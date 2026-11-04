@@ -8,7 +8,7 @@ function frame(app, inner) {
   document.body.classList.remove('mpp-mode');
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
-      <a class="brand" style="color:#fff"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b></span></a>
+      <a class="brand" style="color:#fff"><img src="icons/um-connect-shield.svg" alt=""><span>UM Connect<b>+</b></span></a>
       <div><h2>Pay cashless on campus. Get something back.</h2>
         <p>Pay any UM Connect+ merchant with DuitNow QR, show your code at the counter, and earn points for vouchers, missions and the student welfare fund.</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya student council · PayNet Digital Campus 5.0</p>
@@ -55,7 +55,7 @@ function demoGoogleChooser(app) {
 export function renderSignIn(app, mode = 'in', showEmail = false) {
   const demo = app.backend.mode === 'demo';
   frame(app, `
-    <div><a class="brand"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b></span></a></div>
+    <div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>UM Connect<b>+</b></span></a></div>
     <div><h1>Sign in to UM Connect+</h1>
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>

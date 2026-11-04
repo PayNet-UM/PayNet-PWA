@@ -18,7 +18,7 @@ const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchang
 
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b> MPP</span></a>
+    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/um-connect-shield.svg" alt=""><span>UM Connect<b>+</b> MPP</span></a>
       <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button>
       <nav aria-label="MPP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
       <div class="who"><b style="color:#fff">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">

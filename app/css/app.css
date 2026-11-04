@@ -716,3 +716,9 @@ body:has(.pts-chip) .tabbar a.center.on .ic { color:#192f59; }
   body:has(.pts-chip) .section>.head h2 { font-size:17px; gap:8px; }
 }
 @media(prefers-reduced-motion:reduce) { body:has(.pts-chip) .quick a:hover,body:has(.pts-chip) .btn:active { transform:none; } }
+
+/* Original demo shield: preserve the source logo's proportions and sharp edges. */
+.brand img[src$="um-connect-shield.svg"] { width:31px; height:40px; border-radius:0; object-fit:contain; box-shadow:none; }
+@media(max-width:600px) {
+  .topbar .brand img[src$="um-connect-shield.svg"] { width:27px; height:35px; }
+}
