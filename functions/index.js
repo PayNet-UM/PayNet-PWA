@@ -38,7 +38,11 @@ const deps = {
   now: () => Date.now(),
 };
 
-export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 15 }, async (req, res) => {
+// Runs as the account named in functions/.env.<project-id> (HANDOFF_SERVICE_ACCOUNT): it needs the
+// "Service Account Token Creator" role to make sign-in tokens. Without the file it runs as the default compute account.
+const runAs = process.env.HANDOFF_SERVICE_ACCOUNT ? { serviceAccount: process.env.HANDOFF_SERVICE_ACCOUNT } : {};
+
+export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 15, ...runAs }, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method-not-allowed' });
   const body = typeof req.body === 'object' && req.body ? req.body : {};

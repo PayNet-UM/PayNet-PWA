@@ -103,10 +103,12 @@ session back. So the app uses a small server hand-off (`functions/`, deployed wi
 
 Needs the **Blaze** plan. Once per Firebase project (staging and production):
 
-1. **Let the server create sign-in tokens.** In Google Cloud Console (same project) > IAM & Admin > IAM, find
-   `<project-number>-compute@developer.gserviceaccount.com` (the "Default compute service account"), click the
-   pencil, **Add another role** > **Service Account Token Creator**, Save. Without it the app says
-   "The sign-in server isn't allowed to create sign-in tokens yet".
+1. **Let the server create sign-in tokens.** The server runs as the account named in
+   `functions/.env.<project-id>` (`HANDOFF_SERVICE_ACCOUNT`). Staging uses
+   `firebase-adminsdk-fbsvc@umconnect-e455a.iam.gserviceaccount.com`. In Google Cloud Console > IAM, that account
+   needs **Service Account Token Creator** (pencil > Add another role). For production, create
+   `functions/.env.umconnectproduction` with that project's `firebase-adminsdk-…` address and give it the same role.
+   Without it the app says "The sign-in server isn't allowed to create sign-in tokens yet".
 2. **Optional clean-up:** Firestore > TTL policies > create one on collection group `handoffs`, field `expiresAt`,
    so unused codes are deleted automatically (used codes are deleted straight away).
 3. **GitHub deploys:** the deploy service account (`FIREBASE_SERVICE_ACCOUNT`) also needs **Cloud Functions Admin**,

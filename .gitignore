@@ -15,3 +15,5 @@ dist/
 *service*account*.json
 *.pem
 gha-creds-*.json
+# Server settings per project (no secrets: only which service account the server runs as)
+!functions/.env.*
