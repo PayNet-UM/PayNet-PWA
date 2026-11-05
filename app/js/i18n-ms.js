@@ -1199,4 +1199,8 @@ Hasn’t checked out yet|Belum mendaftar keluar
 Couldn’t check out. You may be too far away, or you already checked out here recently.|Tidak dapat mendaftar keluar. Anda mungkin terlalu jauh, atau sudah mendaftar keluar di sini baru-baru ini.
 Check out. Earn. Redeem.|Daftar keluar. Kumpul. Tebus.
 Check-out days|Hari daftar keluar
+I’ve signed in|Saya sudah log masuk
+Check code|Kod semakan
+: Safari shows the same code.|: Safari menunjukkan kod yang sama.
+: the app shows the same code.|: aplikasi menunjukkan kod yang sama.
 `;

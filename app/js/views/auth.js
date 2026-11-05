@@ -25,8 +25,8 @@ const GOOGLE_G = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="t
 // ------------------------------------------------------------- device checks for Google sign-in
 const UA = navigator.userAgent || '';
 // Google refuses sign-in inside apps' built-in browsers (WhatsApp, Instagram, Telegram, Facebook, TikTok, LINE…).
-export const inAppBrowser = () => /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Telegram|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|MicroMessenger|WhatsApp|GSA\/|; wv\)/i.test(UA)
-  || (/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
+export const inAppBrowser = () => !isStandalone() && (/FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Telegram|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|MicroMessenger|WhatsApp|GSA\/|; wv\)/i.test(UA)
+  || (/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA)));
 const isPhone = () => /Android|iPhone|iPad|iPod|Mobile/i.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
 const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
@@ -160,8 +160,11 @@ function handoffWait(app) {
   const el = sheet(`<h2>Finish signing in in Safari</h2>
     <p class="muted">Sign in with Google in Safari. Then come back to this app: you’ll be signed in automatically.</p>
     <div class="row" style="margin-top:14px;gap:10px;align-items:center"><span class="spinner" aria-hidden="true"></span><span class="faint" id="ho-status">Waiting for Safari…</span></div>
-    <div class="stack" style="margin-top:14px"><a class="btn primary block" id="ho-open" href="${esc(handoffUrl(h.hash))}" target="_blank" rel="noopener">Open Safari</a><button class="btn ghost block" id="ho-cancel">Cancel</button></div>
+    <p class="faint" style="margin-top:8px">Check code <b class="code-text">${esc(h.hash.slice(0, 6).toUpperCase())}</b>: Safari shows the same code.</p>
+    <div class="stack" style="margin-top:14px"><a class="btn primary block" id="ho-open" href="${esc(handoffUrl(h.hash))}" target="_blank" rel="noopener">Open Safari</a>
+      <button class="btn block" id="ho-check">I’ve signed in</button><button class="btn ghost block" id="ho-cancel">Cancel</button></div>
     <p class="faint" style="margin-top:10px">Safari didn’t open? Tap “Open Safari”.</p>`);
+  $('#ho-check', el).onclick = () => polling && polling.tick();
   $('#ho-cancel', el).onclick = () => { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); };
   startPoll(app);
 }
@@ -176,6 +179,8 @@ function startPoll(app) {
     busyNow = true;
     try {
       const r = await api('redeem', { secret: h.secret });
+      const st0 = document.getElementById('ho-status');
+      if (st0 && r.status === 'pending') st0.textContent = `Waiting for Safari… (checked ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`;
       if (r.status === 'ready') {
         ls.del(HANDOFF_KEY); stopPoll();
         await app.backend.sdk.signInWithCustomToken(app.backend.auth, r.token);
@@ -191,7 +196,7 @@ function startPoll(app) {
     } finally { busyNow = false; }
   };
   const vis = () => { if (document.visibilityState === 'visible') tick(); };
-  polling = { timer: setInterval(tick, 2500), vis };
+  polling = { timer: setInterval(tick, 2500), vis, tick };
   addEventListener('visibilitychange', vis); addEventListener('focus', vis);
   tick();
 }
@@ -210,6 +215,7 @@ export async function renderHandoffDone(app, user, hash) {
     try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
     history.replaceState(null, '', location.pathname);
     box.innerHTML = `<h1>You’re signed in</h1><p class="lede">Go back to the +Onz app on your home screen. It will open signed in as <b>${esc(user.email || 'you')}</b>.</p>
+      <p class="faint" style="margin-top:8px">Check code <b class="code-text">${esc(hash.slice(0, 6).toUpperCase())}</b>: the app shows the same code.</p>
       <p class="faint" style="margin-top:14px">You can close this Safari window. Tap “Done” at the top, or switch apps.</p>
       <button class="btn block" id="ho-here" style="margin-top:14px">Keep using +Onz in Safari instead</button>`;
     $('#ho-here').onclick = () => location.reload();

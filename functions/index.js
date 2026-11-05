@@ -49,9 +49,15 @@ export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', max
   try {
     if (req.path.endsWith('/handoff/create')) {
       const idToken = (req.get('Authorization') || '').replace(/^Bearer /, '');
-      return res.json(await create(deps, { hash: body.hash, idToken }));
+      const out = await create(deps, { hash: body.hash, idToken });
+      console.log('handoff create', String(body.hash).slice(0, 6));
+      return res.json(out);
     }
-    if (req.path.endsWith('/handoff/redeem')) return res.json(await redeem(deps, { secret: body.secret }));
+    if (req.path.endsWith('/handoff/redeem')) {
+      const out = await redeem(deps, { secret: body.secret });
+      if (out.status === 'ready') console.log('handoff redeemed');
+      return res.json(out);
+    }
     return res.status(404).json({ error: 'not-found' });
   } catch (e) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.code, message: e.message });
