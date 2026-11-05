@@ -37,7 +37,6 @@ async function boot() {
     await ensureDemoData(app.backend, (msg) => { $('#boot-msg') && ($('#boot-msg').textContent = msg); });
   }
   Auth.finishRedirect(app);
-  Auth.resumeHandoff(app);
   sdk.onAuthStateChanged(auth, (user) => onUser(user).catch((e) => { console.error(e); toast(errText(e), true); }));
   window.addEventListener('hashchange', () => render());
   window.addEventListener('kk-maps-fallback', () => { toast('Google Maps isn’t set up for this address yet, so the basic map is shown.'); render(); });

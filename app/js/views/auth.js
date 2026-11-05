@@ -1,7 +1,7 @@
 // Sign in, sign up, email verification and first-time profile.
 import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
-import { mppBootstrapEmails } from '../firebase-config.js';
+import { mppBootstrapEmails, firebaseConfig } from '../firebase-config.js';
 import { langToggleHTML } from '../i18n.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
 
@@ -124,6 +124,8 @@ async function api(path, body, idToken) {
 }
 // In the browser: the hash this page was opened with, kept across Google's redirect.
 export function handoffHash() {
+  // The installed app itself is never the hand-off page (an older version could leave a stale code behind).
+  if (isStandalone()) { try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ } return null; }
   try {
     const q = new URLSearchParams(location.search).get(HANDOFF_PARAM);
     if (q && /^[a-f0-9]{64}$/.test(q)) { sessionStorage.setItem(HANDOFF_KEY + '-hash', q); return q; }
@@ -131,7 +133,15 @@ export function handoffHash() {
   } catch { return null; }
 }
 let polling = null;
-const handoffUrl = (hash) => `${location.origin}${location.pathname}?${HANDOFF_PARAM}=${hash}`;
+// The browser page must be on a DIFFERENT address from the installed app: iPhone pulls a link to the app's own
+// address back into the app (where Google sign-in can't finish). Firebase Hosting serves the site on two
+// addresses (<project>.web.app and <project>.firebaseapp.com), so the hand-off page uses the other one.
+function handoffOrigin() {
+  const id = firebaseConfig && firebaseConfig.projectId; const host = location.hostname;
+  if (!id || /REPLACE/.test(id) || host === 'localhost' || host === '127.0.0.1') return location.origin;
+  return host === `${id}.firebaseapp.com` ? `https://${id}.web.app` : `https://${id}.firebaseapp.com`;
+}
+const handoffUrl = (hash) => `${handoffOrigin()}/?${HANDOFF_PARAM}=${hash}`;
 // Must stay synchronous from the tap to window.open, or iPhone blocks the new window.
 function handoffStart(app) {
   const secret = b64url(crypto.getRandomValues(new Uint8Array(32)));
@@ -325,6 +335,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
   if ($('#set-pw')) $('#set-pw').onclick = () => setPasswordSheet(app);
+  if (!demo && !forApp && isStandalone()) resumeHandoff(app);
   $('#google').onclick = (e) => { if (demo) demoGoogleChooser(app); else busy(e.currentTarget, () => googleSignIn(app)); };
   $$('.seg [data-mode]').forEach((b) => { b.onclick = () => renderSignIn(app, b.dataset.mode, true); });
   $('#auth-form').onsubmit = (e) => {
