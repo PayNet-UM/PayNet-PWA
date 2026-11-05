@@ -46,23 +46,64 @@ function openInBrowserSheet() {
 }
 
 const REDIRECT_KEY = 'kk-google-redirect';
+const NEXT_KEY = 'kk-google-next';
+const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* */ } }, del: (k) => { try { localStorage.removeItem(k); } catch { /* */ } } };
+// The installed app (added to the home screen) is the hard case: phones handle Google's sign-in window differently
+// there, and the two Firebase methods (popup, full-page redirect) each fail on some phones. So the app tries one,
+// and if it doesn't finish, the next tap uses the other. If both fail it offers email and password.
+function standaloneOrder() { return isIOS() ? ['popup', 'redirect'] : ['redirect', 'popup']; }
+function nextMethod() {
+  const order = standaloneOrder(); const saved = ls.get(NEXT_KEY);
+  return order.includes(saved) ? saved : order[0];
+}
+function markFailed(method) {
+  const order = standaloneOrder(); const tried = (ls.get(NEXT_KEY + '-tried') || '').split(',').filter(Boolean);
+  if (!tried.includes(method)) tried.push(method);
+  ls.set(NEXT_KEY + '-tried', tried.join(','));
+  const other = order.find((m) => !tried.includes(m));
+  if (other) { ls.set(NEXT_KEY, other); return 'retry'; }
+  ls.del(NEXT_KEY); ls.del(NEXT_KEY + '-tried'); return 'both';
+}
+export function googleWorked() { ls.del(NEXT_KEY + '-tried'); ls.del(REDIRECT_KEY); }
+function standaloneHelp(kind) {
+  if (kind === 'retry') return toast('Google sign-in didn’t finish. Tap “Continue with Google” again: the app will try another way.', true);
+  const el = sheet(`<h2>Google sign-in is blocked in the installed app</h2>
+    <p class="muted">On some phones, Google’s sign-in window can’t hand back to an app added to the home screen.</p>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn primary block" id="sa-email">Use email and password instead</button>
+      <p class="faint">${isIOS() ? 'Or sign in from Safari instead of the home-screen icon. On iPhone the installed app keeps its own sign-in, separate from Safari.' : 'Or open the site in Chrome and sign in there: the installed app shares Chrome’s sign-in.'}</p>
+    </div>`);
+  $('#sa-email', el).onclick = () => { closeSheet(); const box = document.getElementById('email-box'); if (box) { box.open = true; box.scrollIntoView({ block: 'center' }); box.querySelector('input')?.focus(); } };
+}
 async function googleSignIn(app, demoEmail) {
   const { sdk, auth, mode } = app.backend;
   const provider = new sdk.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   if (mode === 'demo') provider.demoEmail = demoEmail;
   if (mode === 'live' && inAppBrowser()) return openInBrowserSheet();
-  const redirect = () => { try { sessionStorage.setItem(REDIRECT_KEY, String(Date.now())); } catch { /* */ } return sdk.signInWithRedirect(auth, provider); };
-  // Phones: a full-page redirect is more reliable than a popup (mobile browsers often lose the popup tab).
-  // The installed iPhone app is the exception: a redirect would finish in Safari, outside the app.
-  if (mode === 'live' && isPhone() && !(isStandalone() && isIOS())) return redirect();
-  try {
-    await sdk.signInWithPopup(auth, provider);
-  } catch (err) {
-    if (mode === 'live' && ['auth/popup-blocked', 'auth/operation-not-supported-in-environment', 'auth/web-storage-unsupported'].includes(err.code)) return redirect();
-    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
-    toast(googleErrorText(err), true);
-  }
+  const standalone = mode === 'live' && isStandalone();
+  const redirect = () => { ls.set(REDIRECT_KEY, JSON.stringify({ at: Date.now(), standalone })); return sdk.signInWithRedirect(auth, provider).catch((err) => { ls.del(REDIRECT_KEY); if (standalone) standaloneHelp(markFailed('redirect')); else toast(googleErrorText(err), true); }); };
+  const popup = async () => {
+    const t0 = Date.now();
+    try { await sdk.signInWithPopup(auth, provider); googleWorked(); }
+    catch (err) {
+      if (mode === 'live' && ['auth/popup-blocked', 'auth/operation-not-supported-in-environment', 'auth/web-storage-unsupported'].includes(err.code)) {
+        if (standalone) { markFailed('popup'); return redirect(); }
+        return redirect();
+      }
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // In the installed app a popup that can't hand back looks like the person closed it, after a while.
+        if (standalone && Date.now() - t0 > 6000) standaloneHelp(markFailed('popup'));
+        return;
+      }
+      if (standalone) return standaloneHelp(markFailed('popup'));
+      toast(googleErrorText(err), true);
+    }
+  };
+  if (standalone) return nextMethod() === 'redirect' ? redirect() : popup();
+  // Phones in the browser: a full-page redirect is more reliable than a popup (mobile browsers often lose the popup tab).
+  if (mode === 'live' && isPhone()) return redirect();
+  return popup();
 }
 export function googleErrorText(err) {
   const c = err && err.code;
@@ -77,14 +118,20 @@ export function googleErrorText(err) {
 // Called once at start-up: reports a failed redirect sign-in instead of silently returning to the sign-in page.
 export async function finishRedirect(app) {
   const { sdk, auth } = app.backend;
-  let started = 0; try { started = +sessionStorage.getItem(REDIRECT_KEY) || 0; sessionStorage.removeItem(REDIRECT_KEY); } catch { /* */ }
+  let started = null; try { started = JSON.parse(ls.get(REDIRECT_KEY) || 'null'); } catch { /* */ }
+  ls.del(REDIRECT_KEY);
   if (!sdk.getRedirectResult) return;
   try {
     const res = await sdk.getRedirectResult(auth);
-    if (!res && started && Date.now() - started < 10 * 60000 && !auth.currentUser) {
-      setTimeout(() => { if (!auth.currentUser) toast('Google sign-in didn’t finish. If you use private browsing or block cookies, switch that off, or use email and password.', true); }, 1500);
+    if (res) { googleWorked(); return; }
+    if (started && Date.now() - started.at < 10 * 60000) {
+      setTimeout(() => {
+        if (auth.currentUser) return googleWorked();
+        if (started.standalone) standaloneHelp(markFailed('redirect'));
+        else toast('Google sign-in didn’t finish. If you use private browsing or block cookies, switch that off, or use email and password.', true);
+      }, 1500);
     }
-  } catch (e) { toast(googleErrorText(e), true); }
+  } catch (e) { if (started && started.standalone) standaloneHelp(markFailed('redirect')); else toast(googleErrorText(e), true); }
 }
 
 function demoGoogleChooser(app) {
@@ -116,6 +163,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
           <button class="btn primary block" type="submit">${mode === 'in' ? 'Sign in' : 'Create account'}</button>
           ${mode === 'in' ? '<button class="btn ghost block" type="button" id="forgot">Forgot your password?</button>' : ''}
         </form></div></details>
+    <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
       <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">MPP</button></div></div>` : ''}`);
   const { sdk, auth } = app.backend;

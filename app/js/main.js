@@ -47,6 +47,9 @@ async function onUser(user) {
   app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
+  Auth.googleWorked();
+  // Ask the browser to keep this site's storage (and so the sign-in) instead of clearing it when space runs low.
+  try { navigator.storage?.persist?.().catch(() => {}); } catch { /* not supported */ }
   if (mode === 'live' && !user.emailVerified) return Auth.renderVerify(app);
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);

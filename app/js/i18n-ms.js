@@ -1097,4 +1097,10 @@ Your browser is blocking storage (private mode or strict cookie settings). Turn 
 Google sign-in doesn’t work inside this app. Open the link in Chrome or Safari.|Log masuk Google tidak berfungsi dalam aplikasi ini. Buka pautan dalam Chrome atau Safari.
 Sound and vibration|Bunyi dan getaran
 Play a chime and buzz when you earn points.|Mainkan bunyi dan getaran apabila anda dapat mata.
+You’ll stay signed in on this device until you sign out.|Anda kekal log masuk pada peranti ini sehingga anda log keluar.
+Google sign-in didn’t finish. Tap “Continue with Google” again: the app will try another way.|Log masuk Google tidak selesai. Ketik “Teruskan dengan Google” sekali lagi: aplikasi akan cuba cara lain.
+Google sign-in is blocked in the installed app|Log masuk Google disekat dalam aplikasi yang dipasang
+On some phones, Google’s sign-in window can’t hand back to an app added to the home screen.|Pada sesetengah telefon, tetingkap log masuk Google tidak dapat kembali ke aplikasi di skrin utama.
+Or sign in from Safari instead of the home-screen icon. On iPhone the installed app keeps its own sign-in, separate from Safari.|Atau log masuk dari Safari dan bukan ikon skrin utama. Pada iPhone, aplikasi yang dipasang menyimpan log masuknya sendiri, berasingan daripada Safari.
+Or open the site in Chrome and sign in there: the installed app shares Chrome’s sign-in.|Atau buka laman dalam Chrome dan log masuk di sana: aplikasi yang dipasang berkongsi log masuk Chrome.
 `;
