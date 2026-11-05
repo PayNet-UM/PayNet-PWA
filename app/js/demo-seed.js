@@ -7,8 +7,8 @@ const MPP_EMAIL = mppBootstrapEmails[0];
 export const DEMO_PASSWORD = 'demo1234';
 export const DEMO_ACCOUNTS = [
   ['aina@siswa.um.edu.my', 'Student: Aina (KK3)'], ['badrul@siswa.um.edu.my', 'Student: Badrul (KK5)'],
-  ['kopikolej@demo.my', 'Merchant: Kopi Kolej'], ['laundry@demo.my', 'Merchant: Fresh Laundry'], ['hana@demo.my', 'Merchant: Roti by Hana (awaiting MPP)'],
-  [MPP_EMAIL, 'MPP admin'],
+  ['kopikolej@demo.my', 'Merchant: Kopi Kolej'], ['laundry@demo.my', 'Merchant: Fresh Laundry'], ['hana@demo.my', 'Merchant: Roti by Hana (awaiting HEP)'],
+  [MPP_EMAIL, 'HEP admin'],
 ];
 const MERCHANTS = [
   ['kopikolej@demo.my', 'Hafiz Rahman', 'Kopi Kolej', 'Kopi Kolej Enterprise', 'Food & drinks', 'Campus permanent merchant', 'KK3 cafeteria', 'Residential colleges', 40, 12, 3.1286, 101.6571],
@@ -58,7 +58,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
   try {
     let mpp = await as(MPP_EMAIL);
     await D.initProgramme(mpp);
-    await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Visit Kampus Kita+ merchants and pay cashless. Every check-in counts for your college.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
+    await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Visit +Onz merchants and pay cashless. Every check-in counts for your college.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
     await D.saveCampaign(mpp, null, { name: 'Student Makers Bazaar', description: 'Student-run stalls with DuitNow QR. Check in at three for the explorer mission.', start: D.dayKey(Date.now() + 9 * 86400000), end: D.dayKey(Date.now() + 11 * 86400000), location: 'Kompleks Perdanasiswa', budgetCents: 80000 });
     const ids = {};
     for (const [email, owner, name, account, type, segment, location, zone, seats, , lat, lng] of MERCHANTS) {

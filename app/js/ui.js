@@ -24,7 +24,7 @@ export const colorFor = (s) => PALETTE[[...String(s)].reduce((a, c) => a + c.cha
 export function errText(e) {
   const c = e && e.code;
   const map = {
-    'permission-denied': 'That action isn’t allowed for your account. If you think it should be, ask MPP.',
+    'permission-denied': 'That action isn’t allowed for your account. If you think it should be, ask HEP.',
     'auth/invalid-credential': 'Email or password is incorrect.', 'auth/wrong-password': 'Email or password is incorrect.',
     'auth/user-not-found': 'No account uses that email.', 'auth/email-already-in-use': 'An account already uses that email. Sign in instead.',
     'auth/weak-password': 'Use at least 6 characters for your password.', 'auth/invalid-email': 'Enter a valid email address.',

@@ -14,7 +14,7 @@ const app = {
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['home', 'Home', 'house'], ['explore', 'Shops', 'store'], ['checkin', 'Check in', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['home', 'Home', 'house'], ['events', 'Campus Events', 'calendar'], ['checkin', 'Check out', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
@@ -27,7 +27,7 @@ async function boot() {
   try {
     app.backend = await initBackend();
   } catch (e) {
-    document.body.innerHTML = `<div class="boot"><div><h2>Kampus Kita+ couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
+    document.body.innerHTML = `<div class="boot"><div><h2>+Onz couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
     return;
   }
   const { sdk, auth, mode } = app.backend;
@@ -108,7 +108,7 @@ function shell(role) {
   document.body.innerHTML = `
     <div class="shell">
       <header class="topbar">
-        <a class="brand" href="#/home"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a>
+        <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-header.png" alt="+Onz" width="368" height="227"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
         <span class="spacer"></span>
         ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}
@@ -136,7 +136,7 @@ function accountSheet() {
   const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
-      ${app.isMpp ? '<button class="btn block" id="to-mpp">Open the MPP dashboard</button>' : ''}
+      ${app.isMpp ? '<button class="btn block" id="to-mpp">Open the HEP dashboard</button>' : ''}
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
     </div>`);
@@ -151,7 +151,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); defe
 function installApp() {
   if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; closeSheet(); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  sheet(`<h2>Install Kampus Kita+</h2><p class="muted">${ios
+  sheet(`<h2>Install +Onz</h2><p class="muted">${ios
     ? 'In Safari, tap the Share button, then “Add to Home Screen”.'
     : 'Open your browser menu and choose “Install app” or “Add to Home screen”. If it’s already installed, open it from your home screen.'}</p>`);
 }
@@ -183,7 +183,7 @@ async function render() {
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
   view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
-  document.title = `${r.title} · Kampus Kita+`;
+  document.title = `${r.title} · +Onz ${app.role === 'mpp' ? 'HEP' : app.role === 'student' ? 'Student' : 'Merchant'}`;
   const token = Symbol(); render.token = token;
   try {
     const html = await r.render(app, parts.slice(1));

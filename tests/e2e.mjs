@@ -27,10 +27,17 @@ await stu.reload(); await stu.waitForFunction(() => document.documentElement.dat
 if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo') { console.error('Stopped: the server is not in Demo mode. Use npm run dev:demo.'); await b.close(); process.exit(1); }
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
 const pillars = await stu.locator('.kk-pillar').count();
-if (pillars !== 6) throw new Error('expected 6 Kampus Kita pillars, got ' + pillars);
+if (pillars !== 4) throw new Error('expected 4 +Onz directory cards, got ' + pillars);
+for (const route of ['explore', 'rewards', 'community', 'learn']) {
+  if (await stu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 1) throw new Error('missing directory: ' + route);
+}
+for (const route of ['bayar', 'explore/idea']) {
+  if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
+}
+if (await stu.locator('.tabbar a[href="#/events"]').count() !== 1) throw new Error('missing Campus Events navigation');
 const before = await pointsOf(stu);
 await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
-ok(`student home shows the Kampus Kita hub (${pillars} sections) and ${before} points`);
+ok(`student home shows the +Onz hub (${pillars} directories) and ${before} points`);
 
 await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#mmap .kk-pin', { timeout: 20000 });
 const pins = await stu.locator('#mmap .kk-pin').count(); const logos = await stu.locator('#mmap .kk-pin img').count();
@@ -44,6 +51,11 @@ await stu.screenshot({ path: `${shots}/02-niaga-map.png` });
 ok(`Niaga Kita map shows ${pins} logo pins; live location puts ${nearest} first`);
 
 await stu.goto(BASE + '#/checkin'); await stu.waitForSelector('[data-ci]', { timeout: 20000 });
+await stu.getByText('Pay Cashless', { exact: true }).click();
+await stu.getByText('Scan the merchant’s DuitNow QR', { exact: true }).waitFor();
+await stu.getByRole('button', { name: 'Student Ventures', exact: true }).click();
+await stu.waitForSelector('[data-ventures][aria-pressed="true"]');
+await stu.getByRole('button', { name: 'All', exact: true }).click();
 await stu.screenshot({ path: `${shots}/03-checkin.png`, fullPage: true });
 await stu.click('[data-ci]'); await stu.waitForSelector('#sheet .kk-celebrate', { timeout: 15000 });
 const gained = Number((await stu.textContent('#sheet .amount-big')).replace(/\D/g, ''));
@@ -53,9 +65,12 @@ await stu.click('#sheet [data-close]'); await stu.waitForSelector('text=Again at
 ok('student checked in at Fresh Laundry (+10) and the shop now shows a cooldown');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
-await stu.click('.av-opts [data-k="hair"][data-v="curly"]'); await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
-await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]'); await stu.click('[data-t="glasses"]');
+await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
+await stu.click('[data-t="glasses"]');
 await stu.locator('.av-range[data-k="skin"]').fill('5');
+await stu.click('[aria-controls="av-gear"]');
+await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
+await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]');
 const locked = await stu.locator('.av-opts [data-k="hat"][data-locked]').count();
 await stu.screenshot({ path: `${shots}/05-avatar.png`, fullPage: true });
 await stu.click('#av-save'); await stu.waitForSelector('.me-card');

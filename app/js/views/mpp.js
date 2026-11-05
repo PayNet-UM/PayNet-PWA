@@ -1,4 +1,4 @@
-// MPP dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
+// HEP dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
@@ -20,9 +20,9 @@ const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchang
 
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b> MPP</span></a>
-      <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button>
-      <nav aria-label="MPP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
+    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-header.png" alt="+Onz" width="368" height="227"><em class="onz-role">HEP</em></a>
+      <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button></header>
+      <nav aria-label="HEP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
       <div class="who">${langToggleHTML('on-dark')}<b style="color:#fff;display:block;margin-top:12px">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
         ${app.profile ? `<button class="btn small" id="as-user" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Open my ${esc(app.profile.role)} app</button>` : ''}
         <button class="btn small" id="mpp-out" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">${icon('log-out')} Sign out</button></div></div></aside>
@@ -47,8 +47,9 @@ async function refreshCounts(app) {
 // ------------------------------------------------------------- overview
 async function overviewRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
-  const [users, merchants, visits, welfare, campus] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
-    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'campus'))]);
+  const [users, merchants, visits, welfare, campus, deals, waitingDeals] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
+    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'campus')), D.approvedDeals(app.ctx), D.pendingDeals(app.ctx)]);
+  const liveDeals = await D.dealOverview(app.ctx, deals, merchants);
   const students = users.filter((u) => u.role === 'student'); const conf = visits;
   const active = new Set(conf.map((t) => t.uid)); const verified = merchants.filter((m) => m.status === 'verified');
   const pending = merchants.filter((m) => m.status === 'pending');
@@ -57,19 +58,34 @@ async function overviewRender(app) {
   const byMerchant = {}; conf.forEach((t) => { byMerchant[t.merchantName] = (byMerchant[t.merchantName] || 0) + 1; });
   const top = Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const today = new Date(Date.now() + 8 * 3600000).getUTCDate();
-  return `<div class="page-title row between"><div><h1>Programme overview</h1><p>PayNet merchant list is due on the 20th. ${today <= 20 && month === D.monthKey() ? `${20 - today} days left this month.` : ''}</p></div>${monthPicker()}</div>
+  const shortcuts = [
+    ['merchants', 'store', 'Merchants', `${pending.length} waiting for review`],
+    ['approvals', 'list-checks', 'Approvals', 'Offers, deals and missions'],
+    ['paynet', 'file-spreadsheet', 'PayNet list', 'Export Lampiran 1'],
+  ];
+  return `<section class="kk-hero hep-overview-hero">
+      <div><h1>Programme overview</h1><p>PayNet merchant list is due on the 20th. ${today <= 20 && month === D.monthKey() ? `${20 - today} days left this month.` : ''}</p></div>
+      <label class="hep-period"><span class="sr">Reporting month</span>${monthPicker()}</label>
+    </section>
+    <h2 class="kk-pillars-title">Needs your attention</h2>
+    <nav class="kk-pillars hep-shortcuts" aria-label="HEP shortcuts">
+      ${shortcuts.map(([route, glyph, label, detail]) => `<a class="kk-pillar" href="#/${route}"><span class="tile-icon">${icon(glyph)}</span><h3>${label}</h3><p>${detail}</p></a>`).join('')}
+    </nav>
+    <h2 class="kk-pillars-title">Programme activity</h2>
     <div class="stats">
       <div class="stat"><div class="k">Check-ins</div><div class="v num">${n(conf.length)}</div><div class="s">in ${monthLabel(month)}</div></div>
       <div class="stat"><div class="k">Active students</div><div class="v num">${n(active.size)}</div><div class="s">of ${n(students.length)} signed up</div></div>
       <div class="stat"><div class="k">Verified merchants</div><div class="v num">${n(verified.length)}</div><div class="s">${pending.length} waiting for review</div></div>
       <div class="stat"><div class="k">Welfare fund</div><div class="v num">${n(welfare.exists() ? welfare.data().points : 0)}</div><div class="s">points donated</div></div></div>
-    <div class="cols main-side" style="margin-top:16px">
-      <section class="card pad-lg"><div class="row between"><h2>Check-ins per day</h2><span class="faint">${monthLabel(month)}</span></div>
-        <div style="margin-top:12px">${perDay.length ? barChart(perDay, days.map((d) => String(+d.slice(8))), { highlight: days.indexOf(D.dayKey()) }) : '<p class="faint">No days yet.</p>'}</div></section>
-      <section class="card pad-lg"><h2>Needs your attention</h2><div class="list" style="margin-top:8px">
-        <a class="item" href="#/merchants" style="color:inherit"><span class="tile-icon orange">${icon('store')}</span><div class="grow"><h3>${pending.length} merchant${pending.length === 1 ? '' : 's'} to verify</h3><p>Check QR names before the 20th</p></div>${icon('chevron-right')}</a>
-        <a class="item" href="#/approvals" style="color:inherit"><span class="tile-icon">${icon('list-checks')}</span><div class="grow"><h3>Offers, deals and missions</h3><p>Waiting for approval</p></div>${icon('chevron-right')}</a>
-        <a class="item" href="#/paynet" style="color:inherit"><span class="tile-icon mint">${icon('file-spreadsheet')}</span><div class="grow"><h3>Export Lampiran 1</h3><p>${verified.length} merchants with QR images</p></div>${icon('chevron-right')}</a></div></section></div>
+    <section class="section card pad-lg"><div class="row between"><h2>Live deals</h2><a class="btn small" href="#/approvals">Review deals (${waitingDeals.length})</a></div>
+      <p class="faint">${liveDeals.filter((row) => row.status === 'Available').length} live now · ${deals.length} approved</p>
+      <div class="list">${liveDeals.map(({ deal: d, merchant: m, used, status }) => `<article class="item deal-overview-row">
+        <div class="grow"><h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · +${d.bonus} pts</p>
+          <p>${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'} · ${used == null ? 'Claim count unavailable' : `${used}/${d.limit} claimed today · ${n(used * d.bonus)} bonus pts awarded`}</p></div>
+        <span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span>
+      </article>`).join('') || '<p class="faint">No approved deals yet.</p>'}</div></section>
+    <section class="section card pad-lg"><div class="row between"><h2>Check-ins per day</h2><span class="faint">${monthLabel(month)}</span></div>
+      <div style="margin-top:12px">${perDay.length ? barChart(perDay, days.map((d) => String(+d.slice(8))), { highlight: days.indexOf(D.dayKey()) }) : '<p class="faint">No days yet.</p>'}</div></section>
     <div class="cols two" style="margin-top:16px">
       <section class="card pad-lg"><h2>Top merchants this month</h2><table class="data" style="margin-top:8px"><tbody>${top.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No check-ins yet.</td></tr>'}</tbody></table></section>
       <section class="card pad-lg"><h2>Colleges, all time</h2><table class="data" style="margin-top:8px"><tbody>${Object.entries((campus.exists() && campus.data().colleges) || {}).sort((a, b) => b[1] - a[1]).slice(0, 6)
@@ -78,7 +94,7 @@ async function overviewRender(app) {
 function setupHTML() {
   return `<div class="page-title"><h1>Set up the programme</h1><p>This creates the points rules, reward catalogue, leaderboard and welfare counters in your Firebase project. Run it once.</p></div>
     <div class="card pad-lg stack"><label class="field">Student email domains<input id="domains" value="siswa.um.edu.my, um.edu.my, gmail.com"><small>Only these domains can sign up as students. Keep gmail.com if students sign in with Google; each matric number can only register once.</small></label>
-      <button class="btn primary" id="init">Set up Kampus Kita+</button></div>`;
+      <button class="btn primary" id="init">Set up +Onz</button></div>`;
 }
 function overviewMount(root, app) {
   bindMonth(root, app);
@@ -138,18 +154,18 @@ async function approvalsRender(app) {
   const [offers, deals, claims] = await Promise.all([D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx)]);
   app._ap = { offers, deals, claims };
   const empty = (t) => `<div class="empty" style="padding:16px">${t}</div>`;
-  return `<div class="page-title"><h1>Approvals</h1><p>Merchant offers and quiet-hour bonuses go live when you approve them. Mission claims add points to the student.</p></div>
+  return `<div class="page-title"><h1>Approvals</h1><p>Approve offers and off-peak deals before students can see them. Mission claims add points to the student.</p></div>
     <div class="cols two">
       <section class="card pad-lg"><h2>Offers (${offers.length})</h2><div class="list" style="margin-top:6px">${offers.map((o) => `<div class="item"><div class="grow"><h3>${esc(o.title)}</h3><p>${esc(o.merchantName)} · ${esc(o.type)} · until ${esc(o.endDate)}</p></div>
         <button class="btn small" data-offer="${esc(o.id)}" data-s="rejected">Reject</button><button class="btn small go" data-offer="${esc(o.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No offers waiting.')}</div></section>
-      <section class="card pad-lg"><h2>Quiet-hour bonuses (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · +${d.bonus} pts × ${d.limit}/day (max ${n(d.bonus * d.limit)} pts a day)</p></div>
+      <section class="card pad-lg"><h2>Live deals (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · under ${d.threshold}% full · +${d.bonus} pts × ${d.limit}/day (max ${n(d.bonus * d.limit)} pts a day)</p></div>
         <button class="btn small" data-deal="${esc(d.id)}" data-s="rejected">Reject</button><button class="btn small go" data-deal="${esc(d.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No deals waiting.')}</div></section></div>
     <section class="card pad-lg" style="margin-top:16px"><h2>Mission claims (${claims.length})</h2><p class="faint">Progress is counted from the student’s check-ins.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
       <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section>`;
 }
 function approvalsMount(root, app) {
   $$('[data-offer]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewOffer(app.ctx, app._ap.offers.find((o) => o.id === b.dataset.offer), b.dataset.s); toast(b.dataset.s === 'approved' ? 'Offer is live.' : 'Offer rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
-  $$('[data-deal]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewDeal(app.ctx, b.dataset.deal, b.dataset.s); toast(b.dataset.s === 'approved' ? 'Deal is live.' : 'Deal rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
+  $$('[data-deal]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewDeal(app.ctx, b.dataset.deal, b.dataset.s); toast(b.dataset.s === 'approved' ? 'Deal approved.' : 'Deal rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
   $$('[data-claim]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewMissionClaim(app.ctx, app._ap.claims.find((c) => c.id === b.dataset.claim), b.dataset.ok === '1'); toast('Claim reviewed.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
 }
 
@@ -245,7 +261,7 @@ async function reconRender(app) {
       ${verified.map((m) => { const c = counts.find((x) => x.merchantId === m.id); const a = per[m.id] || 0;
         return `<tr><td>${esc(m.name)}</td><td class="r num">${n(a)}</td><td class="r num">${c ? n(c.count) : '<span class="faint">—</span>'}</td><td class="r num">${c && a ? (c.count / a).toFixed(1) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="4" class="faint">No verified merchants.</td></tr>'}
       <tr><td><b>Total</b></td><td class="r num"><b>${n(visits.length)}</b></td><td class="r num"><b>${n(counts.reduce((s, c) => s + c.count, 0))}</b></td><td></td></tr></tbody></table></div>
-      <p class="faint" style="margin-top:8px">Kampus Kita+ doesn’t record payments. PayNet’s counts show cashless volume at each listed merchant; check-ins show foot traffic the app brought.</p></section>
+      <p class="faint" style="margin-top:8px">+Onz doesn’t record payments. PayNet’s counts show cashless volume at each listed merchant; check-ins show foot traffic the app brought.</p></section>
     <section class="card pad-lg" style="margin-top:16px"><h2>Unusual check-ins (${ex.length})</h2><div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>When</th><th>Student</th><th>Merchant</th><th>Why flagged</th><th></th></tr></thead><tbody>
       ${ex.map(([v, why]) => `<tr><td>${fmtDateTime(v.at)}</td><td>${esc(v.name)}</td><td>${esc(v.merchantName)}</td><td>${esc(why)}${v.flag ? `<br><span class="badge ${v.flag === 'ok' ? 'ok' : 'bad'}">${v.flag === 'ok' ? 'Checked: fine' : 'Points removed'}</span>` : ''}</td>
         <td class="r">${v.flag ? '' : `<button class="btn small" data-ok="${esc(v.id)}">Looks fine</button> <button class="btn small warn" data-undo="${esc(v.id)}">Remove points</button>`}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">Nothing unusual this month.</td></tr>'}</tbody></table></div></section>`;
@@ -293,9 +309,9 @@ async function rewardsRender(app) {
       <div class="stat"><div class="k">Left to commit</div><div class="v num" style="color:${alloc - committed - spent - campBudget < 0 ? 'var(--red)' : 'inherit'}">${rm(alloc - committed - spent - campBudget)}</div><div class="s">after ${rm(campBudget)} set aside for campaigns</div></div></div>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Reward catalogue</h2><button class="btn small primary" id="new-rw">${icon('plus')} New reward</button></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Reward</th><th>Redeem at</th><th class="r">Points</th><th class="r">Value</th><th class="r">Issued / stock</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>${esc(merchants.find((m) => m.id === r.merchantId)?.name || 'MPP counter')}</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
+      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>${esc(merchants.find((m) => m.id === r.merchantId)?.name || 'HEP counter')}</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
         <td>${r.active ? '<span class="badge ok">On</span>' : '<span class="badge grey">Off</span>'}</td><td class="r"><button class="btn small" data-rw="${esc(r.id)}">Edit</button></td></tr>`).join('')}</tbody></table></div></section>
-    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the MPP counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
+    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the HEP counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
       <p class="faint">Cashback and credits not tied to a merchant. Mark them used when you hand over the value.</p>
       <div class="list" style="margin-top:6px">${open.map((v) => `<div class="item"><div class="grow"><h3>${esc(v.title)} · ${esc(v.code)}</h3><p>${esc(v.studentName)} · issued ${fmtDate(v.createdAt)}</p></div><button class="btn small go" data-use="${esc(v.id)}">Mark used</button></div>`).join('') || '<p class="faint" style="padding:10px 0">None waiting.</p>'}</div></section>`;
 }
@@ -309,7 +325,7 @@ function rewardsMount(root, app) {
     const ms = app._rw.merchants.filter((m) => m.status === 'verified');
     const el = sheet(`<h2>${r ? 'Edit reward' : 'New reward'}</h2><form id="rf" class="stack" style="margin-top:12px">
       <label class="field">Title<input name="title" required value="${esc(r?.title || '')}" placeholder="e.g. RM5 off at Kopi Kolej"></label>
-      <label class="field">Redeem at<select name="merchantId"><option value="">MPP counter (cashback or credit)</option>${ms.map((m) => `<option value="${m.id}" ${r?.merchantId === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+      <label class="field">Redeem at<select name="merchantId"><option value="">HEP counter (cashback or credit)</option>${ms.map((m) => `<option value="${m.id}" ${r?.merchantId === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
       <div class="grid-2"><label class="field">Points needed<input name="cost" type="number" min="1" step="1" required value="${r?.cost || 500}"></label><label class="field">Value (RM)<input name="value" type="number" min="0" step="0.5" required value="${(r?.valueCents || 500) / 100}"></label></div>
       <div class="grid-2"><label class="field">Stock<input name="stock" type="number" min="${r?.issued || 0}" step="1" required value="${r?.stock || 100}"></label><label class="field">Valid for (days)<input name="validDays" type="number" min="1" required value="${r?.validDays || 30}"></label></div>
       <label class="check"><input type="checkbox" name="active" ${!r || r.active ? 'checked' : ''}> Students can swap points for this</label><button class="btn primary">Save reward</button></form>`);
@@ -438,7 +454,7 @@ async function settingsRender(app) {
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
       <label class="field">Testers allowed as students<textarea name="testerEmails">${list('testerEmails')}</textarea><small>Individual emails outside those domains, for the pilot team</small></label>
-      <label class="field">MPP reviewers<textarea name="mppEmails">${list('mppEmails')}</textarea><small>They get full access to this dashboard after signing in with a verified email</small></label>
+      <label class="field">HEP reviewers<textarea name="mppEmails">${list('mppEmails')}</textarea><small>They get full access to this dashboard after signing in with a verified email</small></label>
       <button class="btn primary">Save access</button></form></div>`;
 }
 function settingsMount(root, app) {

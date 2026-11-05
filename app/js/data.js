@@ -119,7 +119,7 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 
-// ------------------------------------------------------------- MPP: programme setup
+// ------------------------------------------------------------- HEP: programme setup
 export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 'um.edu.my', 'gmail.com'] } = {}) {
   const { sdk } = ctx; const r = R(ctx);
   const b = sdk.writeBatch(ctx.db);
@@ -356,14 +356,28 @@ export async function dealUsesToday(ctx, dealId) {
 }
 // Mirrors the rules' availability checks so students only see claimable deals.
 export function dealStatus(deal, merchant, usesToday, nowMs = Date.now()) {
+  if (deal.status === 'rejected') return 'Not approved';
+  if (deal.status !== 'approved') return 'Awaiting HEP';
   if (!deal.enabled) return 'Paused';
-  if (deal.status !== 'approved') return 'Awaiting MPP';
+  if (merchant?.status && merchant.status !== 'verified') return 'Shop unavailable';
+  if (usesToday == null) return 'Availability unknown';
   if (usesToday >= deal.limit) return 'All claimed today';
   const m = minuteOfDay(nowMs);
   if (m < deal.startMin || m >= deal.endMin) return `Opens ${hhmm(deal.startMin)}`;
   if (!merchant || !merchant.seats) return 'Seat count not set';
   if (merchant.occupied * 100 >= deal.threshold * merchant.seats) return 'Busy right now';
   return 'Available';
+}
+
+export async function dealOverview(ctx, deals, merchants) {
+  const shops = new Map(merchants.map((m) => [m.id, m]));
+  const uses = await Promise.all(deals.map((d) => d.status === 'approved'
+    ? dealUsesToday(ctx, d.id).catch(() => null) : 0));
+  const now = clock(ctx);
+  return deals.map((deal, i) => {
+    const merchant = shops.get(deal.merchantId);
+    return { deal, merchant, used: uses[i], status: dealStatus(deal, merchant, uses[i], now) };
+  });
 }
 
 // ------------------------------------------------------------- missions

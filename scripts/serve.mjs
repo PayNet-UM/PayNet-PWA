@@ -37,5 +37,5 @@ http.createServer((req, res) => {
   });
 }).listen(port, () => {
   const mode = env ? `STAGING project ${env.firebaseConfig.projectId}` : dirName === 'app' ? 'Demo mode' : 'as built';
-  console.log(`Kampus Kita+ on http://localhost:${port} (serving ${dirName}/, ${mode})`);
+  console.log(`+Onz on http://localhost:${port} (serving ${dirName}/, ${mode})`);
 });

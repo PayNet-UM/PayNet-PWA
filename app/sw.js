@@ -1,16 +1,17 @@
-/* Kampus Kita+ service worker: app shell cached for fast start and offline launch.
+/* +Onz service worker: app shell cached for fast start and offline launch.
    Firebase and Google requests always go to the network. */
 const VERSION = 'umc-__VERSION__';
 const SHELL = [
   './', 'index.html', 'offline.html', 'manifest.webmanifest', 'firestore.rules',
-  'css/app.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
-  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/demo-seed.js', 'js/i18n.js', 'js/i18n-ms.js', 'js/map.js', 'js/avatar.js',
+  'css/app.css?v=__VERSION__', 'css/onz.css?v=__VERSION__', 'css/feskum.css?v=__VERSION__', 'css/event-carousel.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
+  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/feskum.js', 'js/event-carousel.js', 'js/demo-seed.js', 'js/i18n.js', 'js/i18n-ms.js', 'js/map.js', 'js/avatar.js',
   'js/views/auth.js', 'js/views/student.js', 'js/views/merchant.js', 'js/views/mpp.js',
   'js/fake/fakefb.js', 'js/fake/rules-engine.js',
   'vendor/firebase.js', 'vendor/qrcode.min.js', 'vendor/jsQR.js', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'fonts/montserrat-latin-500-normal.woff2', 'fonts/montserrat-latin-600-normal.woff2',
   'fonts/montserrat-latin-700-normal.woff2', 'fonts/montserrat-latin-800-normal.woff2',
-  'icons/um-connect-shield.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-48.png',
+  'assets/feskum-2026/identity-01.jpg', 'assets/feskum-2026/feed-03.jpg', 'assets/feskum-2026/feed-04.jpg', 'assets/feskum-2026/feed-05.jpg', 'assets/feskum-2026/feed-06.jpg', 'assets/feskum-2026/feed-07.jpg', 'assets/feskum-2026/feed-08.jpg', 'assets/feskum-2026/feed-09.jpg', 'assets/feskum-2026/feed-10.jpg', 'assets/feskum-2026/feed-11.jpg', 'assets/feskum-2026/feed-12.jpg', 'assets/feskum-2026/feed-13.jpg',
+  'assets/onz-directory-art.png', 'icons/onz-header.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-48.png',
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

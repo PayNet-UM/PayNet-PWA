@@ -9,10 +9,10 @@ function frame(app, inner) {
   document.body.classList.remove('mpp-mode');
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
-      <a class="brand" style="color:#fff"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a>
-      <div><h2>This is our campus. It’s all here.</h2>
-        <p>Discover campus merchants and student ventures, find events, check in to collect points, and swap them for rewards. Discover. Connect. Experience. Grow.</p></div>
-      <p class="faint" style="color:#8A9AB2">Universiti Malaya student council · PayNet Digital Campus 5.0</p>
+      <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a>
+      <div><h2>Add on to campus life.</h2>
+        <p>Shops, events, check-ins and rewards in one place.</p></div>
+      <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
     <div class="form-side">${langToggleHTML('auth-lang')}${inner}</div></div>`;
@@ -35,7 +35,7 @@ function openInBrowserSheet() {
   const url = location.origin + location.pathname;
   const android = /Android/i.test(UA);
   const el = sheet(`<h2>Open in ${android ? 'Chrome' : 'Safari'} to sign in</h2>
-    <p class="muted">You opened Kampus Kita+ inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.</p>
+    <p class="muted">You opened +Onz inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.</p>
     <div class="stack" style="margin-top:14px">
       ${android ? `<a class="btn primary block" href="intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
       <button class="btn block ${android ? '' : 'primary'}" id="copy-link">Copy the link</button>
@@ -202,22 +202,22 @@ export function resumeHandoff(app) {
 }
 // In the browser, once signed in: register the hash so the home-screen app can collect the sign-in.
 export async function renderHandoffDone(app, user, hash) {
-  frame(app, `<div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
     <div id="ho-box"><h1>Finishing sign-in…</h1><p class="lede">One moment.</p></div>`);
   const box = $('#ho-box');
   try {
     await api('create', { hash }, await user.getIdToken());
     try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
     history.replaceState(null, '', location.pathname);
-    box.innerHTML = `<h1>You’re signed in</h1><p class="lede">Go back to the Kampus Kita+ app on your home screen. It will open signed in as <b>${esc(user.email || 'you')}</b>.</p>
+    box.innerHTML = `<h1>You’re signed in</h1><p class="lede">Go back to the +Onz app on your home screen. It will open signed in as <b>${esc(user.email || 'you')}</b>.</p>
       <p class="faint" style="margin-top:14px">You can close this Safari window. Tap “Done” at the top, or switch apps.</p>
-      <button class="btn block" id="ho-here" style="margin-top:14px">Keep using Kampus Kita+ in Safari instead</button>`;
+      <button class="btn block" id="ho-here" style="margin-top:14px">Keep using +Onz in Safari instead</button>`;
     $('#ho-here').onclick = () => location.reload();
   } catch (e) {
     try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
     box.innerHTML = `<h1>Couldn’t finish signing in to the app</h1><p class="lede">${esc(e.message)}</p>
       <p class="faint" style="margin-top:14px">Go back to the app and tap “Continue with Google” again.</p>
-      <button class="btn block" id="ho-here" style="margin-top:14px">Use Kampus Kita+ in Safari instead</button>`;
+      <button class="btn block" id="ho-here" style="margin-top:14px">Use +Onz in Safari instead</button>`;
     $('#ho-here').onclick = () => { history.replaceState(null, '', location.pathname); location.reload(); };
   }
 }
@@ -304,7 +304,7 @@ export async function finishRedirect(app) {
 function demoGoogleChooser(app) {
   const el = sheet(`<h2>Choose a Google account</h2><p class="muted">Demo mode stands in for Google’s account picker. Live, this is Google’s own sign-in window.</p>
     <div class="stack" style="margin-top:14px">
-      ${[['aina@siswa.um.edu.my', 'Aina Nadhirah', 'Student, has history'], ['kopikolej@demo.my', 'Kopi Kolej', 'Merchant'], [MPP_EMAIL, 'MPP admin', 'Dashboard']]
+      ${[['aina@siswa.um.edu.my', 'Aina Nadhirah', 'Student, has history'], ['kopikolej@demo.my', 'Kopi Kolej', 'Merchant'], [MPP_EMAIL, 'HEP admin', 'Dashboard']]
         .map(([e, n, d]) => `<button class="btn block" data-g="${e}" style="justify-content:flex-start;height:auto;padding:10px 16px;text-align:left;white-space:normal;min-width:0"><span class="avatar" style="width:32px;height:32px;flex:none">${esc(n[0])}</span><span><b>${esc(n)}</b><br><span class="faint">${esc(e)} · ${esc(d)}</span></span></button>`).join('')}
       <form id="gnew" class="stack"><label class="field">Or use another Gmail address<input name="email" type="email" required placeholder="you@gmail.com"></label><button class="btn primary">Continue</button></form>
     </div>`);
@@ -317,12 +317,12 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   const iosApp = !demo && isStandalone() && isIOS();
   const forApp = !demo && !!handoffHash();
   frame(app, `
-    <div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
-    <div><h1>Sign in to Kampus Kita+</h1>
-      <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
+    <div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    <div><h1>Sign in to +Onz</h1>
+      <p class="lede">Sign in with Google. New users get an account.</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
-    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the Kampus Kita+ app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
+    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">
@@ -336,7 +336,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
         </form></div></details>
     <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
-      <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">MPP</button></div></div>` : ''}`);
+      <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">HEP</button></div></div>` : ''}`);
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
   if ($('#set-pw')) $('#set-pw').onclick = () => setPasswordSheet(app);
@@ -398,7 +398,7 @@ export function renderOnboarding(app, done) {
           <small>Your check-ins count towards your college on the leaderboard.</small></label>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
       </div>
-      <label class="check"><input type="checkbox" required> I agree that Kampus Kita+ stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).</label>
+      <label class="check"><input type="checkbox" required> I agree that +Onz stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).</label>
       <button class="btn primary block" type="submit">Continue</button>
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
@@ -416,11 +416,11 @@ export function renderOnboarding(app, done) {
           : { role, name: f.name.value });
         await done();
       } catch (err) {
-        if (err.notReady) toast('Kampus Kita+ isn’t open for students yet. The MPP admin needs to sign in once to set it up.', true);
+        if (err.notReady) toast('+Onz isn’t open for students yet. The HEP admin needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
-        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact MPP.', true);
+        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact HEP.', true);
         else if (err.code === 'permission-denied' && role === 'student')
-          toast('This email can’t join as a student. Use your Gmail or UM email, or ask MPP to add you as a tester.', true);
+          toast('This email can’t join as a student. Use your Gmail or UM email, or ask HEP to add you as a tester.', true);
         else toast(errText(err), true);
       }
     });

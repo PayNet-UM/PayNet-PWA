@@ -7,7 +7,8 @@ export const OUTFIT_COLORS = ['#00A547', '#258DCE', '#F4A019', '#E85A5A', '#8E6C
 export const ACCENT_COLORS = ['#E2463B', '#F4A019', '#00A547', '#258DCE', '#8E6CEF', '#F48FB1', '#4A3B33', '#FFFFFF'];
 export const BG_COLORS = ['#E6F7EE', '#E3F1FB', '#FFF1D6', '#FBE4EC', '#EEE8FD', '#F1EDE4', '#DDF4F7', '#2E3A4F'];
 
-export const HAIRS = [['short', 'Short'], ['bob', 'Bob'], ['long', 'Long'], ['bun', 'Bun'], ['curly', 'Curly'], ['spiky', 'Spiky'], ['tudung', 'Tudung']];
+export const HAIRS = [['short', 'Short'], ['bob', 'Bob'], ['long', 'Long'], ['bun', 'Bun'], ['curly', 'Curly'], ['spiky', 'Spiky'], ['tudung', 'Tudung'], ['bawal', 'Bawal'], ['shawl', 'Shawl']];
+export const isTudung = (hair) => ['tudung', 'bawal', 'shawl'].includes(hair);
 export const OUTFITS = [['tee', 'T-shirt'], ['hoodie', 'Hoodie'], ['overalls', 'Overalls'], ['baju', 'Baju kurung']];
 // Hats marked with a level are unlocked by earning points.
 export const HATS = [['none', 'No hat'], ['cap', 'Cap'], ['beanie', 'Beanie'], ['songkok', 'Songkok'],
@@ -43,47 +44,68 @@ function shade(hex, amt) {
   const r = f(n >> 16), g = f((n >> 8) & 255), b = f(n & 255);
   return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 }
-const light = (hex) => { const n = parseInt(hex.slice(1), 16); return ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) > 200; };
 
 // ------------------------------------------------------------------ drawing
 // viewBox 0 0 200 260. Head centre (100, 84), radius 46.
 function hairBack(a, c) {
-  const d = shade(c, -0.08);
+  const shadow = shade(c, -0.1);
   switch (a.hair) {
-    case 'bob': return `<path d="M50 84 C50 36 150 36 150 84 L152 128 C140 138 128 132 126 118 L74 118 C72 132 60 138 48 128 Z" fill="${d}"/>`;
-    case 'long': return `<path d="M50 84 C50 34 150 34 150 84 L156 176 C140 186 124 178 122 160 L78 160 C76 178 60 186 44 176 Z" fill="${d}"/>`;
-    case 'curly': return [[58, 62], [72, 46], [92, 38], [112, 38], [130, 46], [144, 62], [150, 82], [148, 102], [52, 102], [50, 82]]
-      .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="17" fill="${d}"/>`).join('');
-    case 'tudung': return `<path d="M100 30 C150 30 160 70 158 104 C157 130 150 150 156 176 C130 186 70 186 44 176 C50 150 43 130 42 104 C40 70 50 30 100 30 Z" fill="${d}"/>`;
+    case 'bob': return `<path d="M49 85C45 54 66 35 99 35c32 0 54 20 52 50l4 42q-14 17-35 9l-20-10-20 10q-21 8-35-9Z" fill="${shadow}"/>`;
+    case 'long': return `<path d="M48 89C46 52 67 34 101 34c36 0 54 24 52 54-2 28 4 53 11 80q-9 15-27 15l-14-5-23-36-24 37q-24 11-40-9c8-24 13-50 12-81Z" fill="${shadow}"/>`;
+    case 'bun': return `<path d="M82 42c-9-10-5-26 7-30 11-6 27 0 29 10 4 11-3 20-11 24Z" fill="${shadow}"/>`;
     default: return '';
   }
 }
 function hairFront(a, c) {
-  const hl = shade(c, 0.12);
+  const highlight = shade(c, 0.17);
+  const shadow = shade(c, -0.12);
+  const detail = (path, color = highlight) => `<path d="${path}" stroke="${color}" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".65"/>`;
   switch (a.hair) {
-    case 'short': return `<path d="M53 88 C48 40 152 40 147 88 C142 70 130 58 112 58 C116 66 108 70 96 64 C84 70 66 72 53 88 Z" fill="${c}"/>
-      <path d="M78 52 C90 46 108 46 120 50" stroke="${hl}" stroke-width="4" stroke-linecap="round" fill="none" opacity=".6"/>`;
-    case 'bob': return `<path d="M52 92 C46 38 154 38 148 92 C146 76 138 66 126 62 L74 62 C62 66 54 76 52 92 Z" fill="${c}"/>
-      <path d="M62 66 L138 66 L140 74 C120 70 80 70 60 74 Z" fill="${c}"/>`;
-    case 'long': return `<path d="M52 96 C44 38 156 38 148 96 C144 72 128 60 108 58 C102 70 80 76 64 76 C58 82 54 88 52 96 Z" fill="${c}"/>`;
-    case 'bun': return `<circle cx="100" cy="34" r="17" fill="${c}"/><path d="M53 88 C48 40 152 40 147 88 C140 66 122 58 100 58 C78 58 60 66 53 88 Z" fill="${c}"/>
-      <path d="M86 26 C94 20 106 20 114 26" stroke="${hl}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`;
-    case 'curly': return [[66, 60], [82, 52], [100, 50], [118, 52], [134, 60]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="${c}"/>`).join('');
-    case 'spiky': return `<path d="M52 88 L56 52 L70 62 L74 36 L88 54 L98 30 L108 52 L122 34 L128 58 L144 48 L148 88 C136 70 120 62 100 62 C80 62 64 70 52 88 Z" fill="${c}"/>`;
-    case 'tudung': return `<path fill-rule="evenodd" fill="${c}" d="M100 32 C148 32 156 72 154 104 C152 132 128 146 100 146 C72 146 48 132 46 104 C44 72 52 32 100 32 Z
-        M100 52 C126 52 136 72 134 96 C132 118 118 128 100 128 C82 128 68 118 66 96 C64 72 74 52 100 52 Z"/>
-      <path d="M58 132 C70 150 130 150 142 132 L150 168 C120 182 80 182 50 168 Z" fill="${c}"/>
-      <path d="M76 56 C92 48 110 48 124 56" stroke="${hl}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".6"/>`;
+    case 'short': return `<path d="M51 94C45 83 47 66 54 55c8-13 22-20 38-21 21-2 39 4 50 17 10 12 13 28 7 43l-7-15q-7-5-12-20c-17 12-38 18-65 16q-5 11-14 19Z" fill="${c}"/>`
+      + detail('M65 57q19-17 48-15M70 66q26 0 47-14');
+    case 'bob': return `<path d="M50 110C42 86 46 59 60 46c16-16 43-19 63-11 22 8 32 30 29 56l-1 21-9 13-2-34q-2-13-8-22l-16 4-2-8-10 8-20 1-4-7-12 7-7 2-1 48Z" fill="${c}"/>`
+      + detail('M63 58q14-17 40-17M136 53q10 12 10 32');
+    case 'long': return `<path d="M49 100C39 73 53 44 77 35c12-5 25-4 33 0 21-3 41 13 44 39 3 22-8 46-4 71q-8-1-13-10c-7-14 3-42 0-58-16-3-27-15-32-28-6 15-21 26-42 32-3 17 5 32-2 51q-7 11-15 12c6-20 8-29 3-44Z" fill="${c}"/>`
+      + detail('M58 68q25-7 36-26M117 44q9 17 23 22');
+    case 'bun': return `<path d="M52 93C47 76 50 56 64 45q16-15 37-12c27-1 46 16 48 43q1 11-3 18c-7-14-11-25-17-35-13 15-40 20-67 18q-4 10-10 16Z" fill="${c}"/>`
+      + detail('M86 22q12-10 24 0M65 62q28 2 49-17');
+    case 'curly': return `<path d="M52 97q-11-3-9-15-8-9 1-18-4-12 8-17 0-12 13-13 5-12 19-10 10-9 22-4 12-5 22 5 13-1 18 11 13 2 13 15 10 7 5 18 6 10-2 19 1 12-12 13l-8-18q-13 1-18-10-14 9-24-2-12 10-23 0-7 10-17 8Z" fill="${c}"/>`
+      + detail('M57 58q-1-7 7-9 6-1 7 4M81 43q4-10 13-6m10 12q3-10 13-6 6 3 2 8m12 6q7-6 13 1');
+    case 'spiky': return `<path d="M52 94q-9-20 0-37l-4-13 17 5 1-17 16 8 9-16 12 13 17-11 4 17 19-4-3 15 14 3q7 18-5 37l-8-17-11-11-13 7 1-11-21 10 1-10-22 14-3-8q-12 9-21 26Z" fill="${c}"/>`
+      + detail('m65 56 14-10m10 9 14-10m9 9 15-5');
+    case 'bawal':
+      return `<path fill="${c}" fill-rule="evenodd" d="M100 29Q108 34 122 38C146 47 152 65 149 95c-2 20 2 34 15 51l-64 36-64-36c13-17 17-31 15-51-3-30 3-48 27-57Q92 34 100 29Z
+        M100 49c-22 0-35 14-36 36-2 19 8 34 24 41l12 4 12-4c16-7 26-22 24-41-1-22-14-36-36-36Z"/>
+        <path fill="${shadow}" opacity=".6" d="M48 145q30 4 52-12 22 16 52 12l-52 32Z"/>`
+        + detail('M59 142q22 10 41 27 19-17 41-27M70 56q12-13 30-15');
+    case 'shawl':
+      return `<path fill="${c}" fill-rule="evenodd" d="M100 34c30-4 49 16 49 44 0 18-3 34 6 53l12 27-30 42-29-17 4-26c-24 7-46 6-68-5 12-20 14-37 10-58-5-33 10-58 46-60Z
+        M100 49c-22 0-35 14-36 36-2 19 8 34 24 41l12 4 12-4c16-7 26-22 24-41-1-22-14-36-36-36Z"/>
+        <path fill="${shadow}" d="M58 145q36 12 81-19l10 10q-15 15-37 21-34 10-58-4Z"/>`
+        + detail('M68 55q25-21 55-9M61 145q35 10 77-19M138 149q-2 20-15 35');
+    case 'tudung':
+      return `<path fill-rule="evenodd" fill="${c}" d="M100 32c31-1 49 19 49 50 0 23-4 37 12 54l11 12c-13 10-28 11-41 10-15 11-36 18-57 18-5-12-19-18-38-24 15-14 23-30 21-54-3-37 8-65 43-66Z
+          M100 49c-22 0-35 14-36 36-2 19 8 34 24 41l12 4 12-4c16-7 26-22 24-41-1-22-14-36-36-36Z"/>
+        <path d="M62 117q10 20 38 23c-10 9-26 13-42 11m72-37q-10 24-32 34c17 2 35 0 50-9" fill="none" stroke="${shadow}" stroke-width="3" stroke-linecap="round"/>`
+        + detail('M73 53q12-13 30-13m30 18q9 10 9 25M70 157q20 10 45 2');
     default: return '';
   }
 }
 function hat(a) {
   const ac = ACCENT_COLORS[a.accent]; const acd = shade(ac, -0.15);
   switch (a.hat) {
-    case 'cap': return `<path d="M52 72 C54 30 146 30 148 72 Z" fill="${ac}"/><path d="M96 70 C120 64 150 66 168 74 C150 80 120 80 96 76 Z" fill="${acd}"/><circle cx="100" cy="34" r="4" fill="${acd}"/>`;
-    case 'beanie': return `<path d="M50 74 C50 22 150 22 150 74 Z" fill="${ac}"/><rect x="46" y="64" width="108" height="16" rx="8" fill="${acd}"/>
-      <circle cx="100" cy="22" r="10" fill="${shade(ac, 0.2)}"/>${[64, 80, 96, 112, 128].map((x) => `<line x1="${x}" y1="66" x2="${x}" y2="78" stroke="${shade(ac, -0.28)}" stroke-width="2"/>`).join('')}`;
-    case 'songkok': return `<path d="M58 70 L62 36 C80 30 120 30 138 36 L142 70 C120 64 80 64 58 70 Z" fill="#1F1A1C"/><path d="M62 36 C80 30 120 30 138 36 C120 40 80 40 62 36 Z" fill="#3A3236"/>`;
+    case 'cap': return `<path d="M51 70c0-24 18-39 47-40 30 0 49 15 51 37l-6 11q-49-7-92-2Z" fill="${ac}" stroke="${acd}" stroke-width="2"/>
+      <path d="M98 32q-23 10-26 39m27-39q25 8 32 35M55 69q47-10 89-4" fill="none" stroke="${acd}" stroke-width="1.6"/>
+      <path d="M95 71q32-11 53-7l22 9q4 4-3 7-30 9-72-3Z" fill="${acd}"/>
+      <path d="M111 73q25-6 45 0" fill="none" stroke="${shade(ac, 0.16)}" stroke-width="1.6"/>
+      <rect x="88" y="48" width="17" height="9" rx="2" fill="${shade(ac, 0.24)}"/>`;
+    case 'beanie': return `<path d="M50 70C50 43 68 22 100 22s50 21 50 48Z" fill="${ac}" stroke="${acd}" stroke-width="2"/>
+      <path d="M67 65q1-23 17-34m4 34q0-25 9-36m11 36q0-25-6-36m28 36q-2-23-17-34" fill="none" stroke="${acd}" stroke-width="2" opacity=".6"/>
+      <path d="M50 63q50-8 100 0l-1 15q-49-5-98 0Z" fill="${acd}"/>
+      ${[61, 74, 87, 100, 113, 126, 139].map((x) => `<path d="M${x} 65v9" stroke="${ac}" stroke-width="2" stroke-linecap="round"/>`).join('')}`;
+    case 'songkok': return `<path d="M57 71l5-34q38-12 76 0l5 34q-43-7-86 0Z" fill="#211d24"/>
+      <path d="M62 37q38-12 76 0-38 9-76 0Z" fill="#48404a"/>
+      <path d="M70 42l-3 22m63-22 3 22M61 66q39-7 78 0" fill="none" stroke="#625764" stroke-width="1.4" opacity=".65"/>`;
     case 'mushroom': return `<path d="M36 78 C36 10 164 10 164 78 C140 70 60 70 36 78 Z" fill="#E2463B"/>
       <ellipse cx="78" cy="40" rx="11" ry="8" fill="#FFF4E8"/><ellipse cx="118" cy="32" rx="9" ry="7" fill="#FFF4E8"/><ellipse cx="140" cy="58" rx="8" ry="6" fill="#FFF4E8"/><ellipse cx="58" cy="62" rx="7" ry="5" fill="#FFF4E8"/><ellipse cx="100" cy="58" rx="6" ry="4.5" fill="#FFF4E8"/>
       <path d="M44 76 C70 70 130 70 156 76" stroke="#FFF4E8" stroke-width="5" fill="none" stroke-linecap="round"/>`;
@@ -118,37 +140,49 @@ function body(a) {
   out += `<rect x="80" y="196" width="17" height="42" rx="7" fill="${pants}"/><rect x="103" y="196" width="17" height="42" rx="7" fill="${pants}"/>
     <ellipse cx="88" cy="241" rx="13" ry="7" fill="#2B2B33"/><ellipse cx="112" cy="241" rx="13" ry="7" fill="#2B2B33"/>
     <rect x="76" y="241" width="24" height="4" rx="2" fill="#F4F4F4"/><rect x="100" y="241" width="24" height="4" rx="2" fill="#F4F4F4"/>`;
+  if (a.outfit === 'baju') {
+    out += `<path d="M73 192h54l7 42q-34 6-68 0Z" fill="${pants}"/>
+      <path d="M103 210l-7 26m-22-6q26 5 52 0" fill="none" stroke="${shade(pants, 0.13)}" stroke-width="1.5"/>`;
+  }
   // arms (behind torso edges)
   out += `<rect x="48" y="138" width="16" height="${longSleeve ? 58 : 30}" rx="8" fill="${sleeve}"/><rect x="136" y="138" width="16" height="${longSleeve ? 58 : 30}" rx="8" fill="${sleeve}"/>`;
   if (!longSleeve) out += `<rect x="49" y="162" width="14" height="32" rx="7" fill="${skin}"/><rect x="137" y="162" width="14" height="32" rx="7" fill="${skin}"/>`;
   out += `<circle cx="56" cy="198" r="8" fill="${skin}"/><circle cx="144" cy="198" r="8" fill="${skin}"/>`;
   // torso
   out += `<path d="M62 146 C62 134 74 128 100 128 C126 128 138 134 138 146 L138 ${torsoBottom - 10} C138 ${torsoBottom - 4} 132 ${torsoBottom} 126 ${torsoBottom} L74 ${torsoBottom} C68 ${torsoBottom} 62 ${torsoBottom - 4} 62 ${torsoBottom - 10} Z" fill="${c}"/>`;
-  if (a.outfit === 'tee') out += `<path d="M88 130 Q100 140 112 130" stroke="${cd}" stroke-width="3" fill="none"/><circle cx="100" cy="168" r="9" fill="${shade(c, 0.18)}"/><path d="M96 168 L100 172 L106 164" stroke="${cd}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-  if (a.outfit === 'hoodie') out += `<path d="M78 130 C80 146 120 146 122 130 C116 124 84 124 78 130 Z" fill="${cd}"/><line x1="94" y1="140" x2="93" y2="158" stroke="#fff" stroke-width="2"/><line x1="106" y1="140" x2="107" y2="158" stroke="#fff" stroke-width="2"/>
-    <path d="M78 176 L122 176 L118 194 L82 194 Z" fill="${cd}"/>`;
+  if (a.outfit === 'tee') out += `<path d="M85 130Q100 146 115 130M51 164h12m74 0h12M69 193q31 4 62 0" stroke="${cd}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M111 151h13v10q-6 5-13 0Z" fill="${shade(c, -0.05)}" stroke="${cd}" stroke-width="1.5"/>`;
+  if (a.outfit === 'hoodie') out += `<path d="M76 131q24 30 48 0-7-7-24-6-17-1-24 6Z" fill="${cd}"/>
+    <path d="M85 171h30l8 15q-23 6-46 0Z" fill="${shade(c, -0.06)}" stroke="${cd}" stroke-width="1.5"/>
+    <path d="M51 189h11m76 0h11m-82 3q33 5 66 0" stroke="${cd}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
   if (a.outfit === 'overalls') {
-    const o = OUTFIT_COLORS[a.outfitColor]; const od = shade(o, -0.12);
-    out += `<path d="M72 160 L128 160 L130 200 L70 200 Z" fill="${o}"/><rect x="80" y="150" width="40" height="22" rx="4" fill="${o}"/>
-      <rect x="74" y="130" width="7" height="34" rx="3" fill="${od}"/><rect x="119" y="130" width="7" height="34" rx="3" fill="${od}"/>
-      <circle cx="84" cy="158" r="3" fill="#F4C531"/><circle cx="116" cy="158" r="3" fill="#F4C531"/><path d="M92 160 Q100 168 108 160" stroke="${od}" stroke-width="2" fill="none"/>`;
+    const denim = OUTFIT_COLORS[a.outfitColor];
+    const seam = shade(denim, -0.16);
+    out += `<path d="M74 133l9-3 8 21h18l8-21 9 3-7 21 4 15 9 19-9 13H77l-9-13 9-19 4-15Z" fill="${denim}" stroke="${seam}" stroke-width="1.5"/>
+      <circle cx="84" cy="154" r="2.7" fill="#e8b960"/><circle cx="116" cy="154" r="2.7" fill="#e8b960"/>
+      <path d="M91 164h18v8q-9 6-18 0Zm-16 18 11-4m39 4-11-4" fill="none" stroke="${seam}" stroke-width="1.5"/>`;
   }
-  if (a.outfit === 'baju') out += `<path d="M90 130 L100 146 L110 130" stroke="${cd}" stroke-width="3" fill="none"/><circle cx="100" cy="156" r="2.4" fill="${cd}"/><circle cx="100" cy="166" r="2.4" fill="${cd}"/>
-    <path d="M64 200 L136 200" stroke="${cd}" stroke-width="3"/>${[76, 92, 108, 124].map((x) => `<circle cx="${x}" cy="188" r="3" fill="${shade(c, 0.2)}"/>`).join('')}`;
+  if (a.outfit === 'baju') out += `<path d="M88 129q12 13 24 0m-12 9v15m-34 53q34 4 68 0M50 189h12m76 0h12" stroke="${cd}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="100" cy="147" r="2.4" fill="${cd}"/>`;
   return out;
 }
 function bagBack(a) {
   if (a.bag !== 'backpack') return '';
   const ac = ACCENT_COLORS[a.accent];
-  return `<rect x="54" y="132" width="92" height="66" rx="18" fill="${shade(ac, -0.1)}"/>`;
+  const seam = shade(ac, -0.22);
+  return `<path d="M128 140q0-12 9-12 8 0 8 12" fill="none" stroke="${seam}" stroke-width="4"/>
+    <path d="M127 141q14-8 25 0 11 9 12 28l2 21q-1 10-13 13l-28-1Z" fill="${ac}" stroke="${seam}" stroke-width="2"/>
+    <path d="M143 143q13 6 14 28m-10 3q8-3 15 0l2 14q-1 7-14 8Z" fill="${shade(ac, -0.07)}" stroke="${seam}" stroke-width="1.6"/>
+    <path d="M151 175l9-1m-2 0v5" stroke="${shade(ac, 0.24)}" stroke-width="1.8" stroke-linecap="round"/>`;
 }
 function bagFront(a) {
-  const ac = ACCENT_COLORS[a.accent]; const acd = shade(ac, -0.18);
-  if (a.bag === 'backpack') return `<path d="M72 132 L76 190" stroke="${acd}" stroke-width="7" stroke-linecap="round"/><path d="M128 132 L124 190" stroke="${acd}" stroke-width="7" stroke-linecap="round"/>
-    <rect x="71" y="160" width="10" height="6" rx="2" fill="${light(ac) ? '#999' : '#fff'}" opacity=".7"/><rect x="119" y="160" width="10" height="6" rx="2" fill="${light(ac) ? '#999' : '#fff'}" opacity=".7"/>`;
-  if (a.bag === 'tote') return `<path d="M128 132 L150 178" stroke="${acd}" stroke-width="4"/><path d="M140 176 L170 176 L166 214 L144 214 Z" fill="${ac}" stroke="${acd}" stroke-width="2"/>
-    <path d="M150 190 Q155 196 160 190" stroke="${acd}" stroke-width="2.5" fill="none"/>`;
-  return '';
+  if (a.bag !== 'tote') return '';
+  const ac = ACCENT_COLORS[a.accent];
+  const seam = shade(ac, -0.18);
+  return `<path d="M133 135q11 16 18 44m-13-44q15 15 23 44" fill="none" stroke="${seam}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M141 174q15 3 31 0l-3 35q-1 6-6 7h-15q-5-1-6-6Z" fill="${ac}" stroke="${seam}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M143 181q14 3 27 0m-23 4 1 23q0 3 4 4h11" fill="none" stroke="${seam}" stroke-width="1.4" stroke-dasharray="2 2"/>
+    <rect x="151" y="189" width="11" height="7" rx="2" fill="${shade(ac, 0.24)}"/>`;
 }
 
 // Returns an SVG string. variant 'full' shows the whole character; 'head' crops to the face (for small circles).
@@ -156,9 +190,9 @@ export function avatarSVG(raw, { variant = 'full', size = 160, bg = true, title 
   const a = clean(raw);
   const skin = SKIN[a.skin]; const skinD = shade(skin, -0.08);
   const hc = HAIR_COLORS[a.hairColor];
-  const vb = variant === 'head' ? '38 14 124 124' : '0 0 200 260';
-  const h = variant === 'head' ? size : Math.round(size * 1.3);
-  const tud = a.hair === 'tudung';
+  const vb = variant === 'head' ? '38 14 124 124' : variant === 'bust' ? '4 18 192 192' : variant === 'bag' ? '40 117 140 140' : '0 0 200 260';
+  const h = variant === 'full' ? Math.round(size * 1.3) : size;
+  const tud = isTudung(a.hair);
   const hatSvg = tud && !['crown', 'grad'].includes(a.hat) ? '' : hat(a);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${h}" role="img" aria-label="${title || 'Avatar'}" class="kk-avatar">
     ${bg ? `<rect x="-20" y="-20" width="240" height="300" fill="${BG_COLORS[a.bg]}"/>` : ''}

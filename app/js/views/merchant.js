@@ -11,12 +11,12 @@ const toMs = D.toMs;
 const statusBadge = (m) => !m ? '<span class="badge grey">Not applied</span>'
   : m.status === 'verified' ? `<span class="badge ok">${icon('badge-check')}Verified</span>`
   : m.status === 'rejected' ? '<span class="badge bad">Needs changes</span>'
-  : m.status === 'suspended' ? '<span class="badge bad">Suspended</span>' : '<span class="badge warn">MPP is reviewing</span>';
+  : m.status === 'suspended' ? '<span class="badge bad">Suspended</span>' : '<span class="badge warn">HEP is reviewing</span>';
 
 function needVerified(app) {
   if (app.merchant && app.merchant.status === 'verified') return null;
-  return `<div class="card empty" style="margin-top:16px">${icon('store')}<h3>${app.merchant ? 'Waiting for MPP to verify your shop' : 'Apply to join first'}</h3>
-    <p>${app.merchant ? 'Students can find and check in at your shop once MPP checks your details. This usually takes 1–2 working days.' : 'Send your business details, logo, location and DuitNow QR to MPP. Once verified, students see you on the Kampus Kita+ map.'}</p>
+  return `<div class="card empty" style="margin-top:16px">${icon('store')}<h3>${app.merchant ? 'Waiting for HEP to verify your shop' : 'Apply to join first'}</h3>
+    <p>${app.merchant ? 'Usually reviewed within 1–2 working days.' : 'Submit your shop details for HEP verification.'}</p>
     <a class="btn primary" style="margin-top:12px" href="#/shop">${app.merchant ? 'View application' : 'Apply now'}</a></div>`;
 }
 
@@ -24,20 +24,35 @@ function needVerified(app) {
 async function homeRender(app) {
   const m = app.merchant; const name = m ? m.name : app.profile.name;
   const step = !m ? 1 : m.status !== 'verified' ? 2 : !m.ready ? 3 : 4;
-  return `<div class="page-title"><h1>${esc(name)}</h1><p class="row" style="gap:8px">${statusBadge(m)}${m && m.ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</p></div>
+  const verified = m?.status === 'verified';
+  const shortcuts = [
+    ['shop', 'store', 'My shop', 'Manage your shop details'],
+    ...(verified ? [
+      ['scan', 'ticket', 'Redeem a voucher', 'Scan a student’s voucher'],
+      ['promote', 'badge-percent', 'Promote', 'Manage live deals and offers'],
+    ] : []),
+    ['survey', 'target', 'Cashless readiness check', '7 questions to identify support needs.'],
+  ];
+  return `<section class="kk-hero merchant-home-hero">
+      <div class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</div>
+      <div><h1>${esc(name)}</h1><div class="row merchant-home-status">${statusBadge(m)}${m?.ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div></div>
+    </section>
     ${step < 4 ? `<div class="card pad-lg"><h2>Get set up</h2><div class="steps" style="margin-top:10px">
       ${[['Send your details, logo and location', 'Add your logo, pin your exact spot on the map and upload your DuitNow QR for PayNet’s monthly list.', 'shop'],
-        ['MPP verifies your shop', 'They check the QR name matches your business. Usually 1–2 working days.', 'shop'],
+        ['HEP verifies your shop', 'They check the QR name matches your business. Usually 1–2 working days.', 'shop'],
         ['Train your staff', 'A 2-minute checklist on cashless payments and redeeming vouchers.', 'shop'],
         ['Welcome your first visitors', 'Students find you on the map and check in when they arrive.', 'promote']].map(([t, d, h], i) =>
         `<div class="step ${i + 1 < step ? 'done' : i + 1 === step ? 'now' : ''}"><span class="n">${i + 1 < step ? icon('check') : i + 1}</span><div><h3>${t}</h3><p>${d}</p>
           ${i + 1 === step && i !== 1 ? `<a class="btn small primary" style="margin-top:8px" href="#/${h}">${i === 0 ? 'Apply now' : i === 2 ? 'Open checklist' : 'Promote my shop'}</a>` : ''}</div></div>`).join('')}</div></div>` : ''}
     ${m && m.status === 'verified' && !hasPin(m) ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
-    ${m && m.status === 'verified' ? `
-      <div class="stats" style="margin-top:16px" id="today"><div class="skeleton" style="height:96px"></div><div class="skeleton" style="height:96px"></div></div>
-      <section class="section"><div class="head"><h2>Who’s visiting</h2><a href="#/insights">Insights</a></div><div class="card list" id="feed"><div class="skeleton" style="height:60px"></div></div></section>
-      <a class="card row" href="#/scan" style="margin-top:16px;text-decoration:none;color:inherit"><span class="tile-icon orange">${icon('ticket')}</span><div style="flex:1"><h3>Student has a voucher?</h3><p class="faint">Scan it to apply the discount.</p></div>${icon('chevron-right')}</a>` : ''}
-    <section class="section"><div class="card row"><span class="tile-icon orange">${icon('target')}</span><div style="flex:1"><h3>Cashless readiness check</h3><p class="faint">Seven questions so MPP knows what support you need.</p></div><a class="btn small" href="#/survey">Open</a></div></section>`;
+    <h2 class="kk-pillars-title">Explore</h2>
+    <nav class="kk-pillars merchant-shortcuts" aria-label="Merchant shortcuts">
+      ${shortcuts.map(([route, glyph, label, description]) => `<a class="kk-pillar" href="#/${route}"><span class="tile-icon">${icon(glyph)}</span><h3>${label}</h3><p>${description}</p></a>`).join('')}
+    </nav>
+    ${verified ? `
+      <h2 class="kk-pillars-title">Shop activity</h2>
+      <div class="stats" id="today"><div class="skeleton" style="height:96px"></div><div class="skeleton" style="height:96px"></div></div>
+      <section class="section"><div class="head"><h2>Who’s visiting</h2><a href="#/insights">Insights</a></div><div class="card list" id="feed"><div class="skeleton" style="height:60px"></div></div></section>` : ''}`;
 }
 function homeMount(root, app) {
   if (!$('#feed', root)) return null;
@@ -79,7 +94,7 @@ function scanMount(root, app) {
     try {
       raw = raw.trim();
       if (raw.startsWith('UMV1:') || /^[A-Z0-9]{8}$/i.test(raw)) await voucherFlow(app, raw);
-      else toast('That isn’t a Kampus Kita+ voucher. Ask the student to open the voucher in Rewards.', true);
+      else toast('That isn’t a +Onz voucher. Ask the student to open the voucher in Rewards.', true);
     } finally { handling = false; }
   }
   if (sessionStorage.getItem('umc-cam') === 'on') start();
@@ -105,8 +120,8 @@ const READY_TEXT = {
   '中文': [['如何确认付款', '打开您自己的银行应用或终端，核对付款人、金额和时间。顾客的截图不能作为付款证明。'],
     ['DuitNow QR 款项如何到账', '款项会存入与您的二维码关联的账户。请向银行确认结算时间、费用和退款流程。']],
 };
-const READY_CHECKS = ['Staff confirm every payment in our own banking app or terminal', 'Staff know how to redeem a student’s Kampus Kita+ voucher',
-  'The name on our DuitNow QR matches our registered business name', 'Our Kampus Kita+ poster is displayed next to our DuitNow QR'];
+const READY_CHECKS = ['Staff confirm every payment in our own banking app or terminal', 'Staff know how to redeem a student’s +Onz voucher',
+  'The name on our DuitNow QR matches our registered business name', 'Our +Onz poster is displayed next to our DuitNow QR'];
 let readyLang = 'English';
 async function shopRender(app) {
   const m = app.merchant; const priv = m ? await D.getMerchantPrivate(app.ctx, app.ctx.uid).catch(() => null) : null;
@@ -114,12 +129,12 @@ async function shopRender(app) {
   const v = (k) => esc((m && m[k]) || (priv && priv[k]) || '');
   const sel = (name, opts, cur) => `<select name="${name}">${opts.map((o) => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   return `<div class="page-title"><h1>My shop</h1><p class="row" style="gap:8px">${statusBadge(m)}</p></div>
-    ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>MPP asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
-    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. MPP will check that your QR name matches your business.</span></div>` : ''}
+    ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>HEP asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
+    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. HEP will check that your QR name matches your business.</span></div>` : ''}
     <section class="section"><div class="head"><h2>Business details</h2></div>
     <form id="app-form" class="card stack" ${editable ? '' : 'inert'}>
       <label class="field">Business name, as students know it<input name="name" required minlength="2" value="${v('name')}"></label>
-      <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>MPP checks this matches the QR.</small></label>
+      <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>HEP checks this matches the QR.</small></label>
       <div class="grid-2"><label class="field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
       <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
       <div class="grid-2"><label class="field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
@@ -128,7 +143,7 @@ async function shopRender(app) {
       ${editable ? pinBlock(m) : ''}
       <label class="field">Photo of your DuitNow QR<input name="qr" type="file" accept="image/*" ${priv && priv.qrImage ? '' : 'required'}><small>A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.</small></label>
       ${priv && priv.qrImage ? `<img class="qr-thumb" style="width:120px;height:120px" src="${priv.qrImage}" alt="Your uploaded DuitNow QR">` : ''}
-      ${editable ? `<button class="btn primary">${m ? 'Send updated details to MPP' : 'Send to MPP for verification'}</button>` : '<p class="faint">Verified details are locked. Ask MPP if something needs to change.</p>'}
+      ${editable ? `<button class="btn primary">${m ? 'Send updated details to HEP' : 'Send to HEP for verification'}</button>` : '<p class="faint">Verified details are locked. Ask HEP if something needs to change.</p>'}
     </form></section>
     ${!editable ? `<section class="section"><div class="head"><h2>Logo</h2></div><form id="logo-form" class="card stack">${logoBlock(m, true)}
       <button class="btn primary" id="logo-save">${icon('image')} Save logo</button></form></section>
@@ -237,7 +252,7 @@ function shopMount(root, app) {
         await D.submitApplication(app.ctx, { name: f.name.value, accountName: f.accountName.value, type: f.type.value, segment: f.segment.value,
           location: f.location.value, zone: f.zone.value, phone: f.phone.value, ambassadorId: f.ambassadorId.value,
           eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage, logo, ...pin });
-        toast('Sent to MPP. You’ll see the status here.'); setTimeout(() => app.render(), 300);
+        toast('Sent to HEP. You’ll see the status here.'); setTimeout(() => app.render(), 300);
       } catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });
   };
@@ -252,8 +267,8 @@ async function posterRender(app) {
   const m = app.merchant; if (!m) return needVerified(app);
   return `<a class="back no-print" href="#/shop">${icon('arrow-left')} My shop</a>
     <div class="poster" style="margin-top:8px"><img src="icons/icon-192.png" alt="" style="width:56px;height:56px;border-radius:16px">
-      <h1>Check in here, collect points.</h1><p class="muted" style="max-width:36ch">Find ${esc(m.name)} on Kampus Kita+, check in when you arrive, and pay cashless with DuitNow QR.</p>
-      <div class="qr-frame"><div id="pqr"></div></div><p><b>${esc(m.name)}</b><br><span class="faint">Scan to open this shop in Kampus Kita+</span></p></div>
+      <h1>Check in here, collect points.</h1><p class="muted" style="max-width:36ch">Find ${esc(m.name)} on +Onz, check in when you arrive, and pay cashless with DuitNow QR.</p>
+      <div class="qr-frame"><div id="pqr"></div></div><p><b>${esc(m.name)}</b><br><span class="faint">Scan to open this shop in +Onz</span></p></div>
     <div class="row no-print" style="justify-content:center;margin-top:16px"><button class="btn primary" onclick="window.print()">${icon('printer')} Print poster</button></div>`;
 }
 function posterMount(root, app) {
@@ -264,17 +279,23 @@ function posterMount(root, app) {
 // ------------------------------------------------------------- promote: offers, quiet-hour deals, seats
 async function promoteRender(app) {
   const block = needVerified(app); if (block) return block;
-  const [offers, deals] = await Promise.all([D.myOffers(app.ctx), D.myDeals(app.ctx)]);
-  const m = app.merchant; const badge = (s) => `<span class="badge ${s === 'approved' ? 'ok' : s === 'rejected' ? 'bad' : s === 'withdrawn' ? 'grey' : 'warn'}">${{ approved: 'Live', rejected: 'Not approved', withdrawn: 'Withdrawn', pending: 'MPP reviewing' }[s] || s}</span>`;
-  return `<div class="page-title"><h1>Promote</h1><p>Offers bring students back. Quiet-hour bonuses give extra check-in points when you’re slow. MPP approves both before students see them.</p></div>
-    <section class="card pad-lg"><h2>How busy are you right now?</h2><p class="muted" style="margin-top:4px">Quiet-hour bonuses only switch on while seats taken stay under your limit. Students also see how busy you are on your shop page. Update this when it changes.</p>
+  const [offers, deals, shop] = await Promise.all([D.myOffers(app.ctx), D.myDeals(app.ctx), D.getMerchant(app.ctx, app.ctx.uid)]);
+  const m = shop || app.merchant;
+  const liveDeals = await D.dealOverview(app.ctx, deals, [m]);
+  const badge = (s) => `<span class="badge ${s === 'approved' ? 'ok' : s === 'rejected' ? 'bad' : s === 'withdrawn' ? 'grey' : 'warn'}">${{ approved: 'Live', rejected: 'Not approved', withdrawn: 'Withdrawn', pending: 'HEP reviewing' }[s] || s}</span>`;
+  return `<div class="page-title"><h1>Promote</h1><p>Send deals and offers to HEP for approval.</p></div>
+    <section class="card pad-lg"><h2>Café occupancy</h2><p class="muted" style="margin-top:4px">Keep seat counts current so off-peak deals switch on when you have space.</p>
       <form id="seats" class="grid-2" style="margin-top:12px;align-items:end"><label class="field">Total seats<input name="seats" type="number" min="1" max="2000" required value="${m.seats || ''}"></label>
         <label class="field">Seats taken now<input name="occupied" type="number" min="0" max="2000" required value="${m.occupied ?? ''}"></label>
         <button class="btn primary" style="grid-column:1/-1">Update seats</button></form>
       ${m.occupancyAt ? `<p class="faint" style="margin-top:8px">Last updated ${timeAgo(m.occupancyAt)}</p>` : ''}</section>
-    <section class="section"><div class="head"><h2>Quiet-hour bonuses</h2><button class="btn small primary" id="new-deal">${icon('plus')} New bonus</button></div>
-      <div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · under ${d.threshold}% full · +${d.bonus} pts · ${d.limit}/day</p></div>
-        <div class="row">${badge(d.status)}${d.status === 'approved' ? `<button class="btn small" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div></div>`).join('') || `<div class="card empty">${icon('clock')}<p>No quiet-hour bonuses yet. Try one for your slowest two hours.</p></div>`}</div></section>
+    <section class="section"><div class="head"><h2>Live deals</h2><button class="btn small primary" id="new-deal">${icon('plus')} New deal</button></div>
+      <div class="stack">${liveDeals.map(({ deal: d, used, status }) => `<article class="card deal-overview-row">
+        <div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · under ${d.threshold}% full · +${d.bonus} pts</p>
+          ${d.status === 'approved' ? `<p class="faint">${used == null ? 'Claim count unavailable' : `${used}/${d.limit} claimed today`}</p>` : ''}</div>
+        <div class="row"><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span>
+          ${d.status === 'approved' ? `<button class="btn small" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div>
+      </article>`).join('') || `<div class="card empty">${icon('clock')}<p>No live deals yet.</p></div>`}</div></section>
     <section class="section"><div class="head"><h2>Offers</h2><button class="btn small primary" id="new-offer">${icon('plus')} New offer</button></div>
       <div class="stack">${offers.map((o) => `<div class="card row between"><div><h3>${esc(o.title)}</h3><p class="faint">${esc(o.type)} · until ${esc(o.endDate)}</p></div><div class="row">${badge(o.status)}
         ${o.status === 'approved' || o.status === 'pending' ? `<button class="btn small ghost" data-withdraw="${esc(o.id)}">Withdraw</button>` : ''}</div></div>`).join('') || `<div class="card empty">${icon('megaphone')}<p>No offers yet. A first-visit bonus is a good start.</p></div>`}</div></section>`;
@@ -284,26 +305,26 @@ function promoteMount(root, app) {
   $('#seats', root).onsubmit = (e) => {
     e.preventDefault(); const s = Math.floor(+e.target.seats.value), o = Math.floor(+e.target.occupied.value);
     if (o > s) return toast('Seats taken can’t be more than total seats.', true);
-    busy($('button', e.target), async () => { try { await D.setOccupancy(app.ctx, s, o); toast('Seats updated.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', e.target), async () => { try { await D.setOccupancy(app.ctx, s, o); toast('Seats updated.'); app.render(); } catch (err) { toast(errText(err), true); } });
   };
   $('#new-offer', root).onclick = () => {
     const el = sheet(`<h2>New offer</h2><form id="of" class="stack" style="margin-top:12px"><label class="field">What students get<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Free iced tea with any rice set"></label>
       <label class="field">Type<select name="type"><option>First-visit bonus</option><option>Discount</option><option>Free item</option><option>Extra points day</option></select></label>
-      <label class="field">Runs until<input name="endDate" type="date" required min="${D.dayKey()}"></label><button class="btn primary">Send to MPP</button></form>`);
-    $('#of', el).onsubmit = (e) => { e.preventDefault(); const f = e.target; busy($('button', el), async () => { try { await D.createOffer(app.ctx, { title: f.title.value, type: f.type.value, endDate: f.endDate.value }); closeSheet(); toast('Offer sent to MPP.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+      <label class="field">Runs until<input name="endDate" type="date" required min="${D.dayKey()}"></label><button class="btn primary">Send to HEP</button></form>`);
+    $('#of', el).onsubmit = (e) => { e.preventDefault(); const f = e.target; busy($('button', el), async () => { try { await D.createOffer(app.ctx, { title: f.title.value, type: f.type.value, endDate: f.endDate.value }); closeSheet(); toast('Offer sent to HEP.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
   };
   $('#new-deal', root).onclick = () => {
-    const el = sheet(`<h2>New quiet-hour bonus</h2><p class="muted">Students get bonus points for checking in while you have free seats.</p><form id="df" class="stack" style="margin-top:12px">
+    const el = sheet(`<h2>New live deal</h2><p class="muted">Award extra points when students check out during off-peak hours.</p><form id="df" class="stack" style="margin-top:12px">
       <label class="field">Name<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Afternoon study break"></label>
       <div class="grid-2"><label class="field">From<input name="start" type="time" required value="14:00"></label><label class="field">Until<input name="end" type="time" required value="17:00"></label></div>
       <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="60"></label><label class="field">Bonus points<input name="bonus" type="number" min="1" max="500" required value="40"></label></div>
       <label class="field">Bonuses per day<input name="limit" type="number" min="1" max="200" required value="12"></label>
-      <button class="btn primary">Send to MPP</button></form>`);
+      <button class="btn primary">Send to HEP</button></form>`);
     $('#df', el).onsubmit = (e) => {
       e.preventDefault(); const f = e.target; const s = D.parseHHMM(f.start.value), en = D.parseHHMM(f.end.value);
       if (en <= s) return toast('The end time must be after the start time.', true);
       busy($('button', el), async () => {
-        try { await D.createDeal(app.ctx, { title: f.title.value, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value), bonus: Math.floor(+f.bonus.value), limit: Math.floor(+f.limit.value) }); closeSheet(); toast('Bonus sent to MPP.'); app.render(); }
+        try { await D.createDeal(app.ctx, { title: f.title.value, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value), bonus: Math.floor(+f.bonus.value), limit: Math.floor(+f.limit.value) }); closeSheet(); toast('Deal sent to HEP.'); app.render(); }
         catch (err) { toast(errText(err), true); }
       });
     };
@@ -317,7 +338,7 @@ function promoteMount(root, app) {
 // ------------------------------------------------------------- insights (from check-ins)
 async function insightsRender(app) {
   const block = needVerified(app); if (block) return block;
-  return `<div class="page-title"><h1>Insights</h1><p>From students who checked in at your shop on Kampus Kita+.</p></div><div id="ins"><div class="skeleton" style="height:240px"></div></div>`;
+  return `<div class="page-title"><h1>Insights</h1><p>From students who checked in at your shop on +Onz.</p></div><div id="ins"><div class="skeleton" style="height:240px"></div></div>`;
 }
 function insightsMount(root, app) {
   if (!$('#ins', root)) return null;
@@ -347,7 +368,7 @@ function insightsMount(root, app) {
 
 async function surveyRender(app) {
   const existing = await D.getSurvey(app.ctx).catch(() => null);
-  return `<a class="back" href="#/home">${icon('arrow-left')} Home</a><div class="page-title"><h1>Cashless readiness check</h1><p>Your answers help MPP decide who needs an ambassador visit or staff training.</p></div>${surveyHTML('merchant', existing)}`;
+  return `<a class="back" href="#/home">${icon('arrow-left')} Home</a><div class="page-title"><h1>Cashless readiness check</h1><p>Your answers help HEP decide who needs an ambassador visit or staff training.</p></div>${surveyHTML('merchant', existing)}`;
 }
 
 export const routes = {
