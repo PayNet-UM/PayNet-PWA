@@ -11,11 +11,11 @@ export const DEMO_ACCOUNTS = [
   [MPP_EMAIL, 'MPP admin'],
 ];
 const MERCHANTS = [
-  ['kopikolej@demo.my', 'Hafiz Rahman', 'Kopi Kolej', 'Kopi Kolej Enterprise', 'Food & drinks', 'Campus permanent merchant', 'KK3 cafeteria', 'Residential colleges', 40, 12],
-  ['dailybowl@demo.my', 'Siti Aminah', 'The Daily Bowl', 'Daily Bowl Trading', 'Food & drinks', 'Campus permanent merchant', 'Kompleks Perdanasiswa', 'Central campus', 60, 41],
-  ['print@demo.my', 'Ravi Kumar', 'Campus Print Co.', 'Campus Print Co.', 'Printing', 'Campus permanent merchant', 'Faculty of Science', 'Academic zone', 0, 0],
-  ['laundry@demo.my', 'Mei Ling', 'Fresh Laundry', 'Fresh Laundry Sdn Bhd', 'Laundry', 'Within 100 m of UM gate', 'South Gate, 80 m outside', 'Campus edge', 0, 0],
-  ['hana@demo.my', 'Hana Yusof', 'Roti by Hana', 'Hana Yusof', 'Student event stall', 'Temporary student entrepreneur', 'Perdanasiswa bazaar', 'Central campus', 0, 0],
+  ['kopikolej@demo.my', 'Hafiz Rahman', 'Kopi Kolej', 'Kopi Kolej Enterprise', 'Food & drinks', 'Campus permanent merchant', 'KK3 cafeteria', 'Residential colleges', 40, 12, 3.1286, 101.6571],
+  ['dailybowl@demo.my', 'Siti Aminah', 'The Daily Bowl', 'Daily Bowl Trading', 'Food & drinks', 'Campus permanent merchant', 'Kompleks Perdanasiswa', 'Central campus', 60, 41, 3.1212, 101.6563],
+  ['print@demo.my', 'Ravi Kumar', 'Campus Print Co.', 'Campus Print Co.', 'Printing', 'Campus permanent merchant', 'Faculty of Science', 'Academic zone', 0, 0, 3.1219, 101.6534],
+  ['laundry@demo.my', 'Mei Ling', 'Fresh Laundry', 'Fresh Laundry Sdn Bhd', 'Laundry', 'Within 100 m of UM gate', 'South Gate, 80 m outside', 'Campus edge', 0, 0, 3.1099, 101.6586],
+  ['hana@demo.my', 'Hana Yusof', 'Roti by Hana', 'Hana Yusof', 'Student event stall', 'Temporary student entrepreneur', 'Perdanasiswa bazaar', 'Central campus', 0, 0, 3.1216, 101.6568],
 ];
 
 function fakeQR(name) {
@@ -45,10 +45,10 @@ export async function ensureDemoData(backend, progress = () => {}) {
     await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Pay cashless at any UM Connect+ merchant. Every purchase counts for your college.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
     await D.saveCampaign(mpp, null, { name: 'Student Makers Bazaar', description: 'Student-run stalls with DuitNow QR. Visit three for the explorer mission.', start: D.dayKey(Date.now() + 9 * 86400000), end: D.dayKey(Date.now() + 11 * 86400000), location: 'Kompleks Perdanasiswa', budgetCents: 80000 });
     const ids = {};
-    for (const [email, owner, name, account, type, segment, location, zone, seats] of MERCHANTS) {
+    for (const [email, owner, name, account, type, segment, location, zone, seats, , lat, lng] of MERCHANTS) {
       const m = await as(email); ids[email] = m.uid;
       await D.createProfile(m, { role: 'merchant', name: owner });
-      await D.submitApplication(m, { name, accountName: account, type, segment, location, zone, phone: '012-345 6789', ambassadorId: 'AMB-003', qrImage: fakeQR(name),
+      await D.submitApplication(m, { name, accountName: account, type, segment, location, zone, phone: '012-345 6789', ambassadorId: 'AMB-003', qrImage: fakeQR(name), lat, lng,
         eventName: segment.startsWith('Temporary') ? 'Student Makers Bazaar' : '', eventEnd: segment.startsWith('Temporary') ? D.dayKey(Date.now() + 11 * 86400000) : '' });
       if (seats) await D.setReadiness(m);
     }

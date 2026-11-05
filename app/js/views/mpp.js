@@ -2,6 +2,8 @@
 import * as D from '../data.js';
 import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
+import { langToggleHTML } from '../i18n.js';
+import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
@@ -21,7 +23,7 @@ export async function renderShell(app, route) {
     $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b> MPP</span></a>
       <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button>
       <nav aria-label="MPP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
-      <div class="who"><b style="color:#fff">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
+      <div class="who">${langToggleHTML('on-dark')}<b style="color:#fff;display:block;margin-top:12px">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
         ${app.profile ? `<button class="btn small" id="as-user" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Open my ${esc(app.profile.role)} app</button>` : ''}
         <button class="btn small" id="mpp-out" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">${icon('log-out')} Sign out</button></div></div></aside>
       <main class="view" id="view"></main></div>`;
@@ -110,12 +112,15 @@ function merchantsMount(root, app) {
           <table class="data"><tbody><tr><td class="faint">Account name on QR</td><td><b>${esc(p?.accountName || '—')}</b></td></tr><tr><td class="faint">Phone</td><td>${esc(p?.phone || '—')}</td></tr>
             <tr><td class="faint">Ambassador</td><td>${esc(p?.ambassadorId || '—')}</td></tr><tr><td class="faint">Zone</td><td>${esc(m.zone || '—')}</td></tr>
             ${m.eventName ? `<tr><td class="faint">Event</td><td>${esc(m.eventName)} (ends ${esc(m.eventEnd || '?')})</td></tr>` : ''}
+            <tr><td class="faint">Map pin</td><td>${hasPin(m) ? `<a href="${googleMapsPinUrl(m)}" target="_blank" rel="noopener">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</a>` : '<span class="badge warn">No pin yet</span>'}</td></tr>
             <tr><td class="faint">Sent</td><td>${fmtDateTime(m.submittedAt)}</td></tr>${m.reviewedBy ? `<tr><td class="faint">Last review</td><td>${esc(m.reviewedBy)}, ${fmtDate(m.reviewedAt)}</td></tr>` : ''}</tbody></table></div>
+        ${hasPin(m) ? `<div id="rv-map" class="mmap small" style="margin-top:14px;border-radius:14px" aria-label="Where ${esc(m.name)} placed its shop"></div>` : ''}
         <form id="rv" class="stack" style="margin-top:16px">
           ${['The account name on the QR matches the business', 'The business is on campus or within 100 m of a UM gate', 'The QR image is clear enough for PayNet'].map((c) => `<label class="check"><input type="checkbox" name="c"> ${c}</label>`).join('')}
           <label class="field">Note to the merchant<input name="note" value="${esc(m.reviewNote || '')}" placeholder="Required if you ask for changes"></label>
           <div class="row end">${m.status !== 'suspended' && m.status === 'verified' ? '<button type="button" class="btn warn" data-s="suspended">Suspend</button>' : ''}
             <button type="button" class="btn" data-s="rejected">Ask for changes</button><button type="button" class="btn go" data-s="verified">Verify merchant</button></div></form>`, { wide: true });
+      if (hasPin(m)) shopPinMap($('#rv-map', el), m).catch(() => {});
       $$('[data-s]', el).forEach((x) => {
         x.onclick = () => {
           const f = $('#rv', el); const s = x.dataset.s;

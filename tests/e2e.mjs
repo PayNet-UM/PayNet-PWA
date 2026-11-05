@@ -5,7 +5,11 @@ const BASE = process.env.BASE || 'http://localhost:5173/';
 const shots = process.env.SHOTS || '/tmp/e2e';
 import fs from 'fs'; fs.mkdirSync(shots, { recursive: true });
 const b = await chromium.launch();
-const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1 });
+const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1,
+  geolocation: { latitude: 3.120123, longitude: 101.654456, accuracy: 12 }, permissions: ['geolocation'] });
+// map tiles come from the internet; serve a blank tile so the test runs offline
+const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
+await ctx.route(/basemaps\.cartocdn\.com/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
 const errors = [];
 const watch = (p, who) => { p.on('pageerror', (e) => errors.push(`${who} pageerror: ${e.message}`)); p.on('console', (m) => { if (m.type() === 'error') errors.push(`${who} console: ${m.text()}`); }); };
 let step = 0; const ok = (m) => console.log(`  ✓ ${++step}. ${m}`);
@@ -63,10 +67,29 @@ await stu.click('#survey button'); await stu.waitForSelector('#sheet h2'); ok('m
 await stu.goto(BASE + '#/community'); await stu.waitForSelector('.lb-row'); await stu.screenshot({ path: `${shots}/06-community.png`, fullPage: true }); ok('leaderboard rendered');
 for (const r of ['home', 'explore', 'deals', 'spending', 'me', 'rewards']) { await stu.goto(BASE + '#/' + r); await stu.waitForTimeout(700); await stu.screenshot({ path: `${shots}/s-${r}.png`, fullPage: true }); }
 ok('all student screens rendered');
+await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#mmap .umc-pin', { timeout: 20000 });
+const pins = await stu.locator('#mmap .leaflet-marker-icon.umc-pin').count();
+const navHref = await stu.getAttribute('.mcard-wrap .mnav', 'href');
+if (pins < 4 || !/google\.com\/maps\/dir\/.*destination=3\.1\d+,101\.6\d+/.test(navHref)) throw new Error(`map pins ${pins}, nav ${navHref}`);
+await stu.click('#near'); await stu.waitForSelector('#mmap .umc-me'); await stu.waitForSelector('#mlist .dist');
+const nearest = (await stu.textContent('#mlist .mcard h3')).trim() + ', ' + (await stu.textContent('#mlist .dist')).trim();
+await stu.locator('#mmap .leaflet-marker-icon.umc-pin').first().click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
+await stu.screenshot({ path: `${shots}/07-explore-map.png` });
+ok(`explore map shows ${pins} merchant pins; nearest to the student is ${nearest}`);
+await stu.click('.mpop a:has-text("View shop")'); await stu.waitForSelector('#shop-map .umc-pin');
+if (!(await stu.getAttribute('a:has-text("Navigate there")', 'href')).includes('travelmode=walking')) throw new Error('no walking directions');
+await stu.screenshot({ path: `${shots}/08-merchant-page-map.png`, fullPage: true });
+ok('merchant page shows its pin and a Navigate button');
 
 // merchant screens
 for (const r of ['shop', 'promote', 'insights', 'poster', 'survey']) { await mer.goto(BASE + '#/' + r); await mer.waitForTimeout(800); await mer.screenshot({ path: `${shots}/m-${r}.png`, fullPage: true }); }
 ok('all merchant screens rendered');
+await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .umc-pin', { timeout: 20000 });
+await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.12012'));
+await mer.click('#pin-save'); await mer.waitForSelector('#toast.show'); const pinMsg = await mer.textContent('#toast');
+if (!/Location saved/.test(pinMsg)) throw new Error(pinMsg);
+await mer.screenshot({ path: `${shots}/m-pin.png`, fullPage: true });
+ok('merchant auto-detected its location and saved the pin: ' + (await mer.textContent('#pin-read')));
 
 // a brand-new student signs in with Google (demo account picker) and sets up a profile
 const g = await ctx.newPage(); watch(g, 'gmail'); await fresh(g);

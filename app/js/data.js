@@ -147,6 +147,7 @@ export async function submitApplication(ctx, form) {
   const existing = await one(ctx, r.merchant(ctx.uid));
   const pub = { name: form.name.trim(), type: form.type, segment: form.segment, location: form.location.trim(), zone: form.zone,
     eventName: form.eventName || '', eventEnd: form.eventEnd || '' };
+  if (form.lat != null && form.lng != null && form.lat !== '' && form.lng !== '') { pub.lat = Number(form.lat); pub.lng = Number(form.lng); pub.pinAt = clock(ctx); }
   const priv = { accountName: form.accountName.trim(), phone: form.phone || '', ambassadorId: (form.ambassadorId || '').trim().toUpperCase() };
   if (form.qrImage) { priv.qrImage = form.qrImage; priv.qrUpdatedAt = clock(ctx); }
   const b = sdk.writeBatch(ctx.db);
@@ -154,6 +155,13 @@ export async function submitApplication(ctx, form) {
   else b.update(r.merchant(ctx.uid), { ...pub, status: 'pending', submittedAt: sdk.serverTimestamp() });
   b.set(r.merchantPrivate(ctx.uid), priv, { merge: true });
   await b.commit();
+}
+// Campus box the rules accept for a map pin (keep in step with geoOk() in firestore.rules).
+export const GEO_BOX = { latMin: 3.09, latMax: 3.15, lngMin: 101.62, lngMax: 101.69 };
+export const inGeoBox = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng)
+  && lat > GEO_BOX.latMin && lat < GEO_BOX.latMax && lng > GEO_BOX.lngMin && lng < GEO_BOX.lngMax;
+export async function setMerchantPin(ctx, lat, lng) {
+  await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { lat: Number(lat), lng: Number(lng), pinAt: clock(ctx) });
 }
 export async function setReadiness(ctx) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });

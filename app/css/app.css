@@ -435,3 +435,59 @@ dialog[open].sheet { animation: rise .22s cubic-bezier(.2, .8, .2, 1); }
 #email-box summary::-webkit-details-marker { display: none; }
 #email-box[open] summary { color: var(--ink); }
 dialog.sheet .sheet-body { overflow-x: hidden; } dialog.sheet .btn { max-width: 100%; }
+
+/* language switch */
+.lang-toggle { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--line, #E3E8EF); gap: 2px; flex: none; }
+.lang-toggle button { border: 0; background: transparent; font: 700 12px/1 Montserrat, system-ui, sans-serif; letter-spacing: .04em; color: #5B6B82; padding: 7px 10px; border-radius: 999px; cursor: pointer; min-height: 30px; }
+.lang-toggle button[aria-pressed="true"] { background: #fff; color: var(--ink, #0E1A2B); box-shadow: 0 1px 3px rgba(14,26,43,.18); }
+.topbar .lang-toggle { margin-right: 10px; }
+.lang-toggle.auth-lang { justify-self: end; }
+.lang-toggle.on-dark { background: rgba(255,255,255,.12); }
+.lang-toggle.on-dark button { color: #B9C6D8; }
+.lang-toggle.on-dark button[aria-pressed="true"] { background: #fff; color: var(--ink, #0E1A2B); }
+@media (max-width: 480px) {
+  /* phones: one compact button that switches to the other language */
+  .topbar .lang-toggle { padding: 0; background: transparent; margin-right: 6px; }
+  .topbar .lang-toggle button[aria-pressed="true"] { display: none; }
+  .topbar .lang-toggle button { border: 1.5px solid var(--line-2); padding: 6px 9px; min-height: 32px; color: var(--ink); }
+}
+@media (max-width: 420px) {
+  .topbar { gap: 8px; padding-left: 14px; padding-right: 14px; }
+  .topbar .lang-toggle { margin-right: 0; }
+  .topbar .avatar, .topbar .pts-chip { flex: none; }
+  .topbar .brand { gap: 7px; font-size: 15px; }
+  .topbar:has(.demo-ribbon) .brand span { display: none; }
+}
+@media (max-width: 370px) { .topbar .brand span { display: none; } }
+
+/* maps */
+.map-card { padding: 0; overflow: hidden; margin-top: 12px; }
+.mmap { height: 340px; width: 100%; background: #E8EEF4; z-index: 0; }
+.mmap.small { height: 200px; }
+.mmap .empty { display: grid; place-items: center; height: 100%; color: var(--muted, #5B6B82); padding: 20px; text-align: center; }
+.map-bar { padding: 10px 12px; gap: 10px; border-top: 1px solid var(--line); }
+.pin-field .pin-map { height: 260px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #E8EEF4; z-index: 0; }
+.pin-field .pin-bar { margin-top: 8px; gap: 10px; flex-wrap: wrap; }
+.pin-field .bad-text { color: #D93A3F; }
+.umc-pin { background: none; border: 0; }
+.umc-pin-body { position: absolute; left: 2px; top: 0; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg);
+  background: var(--c, #00A547); border: 3px solid #fff; box-shadow: 0 3px 8px rgba(14,26,43,.35);
+  display: grid; place-items: center; color: #fff; font: 800 12px/1 Montserrat, system-ui, sans-serif; }
+.umc-pin-body i { transform: rotate(45deg); font-style: normal; }
+.umc-pin-body.dot i { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.umc-me { background: none; border: 0; }
+.umc-me span { display: block; width: 22px; height: 22px; border-radius: 50%; background: #258DCE; border: 4px solid #fff; box-shadow: 0 0 0 6px rgba(37,141,206,.25), 0 2px 6px rgba(14,26,43,.3); }
+.leaflet-container { font-family: Montserrat, system-ui, sans-serif; }
+.leaflet-popup-content { margin: 12px 14px; }
+.mpop b { font-size: 15px; color: var(--ink); }
+.mpop p { margin: 4px 0 0; color: #5B6B82; font-size: 13px; }
+.mpop .dist { color: #00783A; font-weight: 700; }
+.mpop .row { margin-top: 10px; gap: 8px; flex-wrap: nowrap; }
+.mpop .btn.primary { color: #fff; }
+.mcard-wrap { position: relative; }
+.mcard-wrap .mcard { padding-right: 60px; height: 100%; }
+.mnav { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--green, #00A547); color: #fff; box-shadow: 0 4px 10px rgba(0,165,71,.3); }
+.mnav:hover { text-decoration: none; filter: brightness(1.05); }
+.mcard .dist { display: flex; align-items: center; gap: 4px; color: #00783A; font-weight: 700; font-size: 12px; margin-top: 2px; }
+.mcard .dist .ic { width: 13px; height: 13px; }

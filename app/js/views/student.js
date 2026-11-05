@@ -1,6 +1,7 @@
 // Student app: pass, explore, pay-and-confirm, rewards, community, learning, profile.
 import * as D from '../data.js';
-import { CAFES, MAP_EMBED } from '../cafes.js';
+import { CAFES } from '../cafes.js';
+import { baseMap, shopPinMap, pinIcon, meIcon, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, locate, UM_CENTER } from '../map.js';
 import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   confetti, renderQR, colorFor, initials, barChart, chevron, countUp } from '../ui.js';
 
@@ -70,10 +71,12 @@ function missionRow(m, v) {
     <div style="flex:1"><h3>${esc(m.title)}</h3><p class="faint">${esc(m.desc)} · +${m.bonus} points</p></div></div>`;
 }
 const emptyMerchants = () => `<div class="card empty">${icon('store')}<p>No merchants are verified yet. MPP is onboarding campus businesses now.</p></div>`;
-function merchantCard(m, offers = []) {
+function merchantCard(m, offers = [], { nav = false, dist = null } = {}) {
   const offer = m.offer || offers.find((o) => o.merchantId === m.id)?.title;
-  return `<a class="mcard" href="#/merchant/${esc(m.id)}">${merchantLogo(m)}<div style="min-width:0"><h3>${esc(m.name)}</h3>
-    <p>${esc(m.type)} · ${esc(m.location)}</p>${offer ? `<div class="offer">${icon('badge-percent')}${esc(offer)}</div>` : ''}</div></a>`;
+  const card = `<a class="mcard" href="#/merchant/${esc(m.id)}">${merchantLogo(m)}<div style="min-width:0"><h3>${esc(m.name)}</h3>
+    <p>${esc(m.type)} · ${esc(m.location)}</p>${dist != null ? `<p class="dist">${icon('map-pin')}${fmtDistance(dist)}</p>` : ''}${offer ? `<div class="offer">${icon('badge-percent')}${esc(offer)}</div>` : ''}</div></a>`;
+  if (!nav || !hasPin(m)) return card;
+  return `<div class="mcard-wrap">${card}<a class="mnav" href="${directionsUrl(m)}" target="_blank" rel="noopener" aria-label="Navigate to ${esc(m.name)}" title="Navigate">${icon('navigation')}</a></div>`;
 }
 function txRow(t) {
   return `<div class="item"><span class="tile-icon mint">${icon('check')}</span><div class="grow"><h3>${esc(t.merchantName)}</h3>
@@ -82,7 +85,7 @@ function txRow(t) {
 }
 
 // ------------------------------------------------------------- explore
-let exploreFilter = 'All', exploreQuery = '';
+let exploreFilter = 'All', exploreQuery = '', myPos = null;
 async function exploreRender(app) {
   const merchants = await D.listVerifiedMerchants(app.ctx);
   app._merchants = merchants;
@@ -90,21 +93,62 @@ async function exploreRender(app) {
   return `<div class="page-title"><h1>Where to pay cashless</h1><p>Every merchant here is checked by MPP and gives you points when you pay with DuitNow QR.</p></div>
     <input type="search" id="q" placeholder="Search by name or place" value="${esc(exploreQuery)}" aria-label="Search merchants">
     <div class="chips" style="margin-top:12px" id="types">${types.map((t) => `<button class="${t === exploreFilter ? 'on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-    <div class="mgrid" id="mlist" style="margin-top:8px"></div>
-    <section class="section"><div class="head"><h2>Campus food map</h2><a href="#/cafes">Café directory</a></div>
-      <div class="card" style="padding:0;overflow:hidden"><iframe title="Map of Universiti Malaya" src="${MAP_EMBED}" style="border:0;width:100%;height:320px;display:block" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div></section>`;
+    <div class="card map-card"><div id="mmap" class="mmap" aria-label="Map of UM Connect+ merchants"></div>
+      <div class="row between map-bar"><button class="btn small" id="near">${icon('locate-fixed')} Show where I am</button><span class="faint" id="map-note"></span></div></div>
+    <div class="mgrid" id="mlist" style="margin-top:12px"></div>
+    <p class="faint" style="margin-top:14px;font-size:13px">Tap the arrow on a merchant for walking directions. Looking for somewhere to eat? See the <a href="#/cafes">café directory</a>.</p>`;
 }
 function exploreMount(root, app) {
-  const draw = () => {
+  let map = null, layer = null, meMarker = null;
+  const rowsNow = () => {
     const q = exploreQuery.toLowerCase();
     const rows = app._merchants.filter((m) => (exploreFilter === 'All' || m.type === exploreFilter) && `${m.name} ${m.location} ${m.zone}`.toLowerCase().includes(q));
-    $('#mlist', root).innerHTML = rows.map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('search')}<p>No merchants match. Try another word or filter.</p></div>`;
+    if (myPos) rows.sort((a, b) => (hasPin(a) ? distanceM(myPos, a) : 1e9) - (hasPin(b) ? distanceM(myPos, b) : 1e9));
+    return rows;
+  };
+  const popup = (m) => `<div class="mpop"><b>${esc(m.name)}</b><p>${esc(m.type)} · ${esc(m.location)}</p>${myPos ? `<p class="dist">${fmtDistance(distanceM(myPos, m))}</p>` : ''}
+    <div class="row"><a class="btn small primary" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Navigate</a><a class="btn small" href="#/merchant/${esc(m.id)}">View shop</a></div></div>`;
+  const drawMap = (rows) => {
+    if (!map) return;
+    layer.clearLayers();
+    const pinned = rows.filter(hasPin);
+    pinned.forEach((m) => window.L.marker([m.lat, m.lng], { icon: pinIcon(m.type, (m.name || '?')[0].toUpperCase()), title: m.name, alt: m.name }).bindPopup(popup(m), { minWidth: 200, autoPanPadding: [12, 12], keepInView: true }).addTo(layer));
+    const missing = rows.length - pinned.length;
+    $('#map-note', root).textContent = missing ? `${missing} not on the map yet` : '';
+    const pts = pinned.map((m) => [m.lat, m.lng]); if (meMarker) pts.push([myPos.lat, myPos.lng]);
+    if (pts.length > 1) map.fitBounds(pts, { padding: [36, 36], maxZoom: 17 }); else if (pts.length === 1) map.setView(pts[0], 17);
+  };
+  const draw = () => {
+    const rows = rowsNow();
+    $('#mlist', root).innerHTML = rows.map((m) => merchantCard(m, [], { nav: true, dist: myPos && hasPin(m) ? distanceM(myPos, m) : null })).join('')
+      || `<div class="card empty">${icon('search')}<p>No merchants match. Try another word or filter.</p></div>`;
+    drawMap(rows);
   };
   $('#q', root).oninput = (e) => { exploreQuery = e.target.value; draw(); };
   $$('#types button', root).forEach((b) => { b.onclick = () => { exploreFilter = b.dataset.t; $$('#types button', root).forEach((x) => x.classList.toggle('on', x === b)); draw(); }; });
+  const showMe = () => {
+    if (!map || !myPos) return;
+    if (meMarker) meMarker.setLatLng([myPos.lat, myPos.lng]); else meMarker = window.L.marker([myPos.lat, myPos.lng], { icon: meIcon(), title: 'You', zIndexOffset: 1000 }).addTo(map);
+  };
+  $('#near', root).onclick = (e) => busy(e.currentTarget, async () => {
+    try { myPos = await locate(); showMe(); draw(); } catch (err) { toast(err.message, true); }
+  });
   draw();
+  baseMap($('#mmap', root), { center: UM_CENTER, zoom: 15 }).then((m) => {
+    if (!root.isConnected) { m.remove(); return; }
+    map = m; layer = window.L.layerGroup().addTo(map); showMe(); drawMap(rowsNow());
+  }).catch((err) => { $('#mmap', root).innerHTML = `<div class="empty">${esc(err.message)}</div>`; });
+  return () => { if (map) map.remove(); };
 }
 
+function merchantMount(root) {
+  const el = $('#shop-map', root); if (!el) return;
+  let map = null;
+  shopPinMap(el, { lat: +el.dataset.lat, lng: +el.dataset.lng, type: el.dataset.type, name: el.dataset.name })
+    .then((m) => { if (root.isConnected) map = m; else m.remove(); })
+    .catch((err) => { el.innerHTML = `<div class="empty">${esc(err.message)}</div>`; });
+  return () => { if (map) map.remove(); };
+}
 async function merchantRender(app, [id]) {
   const m = await D.getMerchant(app.ctx, id).catch(() => null);
   if (!m || m.status !== 'verified') return `<a class="back" href="#/explore">${icon('arrow-left')} Explore</a><div class="card empty">${icon('store')}<h3>This merchant isn’t on UM Connect+ yet</h3><p>Points only count at MPP-verified merchants.</p></div>`;
@@ -115,6 +159,9 @@ async function merchantRender(app, [id]) {
       <div class="row" style="margin-top:14px">${m.ready ? `<span class="badge ok">${icon('badge-check')}Staff trained for cashless</span>` : ''}<span class="badge">${icon('shield-check')}MPP verified</span></div>
       ${m.offer ? `<div class="notice" style="margin-top:14px">${icon('badge-percent')}<span>${esc(m.offer)}</span></div>` : ''}
     </div>
+    ${hasPin(m) ? `<section class="section"><div class="head"><h2>Getting there</h2><a href="${wazeUrl(m)}" target="_blank" rel="noopener">Open in Waze</a></div>
+      <div class="card map-card"><div id="shop-map" class="mmap small" data-lat="${m.lat}" data-lng="${m.lng}" data-type="${esc(m.type)}" data-name="${esc(m.name)}" aria-label="Map showing ${esc(m.name)}"></div>
+        <div class="map-bar"><a class="btn primary block" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Navigate there</a></div></div></section>` : ''}
     <section class="section"><div class="head"><h2>How to earn here</h2></div><div class="card steps">
       <div class="step"><span class="n">1</span><div><h3>Pay with DuitNow QR</h3><p>Scan ${esc(m.name)}’s DuitNow QR in your bank or e-wallet app. Check the name and amount.</p></div></div>
       <div class="step"><span class="n">2</span><div><h3>Show your code</h3><p>Enter what you paid. UM Connect+ makes a one-time code for this purchase.</p></div></div>
@@ -518,7 +565,7 @@ const live = (fn) => (root, app, params) => {
 export const routes = {
   home: { title: 'Home', render: homeRender, mount: live() },
   explore: { title: 'Explore', render: exploreRender, mount: exploreMount },
-  merchant: { title: 'Merchant', render: merchantRender, tab: 'explore' },
+  merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'explore' },
   cafes: { title: 'Campus cafés', render: cafesRender, tab: 'explore' },
   pay: { title: 'Pay and earn', render: payRender, mount: payMount },
   rewards: { title: 'Rewards', render: rewardsRender, mount: rewardsMount },

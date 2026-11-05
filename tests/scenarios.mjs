@@ -80,9 +80,12 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   const qr = 'data:image/jpeg;base64,' + 'A'.repeat(2000);
   await ok('merchant submits application with DuitNow QR', () => D.submitApplication(merch, { name: 'Kopi Kolej', type: 'Food & drinks',
     segment: 'Campus permanent merchant', location: 'KK3 cafeteria', zone: 'Residential colleges', accountName: 'Kopi Kolej Enterprise',
-    phone: '0123456789', ambassadorId: 'amb-003', qrImage: qr }));
+    phone: '0123456789', ambassadorId: 'amb-003', qrImage: qr, lat: 3.1268, lng: 101.6553 }));
+  await denied('a map pin far from campus is refused', () => D.submitApplication(merch, { name: 'Kopi Kolej', type: 'Food & drinks',
+    segment: 'Campus permanent merchant', location: 'KK3 cafeteria', zone: 'Residential colleges', accountName: 'Kopi Kolej Enterprise', lat: 1.3521, lng: 103.8198 }));
   await ok('second merchant submits application', () => D.submitApplication(merch2, { name: 'Fresh Laundry', type: 'Laundry',
     segment: 'Within 100 m of UM gate', location: 'South Gate', zone: 'Campus edge', accountName: 'Fresh Laundry Sdn Bhd', qrImage: qr }));
+  await denied('a pin needs both coordinates', () => merch2.sdk.updateDoc(merch2.sdk.doc(merch2.db, 'merchants', 'mer2'), { lat: 3.12 }));
   await denied('merchant cannot verify itself', () => D.reviewMerchant(merch, 'mer1', 'verified'));
   await denied('students cannot see unverified merchants', () => D.getMerchant(stuA, 'mer1'));
   await denied('student cannot pay an unverified merchant', () => D.createTx(stuA, { merchant: { id: 'mer1', name: 'Kopi Kolej' }, cents: 850 }));
@@ -94,6 +97,12 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await ok('students see verified merchants', async () => eq((await D.listVerifiedMerchants(stuA)).length, 2, 'merchant count'));
   await denied('verified merchant cannot rename itself without review', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'merchants', 'mer1'), { name: 'Other' }));
   await ok('merchant completes staff readiness', () => D.setReadiness(merch));
+  await ok('verified merchant moves its map pin', async () => {
+    await D.setMerchantPin(merch, 3.1270, 101.6551);
+    const m = await D.getMerchant(stuA, 'mer1'); eq(m.lat, 3.127, 'lat'); eq(m.lng, 101.6551, 'lng');
+  });
+  await denied('verified merchant cannot pin itself off campus', () => D.setMerchantPin(merch, 3.2, 101.6551));
+  await denied('another merchant cannot move someone else’s pin', () => merch2.sdk.updateDoc(merch2.sdk.doc(merch2.db, 'merchants', 'mer1'), { lat: 3.12, lng: 101.65 }));
 
   log('Pay and confirm');
   const kopi = { id: 'mer1', name: 'Kopi Kolej' };

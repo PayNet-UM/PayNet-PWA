@@ -2,6 +2,7 @@
 import * as D from '../data.js';
 import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, busy, errText, fmtDate, fmtTime, timeAgo, confetti, renderQR,
   startScanner, compressImage, barChart, colorFor, initials, downloadCSV } from '../ui.js';
+import { pinPicker, hasPin, inGeoBox } from '../map.js';
 import { surveyHTML, surveyMount } from './student.js';
 
 export const defaultRoute = 'home';
@@ -30,6 +31,7 @@ async function homeRender(app) {
         ['Scan your first student', 'Students show a code after paying; you confirm it.', 'scan']].map(([t, d, h], i) =>
         `<div class="step ${i + 1 < step ? 'done' : i + 1 === step ? 'now' : ''}"><span class="n">${i + 1 < step ? icon('check') : i + 1}</span><div><h3>${t}</h3><p>${d}</p>
           ${i + 1 === step && i !== 1 ? `<a class="btn small primary" style="margin-top:8px" href="#/${h}">${i === 0 ? 'Apply now' : i === 2 ? 'Open checklist' : 'Open scanner'}</a>` : ''}</div></div>`).join('')}</div></div>` : ''}
+    ${m && m.status === 'verified' && !hasPin(m) ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
     ${m && m.status === 'verified' ? `
       <a class="pass" href="#/scan" style="display:block;margin-top:16px;text-decoration:none"><div class="who">Student at the counter?</div>
         <div class="balance"><strong style="font-size:34px">Scan their code</strong></div><p style="opacity:.9;font-weight:600">Check the payment in your banking app, then confirm. Vouchers scan here too.</p></a>
@@ -153,10 +155,13 @@ async function shopRender(app) {
       <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
       <div class="grid-2"><label class="field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
       <div id="event-fields" class="grid-2"><label class="field">Event name<input name="eventName" value="${v('eventName')}"></label><label class="field">Event ends<input name="eventEnd" type="date" value="${v('eventEnd')}"></label></div>
+      ${editable ? pinBlock(m) : ''}
       <label class="field">Photo of your DuitNow QR<input name="qr" type="file" accept="image/*" ${priv && priv.qrImage ? '' : 'required'}><small>A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.</small></label>
       ${priv && priv.qrImage ? `<img class="qr-thumb" style="width:120px;height:120px" src="${priv.qrImage}" alt="Your uploaded DuitNow QR">` : ''}
       ${editable ? `<button class="btn primary">${m ? 'Send updated details to MPP' : 'Send to MPP for verification'}</button>` : '<p class="faint">Verified details are locked. Ask MPP if something needs to change.</p>'}
     </form></section>
+    ${!editable ? `<section class="section"><div class="head"><h2>Shop location on the map</h2></div><form id="pin-form" class="card stack">${pinBlock(m, true)}
+      <button class="btn primary" id="pin-save">${icon('map-pin')} Save location</button></form></section>` : ''}
     ${m ? `<section class="section" id="ready"><div class="head"><h2>Staff readiness</h2>${m.ready ? `<span class="badge ok">${icon('check')}Done ${fmtDate(m.readyAt)}</span>` : ''}</div>
       <div class="card stack"><div class="chips">${Object.keys(READY_TEXT).map((l) => `<button data-lang="${l}" class="${l === readyLang ? 'on' : ''}">${l}</button>`).join('')}</div>
         ${READY_TEXT[readyLang].map(([t, d]) => `<div><h3>${esc(t)}</h3><p class="muted" style="font-size:14px;margin-top:4px">${esc(d)}</p></div>`).join('')}
@@ -164,19 +169,59 @@ async function shopRender(app) {
           <button class="btn ${m.ready ? '' : 'primary'}" ${m.status === 'rejected' ? 'disabled' : ''}>${m.ready ? 'Checklist complete' : 'Confirm my staff are ready'}</button></form></div></section>` : ''}
     ${m && m.status === 'verified' ? `<section class="section"><div class="head"><h2>Poster for your counter</h2></div><div class="card row"><span class="tile-icon">${icon('printer')}</span><div style="flex:1"><p class="muted" style="font-size:14px">Print it and place it next to your DuitNow QR. Students scan it to open your shop in the app.</p></div><a class="btn small" href="#/poster">Open poster</a></div></section>` : ''}`;
 }
+function pinBlock(m, standalone = false) {
+  const has = hasPin(m);
+  return `<div class="field pin-field">${standalone ? '' : '<span>Shop location on the map</span>'}
+    <div class="pin-map" id="pin-map" aria-label="Map to place your shop"></div>
+    <div class="row between pin-bar"><button type="button" class="btn small" id="locate">${icon('locate-fixed')} Use my current location</button>
+      <span class="faint num" id="pin-read">${has ? `${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}` : 'No pin yet'}</span></div>
+    <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your shop. Students use it to walk to you.</small>
+    <input type="hidden" name="lat" value="${has ? m.lat : ''}"><input type="hidden" name="lng" value="${has ? m.lng : ''}"></div>`;
+}
+async function mountPin(root, form) {
+  const el = $('#pin-map', root); if (!el || !form) return null;
+  const read = $('#pin-read', root);
+  try {
+    const picker = await pinPicker(el, { lat: parseFloat(form.lat.value), lng: parseFloat(form.lng.value) }, ({ lat, lng }) => {
+      form.lat.value = lat; form.lng.value = lng; read.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      read.classList.toggle('bad-text', !inGeoBox(lat, lng));
+    });
+    $('#locate', root).onclick = (e) => busy(e.currentTarget, async () => {
+      try { const p = await picker.useMyLocation(); if (!inGeoBox(p.lat, p.lng)) toast('That location is outside the UM campus area. Drag the pin to your shop.', true); else toast(p.accuracy > 50 ? `Pin placed (accurate to about ${p.accuracy} m). Drag it if it’s off.` : 'Pin placed at your location.'); }
+      catch (err) { toast(err.message, true); }
+    });
+    return picker;
+  } catch (err) { el.innerHTML = `<div class="empty">${esc(err.message)}</div>`; return null; }
+}
+function pinValues(form, required) {
+  const lat = parseFloat(form.lat.value), lng = parseFloat(form.lng.value);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) { if (required) throw new Error('Place your shop on the map first.'); return {}; }
+  if (!inGeoBox(lat, lng)) throw new Error('The pin must be on the UM campus or just outside a gate.');
+  return { lat, lng };
+}
 function shopMount(root, app) {
   const f = $('#app-form', root);
   const syncEvent = () => { $('#event-fields', root).classList.toggle('hidden', f.segment.value !== 'Temporary student entrepreneur'); };
   f.segment.onchange = syncEvent; syncEvent();
+  const pf = $('#pin-form', root);
+  mountPin(root, pf || f);
+  if (pf) pf.onsubmit = (e) => {
+    e.preventDefault();
+    busy($('#pin-save', pf), async () => {
+      try { const { lat, lng } = pinValues(pf, true); await D.setMerchantPin(app.ctx, lat, lng); toast('Location saved. Students can now find you on the map.'); }
+      catch (err) { toast(err.code ? errText(err) : err.message, true); }
+    });
+  };
   f.onsubmit = (e) => {
     e.preventDefault();
     busy($('button', f), async () => {
       try {
+        const pin = pinValues(f, true);
         let qrImage = null; const file = f.qr.files[0];
         if (file) qrImage = await compressImage(file);
         await D.submitApplication(app.ctx, { name: f.name.value, accountName: f.accountName.value, type: f.type.value, segment: f.segment.value,
           location: f.location.value, zone: f.zone.value, phone: f.phone.value, ambassadorId: f.ambassadorId.value,
-          eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage });
+          eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage, ...pin });
         toast('Sent to MPP. You’ll see the status here.'); setTimeout(() => app.render(), 300);
       } catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });

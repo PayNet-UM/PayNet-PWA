@@ -4,10 +4,10 @@ const VERSION = 'umc-__VERSION__';
 const SHELL = [
   './', 'index.html', 'offline.html', 'manifest.webmanifest', 'firestore.rules',
   'css/app.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
-  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/demo-seed.js',
+  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/demo-seed.js', 'js/i18n.js', 'js/i18n-ms.js', 'js/map.js',
   'js/views/auth.js', 'js/views/student.js', 'js/views/merchant.js', 'js/views/mpp.js',
   'js/fake/fakefb.js', 'js/fake/rules-engine.js',
-  'vendor/firebase.js', 'vendor/qrcode.min.js', 'vendor/jsQR.js',
+  'vendor/firebase.js', 'vendor/qrcode.min.js', 'vendor/jsQR.js', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'fonts/montserrat-latin-500-normal.woff2', 'fonts/montserrat-latin-600-normal.woff2',
   'fonts/montserrat-latin-700-normal.woff2', 'fonts/montserrat-latin-800-normal.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-48.png',

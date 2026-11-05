@@ -2,6 +2,7 @@
 import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails } from '../firebase-config.js';
+import { langToggleHTML } from '../i18n.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
 
 function frame(app, inner) {
@@ -14,7 +15,7 @@ function frame(app, inner) {
       <p class="faint" style="color:#8A9AB2">Universiti Malaya student council · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
-    <div class="form-side">${inner}</div></div>`;
+    <div class="form-side">${langToggleHTML('auth-lang')}${inner}</div></div>`;
   app.shellRole = null;
   if (app.addDemoRibbon) app.addDemoRibbon();
 }

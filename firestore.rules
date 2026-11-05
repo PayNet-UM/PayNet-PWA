@@ -201,6 +201,12 @@ service cloud.firestore {
 
     // ---------- merchants ----------
     match /merchants/{m} {
+      // Optional map pin: both coordinates, inside a box around the UM campus (a little beyond the 100 m rule).
+      function geoOk() {
+        return ('lat' in D()) == ('lng' in D())
+          && (!('lat' in D()) || (D().lat is number && D().lng is number
+              && D().lat > 3.09 && D().lat < 3.15 && D().lng > 101.62 && D().lng < 101.69));
+      }
       function profileKeys() {
         return ['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd'];
       }
@@ -208,14 +214,17 @@ service cloud.firestore {
       allow create: if isMerchantRole() && m == uid() && D().ownerUid == uid() && D().status == 'pending'
         && D().submittedAt == request.time && D().name is string && D().name.size() > 1
         && D().keys().hasOnly(['ownerUid', 'status', 'submittedAt', 'name', 'type', 'segment', 'location',
-                               'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready']);
+                               'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt'])
+        && geoOk();
       allow update: if signedIn() && (
           (m == uid() && resource.data.status != 'verified'
              && changed().hasOnly(['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd',
-                                   'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt'])
-             && D().status == 'pending' && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
+                                   'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt',
+                                   'lat', 'lng', 'pinAt'])
+             && geoOk() && D().status == 'pending' && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
           || (m == uid() && resource.data.status == 'verified'
-             && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt'])
+             && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt', 'lat', 'lng', 'pinAt'])
+             && geoOk()
              && (!changed().hasAny(['occupied', 'seats']) || (D().occupied is int && D().seats is int
                  && D().occupied >= 0 && D().occupied <= D().seats)))
           || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt', 'offer'])
