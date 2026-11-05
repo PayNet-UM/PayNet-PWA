@@ -1,6 +1,6 @@
 {
   "projects": {
     "staging": "umconnect-e455a",
-    "production": "REPLACE_WITH_PROD_PROJECT_ID"
+    "production": "umconnectproduction"
   }
 }

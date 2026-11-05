@@ -14,9 +14,9 @@ The app records purchases that merchants confirm. It never moves money.
 
 | | Production | Staging |
 |---|---|---|
-| **PWA** | `https://<prod-project-id>.web.app` *(fill in once the project ID is confirmed)* | https://umconnect-e455a.web.app |
+| **PWA** | https://umconnectproduction.web.app *(live after the first production release)* | https://umconnect-e455a.web.app |
 | **Git branch** | `main` | `development` |
-| **Firebase console** | `https://console.firebase.google.com/project/<prod-project-id>` | https://console.firebase.google.com/project/umconnect-e455a |
+| **Firebase console** | https://console.firebase.google.com/project/umconnectproduction | https://console.firebase.google.com/project/umconnect-e455a |
 | **Database** | Production Firestore | Staging Firestore |
 | **Use it for** | Real users and real data | Testing, with test data only |
 
@@ -110,7 +110,6 @@ firebase.json        Hosting, Firestore and emulator settings
 Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 
 - [ ] Firestore region is confirmed; it can't be changed later
-- [ ] Project ID is set for `production` in `.firebaserc` and in the Links table above
 - [ ] Admin account exists **before** Email/Password sign-in is turned on
 - [ ] Google and Email/Password sign-in are enabled
 - [ ] API key is restricted in Google Cloud Console, for both projects
