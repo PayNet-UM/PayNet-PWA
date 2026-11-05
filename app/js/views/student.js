@@ -5,7 +5,7 @@ import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
 import { $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
-  confetti, renderQR, colorFor, initials, chevron, countUp } from '../ui.js';
+  confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, chevron, countUp } from '../ui.js';
 
 export const defaultRoute = 'home';
 const toMs = D.toMs;
@@ -254,7 +254,7 @@ function checkinMount(root, app, [focusId]) {
           try { await D.claimFriendBonus(app.ctx, r); extra.push(`+${r.friendBonus} welcome bonus from your referral`); } catch { /* not yet */ }
         }
         prevs[m.id] = await D.lastCheckin(app.ctx, m.id).catch(() => prevs[m.id]);
-        confetti();
+        confetti(); pointsFx(true);
         sheet(`<div class="qr-stage"><div class="kk-celebrate">${AV.avatarSVG(myAvatar(app), { size: 120 })}</div>
           <span class="state-pill" style="background:var(--mint-wash);color:#00783A">${icon('circle-check')} Checked in at ${esc(m.name)}</span>
           <div class="amount-big" style="font-size:56px;color:#00783A">+${res.points}</div><p class="muted">points</p>
@@ -399,7 +399,7 @@ function learnMount(root, app) {
       $$('[data-a]', el).forEach((a) => {
         a.onclick = () => busy(a, async () => {
           const r = await D.answerLesson(app.ctx, i, +a.dataset.a, app.rules).catch((e) => { toast(errText(e), true); return null; });
-          if (r === 'correct') { closeSheet(); confetti(); toast(`Correct. +${app.rules.lessonBonus} points`); app.render(); }
+          if (r === 'correct') { closeSheet(); confetti(); pointsFx(); toast(`Correct. +${app.rules.lessonBonus} points`); app.render(); }
           else if (r === 'done') { closeSheet(); toast('You’ve already earned points for this lesson.'); }
           else if (r === 'wrong') { a.classList.add('warn'); $('#fb', el).textContent = 'Not quite. Think about what keeps your money safe, then try again.'; }
         });
@@ -437,7 +437,7 @@ export function surveyMount(root, app, role, back) {
     busy($('button', e.target), async () => {
       try {
         const r = D.scoreSurvey(role, answers); const bonus = await D.submitSurvey(app.ctx, r, app.rules);
-        const t = surveyResultText(role, r); if (bonus) confetti();
+        const t = surveyResultText(role, r); if (bonus) { confetti(); pointsFx(); }
         sheet(`<h2>${esc(t.title)}</h2><p class="muted">Knowledge ${r.knowledge}% · Digital confidence ${r.digital}%. ${esc(t.tip)}</p>${bonus ? `<p class="badge ok" style="margin-top:12px">+${bonus} points</p>` : ''}
           <div class="row end" style="margin-top:16px"><a class="btn primary" href="#/${back}" data-close>Continue</a></div>`);
       } catch (err) { toast(errText(err), true); }
@@ -560,6 +560,8 @@ async function meRender(app) {
       <button class="btn primary">Save profile</button></form></section>
     <section class="section"><div class="head"><h2>Points history</h2></div><div class="card list">${app.ledger.slice(0, 30).map((l) => `<div class="item"><div class="grow"><h3>${esc(ledgerLabel(l))}</h3><p>${fmtDateTime(l.createdAt)}</p></div>
       <b class="num" style="color:${l.delta >= 0 ? '#00783A' : 'var(--ink-2)'}">${l.delta >= 0 ? '+' : ''}${n(l.delta)}</b></div>`).join('') || `<div class="empty">${icon('sparkles')}<p>Points you earn and spend appear here.</p></div>`}</div></section>
+    <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
+      <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button><a class="btn block" href="#/survey">Money check</a>
       <button class="btn block warn" id="out">${icon('log-out')} Sign out</button></section>`;
 }
@@ -573,13 +575,14 @@ function meMount(root, app) {
     const text = `Join Kampus Kita+, UM’s campus app for merchants, events and rewards. Use my code ${app.profile.referralCode} for a welcome bonus: ${location.origin}${location.pathname}`;
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it to a friend.'); } } catch { /* cancelled */ }
   };
-  $$('[data-ref]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.claimInviterBonus(app.ctx, b.dataset.ref, app.rules); confetti(); toast(`+${app.rules.referrerBonus} points`); app.render(); } catch (e) { toast(errText(e), true); } }); });
+  $$('[data-ref]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.claimInviterBonus(app.ctx, b.dataset.ref, app.rules); confetti(); pointsFx(); toast(`+${app.rules.referrerBonus} points`); app.render(); } catch (e) { toast(errText(e), true); } }); });
   if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your bonus arrives after your first check-in.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), college: f.college.value, faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#install', root).onclick = () => app.installApp();
+  $('#fx', root).onchange = (e) => { setFx(e.target.checked); if (e.target.checked) pointsFx(); };
   $('#out', root).onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 

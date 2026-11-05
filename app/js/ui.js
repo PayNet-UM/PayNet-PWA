@@ -94,6 +94,40 @@ export function countUp(el, to, dur = 700) {
 }
 
 // ------------------------------------------------------------- confetti (one celebratory moment: points earned)
+// ------------------------------------------------------------- sound and vibration when points are earned
+// A short coin chime made with Web Audio (no sound file to download) plus a buzz where the phone allows it.
+// Android Chrome vibrates; iPhones don't let websites vibrate, and an iPhone on silent plays no sound.
+const FX_KEY = 'kk-fx';
+export const fxOn = () => { try { return localStorage.getItem(FX_KEY) !== 'off'; } catch { return true; } };
+export const setFx = (on) => { try { localStorage.setItem(FX_KEY, on ? 'on' : 'off'); } catch { /* private mode */ } };
+let audioCtx = null;
+const AC = window.AudioContext || window.webkitAudioContext;
+function unlockAudio() {
+  if (!AC || audioCtx) return;
+  try {
+    audioCtx = new AC();
+    const b = audioCtx.createBuffer(1, 1, 22050); const src = audioCtx.createBufferSource(); src.buffer = b; src.connect(audioCtx.destination); src.start(0);
+  } catch { audioCtx = null; }
+}
+// Browsers only allow sound after the person has tapped the page, so the audio is unlocked on the first tap.
+['pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, unlockAudio, { once: true, capture: true, passive: true }));
+export function pointsFx(big = false) {
+  if (!fxOn()) return;
+  try { if (navigator.vibrate) navigator.vibrate(big ? [70, 50, 70, 50, 160] : [60, 40, 110]); } catch { /* not allowed */ }
+  try {
+    unlockAudio(); if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t0 = audioCtx.currentTime + 0.02;
+    const notes = big ? [988, 1319, 1568, 2093] : [1319, 1976];
+    notes.forEach((f, i) => {
+      const t = t0 + i * 0.085; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + (i === notes.length - 1 ? 0.45 : 0.16));
+      o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.5);
+    });
+  } catch { /* audio unavailable */ }
+}
+
 export function confetti() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const c = document.createElement('canvas'); c.className = 'confetti'; document.body.append(c);

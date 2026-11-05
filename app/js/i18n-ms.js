@@ -1095,4 +1095,6 @@ Link copied. Paste it in your browser.|Pautan disalin. Tampal dalam pelayar anda
 Google sign-in didn’t finish. If you use private browsing or block cookies, switch that off, or use email and password.|Log masuk Google tidak selesai. Jika anda guna pelayaran peribadi atau menyekat kuki, matikannya, atau guna e-mel dan kata laluan.
 Your browser is blocking storage (private mode or strict cookie settings). Turn that off, or sign in with email and password.|Pelayar anda menyekat storan (mod peribadi atau tetapan kuki ketat). Matikannya, atau log masuk dengan e-mel dan kata laluan.
 Google sign-in doesn’t work inside this app. Open the link in Chrome or Safari.|Log masuk Google tidak berfungsi dalam aplikasi ini. Buka pautan dalam Chrome atau Safari.
+Sound and vibration|Bunyi dan getaran
+Play a chime and buzz when you earn points.|Mainkan bunyi dan getaran apabila anda dapat mata.
 `;
