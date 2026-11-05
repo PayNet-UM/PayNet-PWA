@@ -252,6 +252,12 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     eq((await D.monthVisits(mpp, D.monthKey(T))).length >= 4, true, 'visits');
   });
   await denied('merchant cannot list every check-in', () => D.monthVisits(merch, D.monthKey(T)));
+  await denied('nobody can read sign-in hand-off codes from the app', async () => {
+    const { sdk, db } = stuA; await sdk.getDoc(sdk.doc(db, 'handoffs', 'a'.repeat(64)));
+  });
+  await denied('nobody can create a sign-in hand-off code from the app', async () => {
+    const { sdk, db } = mpp; await sdk.setDoc(sdk.doc(db, 'handoffs', 'b'.repeat(64)), { uid: 'mpp1', expiresAt: 0 });
+  });
   await ok('MPP can flag a visit after review', async () => { const [v] = await D.monthVisits(mpp, D.monthKey(T)); await D.flagVisit(mpp, v.id, 'ok', 'Reviewed'); });
   await ok('MPP adds another MPP reviewer by email', async () => {
     const a = await D.getConfig(mpp, 'access'); await D.saveConfig(mpp, 'access', { ...a, mppEmails: ['reviewer@um.edu.my'] });

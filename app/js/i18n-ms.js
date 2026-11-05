@@ -1114,4 +1114,24 @@ Enter the email you use with Google. We’ll email you a link to choose a passwo
 Email me the link|E-mel pautan kepada saya
 It’s the same account, so your points, avatar and history stay the same. You can still use Google in Safari.|Ini akaun yang sama, jadi mata, avatar dan sejarah anda kekal. Anda masih boleh guna Google dalam Safari.
 Link sent. Check your inbox (and spam), set a password, then sign in here.|Pautan dihantar. Semak peti masuk (dan spam), tetapkan kata laluan, kemudian log masuk di sini.
+Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.|Log masuk Google akan membuka Safari seketika. Log masuk di sana, kemudian kembali ke aplikasi ini dan anda sudah masuk.
+Signing in for the Kampus Kita+ app on your home screen.|Log masuk untuk aplikasi Kampus Kita+ di skrin utama anda.
+Sign in here, then go back to the app.|Log masuk di sini, kemudian kembali ke aplikasi.
+Sign in through the browser|Log masuk melalui pelayar
+Finish signing in in Safari|Selesaikan log masuk dalam Safari
+Sign in with Google in the Safari window that just opened. Then come back to this app: you’ll be signed in automatically.|Log masuk dengan Google dalam tetingkap Safari yang baru dibuka. Kemudian kembali ke aplikasi ini: anda akan log masuk secara automatik.
+Waiting for Safari…|Menunggu Safari…
+Open Safari again|Buka Safari semula
+Can’t reach the server. Retrying…|Tidak dapat menghubungi pelayan. Mencuba semula…
+That sign-in took too long. Tap “Continue with Google” to try again.|Log masuk itu terlalu lama. Ketik “Teruskan dengan Google” untuk cuba lagi.
+The sign-in server isn’t set up yet. Use email and password for now.|Pelayan log masuk belum disediakan. Guna e-mel dan kata laluan buat masa ini.
+Finishing sign-in…|Menyelesaikan log masuk…
+One moment.|Sebentar.
+You’re signed in|Anda sudah log masuk
+Go back to the Kampus Kita+ app on your home screen. It will open signed in as|Kembali ke aplikasi Kampus Kita+ di skrin utama anda. Ia akan dibuka dengan log masuk sebagai
+You can close this Safari window. Tap “Done” at the top, or switch apps.|Anda boleh tutup tetingkap Safari ini. Ketik “Selesai” di atas, atau tukar aplikasi.
+Keep using Kampus Kita+ in Safari instead|Terus guna Kampus Kita+ dalam Safari
+Couldn’t finish signing in to the app|Tidak dapat menyelesaikan log masuk ke aplikasi
+Go back to the app and tap “Continue with Google” again.|Kembali ke aplikasi dan ketik “Teruskan dengan Google” sekali lagi.
+Use Kampus Kita+ in Safari instead|Guna Kampus Kita+ dalam Safari
 `;

@@ -37,6 +37,7 @@ async function boot() {
     await ensureDemoData(app.backend, (msg) => { $('#boot-msg') && ($('#boot-msg').textContent = msg); });
   }
   Auth.finishRedirect(app);
+  Auth.resumeHandoff(app);
   sdk.onAuthStateChanged(auth, (user) => onUser(user).catch((e) => { console.error(e); toast(errText(e), true); }));
   window.addEventListener('hashchange', () => render());
   window.addEventListener('kk-maps-fallback', () => { toast('Google Maps isn’t set up for this address yet, so the basic map is shown.'); render(); });
@@ -51,6 +52,9 @@ async function onUser(user) {
   // Ask the browser to keep this site's storage (and so the sign-in) instead of clearing it when space runs low.
   try { navigator.storage?.persist?.().catch(() => {}); } catch { /* not supported */ }
   if (mode === 'live' && !user.emailVerified) return Auth.renderVerify(app);
+  // Opened from the iPhone home-screen app to sign in: hand the sign-in back instead of opening the app here.
+  const hoHash = mode === 'live' ? Auth.handoffHash() : null;
+  if (hoHash) return Auth.renderHandoffDone(app, user, hoHash);
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;

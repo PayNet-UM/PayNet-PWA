@@ -70,13 +70,116 @@ function standaloneHelp(kind) {
   const el = sheet(`<h2>Google sign-in is blocked in the installed app</h2>
     <p class="muted">On some phones, Google’s sign-in window can’t hand back to an app added to the home screen.</p>
     <div class="stack" style="margin-top:14px">
-      <button class="btn primary block" id="sa-email">Use email and password instead</button>
+      <button class="btn primary block" id="sa-browser">Sign in through the browser</button>
+      <button class="btn block" id="sa-email">Use email and password instead</button>
       <button class="btn block" id="sa-setpw">I signed up with Google: set a password</button>
       <p class="faint">${isIOS() ? 'Or sign in from Safari instead of the home-screen icon. On iPhone the installed app keeps its own sign-in, separate from Safari.' : 'Or open the site in Chrome and sign in there: the installed app shares Chrome’s sign-in.'}</p>
     </div>`);
+  $('#sa-browser', el).onclick = () => { closeSheet(); handoffStart(window.__kkApp); };
   $('#sa-setpw', el).onclick = () => { closeSheet(); setPasswordSheet(window.__kkApp); };
   $('#sa-email', el).onclick = () => { closeSheet(); const box = document.getElementById('email-box'); if (box) { box.open = true; box.scrollIntoView({ block: 'center' }); box.querySelector('input')?.focus(); } };
 }
+// ------------------------------------------------------------- sign-in hand-off (home-screen app <-> browser)
+// The home-screen app makes a random secret and keeps it; the browser gets only its SHA-256 hash in the address.
+// After Google sign-in there, the browser registers the hash with the server (functions/handoff.js). The app then
+// trades its secret for a one-time sign-in token. See docs/DEPLOY.md for the server set-up.
+const HANDOFF_KEY = 'kk-handoff';
+const HANDOFF_PARAM = 'handoff';
+const HANDOFF_MAX_MS = 5 * 60 * 1000;
+const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function sha256hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+async function api(path, body, idToken) {
+  const res = await fetch('/api/handoff/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(idToken ? { Authorization: 'Bearer ' + idToken } : {}) }, body: JSON.stringify(body) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) { const e = new Error(data.message || `The sign-in server didn’t answer (${res.status}).`); e.status = res.status; e.code = data.error; throw e; }
+  return data;
+}
+// In the browser: the hash this page was opened with, kept across Google's redirect.
+export function handoffHash() {
+  try {
+    const q = new URLSearchParams(location.search).get(HANDOFF_PARAM);
+    if (q && /^[a-f0-9]{64}$/.test(q)) { sessionStorage.setItem(HANDOFF_KEY + '-hash', q); return q; }
+    return sessionStorage.getItem(HANDOFF_KEY + '-hash');
+  } catch { return null; }
+}
+let polling = null;
+async function handoffStart(app) {
+  const secret = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const hash = await sha256hex(secret);
+  ls.set(HANDOFF_KEY, JSON.stringify({ secret, at: Date.now() }));
+  // A new window: from a home-screen app iPhone opens it in Safari, where Google sign-in works.
+  const w = window.open(`${location.origin}${location.pathname}?${HANDOFF_PARAM}=${hash}`, '_blank');
+  handoffWait(app);
+}
+function handoffPending() {
+  try { const h = JSON.parse(ls.get(HANDOFF_KEY) || 'null'); return h && Date.now() - h.at < HANDOFF_MAX_MS ? h : null; } catch { return null; }
+}
+function handoffWait(app) {
+  const h = handoffPending(); if (!h) return;
+  const el = sheet(`<h2>Finish signing in in Safari</h2>
+    <p class="muted">Sign in with Google in the Safari window that just opened. Then come back to this app: you’ll be signed in automatically.</p>
+    <div class="row" style="margin-top:14px;gap:10px;align-items:center"><span class="spinner" aria-hidden="true"></span><span class="faint" id="ho-status">Waiting for Safari…</span></div>
+    <div class="stack" style="margin-top:14px"><button class="btn block" id="ho-again">Open Safari again</button><button class="btn ghost block" id="ho-cancel">Cancel</button></div>`);
+  $('#ho-cancel', el).onclick = () => { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); };
+  $('#ho-again', el).onclick = () => { stopPoll(); closeSheet(); handoffStart(app); };
+  startPoll(app);
+}
+function stopPoll() { if (polling) { clearInterval(polling.timer); removeEventListener('visibilitychange', polling.vis); removeEventListener('focus', polling.vis); polling = null; } }
+function startPoll(app) {
+  stopPoll();
+  let busyNow = false;
+  const tick = async () => {
+    const h = handoffPending();
+    if (!h) { stopPoll(); if (ls.get(HANDOFF_KEY)) { ls.del(HANDOFF_KEY); closeSheet(); toast('That sign-in took too long. Tap “Continue with Google” to try again.', true); } return; }
+    if (busyNow || document.visibilityState === 'hidden') return;
+    busyNow = true;
+    try {
+      const r = await api('redeem', { secret: h.secret });
+      if (r.status === 'ready') {
+        ls.del(HANDOFF_KEY); stopPoll();
+        await app.backend.sdk.signInWithCustomToken(app.backend.auth, r.token);
+        closeSheet(); toast(r.email ? `Signed in as ${r.email}` : 'Signed in.');
+      }
+    } catch (e) {
+      if (e.code === 'expired' || e.status === 404) { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); toast(e.status === 404 ? 'The sign-in server isn’t set up yet. Use email and password for now.' : e.message, true); }
+      else { const st = document.getElementById('ho-status'); if (st) st.textContent = 'Can’t reach the server. Retrying…'; }
+    } finally { busyNow = false; }
+  };
+  const vis = () => { if (document.visibilityState === 'visible') tick(); };
+  polling = { timer: setInterval(tick, 2500), vis };
+  addEventListener('visibilitychange', vis); addEventListener('focus', vis);
+  tick();
+}
+// At start-up in the home-screen app: iPhone may reload the app while the person is in Safari, so carry on waiting.
+export function resumeHandoff(app) {
+  if (app.backend.mode !== 'live' || !handoffPending() || app.backend.auth.currentUser) return;
+  handoffWait(app);
+}
+// In the browser, once signed in: register the hash so the home-screen app can collect the sign-in.
+export async function renderHandoffDone(app, user, hash) {
+  frame(app, `<div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
+    <div id="ho-box"><h1>Finishing sign-in…</h1><p class="lede">One moment.</p></div>`);
+  const box = $('#ho-box');
+  try {
+    await api('create', { hash }, await user.getIdToken());
+    try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
+    history.replaceState(null, '', location.pathname);
+    box.innerHTML = `<h1>You’re signed in</h1><p class="lede">Go back to the Kampus Kita+ app on your home screen. It will open signed in as <b>${esc(user.email || 'you')}</b>.</p>
+      <p class="faint" style="margin-top:14px">You can close this Safari window. Tap “Done” at the top, or switch apps.</p>
+      <button class="btn block" id="ho-here" style="margin-top:14px">Keep using Kampus Kita+ in Safari instead</button>`;
+    $('#ho-here').onclick = () => location.reload();
+  } catch (e) {
+    try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
+    box.innerHTML = `<h1>Couldn’t finish signing in to the app</h1><p class="lede">${esc(e.message)}</p>
+      <p class="faint" style="margin-top:14px">Go back to the app and tap “Continue with Google” again.</p>
+      <button class="btn block" id="ho-here" style="margin-top:14px">Use Kampus Kita+ in Safari instead</button>`;
+    $('#ho-here').onclick = () => { history.replaceState(null, '', location.pathname); location.reload(); };
+  }
+}
+
 // Lets a student who signed up with Google add a password to the SAME account (Firebase links it on reset),
 // so they can sign in inside the iPhone home-screen app, where Google sign-in can't finish.
 function setPasswordSheet(app) {
@@ -120,6 +223,7 @@ async function googleSignIn(app, demoEmail) {
       toast(googleErrorText(err), true);
     }
   };
+  if (standalone && isIOS()) return handoffStart(app);
   if (standalone) return nextMethod() === 'redirect' ? redirect() : popup();
   // Phones in the browser: a full-page redirect is more reliable than a popup (mobile browsers often lose the popup tab).
   if (mode === 'live' && isPhone()) return redirect();
@@ -169,14 +273,14 @@ function demoGoogleChooser(app) {
 export function renderSignIn(app, mode = 'in', showEmail = false) {
   const demo = app.backend.mode === 'demo';
   const iosApp = !demo && isStandalone() && isIOS();
-  if (iosApp) showEmail = true;
+  const forApp = !demo && !!handoffHash();
   frame(app, `
     <div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
     <div><h1>Sign in to Kampus Kita+</h1>
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
-    ${iosApp ? `<div class="notice warn" id="ios-app">${icon('info')}<span><b>On iPhone, use email and password in the home-screen app.</b> Apple opens Google’s sign-in in a separate Safari window, so it can’t sign you in here.
-      Already signed up with Google? <button class="link" id="set-pw">Set a password</button> for the same account: your points and profile stay the same.</span></div>` : ''}
+    ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
+    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the Kampus Kita+ app on your home screen.</b> Sign in here, then go back to the app.</span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">

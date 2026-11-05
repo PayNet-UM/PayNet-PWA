@@ -926,3 +926,7 @@ table.data th { font-size: 12.5px; }
 .switch input:checked + span { background: #248e49; }
 .switch input:checked + span::after { transform: translateX(22px); }
 .switch input:focus-visible + span { outline: 3px solid #ffe365; outline-offset: 2px; }
+
+.spinner { display: inline-block; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #d0dbed; border-top-color: #192f59; animation: kk-spin .8s linear infinite; flex: none; }
+@keyframes kk-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }

@@ -91,6 +91,31 @@ Without a key the app shows a free OpenStreetMap map. To use Google Maps:
 
 If Google rejects the key on some address, the app switches to the OpenStreetMap map automatically and says so.
 
+## Google sign-in in the iPhone home-screen app (server, one-time set-up)
+
+An app added to the iPhone home screen opens Google's sign-in in a separate Safari window, which can't hand the
+session back. So the app uses a small server hand-off (`functions/`, deployed with the rest):
+
+1. In the home-screen app, "Continue with Google" makes a random secret, keeps it, and opens Safari with only its hash.
+2. The student signs in with Google in Safari; that page registers the hash with the server (`/api/handoff/create`).
+3. Back in the app, it trades the secret for a one-time sign-in token (`/api/handoff/redeem`) and is signed in.
+   Codes work once and expire after 3 minutes. Android, computers and Safari itself keep the normal Google sign-in.
+
+Needs the **Blaze** plan. Once per Firebase project (staging and production):
+
+1. **Let the server create sign-in tokens.** In Google Cloud Console (same project) > IAM & Admin > IAM, find
+   `<project-number>-compute@developer.gserviceaccount.com` (the "Default compute service account"), click the
+   pencil, **Add another role** > **Service Account Token Creator**, Save. Without it the app says
+   "The sign-in server isn't allowed to create sign-in tokens yet".
+2. **Optional clean-up:** Firestore > TTL policies > create one on collection group `handoffs`, field `expiresAt`,
+   so unused codes are deleted automatically (used codes are deleted straight away).
+3. **GitHub deploys:** the deploy service account (`FIREBASE_SERVICE_ACCOUNT`) also needs **Cloud Functions Admin**,
+   **Service Account User** and **Cloud Run Admin** to deploy functions. Add them in the same IAM page if a deploy
+   stops with a permission error.
+
+The first deploy with functions takes a few minutes longer: Google turns on Cloud Functions, Cloud Build and
+Artifact Registry for the project. Tests: `node tests/handoff.mjs`.
+
 ## How the trust model works
 
 | Step | Who | Enforced in `firestore.rules` |

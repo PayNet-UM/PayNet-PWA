@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs app",
     "dev:demo": "node scripts/serve.mjs app --demo",
-    "test": "node tests/local.mjs && node tests/env.mjs",
+    "test": "node tests/local.mjs && node tests/env.mjs && node tests/handoff.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:legacy": "node legacy/campus.test.cjs",
     "test:emulator": "node scripts/build.mjs --env demo && firebase emulators:exec --project demo-umc --only firestore \"node tests/emulator.mjs\"",

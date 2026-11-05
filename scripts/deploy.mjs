@@ -1,5 +1,6 @@
 // Deploys rules and hosting to one named environment: node scripts/deploy.mjs staging|production [--dry-run]
 // --dry-run runs every check, the tests and the build, then stops before calling Firebase.
+// Deploys Firestore rules, the website and the server functions (functions/, the iPhone sign-in hand-off).
 import fs from 'fs'; import path from 'path'; import readline from 'readline'; import { execSync, execFileSync } from 'child_process';
 import { root, loadEnv, deployProblems, ENV_FILES } from './lib/env.mjs';
 
@@ -41,6 +42,9 @@ for (const [other, id] of Object.entries(projects)) {
 }
 if (/REPLACE|\.invalid/.test(builtConfig) || /\.invalid'/.test(builtRules)) fail('dist/ still contains a placeholder');
 
-if (dryRun) { console.log(`\nDry run passed. Would deploy firestore and hosting to ${target} (${projectId}).`); process.exit(0); }
-run(`npx firebase deploy --project ${projectId} --only firestore,hosting --non-interactive`);
+if (dryRun) { console.log(`\nDry run passed. Would deploy firestore, hosting and functions to ${target} (${projectId}).`); process.exit(0); }
+// Server functions (functions/): install their packages so the Firebase CLI can read them.
+run('npm ci --prefix functions --no-audit --no-fund');
+// --force accepts the default clean-up policy for old function images on the first deploy.
+run(`npx firebase deploy --project ${projectId} --only firestore,hosting,functions --non-interactive --force`);
 console.log(`\nDeployed ${target}: https://${projectId}.web.app`);

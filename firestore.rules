@@ -8,6 +8,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Sign-in hand-off codes for the iPhone home-screen app: server only (functions/handoff.js).
+    match /handoffs/{id} { allow read, write: if false; }
+
 
     // ---------- identity ----------
     function bootstrapAdmins() { return ['mpp-admin@demo.invalid']; }
