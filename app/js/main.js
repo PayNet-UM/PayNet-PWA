@@ -1,6 +1,5 @@
 // App bootstrap: backend choice, sign-in state, role shells and hash routing.
 import { initBackend } from './backend.js';
-import { mppBootstrapEmails } from './firebase-config.js';
 import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText } from './ui.js';
 import * as Auth from './views/auth.js';
@@ -44,7 +43,7 @@ async function onUser(user) {
   app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.txs = []; app.ledger = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
-  if (mode === 'live' && !user.emailVerified && !mppBootstrapEmails.includes(String(user.email).toLowerCase())) return Auth.renderVerify(app);
+  if (mode === 'live' && !user.emailVerified) return Auth.renderVerify(app);
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
