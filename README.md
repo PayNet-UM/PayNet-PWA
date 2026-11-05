@@ -20,8 +20,8 @@ The app records purchases that merchants confirm. It never moves money.
 | **Database** | Production Firestore | Staging Firestore |
 | **Use it for** | Real users and real data | Testing, with test data only |
 
-- **Repository:** https://github.com/djkins/PayNet-WebApp
-- **Deploy runs:** https://github.com/djkins/PayNet-WebApp/actions
+- **Repository:** https://github.com/PayNet-UM/PayNet-PWA
+- **Deploy runs:** https://github.com/PayNet-UM/PayNet-PWA/actions
 
 ## How code gets to each environment
 
@@ -115,6 +115,7 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 - [ ] API key is restricted in Google Cloud Console, for both projects
 - [ ] GitHub Environments, variables and secrets are set up
 - [ ] `main` and `development` are protected
+- [ ] Scheduled Firestore backups are on (this may need the Blaze plan)
 - [ ] Programme defaults are reviewed on first admin login, especially the allocation and allowed student domains (`gmail.com` is allowed by default)
 
 ## Troubleshooting
@@ -128,4 +129,4 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 | An admin only sees "verify your email" | Open the link sent to that mailbox, or sign in with Google using that address. |
 | The app looks stale after a deploy | The service worker is serving its cache. Reload twice, or clear the site's data. |
 | You're stuck in Demo mode on a live site | Open the site with `?mode=live` added to the URL. |
-| The old `djkins.github.io/PayNet-WebApp` links stop working | The old demo moved to `/legacy/`. |
+| Old GitHub Pages links stop working | The repo moved to the `PayNet-UM` organization, and the old demo moved to `legacy/`. The app itself is on Firebase, so use the links above. |
