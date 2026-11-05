@@ -30,8 +30,8 @@ self.addEventListener('fetch', (e) => {
       .catch(async () => (await caches.match('index.html')) || caches.match('offline.html')));
     return;
   }
-  // Network first so a new deploy is picked up immediately; the cache is only the offline fallback.
-  e.respondWith(fetch(req).then((r) => {
+  // Network first (revalidating the browser's HTTP cache) so a new deploy is picked up immediately; the cache is only the offline fallback.
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then((r) => {
     if (r.ok && !url.pathname.endsWith('exceljs.min.js')) { const copy = r.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
     return r;
   }).catch(async () => (await caches.match(req)) || (await caches.match(req, { ignoreSearch: true })) || Response.error()));
