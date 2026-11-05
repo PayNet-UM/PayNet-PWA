@@ -3,7 +3,6 @@ export const MS = `
 Home|Utama
 Explore|Teroka
 Pay|Bayar
-Rewards|Ganjaran
 Me|Saya
 My shop|Kedai saya
 Shop|Kedai
@@ -15,7 +14,6 @@ Merchants|Peniaga
 Students|Pelajar
 Approvals|Kelulusan
 Campaigns|Kempen
-Community|Komuniti
 Reconciliation|Penyesuaian
 PayNet list|Senarai PayNet
 KPIs and surveys|KPI dan tinjauan
@@ -829,7 +827,6 @@ That record no longer exists.|Rekod itu sudah tidak wujud.
 Something went wrong. Try again.|Sesuatu tidak kena. Cuba lagi.
 Lessons, ambassador check-in|Pelajaran, daftar masuk duta
 Not applied|Tidak dimohon
-Shops|Kedai
 What students get|Apa yang pelajar dapat
 and|dan
 Mission claims|Tuntutan misi
@@ -922,7 +919,6 @@ Keep your receipt|Simpan resit anda
 Your bank app keeps the record. Kampus Kita+ never asks for your banking details or OTP.|Aplikasi bank anda menyimpan rekod. Kampus Kita+ tidak akan meminta butiran perbankan atau OTP anda.
 Participating merchants|Peniaga yang menyertai
 Check-ins|Daftar masuk
-Idea Kita: student ventures|Idea Kita: usaha niaga pelajar
 Running a stall or small business? Ask MPP about joining as a student entrepreneur.|Ada gerai atau perniagaan kecil? Tanya MPP tentang menyertai sebagai usahawan pelajar.
 You both get bonus points after their first check-in.|Anda berdua dapat mata bonus selepas daftar masuk pertama mereka.
 Invite|Jemput
@@ -1076,5 +1072,13 @@ Your location isn’t available right now. Try again in a moment.|Lokasi anda ti
 Couldn’t check in. You may be too far away, or you already checked in here recently.|Tidak dapat mendaftar masuk. Anda mungkin terlalu jauh, atau sudah mendaftar masuk di sini baru-baru ini.
 The quiet-hour bonus wasn’t available, so you got the normal points.|Bonus waktu lengang tidak tersedia, jadi anda mendapat mata biasa.
 Join Kampus Kita+, UM’s campus app for merchants, events and rewards.|Sertai Kampus Kita+, aplikasi kampus UM untuk peniaga, acara dan ganjaran.
-Public listings of where to eat on campus. Only places in Niaga Kita give Kampus Kita+ points.|Senarai awam tempat makan di kampus. Hanya tempat dalam Niaga Kita memberi mata Kampus Kita+.
+Public listings of where to eat on campus. Only places in Campus Shops give Kampus Kita+ points.|Senarai awam tempat makan di kampus. Hanya tempat dalam Niaga Kita memberi mata Kampus Kita+.
+This is our campus. It’s all here.|Ini kampus kita. Semua ada.
+Campus Shops|Niaga Kita
+Campus Events|Aktiviti Kita
+Rewards|Ganjaran Kita
+Pay Cashless|Bayar Kita
+Community|Komuniti Kita
+Student Ventures|Idea Kita
+Shops|Niaga
 `;

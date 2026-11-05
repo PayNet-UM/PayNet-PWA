@@ -10,7 +10,7 @@ function frame(app, inner) {
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
       <a class="brand" style="color:#fff"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a>
-      <div><h2>Ini kampus kita. Semua ada.</h2>
+      <div><h2>This is our campus. It’s all here.</h2>
         <p>Discover campus merchants and student ventures, find events, check in to collect points, and swap them for rewards. Discover. Connect. Experience. Grow.</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya student council · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}

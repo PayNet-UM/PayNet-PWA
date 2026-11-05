@@ -35,12 +35,12 @@ const isIdea = (m) => m.segment === IDEA_SEGMENT;
 
 // ------------------------------------------------------------- home: the Kampus Kita hub
 const PILLARS = [
-  ['explore', 'Niaga Kita', 'store', 'Merchant directory, local businesses and student entrepreneurs.', 'green'],
-  ['events', 'Aktiviti Kita', 'calendar', 'Events, campus activities, clubs and community programmes.', 'blue'],
-  ['rewards', 'Ganjaran Kita', 'gift', 'Points, rewards, promotions and loyalty benefits.', 'orange'],
-  ['bayar', 'Bayar Kita', 'wallet', 'Cashless payments and participating merchants.', 'sky'],
-  ['community', 'Komuniti Kita', 'users', 'Student communities, collaborations and volunteering.', 'mint'],
-  ['explore/idea', 'Idea Kita', 'lightbulb', 'Student ventures, innovation and entrepreneurship.', 'yellow'],
+  ['explore', 'Campus Shops', 'store', 'Merchant directory, local businesses and student entrepreneurs.', 'green'],
+  ['events', 'Campus Events', 'calendar', 'Events, campus activities, clubs and community programmes.', 'blue'],
+  ['rewards', 'Rewards', 'gift', 'Points, rewards, promotions and loyalty benefits.', 'orange'],
+  ['bayar', 'Pay Cashless', 'wallet', 'Cashless payments and participating merchants.', 'sky'],
+  ['community', 'Community', 'users', 'Student communities, collaborations and volunteering.', 'mint'],
+  ['explore/idea', 'Student Ventures', 'lightbulb', 'Student ventures, innovation and entrepreneurship.', 'yellow'],
 ];
 async function homeRender(app) {
   const p = app.profile; const lvl = levelOf(earnedTotal(app.ledger)); const st = streak(app.visits);
@@ -54,7 +54,7 @@ async function homeRender(app) {
     <a class="kk-hero-avatar" href="#/avatar" aria-label="Customise your avatar">${AV.avatarSVG(myAvatar(app), { size: 108, title: p.name })}<span class="kk-edit">${icon('pencil')}</span></a>
     <div class="kk-hero-text">
       <div class="who">Hi ${esc(firstName(p))}</div>
-      <p class="kk-tag">Ini kampus kita. Semua ada.</p>
+      <p class="kk-tag">This is our campus. It’s all here.</p>
       <div class="balance"><strong data-bind="points">${n(p.points)}</strong><span>points</span></div>
       <div class="level">${esc(lvl.name)} <span class="progress"><i style="width:${lvl.pct}%"></i></span>${lvl.next ? `<span>${n(lvl.toNext)} to ${esc(lvl.next)}</span>` : ''}</div>
       ${st ? `<span class="streak">${icon('flame')} ${st}-day streak</span>` : ''}
@@ -68,9 +68,9 @@ async function homeRender(app) {
     <p class="muted" style="font-size:13px">Seven questions, ${app.rules.surveyBonus} points the first time.</p></span>${icon('chevron-right')}</a>` : ''}
   <section class="section"><div class="head"><h2>This week’s missions</h2><a href="#/rewards">See all</a></div>
     <div class="card stack">${D.MISSIONS.map((m) => missionRow(m, prog[m.id])).join('')}</div></section>
-  <section class="section"><div class="head"><h2>Niaga Kita</h2><a href="#/explore">All ${merchants.length}</a></div>
+  <section class="section"><div class="head"><h2>Campus Shops</h2><a href="#/explore">All ${merchants.length}</a></div>
     <div class="mgrid">${merchants.slice(0, 4).map((m) => merchantCard(m)).join('') || emptyMerchants()}</div></section>
-  <section class="section"><div class="head"><h2>Aktiviti Kita</h2><a href="#/events">All events</a></div>
+  <section class="section"><div class="head"><h2>Campus Events</h2><a href="#/events">All events</a></div>
     <div class="stack">${upcoming.map(eventCard).join('') || `<div class="card empty">${icon('calendar')}<p>No events listed right now.</p></div>`}</div></section>`;
 }
 function missionRow(m, v) {
@@ -100,7 +100,7 @@ async function exploreRender(app, [mode]) {
   else if (exploreFilter === 'Student ventures') exploreFilter = 'All';
   const types = ['All', ...new Set(merchants.map((m) => m.type))];
   if (merchants.some(isIdea)) types.push('Student ventures');
-  return `<div class="page-title"><h1>${mode === 'idea' ? 'Idea Kita' : 'Niaga Kita'}</h1><p>${mode === 'idea' ? 'Student ventures and pop-up stalls run by UM students.' : 'Campus merchants, local businesses and student entrepreneurs, all checked by MPP.'}</p></div>
+  return `<div class="page-title"><h1>${mode === 'idea' ? 'Student Ventures' : 'Campus Shops'}</h1><p>${mode === 'idea' ? 'Student ventures and pop-up stalls run by UM students.' : 'Campus merchants, local businesses and student entrepreneurs, all checked by MPP.'}</p></div>
     <input type="search" id="q" placeholder="Search by name or place" value="${esc(exploreQuery)}" aria-label="Search merchants">
     <div class="chips" style="margin-top:12px" id="types">${types.map((t) => `<button class="${t === exploreFilter ? 'on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="card map-card"><div id="mmap" class="mmap" aria-label="Map of Kampus Kita+ merchants"></div>
@@ -153,9 +153,9 @@ function exploreMount(root, app) {
 
 async function merchantRender(app, [id]) {
   const m = await D.getMerchant(app.ctx, id).catch(() => null);
-  if (!m || m.status !== 'verified') return `<a class="back" href="#/explore">${icon('arrow-left')} Niaga Kita</a><div class="card empty">${icon('store')}<h3>This merchant isn’t on Kampus Kita+ yet</h3><p>Only MPP-verified merchants are listed.</p></div>`;
+  if (!m || m.status !== 'verified') return `<a class="back" href="#/explore">${icon('arrow-left')} Campus Shops</a><div class="card empty">${icon('store')}<h3>This merchant isn’t on Kampus Kita+ yet</h3><p>Only MPP-verified merchants are listed.</p></div>`;
   const deals = (await D.approvedDeals(app.ctx)).filter((d) => d.merchantId === id && d.enabled);
-  return `<a class="back" href="#/explore">${icon('arrow-left')} Niaga Kita</a>
+  return `<a class="back" href="#/explore">${icon('arrow-left')} Campus Shops</a>
     <div class="card pad-lg" style="margin-top:8px"><div class="row" style="gap:14px">${merchantLogo(m, 'logo big')}
       <div><h1 style="font-size:26px">${esc(m.name)}</h1><p class="muted">${esc(m.type)} · ${esc(m.location)}</p></div></div>
       <div class="row" style="margin-top:14px">${isIdea(m) ? `<span class="badge warn">${icon('lightbulb')}Student venture</span>` : ''}${m.ready ? `<span class="badge ok">${icon('badge-check')}Cashless ready</span>` : ''}<span class="badge">${icon('shield-check')}MPP verified</span></div>
@@ -181,8 +181,8 @@ function merchantMount(root, app, [id]) {
 }
 
 async function cafesRender() {
-  return `<a class="back" href="#/explore">${icon('arrow-left')} Niaga Kita</a><div class="page-title"><h1>Campus cafés</h1>
-    <p>Public listings of where to eat on campus. Only places in Niaga Kita give Kampus Kita+ points.</p></div>
+  return `<a class="back" href="#/explore">${icon('arrow-left')} Campus Shops</a><div class="page-title"><h1>Campus cafés</h1>
+    <p>Public listings of where to eat on campus. Only places in Campus Shops give Kampus Kita+ points.</p></div>
     <div class="card list">${CAFES.map((c) => `<div class="item"><span class="tile-icon">${icon('coffee')}</span><div class="grow"><h3>${esc(c.name)}</h3>
       <p>${esc(c.location)} · ${esc(c.food)}</p></div><a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.name + ' ' + c.location + ' Universiti Malaya')}">${icon('map-pin')} Map</a></div>`).join('')}</div>
     <p class="faint" style="margin-top:12px">Sources: <a href="${CAFES[6].source}" target="_blank" rel="noopener">UM food and vendor listings</a> and <a href="${CAFES[0].source}" target="_blank" rel="noopener">campus food guide (2023)</a>. Hours and prices aren’t verified.</p>`;
@@ -281,7 +281,7 @@ async function rewardsRender(app) {
   const [rewards, claims] = await Promise.all([D.listRewards(app.ctx), D.myMissionClaims(app.ctx)]);
   const prog = D.missionProgress(app.visits);
   const p = app.profile;
-  return `<div class="page-title"><h1>Ganjaran Kita</h1><p>You have <b data-bind="points">${n(p.points)}</b> points. Swap them for vouchers, or give them to the student welfare fund.</p></div>
+  return `<div class="page-title"><h1>Rewards</h1><p>You have <b data-bind="points">${n(p.points)}</b> points. Swap them for vouchers, or give them to the student welfare fund.</p></div>
     <section><div class="head" style="display:flex;justify-content:space-between;margin-bottom:12px"><h2>Swap points</h2></div>
       <div class="stack">${rewards.filter((r) => r.active).map((r) => {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
@@ -362,7 +362,7 @@ async function dealsRender(app) {
 // ------------------------------------------------------------- Aktiviti Kita
 async function eventsRender(app) {
   const camps = (await D.listCampaigns(app.ctx).catch(() => [])).filter((c) => !c.end || c.end >= D.dayKey()).sort((a, b) => String(a.start).localeCompare(String(b.start)));
-  return `<div class="page-title"><h1>Aktiviti Kita</h1><p>Events, campus activities, clubs and community programmes.</p></div>
+  return `<div class="page-title"><h1>Campus Events</h1><p>Events, campus activities, clubs and community programmes.</p></div>
     <div class="stack">${camps.map(eventCard).join('') || `<div class="card empty">${icon('calendar')}<p>No events listed right now.</p></div>`}</div>
     <section class="section"><div class="card row"><span class="tile-icon">${icon('clock')}</span><div style="flex:1"><h3>Quiet-hour bonuses</h3><p class="faint">Check in at quiet cafés for extra points.</p></div><a class="btn small" href="#/deals">Open</a></div></section>`;
 }
@@ -370,7 +370,7 @@ async function eventsRender(app) {
 // ------------------------------------------------------------- Bayar Kita: how to pay cashless (no tracking)
 async function bayarRender(app) {
   const merchants = await D.listVerifiedMerchants(app.ctx);
-  return `<div class="page-title"><h1>Bayar Kita</h1><p>Every Kampus Kita+ merchant accepts DuitNow QR. Here’s how to pay safely.</p></div>
+  return `<div class="page-title"><h1>Pay Cashless</h1><p>Every Kampus Kita+ merchant accepts DuitNow QR. Here’s how to pay safely.</p></div>
     <div class="card steps">
       <div class="step"><span class="n">1</span><div><h3>Open your banking or e-wallet app</h3><p>Any app that supports DuitNow QR works.</p></div></div>
       <div class="step"><span class="n">2</span><div><h3>Scan the merchant’s DuitNow QR</h3><p>Check the recipient name matches the shop and the amount is right before you confirm.</p></div></div>
@@ -384,7 +384,7 @@ async function bayarRender(app) {
 // ------------------------------------------------------------- learn
 async function learnRender(app) {
   const done = new Set(app.ledger.map((l) => l.id));
-  return `<a class="back" href="#/bayar">${icon('arrow-left')} Bayar Kita</a><div class="page-title"><h1>Learn and earn</h1>
+  return `<a class="back" href="#/bayar">${icon('arrow-left')} Pay Cashless</a><div class="page-title"><h1>Learn and earn</h1>
     <p>One-minute lessons on paying safely. Answer correctly to earn ${app.rules.lessonBonus} points each, once.</p></div>
     <div class="stack">${D.LESSONS.map((l, i) => `<div class="card row" style="gap:14px"><span class="tile-icon ${done.has('lesson' + i) ? 'mint' : ''}">${icon(done.has('lesson' + i) ? 'circle-check' : l.icon)}</span>
       <div style="flex:1"><h3>${esc(l.title)}</h3><p class="faint">${done.has('lesson' + i) ? 'Completed' : `1 question · +${app.rules.lessonBonus} points`}</p></div>
@@ -449,13 +449,13 @@ export function surveyMount(root, app, role, back) {
 async function communityRender(app) {
   const merchants = await D.listVerifiedMerchants(app.ctx);
   const ventures = merchants.filter(isIdea);
-  return `<div class="page-title"><h1>Komuniti Kita</h1><p>Your check-ins count for ${esc(D.COLLEGES.find(([k]) => k === app.profile.college)?.[1] || 'your college')}.</p></div>
+  return `<div class="page-title"><h1>Community</h1><p>Your check-ins count for ${esc(D.COLLEGES.find(([k]) => k === app.profile.college)?.[1] || 'your college')}.</p></div>
     <section class="card pad-lg"><div class="row between"><h2>College leaderboard</h2><span class="faint">Check-ins</span></div><div id="lb" style="margin-top:10px"><div class="skeleton" style="height:120px"></div></div></section>
     <section class="section"><div class="card pad-lg" style="background:var(--ink);color:#fff;border:0;position:relative;overflow:hidden">${chevron('#00D669', 14, 'style="position:absolute;right:-90px;top:-40px;width:240px;height:240px"')}
       <h2>Student welfare fund</h2><p style="color:#C9D4E3;margin-top:6px;max-width:42ch">Points given here are pooled for UM students who need help with essentials.</p>
       <div style="font-size:44px;font-weight:800;letter-spacing:-0.03em;margin-top:12px" id="welfare">—</div><p style="color:#C9D4E3">points given so far</p>
       <button class="btn" style="margin-top:14px" id="donate">${icon('hand-heart')} Give points</button></div></section>
-    <section class="section"><div class="head"><h2>Idea Kita: student ventures</h2><a href="#/explore/idea">See all</a></div>
+    <section class="section"><div class="head"><h2>Student Ventures</h2><a href="#/explore/idea">See all</a></div>
       <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask MPP about joining as a student entrepreneur.</p></div>`}</div></section>
     <section class="section"><div class="card row"><span class="tile-icon">${icon('user-plus')}</span><div style="flex:1"><h3>Invite friends</h3><p class="faint">You both get bonus points after their first check-in.</p></div><a class="btn small" href="#/me">Invite</a></div></section>`;
 }
@@ -591,17 +591,17 @@ const live = (fn) => (root, app, params) => {
 };
 export const routes = {
   home: { title: 'Home', render: homeRender, mount: live() },
-  explore: { title: 'Niaga Kita', render: exploreRender, mount: exploreMount },
+  explore: { title: 'Campus Shops', render: exploreRender, mount: exploreMount },
   merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'explore' },
   cafes: { title: 'Campus cafés', render: cafesRender, tab: 'explore' },
   checkin: { title: 'Check in', render: checkinRender, mount: checkinMount },
-  rewards: { title: 'Ganjaran Kita', render: rewardsRender, mount: rewardsMount },
+  rewards: { title: 'Rewards', render: rewardsRender, mount: rewardsMount },
   deals: { title: 'Quiet-hour bonuses', render: dealsRender, tab: 'home' },
-  events: { title: 'Aktiviti Kita', render: eventsRender, tab: 'home' },
-  bayar: { title: 'Bayar Kita', render: bayarRender, tab: 'home' },
+  events: { title: 'Campus Events', render: eventsRender, tab: 'home' },
+  bayar: { title: 'Pay Cashless', render: bayarRender, tab: 'home' },
   learn: { title: 'Learn and earn', render: learnRender, mount: learnMount, tab: 'home' },
   survey: { title: 'Money check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'student', 'home'), tab: 'home' },
-  community: { title: 'Komuniti Kita', render: communityRender, mount: communityMount, tab: 'home' },
+  community: { title: 'Community', render: communityRender, mount: communityMount, tab: 'home' },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
 };

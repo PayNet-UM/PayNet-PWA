@@ -15,7 +15,7 @@ const app = {
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['home', 'Home', 'house'], ['explore', 'Niaga', 'store'], ['checkin', 'Check in', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['home', 'Home', 'house'], ['explore', 'Shops', 'store'], ['checkin', 'Check in', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
