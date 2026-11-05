@@ -40,7 +40,7 @@ git push -u origin feature/short-name
 1. Go to the repo and click **Compare & pull request**.
 2. Set **base** to `development`. Check this every time.
 3. Describe what changed and how you tested it.
-4. Wait for the tests and a review.
+4. Wait for the tests to pass. A review is optional but recommended for bigger changes.
 
 **5. Merge it.** Staging then deploys automatically, so test your change at https://umconnect-e455a.web.app.
 
@@ -72,7 +72,7 @@ git push
 
 1. Test everything on staging first.
 2. On GitHub, open a pull request with **base** `main` and **compare** `development`.
-3. Get it reviewed, then merge using **Create a merge commit**. Don't squash this PR, because the two branches would stop matching and the next release would show false conflicts.
+3. Wait for the tests to pass, then merge using **Create a merge commit**. Don't squash this PR, because the two branches would stop matching and the next release would show false conflicts.
 4. Open the **Actions** tab and approve the production deployment when asked.
 5. Check the production site.
 
@@ -100,7 +100,7 @@ git switch -c fix/short-name
 ## Repo admin setup (once)
 
 **Branch protection:** Settings > Branches > Add rule, for both `main` and `development`:
-- Require a pull request before merging, with 1 approval
+- Require a pull request before merging, with 0 required approvals, so you can merge your own PRs
 - Require status checks to pass, and select the `test` check after it has run once
 - Block force pushes
 
