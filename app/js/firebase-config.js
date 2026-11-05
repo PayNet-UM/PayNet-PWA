@@ -13,3 +13,9 @@ export const firebaseConfig = {
 // Emails that get MPP admin access on day one. Keep this in sync with bootstrapAdmins() in firestore.rules
 // (`npm run setup` updates both). More MPP reviewers can be added later in the app under Settings.
 export const mppBootstrapEmails = ['admin@umconnect-e455a.web.app'];
+
+// Google Maps (optional). Paste a browser key from Google Cloud > APIs & Services > Credentials with the
+// "Maps JavaScript API" enabled and restricted to your site. Leave it empty to use the built-in OpenStreetMap map.
+export const googleMapsApiKey = '';
+// Optional Map ID from Google Cloud > Google Maps Platform > Map management (needed for custom map styles).
+export const googleMapsMapId = '';

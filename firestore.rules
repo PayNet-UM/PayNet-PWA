@@ -1,8 +1,9 @@
 rules_version = '2';
 
-// UM Connect+ security rules (Spark plan, no Cloud Functions).
+// Kampus Kita+ security rules (Spark plan, no Cloud Functions).
 // Every points change is paired with an immutable ledger entry in the same batch,
 // and each ledger type can only be written by the role allowed to earn it.
+// Students earn by checking in at a merchant's map pin (no purchase tracking).
 // Run `npm run setup` to replace the admin email below before deploying.
 
 service cloud.firestore {
@@ -64,17 +65,26 @@ service cloud.firestore {
           && ledgerAfter().delta == D().points - resource.data.points
         );
       }
+      function hasFirst(d) { return 'firstVisit' in d || 'firstTx' in d; }
       function validInviter() {
-        return !('inviterUid' in resource.data) && !('firstTx' in resource.data)
+        return !('inviterUid' in resource.data) && !hasFirst(resource.data)
           && D().inviterUid != u
           && get(/databases/$(database)/documents/referralCodes/$(D().inviterCode)).data.uid == D().inviterUid
           && existsAfter(/databases/$(database)/documents/referrals/$(u));
       }
-      function validFirstTx() {
-        return !('firstTx' in resource.data)
-          && get(/databases/$(database)/documents/txRequests/$(D().firstTx)).data.studentUid == u
-          && get(/databases/$(database)/documents/txRequests/$(D().firstTx)).data.status == 'confirmed';
+      function validFirstVisit() {
+        return !hasFirst(resource.data)
+          && getAfter(/databases/$(database)/documents/visits/$(D().firstVisit)).data.uid == u;
       }
+      function validCiCounter() {
+        return D().ciDay == dayKey(request.time) && D().ciCount is int && D().ciCount <= cfg().checkinDailyCap
+          && (('ciDay' in resource.data && resource.data.ciDay == D().ciDay)
+                ? D().ciCount == resource.data.ciCount + 1
+                : D().ciCount == 1)
+          && ptsChanged() && ledgerAfter().type == 'checkin';
+      }
+      // avatar: a small map of drawing options (see app/js/avatar.js)
+      function validAvatar() { return D().avatar is map && D().avatar.size() <= 16; }
       function validRefCounter() {
         return D().refMonth == monthKey(request.time)
           && D().refCount <= cfg().referralCap
@@ -84,10 +94,12 @@ service cloud.firestore {
           && ptsChanged() && ledgerAfter().type == 'inviter';
       }
       function selfUpdate() {
-        return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx',
-                                  'inviterUid', 'inviterCode', 'firstTx', 'refMonth', 'refCount'])
+        return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
+                                  'inviterUid', 'inviterCode', 'firstVisit', 'refMonth', 'refCount', 'ciDay', 'ciCount'])
           && (!changed().hasAny(['inviterUid', 'inviterCode']) || validInviter())
-          && (!changed().hasAny(['firstTx']) || validFirstTx())
+          && (!changed().hasAny(['firstVisit']) || validFirstVisit())
+          && (!changed().hasAny(['ciDay', 'ciCount']) || validCiCounter())
+          && (!changed().hasAny(['avatar']) || validAvatar())
           && (!changed().hasAny(['refMonth', 'refCount']) || validRefCounter())
           && (!changed().hasAny(['college']) || D().college is string);
       }
@@ -103,8 +115,6 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
           (uid() == u && selfUpdate())
-          || (isVerifiedMerchant() && changed().hasOnly(['points', 'lastTx']) && ptsChanged()
-              && ledgerAfter().type == 'purchase')
           || (isMpp() && changed().hasOnly(['points', 'lastTx', 'disabled'])
               && (!ptsChanged() || ledgerAfter().type == 'adjust'))
         );
@@ -112,25 +122,29 @@ service cloud.firestore {
       // ---------- points ledger (immutable) ----------
       match /ledger/{id} {
         function L() { return request.resource.data; }
-        function txAfter() { return getAfter(/databases/$(database)/documents/txRequests/$(id)).data; }
-        function purchaseOk() {
-          return isVerifiedMerchant()
-            && get(/databases/$(database)/documents/txRequests/$(id)).data.status == 'pending'
-            && txAfter().status == 'confirmed' && txAfter().merchantId == uid()
-            && txAfter().studentUid == u && L().delta == txAfter().points;
+        // Check-in points: the visit is created in the same batch, and a quiet-hour deal adds its bonus.
+        function ciCounted() {
+          return userAfter(u).ciDay == dayKey(request.time)
+            && (userDoc(u).get('ciDay', '') == dayKey(request.time)
+                ? userAfter(u).ciCount == userDoc(u).get('ciCount', 0) + 1
+                : userAfter(u).ciCount == 1);
         }
-        function offpeakOk() {
-          let t = get(/databases/$(database)/documents/txRequests/$(L().tx)).data;
+        function dealOk(mid) {
           let d = get(/databases/$(database)/documents/deals/$(L().deal)).data;
-          let k = L().deal + '_' + dayKey(t.confirmedAt);
-          let kp = /databases/$(database)/documents/dealDays/$(k);
-          return t.status == 'confirmed' && t.studentUid == u && t.dealId == L().deal
-            && d.status == 'approved' && d.enabled == true && d.merchantId == t.merchantId
-            && t.cents >= d.minSpendCents
-            && minuteOfDay(t.confirmedAt) >= d.startMin && minuteOfDay(t.confirmedAt) < d.endMin
-            && id == 'offpeak_' + k && L().delta == d.bonus
+          let m = get(/databases/$(database)/documents/merchants/$(mid)).data;
+          let kp = /databases/$(database)/documents/dealDays/$(L().deal + '_' + dayKey(request.time));
+          return d.status == 'approved' && d.enabled == true && d.merchantId == mid
+            && minuteOfDay(request.time) >= d.startMin && minuteOfDay(request.time) < d.endMin
+            && m.occupied * 100 < d.threshold * m.seats
+            && L().delta == cfg().checkinPoints + d.bonus
             && getAfter(kp).data.count <= d.limit
             && getAfter(kp).data.count == (exists(kp) ? get(kp).data.count + 1 : 1);
+        }
+        function checkinOk() {
+          let v = getAfter(/databases/$(database)/documents/visits/$(id)).data;
+          return !exists(/databases/$(database)/documents/visits/$(id))
+            && v.uid == u && L().merchant == v.merchantId && L().deal == v.deal && ciCounted()
+            && (L().deal == '' ? L().delta == cfg().checkinPoints : dealOk(v.merchantId));
         }
         function redeemOk() {
           let v = getAfter(/databases/$(database)/documents/vouchers/$(id)).data;
@@ -142,6 +156,7 @@ service cloud.firestore {
           return L().delta < 0 && w.lastUid == u && w.lastId == id
             && w.points == get(/databases/$(database)/documents/stats/welfare).data.points - L().delta;
         }
+        function hasFirstU(x) { return 'firstVisit' in userDoc(x) || 'firstTx' in userDoc(x); }
         function refCounted() {
           return userAfter(u).refMonth == monthKey(request.time)
             && (userDoc(u).get('refMonth', '') == monthKey(request.time)
@@ -149,18 +164,17 @@ service cloud.firestore {
                 : userAfter(u).refCount == 1);
         }
         function validEntry() {
-          return (L().type == 'purchase' && purchaseOk())
-            || (uid() == u && isStudent() && (
-                 (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus)
+          return (uid() == u && isStudent() && (
+                 (L().type == 'checkin' && checkinOk())
+              || (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus)
               || (L().type == 'lesson' && id in ['lesson0', 'lesson1', 'lesson2']
                   && L().answer == get(/databases/$(database)/documents/config/lessonKeys).data[id]
                   && L().delta == cfg().lessonBonus)
               || (L().type == 'friend' && id == 'referral_friend' && 'inviterUid' in userDoc(u)
-                  && 'firstTx' in userDoc(u) && L().delta == cfg().friendBonus)
+                  && hasFirstU(u) && L().delta == cfg().friendBonus)
               || (L().type == 'inviter' && id == 'ref_' + L().friend
-                  && userDoc(L().friend).inviterUid == u && 'firstTx' in userDoc(L().friend)
+                  && userDoc(L().friend).inviterUid == u && hasFirstU(L().friend)
                   && L().delta == cfg().referrerBonus && refCounted())
-              || (L().type == 'offpeak' && offpeakOk())
               || (L().type == 'redeem' && redeemOk())
               || (L().type == 'donate' && donateOk())
             ))
@@ -196,7 +210,7 @@ service cloud.firestore {
         && D().inviterUid == userAfter(uid()).inviterUid && D().createdAt == request.time
         && D().keys().hasOnly(['inviterUid', 'friendName', 'createdAt', 'qualified']);
       allow update: if verified() && friend == uid() && changed().hasOnly(['qualified'])
-        && D().qualified == true && 'firstTx' in userDoc(uid());
+        && D().qualified == true && ('firstVisit' in userDoc(uid()) || 'firstTx' in userDoc(uid()));
     }
 
     // ---------- merchants ----------
@@ -207,6 +221,11 @@ service cloud.firestore {
           && (!('lat' in D()) || (D().lat is number && D().lng is number
               && D().lat > 3.09 && D().lat < 3.15 && D().lng > 101.62 && D().lng < 101.69));
       }
+      // Logo: a small image stored as a data URL (the app shrinks it to 256 px before upload).
+      function logoOk() {
+        return !('logo' in D()) || (D().logo is string && D().logo.size() < 200000
+          && D().logo.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'));
+      }
       function profileKeys() {
         return ['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd'];
       }
@@ -214,17 +233,17 @@ service cloud.firestore {
       allow create: if isMerchantRole() && m == uid() && D().ownerUid == uid() && D().status == 'pending'
         && D().submittedAt == request.time && D().name is string && D().name.size() > 1
         && D().keys().hasOnly(['ownerUid', 'status', 'submittedAt', 'name', 'type', 'segment', 'location',
-                               'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt'])
-        && geoOk();
+                               'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+        && 'lat' in D() && 'logo' in D() && geoOk() && logoOk();
       allow update: if signedIn() && (
           (m == uid() && resource.data.status != 'verified'
              && changed().hasOnly(['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd',
                                    'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt',
-                                   'lat', 'lng', 'pinAt'])
-             && geoOk() && D().status == 'pending' && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
+                                   'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+             && geoOk() && logoOk() && D().status == 'pending' && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
           || (m == uid() && resource.data.status == 'verified'
-             && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt', 'lat', 'lng', 'pinAt'])
-             && geoOk()
+             && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+             && geoOk() && logoOk()
              && (!changed().hasAny(['occupied', 'seats']) || (D().occupied is int && D().seats is int
                  && D().occupied >= 0 && D().occupied <= D().seats)))
           || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt', 'offer'])
@@ -261,62 +280,71 @@ service cloud.firestore {
     }
 
     match /dealDays/{k} {
+      function byCheckin() {
+        let l = getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(D().last)).data;
+        return D().keys().hasOnly(['count', 'last'])
+          && !exists(/databases/$(database)/documents/users/$(uid())/ledger/$(D().last))
+          && l.type == 'checkin' && l.deal + '_' + dayKey(request.time) == k;
+      }
       allow read: if signedIn();
-      allow create: if verified() && D().count == 1
-        && existsAfter(/databases/$(database)/documents/users/$(uid())/ledger/$('offpeak_' + k));
-      allow update: if verified() && D().count == resource.data.count + 1
-        && existsAfter(/databases/$(database)/documents/users/$(uid())/ledger/$('offpeak_' + k));
+      allow create: if verified() && D().count == 1 && byCheckin();
+      allow update: if verified() && D().count == resource.data.count + 1 && byCheckin();
     }
 
-    // ---------- transactions: student requests, merchant confirms ----------
-    match /txRequests/{id} {
-      function dealEligible() {
-        let d = get(/databases/$(database)/documents/deals/$(D().dealId)).data;
-        let m = get(/databases/$(database)/documents/merchants/$(D().merchantId)).data;
-        return d.status == 'approved' && d.enabled == true && d.merchantId == D().merchantId
-          && m.occupied * 100 < d.threshold * m.seats;
+    // ---------- check-ins: a student at a merchant's map pin ----------
+    // One doc per student+merchant holds the last check-in (for the cooldown); every check-in also
+    // writes an immutable visit and a ledger entry with the same id, all in one batch.
+    function nearMerchant(mid, lat, lng) {
+      let m = get(/databases/$(database)/documents/merchants/$(mid)).data;
+      return m.status == 'verified' && 'lat' in m && lat is number && lng is number
+        && math.abs(lat - m.lat) * 111000 <= cfg().checkinRadiusM
+        && math.abs(lng - m.lng) * 111000 <= cfg().checkinRadiusM;
+    }
+    match /checkins/{pair} {
+      function visitId() { return 'ci_' + pair + '_' + string(D().n); }
+      function base() {
+        return isStudent() && pair == uid() + '_' + D().merchantId && D().uid == uid()
+          && D().keys().hasOnly(['uid', 'merchantId', 'n', 'at', 'lat', 'lng', 'acc'])
+          && D().n is int && D().at == request.time && nearMerchant(D().merchantId, D().lat, D().lng)
+          && existsAfter(/databases/$(database)/documents/visits/$(visitId()));
       }
-      allow read: if signedIn() && (resource.data.studentUid == uid() || resource.data.merchantId == uid() || isMpp());
-      allow create: if isStudent() && D().studentUid == uid() && D().status == 'pending'
-        && D().createdAt == request.time
-        && D().keys().hasOnly(['studentUid', 'studentName', 'studentCollege', 'merchantId', 'merchantName',
-                               'cents', 'status', 'createdAt', 'dealId'])
-        && D().cents is int && D().cents >= 50 && D().cents <= cfg().maxTxCents
-        && D().studentName == userDoc(uid()).name && D().studentCollege == userDoc(uid()).college
-        && get(/databases/$(database)/documents/merchants/$(D().merchantId)).data.status == 'verified'
-        && (!('dealId' in D()) || dealEligible());
-      allow update: if signedIn() && (
-          (resource.data.studentUid == uid() && resource.data.status == 'pending'
-             && changed().hasOnly(['status']) && D().status == 'cancelled')
-          || (isVerifiedMerchant() && resource.data.merchantId == uid() && resource.data.status == 'pending'
-             && request.time < resource.data.createdAt + duration.value(cfg().txTtlMin, 'm')
-             && changed().hasOnly(['status', 'confirmedAt', 'confirmedBy', 'points', 'confirmDay',
-                                   'confirmMonth'])
-             && D().status == 'confirmed' && D().confirmedAt == request.time && D().confirmedBy == uid()
-             && D().points is int
-             && D().points * 100 <= resource.data.cents * cfg().baseRate
-             && (D().points + 1) * 100 > resource.data.cents * cfg().baseRate
-             && D().confirmMonth is string && D().confirmDay is string
-             && existsAfter(/databases/$(database)/documents/users/$(resource.data.studentUid)/ledger/$(id))
-             && getAfter(/databases/$(database)/documents/stats/campus).data.lastTx == id)
-          || (isMpp() && changed().hasOnly(['flag', 'flagNote', 'flaggedBy']))
-        );
+      // the id starts with the student's uid, so a student can read their own (even before it exists)
+      allow read: if signedIn() && (pair.matches(uid() + '_.*') || isMpp());
+      allow create: if base() && D().n == 1;
+      allow update: if base() && D().merchantId == resource.data.merchantId && D().n == resource.data.n + 1
+        && request.time > resource.data.at + duration.value(cfg().checkinCooldownH, 'h');
+    }
+    match /visits/{id} {
+      function pairAfter() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().merchantId)).data; }
+      allow read: if signedIn() && (resource.data.uid == uid() || resource.data.merchantId == uid() || isMpp());
+      allow create: if isStudent() && D().uid == uid() && D().at == request.time
+        && D().keys().hasOnly(['uid', 'name', 'college', 'merchantId', 'merchantName', 'at', 'day', 'month', 'deal', 'points', 'acc', 'avatar'])
+        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
+        && id == 'ci_' + uid() + '_' + D().merchantId + '_' + string(pairAfter().n)
+        && pairAfter().at == request.time
+        && D().name == userDoc(uid()).name && D().college == userDoc(uid()).college
+        && D().day == dayKey(request.time) && D().month == monthKey(request.time)
+        && D().points == getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(id)).data.delta;
+      allow update: if isMpp() && changed().hasOnly(['flag', 'flagNote', 'flaggedBy']);
+    }
+    // Purchase codes from the first pilot version: kept readable for MPP records only.
+    match /txRequests/{id} {
+      allow read: if isMpp();
     }
 
     // ---------- campus stats (leaderboard and welfare pool) ----------
     match /stats/campus {
       allow read: if signedIn();
       allow create: if isMpp();
-      allow update: if isMpp() || (isVerifiedMerchant() && campusIncrementOk());
+      allow update: if isMpp() || (isStudent() && campusIncrementOk());
       function campusIncrementOk() {
-        let t = getAfter(/databases/$(database)/documents/txRequests/$(D().lastTx)).data;
-        return changed().hasOnly(['checkins', 'cents', 'colleges', 'lastTx'])
-          && get(/databases/$(database)/documents/txRequests/$(D().lastTx)).data.status == 'pending'
-          && t.status == 'confirmed' && t.merchantId == uid()
+        let v = getAfter(/databases/$(database)/documents/visits/$(D().lastVisit)).data;
+        return changed().hasOnly(['checkins', 'colleges', 'lastVisit'])
+          && !exists(/databases/$(database)/documents/visits/$(D().lastVisit))
+          && v.uid == uid()
           && D().checkins == resource.data.checkins + 1
-          && D().cents == resource.data.cents + t.cents
-          && D().colleges.diff(resource.data.colleges).affectedKeys().hasOnly([t.studentCollege])
-          && D().colleges[t.studentCollege] == resource.data.colleges.get(t.studentCollege, 0) + 1;
+          && D().colleges.diff(resource.data.colleges).affectedKeys().hasOnly([v.college])
+          && D().colleges[v.college] == resource.data.colleges.get(v.college, 0) + 1;
       }
     }
     match /stats/welfare {

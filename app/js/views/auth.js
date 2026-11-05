@@ -9,9 +9,9 @@ function frame(app, inner) {
   document.body.classList.remove('mpp-mode');
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
-      <a class="brand" style="color:#fff"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b></span></a>
-      <div><h2>Pay cashless on campus. Get something back.</h2>
-        <p>Pay any UM Connect+ merchant with DuitNow QR, show your code at the counter, and earn points for vouchers, missions and the student welfare fund.</p></div>
+      <a class="brand" style="color:#fff"><img src="icons/icon-192.png" alt=""><span>Kampus Kita<b>+</b></span></a>
+      <div><h2>Ini kampus kita. Semua ada.</h2>
+        <p>Discover campus merchants and student ventures, find events, check in to collect points, and swap them for rewards. Discover. Connect. Experience. Grow.</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya student council · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
@@ -56,8 +56,8 @@ function demoGoogleChooser(app) {
 export function renderSignIn(app, mode = 'in', showEmail = false) {
   const demo = app.backend.mode === 'demo';
   frame(app, `
-    <div><a class="brand"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b></span></a></div>
-    <div><h1>Sign in to UM Connect+</h1>
+    <div><a class="brand"><img src="icons/icon-192.png" alt=""><span>Kampus Kita<b>+</b></span></a></div>
+    <div><h1>Sign in to Kampus Kita+</h1>
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
@@ -119,9 +119,9 @@ export function renderOnboarding(app, done) {
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
-          <span><b>I’m a student</b><br><span class="faint">Earn points when you pay cashless on campus</span></span></label>
+          <span><b>I’m a student</b><br><span class="faint">Discover campus, check in at shops and collect rewards</span></span></label>
         <label><input type="radio" name="role" value="merchant" ${looksStudent ? '' : 'checked'}><span class="tile-icon orange">${icon('store')}</span>
-          <span><b>I run a business or stall</b><br><span class="faint">Join the campus merchant list and confirm student purchases</span></span></label>
+          <span><b>I run a business or stall</b><br><span class="faint">Join the campus map so students can find and visit you</span></span></label>
       </div>
       <label class="field">Your full name<input name="name" required minlength="2" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
       <div id="student-fields" class="stack">
@@ -130,7 +130,7 @@ export function renderOnboarding(app, done) {
           <small>Your check-ins count towards your college on the leaderboard.</small></label>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
       </div>
-      <label class="check"><input type="checkbox" required> I agree that UM Connect+ stores my name, email and the purchases I record, for running and reporting this campus programme (PDPA notice).</label>
+      <label class="check"><input type="checkbox" required> I agree that Kampus Kita+ stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).</label>
       <button class="btn primary block" type="submit">Continue</button>
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
@@ -148,7 +148,7 @@ export function renderOnboarding(app, done) {
           : { role, name: f.name.value });
         await done();
       } catch (err) {
-        if (err.notReady) toast('UM Connect+ isn’t open for students yet. The MPP admin needs to sign in once to set it up.', true);
+        if (err.notReady) toast('Kampus Kita+ isn’t open for students yet. The MPP admin needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
         else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact MPP.', true);
         else if (err.code === 'permission-denied' && role === 'student')

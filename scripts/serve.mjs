@@ -14,4 +14,4 @@ http.createServer((req, res) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data);
   });
-}).listen(port, () => console.log(`UM Connect+ on http://localhost:${port} (serving ${path.relative(root, dir)}/)`));
+}).listen(port, () => console.log(`Kampus Kita+ on http://localhost:${port} (serving ${path.relative(root, dir)}/)`));

@@ -61,7 +61,7 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   });
   await denied('the rules also refuse a reused matric number (bypassing the app check)', async () => {
     const { sdk, db } = dupe; const b = sdk.writeBatch(db);
-    b.set(sdk.doc(db, 'users', 'gm2'), { role: 'student', name: 'Copy Cat', email: 'copycat@gmail.com', matric: '23007777', college: 'KK1', faculty: '', points: 0, lastTx: '', referralCode: '', goalCents: 15000, createdAt: sdk.serverTimestamp() });
+    b.set(sdk.doc(db, 'users', 'gm2'), { role: 'student', name: 'Copy Cat', email: 'copycat@gmail.com', matric: '23007777', college: 'KK1', faculty: '', points: 0, lastTx: '', referralCode: '', createdAt: sdk.serverTimestamp() });
     b.set(sdk.doc(db, 'matrics', '23007777'), { uid: 'gm2' });
     await b.commit();
   });
@@ -78,25 +78,32 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
 
   log('Merchant onboarding');
   const qr = 'data:image/jpeg;base64,' + 'A'.repeat(2000);
-  await ok('merchant submits application with DuitNow QR', () => D.submitApplication(merch, { name: 'Kopi Kolej', type: 'Food & drinks',
+  const logo = 'data:image/jpeg;base64,' + 'B'.repeat(3000);
+  await ok('merchant submits application with logo, exact location and DuitNow QR', () => D.submitApplication(merch, { name: 'Kopi Kolej', type: 'Food & drinks',
     segment: 'Campus permanent merchant', location: 'KK3 cafeteria', zone: 'Residential colleges', accountName: 'Kopi Kolej Enterprise',
-    phone: '0123456789', ambassadorId: 'amb-003', qrImage: qr, lat: 3.1268, lng: 101.6553 }));
+    phone: '0123456789', ambassadorId: 'amb-003', qrImage: qr, logo, lat: 3.1268, lng: 101.6553 }));
   await denied('a map pin far from campus is refused', () => D.submitApplication(merch, { name: 'Kopi Kolej', type: 'Food & drinks',
     segment: 'Campus permanent merchant', location: 'KK3 cafeteria', zone: 'Residential colleges', accountName: 'Kopi Kolej Enterprise', lat: 1.3521, lng: 103.8198 }));
-  await ok('second merchant submits application', () => D.submitApplication(merch2, { name: 'Fresh Laundry', type: 'Laundry',
-    segment: 'Within 100 m of UM gate', location: 'South Gate', zone: 'Campus edge', accountName: 'Fresh Laundry Sdn Bhd', qrImage: qr }));
-  await denied('a pin needs both coordinates', () => merch2.sdk.updateDoc(merch2.sdk.doc(merch2.db, 'merchants', 'mer2'), { lat: 3.12 }));
+  await denied('a new merchant must upload a logo', () => D.submitApplication(merch2, { name: 'Fresh Laundry', type: 'Laundry',
+    segment: 'Within 100 m of UM gate', location: 'South Gate', zone: 'Campus edge', accountName: 'Fresh Laundry Sdn Bhd', qrImage: qr, lat: 3.1099, lng: 101.6586 }));
+  await denied('a new merchant must pin its exact location', () => D.submitApplication(merch2, { name: 'Fresh Laundry', type: 'Laundry',
+    segment: 'Within 100 m of UM gate', location: 'South Gate', zone: 'Campus edge', accountName: 'Fresh Laundry Sdn Bhd', qrImage: qr, logo }));
+  await ok('second merchant submits application with logo and pin', () => D.submitApplication(merch2, { name: 'Fresh Laundry', type: 'Laundry',
+    segment: 'Within 100 m of UM gate', location: 'South Gate', zone: 'Campus edge', accountName: 'Fresh Laundry Sdn Bhd', qrImage: qr, logo, lat: 3.1099, lng: 101.6586 }));
+  await denied('a logo must be an image data URL', () => D.setMerchantLogo(merch2, 'javascript:alert(1)'));
+  await denied('a pin needs both coordinates', () => merch2.sdk.updateDoc(merch2.sdk.doc(merch2.db, 'merchants', 'mer2'), { lat: 3.12, lng: merch2.sdk.deleteField ? merch2.sdk.deleteField() : null }));
   await denied('merchant cannot verify itself', () => D.reviewMerchant(merch, 'mer1', 'verified'));
   await denied('students cannot see unverified merchants', () => D.getMerchant(stuA, 'mer1'));
-  await denied('student cannot pay an unverified merchant', () => D.createTx(stuA, { merchant: { id: 'mer1', name: 'Kopi Kolej' }, cents: 850 }));
-  await ok('MPP reads the private QR and verifies the merchant', async () => {
+  await denied('student cannot check in at an unverified merchant', () => D.checkIn(stuA, { id: 'mer1', name: 'Kopi Kolej' }, { lat: 3.1268, lng: 101.6553, accuracy: 10 }, rules));
+  await ok('MPP reads the private QR and verifies the merchants', async () => {
     const p = await D.getMerchantPrivate(mpp, 'mer1'); eq(p.qrImage.length, qr.length, 'qr length');
     await D.reviewMerchant(mpp, 'mer1', 'verified', 'Names match');
     await D.reviewMerchant(mpp, 'mer2', 'verified', 'Names match');
   });
-  await ok('students see verified merchants', async () => eq((await D.listVerifiedMerchants(stuA)).length, 2, 'merchant count'));
+  await ok('students see verified merchants with their logos', async () => { const l = await D.listVerifiedMerchants(stuA); eq(l.length, 2, 'merchant count'); eq(!!l[0].logo, true, 'logo'); });
   await denied('verified merchant cannot rename itself without review', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'merchants', 'mer1'), { name: 'Other' }));
   await ok('merchant completes staff readiness', () => D.setReadiness(merch));
+  await ok('verified merchant updates its logo', () => D.setMerchantLogo(merch, 'data:image/png;base64,' + 'C'.repeat(500)));
   await ok('verified merchant moves its map pin', async () => {
     await D.setMerchantPin(merch, 3.1270, 101.6551);
     const m = await D.getMerchant(stuA, 'mer1'); eq(m.lat, 3.127, 'lat'); eq(m.lng, 101.6551, 'lng');
@@ -104,39 +111,43 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await denied('verified merchant cannot pin itself off campus', () => D.setMerchantPin(merch, 3.2, 101.6551));
   await denied('another merchant cannot move someone else’s pin', () => merch2.sdk.updateDoc(merch2.sdk.doc(merch2.db, 'merchants', 'mer1'), { lat: 3.12, lng: 101.65 }));
 
-  log('Pay and confirm');
-  const kopi = { id: 'mer1', name: 'Kopi Kolej' };
-  let tx1;
-  await ok('student creates a transaction QR', async () => { tx1 = await D.createTx(stuA, { merchant: kopi, cents: 1050 }); });
-  await denied('student cannot mislabel their name on a QR', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'txRequests', 'fake1'), {
-    studentUid: 'stuA', studentName: 'Someone Else', studentCollege: 'KK3', merchantId: 'mer1', merchantName: 'Kopi Kolej', cents: 500,
-    status: 'pending', createdAt: stuA.sdk.serverTimestamp() }));
-  await denied('another merchant cannot read the QR', () => D.getTx(merch2, tx1));
-  await denied('student cannot confirm their own purchase', async () => D.confirmTx(stuA, await D.getTx(stuA, tx1), rules));
-  await ok('merchant confirms and the student earns 21 points (RM10.50 × 2)', async () => {
-    const t = await D.getTx(merch, tx1); const pts = await D.confirmTx(merch, t, rules); eq(pts, 21);
-    eq((await D.getProfile(stuA)).points, 21, 'balance');
+  log('Avatars');
+  await ok('student saves an avatar', () => D.saveAvatar(stuA, { skin: 3, hair: 'tudung', hairColor: 2, outfit: 'baju', outfitColor: 1, hat: 'none', bag: 'tote', accent: 2, glasses: true, freckles: false, face: 'smile', bg: 1 }));
+  await denied('an avatar cannot carry extra data', () => D.saveAvatar(stuA, Object.fromEntries(Array.from({ length: 20 }, (_, i) => ['k' + i, i]))));
+  stuA.profile = await D.getProfile(stuA);
+
+  log('Check-ins');
+  const kopi = { id: 'mer1', name: 'Kopi Kolej', lat: 3.1270, lng: 101.6551 };
+  const laundry = { id: 'mer2', name: 'Fresh Laundry', lat: 3.1099, lng: 101.6586 };
+  const at = (m) => ({ lat: m.lat + 0.0001, lng: m.lng - 0.0001, accuracy: 12 });
+  const pts = async (c) => (await D.getProfile(c)).points;
+  await denied('student 1 km away cannot check in', () => D.checkIn(stuA, kopi, { lat: kopi.lat + 0.01, lng: kopi.lng, accuracy: 10 }, rules));
+  await ok('student at the shop checks in and earns 10 points', async () => {
+    const before = await pts(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); eq(await pts(stuA), before + 10, 'balance');
   });
-  await denied('merchant cannot award inflated points', async () => {
-    const t = await D.createTx(stuA, { merchant: kopi, cents: 700 });
-    await D.confirmTx(merch, await D.getTx(merch, t), { ...rules, baseRate: 50 });
+  await ok('the check-in counts for KK3 on the leaderboard', async () => {
+    const s = (await mpp.sdk.getDoc(mpp.sdk.doc(mpp.db, 'stats', 'campus'))).data(); eq(s.checkins, 1); eq(s.colleges.KK3, 1);
   });
-  await denied('the same QR cannot be confirmed twice', async () => D.confirmTx(merch, { ...(await D.getTx(merch, tx1)), status: 'pending' }, rules));
-  await ok('campus stats count the check-in for KK3', async () => {
-    const s = (await mpp.sdk.getDoc(mpp.sdk.doc(mpp.db, 'stats', 'campus'))).data();
-    eq(s.checkins, 1); eq(s.cents, 1050); eq(s.colleges.KK3, 1);
+  await ok('the merchant sees the visit, with the student’s avatar', async () => {
+    const q = merch.sdk.query(merch.sdk.collection(merch.db, 'visits'), merch.sdk.where('merchantId', '==', 'mer1'));
+    const v = (await merch.sdk.getDocs(q)).docs.map((d) => d.data()); eq(v.length, 1); eq(v[0].name, 'Aina Nadhirah'); eq(v[0].avatar.hair, 'tudung');
   });
-  let txOld;
-  await ok('an expired QR cannot be confirmed (after 5 minutes)', async () => {
-    txOld = await D.createTx(stuA, { merchant: kopi, cents: 500 });
+  await denied('another merchant cannot see that visit', () => merch2.sdk.getDocs(merch2.sdk.query(merch2.sdk.collection(merch2.db, 'visits'), merch2.sdk.where('merchantId', '==', 'mer1'))));
+  stuA.profile = await D.getProfile(stuA);
+  await ok('the first check-in is recorded for referrals', async () => eq(!!stuA.profile.firstVisit, true));
+  await denied('cannot check in at the same shop again within 3 hours', async () => { tick(60 * 60 * 1000); stuA.profile = await D.getProfile(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); });
+  await denied('cannot award yourself extra check-in points', async () => { stuA.profile = await D.getProfile(stuA); await D.checkIn(stuA, laundry, at(laundry), { ...rules, checkinPoints: 500 }); });
+  await denied('cannot record a visit for another student', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'visits', 'ci_stuA_mer2_9'), { uid: 'stuA', name: 'Aina Nadhirah', college: 'KK3', merchantId: 'mer2', merchantName: 'x', at: stuB.sdk.serverTimestamp(), day: D.dayKey(T), month: D.monthKey(T), deal: '', points: 10, acc: 5 }));
+  await ok('after 3 hours the student can check in at the same shop again', async () => {
     if (!canSetTime) { log('      (skipped: the emulator clock cannot be moved)'); return; }
-    tick(6 * 60 * 1000);
-    try { await D.confirmTx(merch, await D.getTx(merch, txOld), rules); throw new Error('confirmed an expired QR'); }
-    catch (e) { if (e.code !== 'permission-denied') throw e; }
+    tick(3 * 60 * 60 * 1000); stuA.profile = await D.getProfile(stuA);
+    const before = await pts(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); eq(await pts(stuA), before + 10);
   });
-  await ok('student can cancel a pending QR', async () => { await D.cancelTx(stuA, txOld); });
-  await denied('purchase over the cap is refused', () => D.createTx(stuA, { merchant: kopi, cents: 60000 }));
-  await ok('student records first purchase for referrals', () => D.markFirstTx(stuA, tx1));
+  await denied('the daily limit of check-ins is enforced', async () => {
+    await D.saveConfig(mpp, 'rules', { checkinDailyCap: canSetTime ? 2 : 1 }); stuA.profile = await D.getProfile(stuA);
+    try { await D.checkIn(stuA, laundry, at(laundry), { ...rules, checkinDailyCap: 2 }); } finally { await D.saveConfig(mpp, 'rules', { checkinDailyCap: 5 }); }
+  });
+  await ok('with the normal limit the same check-in works', async () => { const before = await pts(stuA); await D.checkIn(stuA, laundry, at(laundry), rules); eq(await pts(stuA), before + 10); });
 
   log('Earning');
   stuA.profile = await D.getProfile(stuA);
@@ -154,51 +165,44 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await ok('wrong lesson answer earns nothing', async () => eq(await D.answerLesson(stuA, 0, 0, rules), 'wrong'));
   await ok('right lesson answer earns 50', async () => eq(await D.answerLesson(stuA, 0, 1, rules), 'correct'));
   await ok('lesson cannot be repeated', async () => eq(await D.answerLesson(stuA, 0, 1, rules), 'done'));
-  await ok('balance is 121', async () => eq((await D.getProfile(stuA)).points, 121));
 
   log('Referrals');
   stuB.profile = await D.getProfile(stuB);
   await ok('student B enters A’s referral code', () => D.applyInviterCode(stuB, stuA.profile.referralCode));
   await denied('B cannot change inviter later', () => D.updateProfile(stuB, { inviterUid: 'mpp1', inviterCode: stuA.profile.referralCode }));
   stuA.profile = await D.getProfile(stuA);
-  await denied('A cannot claim before B’s first purchase', () => D.claimInviterBonus(stuA, 'stuB', rules));
-  await denied('B cannot claim friend bonus before first purchase', () => D.claimFriendBonus(stuB, rules));
-  let txB;
-  await ok('B buys at Fresh Laundry and it is confirmed', async () => {
-    txB = await D.createTx(stuB, { merchant: { id: 'mer2', name: 'Fresh Laundry' }, cents: 600 });
-    await D.confirmTx(merch2, await D.getTx(merch2, txB), rules);
-    await D.markFirstTx(stuB, txB);
-  });
+  await denied('A cannot claim before B’s first check-in', () => D.claimInviterBonus(stuA, 'stuB', rules));
+  await denied('B cannot claim friend bonus before first check-in', () => D.claimFriendBonus(stuB, rules));
+  await ok('B checks in at Fresh Laundry', async () => { stuB.profile = await D.getProfile(stuB); await D.checkIn(stuB, laundry, at(laundry), rules); });
   await ok('B claims the 100-point friend bonus', () => D.claimFriendBonus(stuB, rules));
   await denied('B cannot claim the friend bonus twice', () => D.claimFriendBonus(stuB, rules));
   await ok('A sees B as a qualified referral', async () => { const r = await D.myReferrals(stuA); eq(r.length, 1); eq(r[0].qualified, true); });
   await ok('A claims the 100-point inviter bonus', () => D.claimInviterBonus(stuA, 'stuB', rules));
   stuA.profile = await D.getProfile(stuA);
   await denied('A cannot claim the same friend twice', () => D.claimInviterBonus(stuA, 'stuB', rules));
-  await ok('A’s balance is 221 and refCount is 1', async () => { eq(stuA.profile.points, 221); eq(stuA.profile.refCount, 1); });
+  await ok('A’s refCount is 1', async () => { eq(stuA.profile.refCount, 1); });
 
   log('Rewards, vouchers, welfare');
   await ok('MPP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
     cost: 200, valueCents: 200, stock: 2, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' }));
   let vid;
   await ok('A redeems the reward for 200 points', async () => {
-    const rw = (await D.listRewards(stuA)).find((r) => r.id === 'kopi-rm2');
-    vid = await D.redeemReward(stuA, rw); eq((await D.getProfile(stuA)).points, 21);
+    const before = await pts(stuA); const rw = (await D.listRewards(stuA)).find((r) => r.id === 'kopi-rm2');
+    vid = await D.redeemReward(stuA, rw); eq(await pts(stuA), before - 200);
   });
-  await denied('A cannot redeem without enough points', async () => D.redeemReward(stuA, (await D.listRewards(stuA)).find((r) => r.id === 'kopi-rm2')));
   await denied('another merchant cannot see the voucher', () => D.findVoucher(merch2, 'UMV1:' + vid));
   await ok('Kopi Kolej looks up the voucher by short code and marks it used', async () => {
     const v = await D.findVoucher(merch, vid.slice(0, 8).toUpperCase()); eq(v.id, vid);
     await D.useVoucher(merch, vid);
   });
   await denied('a used voucher cannot be used again', () => D.useVoucher(merch, vid));
-  await ok('A donates 20 points to the welfare pool', async () => {
-    await D.donatePoints(stuA, 20); eq((await D.getProfile(stuA)).points, 1);
-    eq((await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'stats', 'welfare'))).data().points, 20);
+  await ok('A donates 10 points to the welfare pool', async () => {
+    const before = await pts(stuA); await D.donatePoints(stuA, 10); eq(await pts(stuA), before - 10);
+    eq((await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'stats', 'welfare'))).data().points, 10);
   });
-  await denied('A cannot donate more points than they have', () => D.donatePoints(stuA, 50));
+  await denied('A cannot donate more points than they have', async () => D.donatePoints(stuA, (await pts(stuA)) + 1));
 
-  log('Offers and off-peak deals');
+  log('Offers and quiet-hour bonuses');
   merch.merchantName = 'Kopi Kolej';
   await ok('merchant proposes an offer; MPP approves it', async () => {
     await D.createOffer(merch, { title: 'Double points Tuesdays', type: 'Extra points', endDate: '2026-12-31' });
@@ -206,33 +210,23 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     eq((await D.getMerchant(stuA, 'mer1')).offer, 'Double points Tuesdays');
   });
   let deal;
-  await ok('merchant creates an off-peak deal and sets seat count; MPP approves', async () => {
-    await D.createDeal(merch, { title: 'Quiet afternoon', startMin: canSetTime ? 14 * 60 : 0, endMin: canSetTime ? 17 * 60 : 1440,
-      threshold: 60, bonus: 40, minSpendCents: 500, limit: 1 });
-    await D.setOccupancy(merch, 40, 10);
+  await ok('merchant creates a quiet-hour bonus and sets seats; MPP approves', async () => {
+    await D.createDeal(merch, { title: 'Quiet afternoon', startMin: canSetTime ? 14 * 60 : 0, endMin: canSetTime ? 17 * 60 : 1440, threshold: 60, bonus: 40, limit: 1 });
+    await D.setOccupancy(merch, 40, 39);
     const [d] = await D.pendingDeals(mpp); await D.reviewDeal(mpp, d.id, 'approved'); deal = { ...d, status: 'approved' };
   });
-  await ok('deal shows as available at 15:00 when the café is quiet', async () => {
-    if (canSetTime) { T = Date.UTC(2026, 10, 10, 7, 0, 0); setTime(T); } else T = Date.now();
-    eq(D.dealStatus(deal, await D.getMerchant(stuA, 'mer1'), 0, T), 'Available');
+  if (canSetTime) { T = Date.UTC(2026, 10, 10, 7, 0, 0); setTime(T); }
+  const farah = gmailer; farah.profile = await D.getProfile(farah);
+  await denied('no quiet-hour bonus while the café is busy', () => D.checkIn(farah, kopi, at(kopi), rules, deal));
+  await ok('when the café is quiet, B checks in and gets +10 +40', async () => {
+    await D.setOccupancy(merch, 40, 10);
+    eq(D.dealStatus(deal, await D.getMerchant(stuB, 'mer1'), 0, T), 'Available');
+    stuB.profile = await D.getProfile(stuB); const before = await pts(stuB);
+    await D.checkIn(stuB, kopi, at(kopi), rules, deal); eq(await pts(stuB), before + 50);
   });
-  let txDeal;
-  await ok('student pays with the deal attached; merchant confirms; student claims +40', async () => {
-    txDeal = await D.createTx(stuA, { merchant: kopi, cents: 800, dealId: deal.id });
-    await D.confirmTx(merch, await D.getTx(merch, txDeal), rules);
-    stuA.profile = await D.getProfile(stuA);
-    eq(await D.claimOffpeak(stuA, await D.getTx(stuA, txDeal), deal), 40);
-    eq((await D.getProfile(stuA)).points, 1 + 16 + 40);
-  });
-  await denied('the deal cannot be claimed twice the same day', async () => D.claimOffpeak(stuA, await D.getTx(stuA, txDeal), deal));
-  await denied('B cannot claim after the daily limit (1) is used', async () => {
-    const t = await D.createTx(stuB, { merchant: kopi, cents: 900, dealId: deal.id });
-    await D.confirmTx(merch, await D.getTx(merch, t), rules);
-    await D.claimOffpeak(stuB, await D.getTx(stuB, t), deal);
-  });
-  await denied('student cannot attach a deal when the café is busy', async () => {
-    await D.setOccupancy(merch, 40, 39);
-    await D.createTx(stuA, { merchant: kopi, cents: 800, dealId: deal.id });
+  await denied('the bonus stops after its daily limit (1)', async () => { farah.profile = await D.getProfile(farah); await D.checkIn(farah, kopi, at(kopi), rules, deal); });
+  await ok('the student still gets normal check-in points without the bonus', async () => {
+    farah.profile = await D.getProfile(farah); const before = await pts(farah); await D.checkIn(farah, kopi, at(kopi), rules, null); eq(await pts(farah), before + 10);
   });
 
   log('Missions and MPP tools');
@@ -249,11 +243,12 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   });
   await ok('MPP adjusts points with a note', async () => { await D.adjustPoints(mpp, 'stuB', -5, 'Correction: duplicate'); });
   await denied('MPP adjustment cannot make a balance negative', () => D.adjustPoints(mpp, 'stuB', -100000, 'Too much'));
-  await ok('MPP lists users, surveys, month transactions', async () => {
+  await ok('MPP lists users and this month’s check-ins', async () => {
     eq((await D.listUsers(mpp)).length >= 4, true, 'users');
-    eq((await D.monthTransactions(mpp, D.monthKey(T))).length >= 3, true, 'transactions');
+    eq((await D.monthVisits(mpp, D.monthKey(T))).length >= 4, true, 'visits');
   });
-  await denied('merchant cannot list all transactions', () => D.monthTransactions(merch, D.monthKey(T)));
+  await denied('merchant cannot list every check-in', () => D.monthVisits(merch, D.monthKey(T)));
+  await ok('MPP can flag a visit after review', async () => { const [v] = await D.monthVisits(mpp, D.monthKey(T)); await D.flagVisit(mpp, v.id, 'ok', 'Reviewed'); });
   await ok('MPP adds another MPP reviewer by email', async () => {
     const a = await D.getConfig(mpp, 'access'); await D.saveConfig(mpp, 'access', { ...a, mppEmails: ['reviewer@um.edu.my'] });
   });

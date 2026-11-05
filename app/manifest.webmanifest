@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "UM Connect+",
-  "short_name": "UM Connect+",
-  "description": "Pay cashless on campus and earn points. For Universiti Malaya students, merchants and MPP.",
+  "name": "Kampus Kita+",
+  "short_name": "Kampus Kita+",
+  "description": "Ini kampus kita. Semua ada. Campus merchants, events, check-ins and rewards for Universiti Malaya students.",
   "lang": "en-MY",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -10,14 +10,51 @@
   "orientation": "portrait",
   "background_color": "#F4F7FA",
   "theme_color": "#F4F7FA",
-  "categories": ["finance", "education", "lifestyle"],
+  "categories": [
+    "lifestyle",
+    "education",
+    "social"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Show my code", "url": "./#/pay", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Scan a student", "url": "./#/scan", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Check in",
+      "url": "./#/checkin",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Niaga Kita map",
+      "url": "./#/explore",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

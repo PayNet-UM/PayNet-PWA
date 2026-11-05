@@ -9,7 +9,7 @@ export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'],
-  ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Reconciliation', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
+  ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
   ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
@@ -20,7 +20,7 @@ const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchang
 
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b> MPP</span></a>
+    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><a class="brand" href="#/overview"><img src="icons/icon-192.png" alt=""><span>Kampus Kita<b>+</b> MPP</span></a>
       <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button>
       <nav aria-label="MPP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
       <div class="who">${langToggleHTML('on-dark')}<b style="color:#fff;display:block;margin-top:12px">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
@@ -46,39 +46,39 @@ async function refreshCounts(app) {
 
 // ------------------------------------------------------------- overview
 async function overviewRender(app) {
-  if (!(await D.programmeReady(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
-  const [users, merchants, txs, welfare, campus] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthTransactions(app.ctx, month),
+  if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
+  const [users, merchants, visits, welfare, campus] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
     app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'campus'))]);
-  const students = users.filter((u) => u.role === 'student'); const conf = txs.filter((t) => t.status === 'confirmed');
-  const active = new Set(conf.map((t) => t.studentUid)); const verified = merchants.filter((m) => m.status === 'verified');
+  const students = users.filter((u) => u.role === 'student'); const conf = visits;
+  const active = new Set(conf.map((t) => t.uid)); const verified = merchants.filter((m) => m.status === 'verified');
   const pending = merchants.filter((m) => m.status === 'pending');
   const days = [...new Set(Array.from({ length: 31 }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`))].filter((d) => d.slice(0, 7) === month && !Number.isNaN(Date.parse(d)) && d <= D.dayKey());
-  const perDay = days.map((d) => conf.filter((t) => t.confirmDay === d).length);
+  const perDay = days.map((d) => conf.filter((t) => t.day === d).length);
   const byMerchant = {}; conf.forEach((t) => { byMerchant[t.merchantName] = (byMerchant[t.merchantName] || 0) + 1; });
   const top = Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const today = new Date(Date.now() + 8 * 3600000).getUTCDate();
   return `<div class="page-title row between"><div><h1>Programme overview</h1><p>PayNet merchant list is due on the 20th. ${today <= 20 && month === D.monthKey() ? `${20 - today} days left this month.` : ''}</p></div>${monthPicker()}</div>
     <div class="stats">
-      <div class="stat"><div class="k">Confirmed purchases</div><div class="v num">${n(conf.length)}</div><div class="s">${rm(conf.reduce((s, t) => s + t.cents, 0))} in ${monthLabel(month)}</div></div>
+      <div class="stat"><div class="k">Check-ins</div><div class="v num">${n(conf.length)}</div><div class="s">in ${monthLabel(month)}</div></div>
       <div class="stat"><div class="k">Active students</div><div class="v num">${n(active.size)}</div><div class="s">of ${n(students.length)} signed up</div></div>
       <div class="stat"><div class="k">Verified merchants</div><div class="v num">${n(verified.length)}</div><div class="s">${pending.length} waiting for review</div></div>
       <div class="stat"><div class="k">Welfare fund</div><div class="v num">${n(welfare.exists() ? welfare.data().points : 0)}</div><div class="s">points donated</div></div></div>
     <div class="cols main-side" style="margin-top:16px">
-      <section class="card pad-lg"><div class="row between"><h2>Purchases per day</h2><span class="faint">${monthLabel(month)}</span></div>
+      <section class="card pad-lg"><div class="row between"><h2>Check-ins per day</h2><span class="faint">${monthLabel(month)}</span></div>
         <div style="margin-top:12px">${perDay.length ? barChart(perDay, days.map((d) => String(+d.slice(8))), { highlight: days.indexOf(D.dayKey()) }) : '<p class="faint">No days yet.</p>'}</div></section>
       <section class="card pad-lg"><h2>Needs your attention</h2><div class="list" style="margin-top:8px">
         <a class="item" href="#/merchants" style="color:inherit"><span class="tile-icon orange">${icon('store')}</span><div class="grow"><h3>${pending.length} merchant${pending.length === 1 ? '' : 's'} to verify</h3><p>Check QR names before the 20th</p></div>${icon('chevron-right')}</a>
         <a class="item" href="#/approvals" style="color:inherit"><span class="tile-icon">${icon('list-checks')}</span><div class="grow"><h3>Offers, deals and missions</h3><p>Waiting for approval</p></div>${icon('chevron-right')}</a>
         <a class="item" href="#/paynet" style="color:inherit"><span class="tile-icon mint">${icon('file-spreadsheet')}</span><div class="grow"><h3>Export Lampiran 1</h3><p>${verified.length} merchants with QR images</p></div>${icon('chevron-right')}</a></div></section></div>
     <div class="cols two" style="margin-top:16px">
-      <section class="card pad-lg"><h2>Top merchants this month</h2><table class="data" style="margin-top:8px"><tbody>${top.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No purchases yet.</td></tr>'}</tbody></table></section>
+      <section class="card pad-lg"><h2>Top merchants this month</h2><table class="data" style="margin-top:8px"><tbody>${top.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No check-ins yet.</td></tr>'}</tbody></table></section>
       <section class="card pad-lg"><h2>Colleges, all time</h2><table class="data" style="margin-top:8px"><tbody>${Object.entries((campus.exists() && campus.data().colleges) || {}).sort((a, b) => b[1] - a[1]).slice(0, 6)
-        .map(([k, v]) => `<tr><td>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No purchases yet.</td></tr>'}</tbody></table></section></div>`;
+        .map(([k, v]) => `<tr><td>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No check-ins yet.</td></tr>'}</tbody></table></section></div>`;
 }
 function setupHTML() {
   return `<div class="page-title"><h1>Set up the programme</h1><p>This creates the points rules, reward catalogue, leaderboard and welfare counters in your Firebase project. Run it once.</p></div>
     <div class="card pad-lg stack"><label class="field">Student email domains<input id="domains" value="siswa.um.edu.my, um.edu.my, gmail.com"><small>Only these domains can sign up as students. Keep gmail.com if students sign in with Google; each matric number can only register once.</small></label>
-      <button class="btn primary" id="init">Set up UM Connect+</button></div>`;
+      <button class="btn primary" id="init">Set up Kampus Kita+</button></div>`;
 }
 function overviewMount(root, app) {
   bindMonth(root, app);
@@ -107,7 +107,7 @@ function merchantsMount(root, app) {
   $$('[data-review]', root).forEach((b) => {
     b.onclick = async () => {
       const m = app._m.find((x) => x.id === b.dataset.review); const p = await D.getMerchantPrivate(app.ctx, m.id).catch(() => ({}));
-      const el = sheet(`<h2>${esc(m.name)}</h2><p class="muted">${esc(m.type)} · ${esc(m.segment)} · ${esc(m.location)}</p>
+      const el = sheet(`<div class="row" style="gap:12px">${m.logo ? `<img class="logo big" src="${m.logo}" alt="${esc(m.name)} logo">` : '<span class="badge bad">No logo</span>'}<div><h2>${esc(m.name)}</h2><p class="muted">${esc(m.type)} · ${esc(m.segment)} · ${esc(m.location)}</p></div></div>
         <div class="cols two" style="margin-top:14px"><div>${p && p.qrImage ? `<a href="${p.qrImage}" target="_blank" rel="noopener"><img class="qr-large" src="${p.qrImage}" alt="Uploaded DuitNow QR for ${esc(m.name)}"></a>` : '<div class="card empty">No QR image uploaded</div>'}</div>
           <table class="data"><tbody><tr><td class="faint">Account name on QR</td><td><b>${esc(p?.accountName || '—')}</b></td></tr><tr><td class="faint">Phone</td><td>${esc(p?.phone || '—')}</td></tr>
             <tr><td class="faint">Ambassador</td><td>${esc(p?.ambassadorId || '—')}</td></tr><tr><td class="faint">Zone</td><td>${esc(m.zone || '—')}</td></tr>
@@ -116,7 +116,7 @@ function merchantsMount(root, app) {
             <tr><td class="faint">Sent</td><td>${fmtDateTime(m.submittedAt)}</td></tr>${m.reviewedBy ? `<tr><td class="faint">Last review</td><td>${esc(m.reviewedBy)}, ${fmtDate(m.reviewedAt)}</td></tr>` : ''}</tbody></table></div>
         ${hasPin(m) ? `<div id="rv-map" class="mmap small" style="margin-top:14px;border-radius:14px" aria-label="Where ${esc(m.name)} placed its shop"></div>` : ''}
         <form id="rv" class="stack" style="margin-top:16px">
-          ${['The account name on the QR matches the business', 'The business is on campus or within 100 m of a UM gate', 'The QR image is clear enough for PayNet'].map((c) => `<label class="check"><input type="checkbox" name="c"> ${c}</label>`).join('')}
+          ${['The account name on the QR matches the business', 'The map pin is at the shop (on campus or within 100 m of a UM gate)', 'The QR image is clear enough for PayNet'].map((c) => `<label class="check"><input type="checkbox" name="c"> ${c}</label>`).join('')}
           <label class="field">Note to the merchant<input name="note" value="${esc(m.reviewNote || '')}" placeholder="Required if you ask for changes"></label>
           <div class="row end">${m.status !== 'suspended' && m.status === 'verified' ? '<button type="button" class="btn warn" data-s="suspended">Suspend</button>' : ''}
             <button type="button" class="btn" data-s="rejected">Ask for changes</button><button type="button" class="btn go" data-s="verified">Verify merchant</button></div></form>`, { wide: true });
@@ -138,13 +138,13 @@ async function approvalsRender(app) {
   const [offers, deals, claims] = await Promise.all([D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx)]);
   app._ap = { offers, deals, claims };
   const empty = (t) => `<div class="empty" style="padding:16px">${t}</div>`;
-  return `<div class="page-title"><h1>Approvals</h1><p>Merchant offers and quiet-hour deals go live when you approve them. Mission claims add points to the student.</p></div>
+  return `<div class="page-title"><h1>Approvals</h1><p>Merchant offers and quiet-hour bonuses go live when you approve them. Mission claims add points to the student.</p></div>
     <div class="cols two">
       <section class="card pad-lg"><h2>Offers (${offers.length})</h2><div class="list" style="margin-top:6px">${offers.map((o) => `<div class="item"><div class="grow"><h3>${esc(o.title)}</h3><p>${esc(o.merchantName)} · ${esc(o.type)} · until ${esc(o.endDate)}</p></div>
         <button class="btn small" data-offer="${esc(o.id)}" data-s="rejected">Reject</button><button class="btn small go" data-offer="${esc(o.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No offers waiting.')}</div></section>
-      <section class="card pad-lg"><h2>Quiet-hour deals (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · +${d.bonus} pts × ${d.limit}/day (max ${n(d.bonus * d.limit)} pts a day) · spend ${rm(d.minSpendCents)}+</p></div>
+      <section class="card pad-lg"><h2>Quiet-hour bonuses (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · +${d.bonus} pts × ${d.limit}/day (max ${n(d.bonus * d.limit)} pts a day)</p></div>
         <button class="btn small" data-deal="${esc(d.id)}" data-s="rejected">Reject</button><button class="btn small go" data-deal="${esc(d.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No deals waiting.')}</div></section></div>
-    <section class="card pad-lg" style="margin-top:16px"><h2>Mission claims (${claims.length})</h2><p class="faint">Progress is counted from the student’s merchant-confirmed purchases.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
+    <section class="card pad-lg" style="margin-top:16px"><h2>Mission claims (${claims.length})</h2><p class="faint">Progress is counted from the student’s check-ins.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
       <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section>`;
 }
 function approvalsMount(root, app) {
@@ -219,47 +219,51 @@ function paynetMount(root, app) {
   $$('[data-del2]', root).forEach((b) => { b.onclick = async () => { if (await confirmSheet('Delete this row?', 'It will be removed from this month’s Lampiran 2.', 'Delete', true)) { await D.deleteManualVolume(app.ctx, b.dataset.del2); app.render(); } }; });
 }
 
-// ------------------------------------------------------------- reconciliation
+// ------------------------------------------------------------- activity check: check-ins vs PayNet counts, unusual patterns
 async function reconRender(app) {
-  const [txs, counts, merchants] = await Promise.all([D.monthTransactions(app.ctx, month), D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx)]);
-  const conf = txs.filter((t) => t.status === 'confirmed'); app._rc = { conf, merchants };
-  const per = {}; conf.forEach((t) => { per[t.merchantId] = (per[t.merchantId] || 0) + 1; });
-  const verified = merchants.filter((m) => m.status === 'verified');
-  // exceptions: unusually large, repeated same student+merchant same day, or confirmed within 2 minutes of the previous one
-  const ex = []; const seen = {};
-  [...conf].sort((a, b) => (toMs(a.confirmedAt) || 0) - (toMs(b.confirmedAt) || 0)).forEach((t) => {
-    const k = `${t.studentUid}|${t.merchantId}|${t.confirmDay}`; seen[k] = (seen[k] || []); const prev = seen[k][seen[k].length - 1];
-    if (t.cents >= 10000) ex.push([t, `Large purchase (${rm(t.cents)})`]);
-    if (seen[k].length >= 2) ex.push([t, `${seen[k].length + 1}th purchase by this student here today`]);
-    else if (prev && (toMs(t.confirmedAt) - toMs(prev.confirmedAt)) < 120000) ex.push([t, 'Confirmed within 2 minutes of the previous one']);
-    seen[k].push(t);
+  const [visits, counts, merchants] = await Promise.all([D.monthVisits(app.ctx, month), D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx)]);
+  app._rc = { visits, merchants };
+  const per = {}; visits.forEach((v) => { per[v.merchantId] = (per[v.merchantId] || 0) + 1; });
+  const verified = merchants.filter((m) => m.status === 'verified'); const byId = Object.fromEntries(merchants.map((m) => [m.id, m]));
+  // unusual: checking in at shops too far apart too quickly, or with a very rough location fix
+  const ex = []; const byStudent = {};
+  [...visits].sort((a, b) => (toMs(a.at) || 0) - (toMs(b.at) || 0)).forEach((v) => {
+    const prev = byStudent[v.uid]; byStudent[v.uid] = v;
+    if ((v.acc || 0) > 80) ex.push([v, `Rough location (±${v.acc} m)`]);
+    if (prev && prev.merchantId !== v.merchantId) {
+      const a = byId[prev.merchantId], b = byId[v.merchantId]; const mins = ((toMs(v.at) || 0) - (toMs(prev.at) || 0)) / 60000;
+      if (a && b && a.lat && b.lat) {
+        const km = Math.hypot((a.lat - b.lat) * 111, (a.lng - b.lng) * 111);
+        if (mins > 0 && km / (mins / 60) > 12 && km > 0.4) ex.push([v, `${km.toFixed(1)} km from the last shop in ${Math.round(mins)} min`]);
+      }
+    }
   });
-  return `<div class="page-title row between"><div><h1>Reconciliation</h1><p>Compare purchases confirmed in the app with PayNet’s monthly counts, and review unusual activity before reporting.</p></div>${monthPicker()}</div>
-    <section class="card pad-lg"><div class="row between"><h2>App vs PayNet, ${monthLabel(month)}</h2><div class="row"><button class="btn small" id="imp">${icon('upload')} Import PayNet CSV</button><button class="btn small" id="exp">${icon('download')} Export</button></div></div>
+  return `<div class="page-title row between"><div><h1>Activity check</h1><p>Compare check-ins with PayNet’s monthly DuitNow QR counts, and review unusual check-ins before reporting.</p></div>${monthPicker()}</div>
+    <section class="card pad-lg"><div class="row between"><h2>Check-ins vs PayNet, ${monthLabel(month)}</h2><div class="row"><button class="btn small" id="imp">${icon('upload')} Import PayNet CSV</button><button class="btn small" id="exp">${icon('download')} Export</button></div></div>
       <p class="faint">CSV columns: merchant name, transaction count. Names are matched to verified merchants.</p>
-      <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Merchant</th><th class="r">Confirmed in app</th><th class="r">PayNet count</th><th class="r">App share</th></tr></thead><tbody>
+      <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Merchant</th><th class="r">Check-ins</th><th class="r">PayNet transactions</th><th class="r">Transactions per check-in</th></tr></thead><tbody>
       ${verified.map((m) => { const c = counts.find((x) => x.merchantId === m.id); const a = per[m.id] || 0;
-        return `<tr><td>${esc(m.name)}</td><td class="r num">${n(a)}</td><td class="r num">${c ? n(c.count) : '<span class="faint">—</span>'}</td><td class="r num">${c && c.count ? Math.round((a / c.count) * 100) + '%' : '—'}</td></tr>`; }).join('') || '<tr><td colspan="4" class="faint">No verified merchants.</td></tr>'}
-      <tr><td><b>Total</b></td><td class="r num"><b>${n(conf.length)}</b></td><td class="r num"><b>${n(counts.reduce((s, c) => s + c.count, 0))}</b></td><td></td></tr></tbody></table></div>
-      <p class="faint" style="margin-top:8px">App share is how many of the merchant’s DuitNow QR payments students also recorded in UM Connect+. Above 100% means app confirmations exceed what PayNet counted, which needs a check.</p></section>
-    <section class="card pad-lg" style="margin-top:16px"><h2>Unusual activity (${ex.length})</h2><div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>When</th><th>Student</th><th>Merchant</th><th class="r">Amount</th><th>Why flagged</th><th></th></tr></thead><tbody>
-      ${ex.map(([t, why]) => `<tr><td>${fmtDateTime(t.confirmedAt)}</td><td>${esc(t.studentName)}</td><td>${esc(t.merchantName)}</td><td class="r num">${rm(t.cents)}</td><td>${esc(why)}${t.flag ? `<br><span class="badge ${t.flag === 'ok' ? 'ok' : 'bad'}">${t.flag === 'ok' ? 'Checked: fine' : 'Points removed'}</span>` : ''}</td>
-        <td class="r">${t.flag ? '' : `<button class="btn small" data-ok="${esc(t.id)}">Looks fine</button> <button class="btn small warn" data-undo="${esc(t.id)}">Remove points</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="faint">Nothing unusual this month.</td></tr>'}</tbody></table></div></section>`;
+        return `<tr><td>${esc(m.name)}</td><td class="r num">${n(a)}</td><td class="r num">${c ? n(c.count) : '<span class="faint">—</span>'}</td><td class="r num">${c && a ? (c.count / a).toFixed(1) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="4" class="faint">No verified merchants.</td></tr>'}
+      <tr><td><b>Total</b></td><td class="r num"><b>${n(visits.length)}</b></td><td class="r num"><b>${n(counts.reduce((s, c) => s + c.count, 0))}</b></td><td></td></tr></tbody></table></div>
+      <p class="faint" style="margin-top:8px">Kampus Kita+ doesn’t record payments. PayNet’s counts show cashless volume at each listed merchant; check-ins show foot traffic the app brought.</p></section>
+    <section class="card pad-lg" style="margin-top:16px"><h2>Unusual check-ins (${ex.length})</h2><div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>When</th><th>Student</th><th>Merchant</th><th>Why flagged</th><th></th></tr></thead><tbody>
+      ${ex.map(([v, why]) => `<tr><td>${fmtDateTime(v.at)}</td><td>${esc(v.name)}</td><td>${esc(v.merchantName)}</td><td>${esc(why)}${v.flag ? `<br><span class="badge ${v.flag === 'ok' ? 'ok' : 'bad'}">${v.flag === 'ok' ? 'Checked: fine' : 'Points removed'}</span>` : ''}</td>
+        <td class="r">${v.flag ? '' : `<button class="btn small" data-ok="${esc(v.id)}">Looks fine</button> <button class="btn small warn" data-undo="${esc(v.id)}">Remove points</button>`}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">Nothing unusual this month.</td></tr>'}</tbody></table></div></section>`;
 }
 function reconMount(root, app) {
   bindMonth(root, app);
-  const find = (id) => app._rc.conf.find((t) => t.id === id);
-  $$('[data-ok]', root).forEach((b) => { b.onclick = () => busy(b, async () => { await D.flagTx(app.ctx, b.dataset.ok, 'ok', 'Reviewed'); app.render(); }); });
+  const find = (id) => app._rc.visits.find((t) => t.id === id);
+  $$('[data-ok]', root).forEach((b) => { b.onclick = () => busy(b, async () => { await D.flagVisit(app.ctx, b.dataset.ok, 'ok', 'Reviewed'); app.render(); }); });
   $$('[data-undo]', root).forEach((b) => {
     b.onclick = async () => {
-      const t = find(b.dataset.undo);
-      if (!(await confirmSheet('Remove these points?', `${esc(t.studentName)} loses ${t.points} points from the ${rm(t.cents)} purchase at ${esc(t.merchantName)}. This is recorded in their history.`, 'Remove points', true))) return;
-      try { await D.adjustPoints(app.ctx, t.studentUid, -t.points, `Reversed purchase ${t.id.slice(0, 6)} after review`); await D.flagTx(app.ctx, t.id, 'reversed', 'Points removed'); toast('Points removed.'); app.render(); }
+      const v = find(b.dataset.undo);
+      if (!(await confirmSheet('Remove these points?', `${esc(v.name)} loses ${v.points} points from the check-in at ${esc(v.merchantName)}. This is recorded in their history.`, 'Remove points', true))) return;
+      try { await D.adjustPoints(app.ctx, v.uid, -v.points, `Reversed check-in at ${v.merchantName} after review`); await D.flagVisit(app.ctx, v.id, 'reversed', 'Points removed'); toast('Points removed.'); app.render(); }
       catch (e) { toast(e.code === 'permission-denied' ? 'The student has already spent those points. Remove fewer, or note it instead.' : errText(e), true); }
     };
   });
-  $('#exp', root).onclick = () => downloadCSV(`Reconciliation-UM-${month}.csv`, [['Date', 'Time', 'Student', 'College', 'Merchant', 'Amount (RM)', 'Points', 'Flag'],
-    ...app._rc.conf.map((t) => [t.confirmDay, new Date(toMs(t.confirmedAt)).toISOString(), t.studentName, t.studentCollege, t.merchantName, (t.cents / 100).toFixed(2), t.points, t.flag || ''])]);
+  $('#exp', root).onclick = () => downloadCSV(`Check-ins-UM-${month}.csv`, [['Date', 'Time', 'Student', 'College', 'Merchant', 'Points', 'Quiet-hour bonus', 'Location accuracy (m)', 'Flag'],
+    ...app._rc.visits.map((v) => [v.day, new Date(toMs(v.at)).toISOString(), v.name, v.college, v.merchantName, v.points, v.deal ? 'yes' : '', v.acc || '', v.flag || ''])]);
   $('#imp', root).onclick = () => {
     const el = sheet(`<h2>Import PayNet counts</h2><p class="muted">For ${monthLabel(month)}. A CSV with merchant name in the first column and transaction count in the second.</p>
       <input type="file" id="f" accept=".csv,text/csv" style="margin-top:12px"><div id="pv" style="margin-top:12px"></div>`);
@@ -354,12 +358,12 @@ function campaignsMount(root, app) {
 
 // ------------------------------------------------------------- KPIs and surveys
 async function kpisRender(app) {
-  const [users, merchants, txs, surveys, claims, refs, vouchers] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthTransactions(app.ctx, month),
-    D.listSurveys(app.ctx), app.backend.sdk.getDocs(app.backend.sdk.collection(app.ctx.db, 'missionClaims')).then((s) => s.docs.map((d) => d.data())), D.listReferrals(app.ctx), D.listVouchers(app.ctx)]);
+  const [users, merchants, visits, surveys, claims, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
+    D.listSurveys(app.ctx), app.backend.sdk.getDocs(app.backend.sdk.collection(app.ctx.db, 'missionClaims')).then((s) => s.docs.map((d) => d.data())), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
   app._sv = { surveys, users };
-  const students = users.filter((u) => u.role === 'student'); const conf = txs.filter((t) => t.status === 'confirmed');
+  const students = users.filter((u) => u.role === 'student'); const conf = visits;
   const verified = merchants.filter((m) => m.status === 'verified'); const ready = verified.filter((m) => m.ready);
-  const perStudentDays = {}; conf.forEach((t) => { (perStudentDays[t.studentUid] = perStudentDays[t.studentUid] || new Set()).add(t.confirmDay); });
+  const perStudentDays = {}; conf.forEach((t) => { (perStudentDays[t.uid] = perStudentDays[t.uid] || new Set()).add(t.day); });
   const active = Object.keys(perStudentDays).length; const repeat = Object.values(perStudentDays).filter((s) => s.size >= 2).length;
   const sustained = verified.filter((m) => conf.some((t) => t.merchantId === m.id)).length;
   const monthClaims = claims.filter((c) => String(c.week).slice(0, 7) <= month);
@@ -368,13 +372,14 @@ async function kpisRender(app) {
   const kpi = [
     ['Eligible merchants onboarded', n(verified.length), 'Verified merchants on the PayNet list'],
     ['Merchant readiness', verified.length ? Math.round((ready.length / verified.length) * 100) + '%' : '—', `${ready.length} of ${verified.length} finished the staff checklist`],
-    ['Transaction frequency', n(conf.length), `Merchant-confirmed purchases in ${monthLabel(month)}`],
-    ['Sustained activity', `${sustained} of ${verified.length}`, 'Verified merchants with at least one purchase this month'],
-    ['Active participants', n(active), `Students with a confirmed purchase (of ${students.length} signed up)`],
-    ['Repeat usage', active ? Math.round((repeat / active) * 100) + '%' : '—', `${repeat} students bought on 2 or more days`],
+    ['Transaction frequency', n(counts.reduce((s, c) => s + c.count, 0)), `DuitNow QR transactions PayNet counted at listed merchants in ${monthLabel(month)} (import on Activity check)`],
+    ['Campus visits', n(conf.length), `Student check-ins at merchants in ${monthLabel(month)}`],
+    ['Sustained activity', `${sustained} of ${verified.length}`, 'Verified merchants with at least one check-in this month'],
+    ['Active participants', n(active), `Students who checked in this month (of ${students.length} signed up)`],
+    ['Repeat usage', active ? Math.round((repeat / active) * 100) + '%' : '—', `${repeat} students checked in on 2 or more days`],
     ['Campaign conversion', `${monthClaims.filter((c) => c.status === 'approved').length}`, 'Mission claims approved'],
     ['Financial capability', sStu.length ? avgK + '%' : '—', `Average knowledge score across ${sStu.length} student money checks`],
-    ['Referral sign-ups', n(refs.length), `${refs.filter((r) => r.qualified).length} made a first purchase`],
+    ['Referral sign-ups', n(refs.length), `${refs.filter((r) => r.qualified).length} checked in for the first time`],
     ['Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), `${rm(vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + v.valueCents, 0))} paid out`],
   ];
   return `<div class="page-title row between"><div><h1>KPIs and surveys</h1><p>The solution map’s KPIs, calculated live from app records.</p></div>${monthPicker()}</div>
@@ -418,16 +423,17 @@ function peopleMount(root, app) {
 
 // ------------------------------------------------------------- settings
 async function settingsRender(app) {
-  if (!(await D.programmeReady(app.ctx))) await D.initProgramme(app.ctx);
+  if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) await D.initProgramme(app.ctx);
   const [rules, access] = await Promise.all([D.getRules(app.ctx), D.getConfig(app.ctx, 'access')]);
   const field = (k, label, help, min = 0, max = 100000) => `<label class="field">${label}<input name="${k}" type="number" min="${min}" max="${max}" step="1" required value="${rules[k]}"><small>${help}</small></label>`;
   const list = (k) => esc((access?.[k] || []).join('\n'));
   return `<div class="page-title"><h1>Settings</h1><p>Changes apply to new activity only. Past points stay as they were.</p></div>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
-      ${field('baseRate', 'Points per RM1 spent', 'Rounded down per purchase', 1, 20)}${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}
-      <div class="grid-2">${field('referrerBonus', 'Referral: inviter', 'After friend’s first purchase')}${field('friendBonus', 'Referral: new friend', 'After their first purchase')}</div>
-      <div class="grid-2">${field('referralCap', 'Referral bonuses a month', 'Per inviter', 1, 100)}${field('txTtlMin', 'Code expiry (minutes)', 'Time the cashier has to confirm', 1, 30)}</div>
-      <label class="field">Maximum purchase that earns points (RM)<input name="maxTx" type="number" min="1" step="1" required value="${rules.maxTxCents / 100}"></label>
+      <div class="grid-2">${field('checkinPoints', 'Points per check-in', 'At a merchant’s pin', 1, 500)}${field('checkinRadiusM', 'Check-in distance (metres)', 'How close to the pin', 20, 300)}</div>
+      <div class="grid-2">${field('checkinCooldownH', 'Hours between check-ins', 'Same student, same shop', 1, 48)}${field('checkinDailyCap', 'Check-ins that earn per day', 'Per student', 1, 50)}</div>
+      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}</div>
+      <div class="grid-2">${field('referrerBonus', 'Referral: inviter', 'After friend’s first check-in')}${field('friendBonus', 'Referral: new friend', 'After their first check-in')}</div>
+      ${field('referralCap', 'Referral bonuses a month', 'Per inviter', 1, 100)}
       <button class="btn primary">Save rules</button></form>
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
@@ -440,7 +446,7 @@ function settingsMount(root, app) {
   if (!$('#rules', root)) return;
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { baseRate: v('baseRate'), surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), referrerBonus: v('referrerBonus'), friendBonus: v('friendBonus'), referralCap: v('referralCap'), txTtlMin: v('txTtlMin'), maxTxCents: Math.round(+f.maxTx.value * 100) }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { checkinPoints: v('checkinPoints'), checkinRadiusM: v('checkinRadiusM'), checkinCooldownH: v('checkinCooldownH'), checkinDailyCap: v('checkinDailyCap'), surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), referrerBonus: v('referrerBonus'), friendBonus: v('friendBonus'), referralCap: v('referralCap') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#access', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const lines = (k) => f[k].value.split(/[\s,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);

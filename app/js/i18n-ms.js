@@ -873,4 +873,208 @@ Your location isn’t available right now. Drag the pin instead.|Lokasi anda tid
 The map could not load. Check your connection.|Peta tidak dapat dimuatkan. Semak sambungan anda.
 Zoom in|Zum masuk
 Zoom out|Zum keluar
+Kampus Kita|Kampus Kita
+Discover campus merchants and student ventures, find events, check in to collect points, and swap them for rewards. Discover. Connect. Experience. Grow.|Terokai peniaga kampus dan usaha niaga pelajar, cari acara, daftar masuk untuk kumpul mata, dan tukar dengan ganjaran. Teroka. Hubung. Alami. Berkembang.
+Check in nearby|Daftar masuk berdekatan
+Discover. Connect. Experience. Grow.|Teroka. Hubung. Alami. Berkembang.
+Merchant directory, local businesses and student entrepreneurs.|Direktori peniaga, perniagaan tempatan dan usahawan pelajar.
+Events, campus activities, clubs and community programmes.|Acara, aktiviti kampus, kelab dan program komuniti.
+Points, rewards, promotions and loyalty benefits.|Mata, ganjaran, promosi dan manfaat kesetiaan.
+Cashless payments and participating merchants.|Bayaran tanpa tunai dan peniaga yang menyertai.
+Student communities, collaborations and volunteering.|Komuniti pelajar, kolaborasi dan kesukarelawanan.
+Student ventures, innovation and entrepreneurship.|Usaha niaga pelajar, inovasi dan keusahawanan.
+Five days on campus|Lima hari di kampus
+Check in on 5 different days this week|Daftar masuk pada 5 hari berbeza minggu ini
+All events|Semua acara
+Visit Kampus Kita+ merchants and pay cashless. Every check-in counts for your college.|Kunjungi peniaga Kampus Kita+ dan bayar tanpa tunai. Setiap daftar masuk dikira untuk kolej anda.
+Student-run stalls with DuitNow QR. Check in at three for the explorer mission.|Gerai kendalian pelajar dengan DuitNow QR. Daftar masuk di tiga gerai untuk misi penjelajah.
+Niaga|Niaga
+Check in|Daftar masuk
+Campus merchants, local businesses and student entrepreneurs, all checked by MPP.|Peniaga kampus, perniagaan tempatan dan usahawan pelajar, semuanya disemak oleh MPP.
+Student ventures and pop-up stalls run by UM students.|Usaha niaga dan gerai sementara kendalian pelajar UM.
+Student ventures|Usaha niaga pelajar
+Student venture|Usaha niaga pelajar
+Tap Check in to collect your points.|Ketik Daftar masuk untuk kumpul mata anda.
+Demo:|Demo:
+pretend you’re standing at|anggap anda berdiri di
+Finding where you are…|Mencari lokasi anda…
+Allow location when your browser asks. It’s only used while this screen is open.|Benarkan lokasi apabila pelayar meminta. Ia hanya digunakan semasa skrin ini dibuka.
+Location found|Lokasi dijumpai
+Location is off|Lokasi dimatikan
+Your location is rough|Lokasi anda kurang tepat
+No merchants on the map yet.|Belum ada peniaga pada peta.
+You’re here|Anda di sini
+Daily limit reached|Had harian dicapai
+First check-in|Daftar masuk pertama
+Unlock avatar hats|Buka kunci topi avatar
+Earn points to unlock the mushroom hat, graduation cap and crown.|Kumpul mata untuk membuka kunci topi cendawan, topi graduasi dan mahkota.
+Quiet-hour bonuses|Bonus waktu lengang
+Extra points when a café has free seats. Check in during these hours and the bonus is added automatically. One bonus per deal per day.|Mata tambahan apabila kafe mempunyai tempat duduk kosong. Daftar masuk pada waktu ini dan bonus ditambah secara automatik. Satu bonus bagi setiap tawaran sehari.
+No quiet-hour bonuses right now. Merchants add them for their off-peak hours.|Tiada bonus waktu lengang sekarang. Peniaga menambahnya untuk waktu luar puncak mereka.
+Check in there|Daftar masuk di sana
+Check in at quiet cafés for extra points.|Daftar masuk di kafe yang lengang untuk mata tambahan.
+Every Kampus Kita+ merchant accepts DuitNow QR. Here’s how to pay safely.|Setiap peniaga Kampus Kita+ menerima DuitNow QR. Ini cara membayar dengan selamat.
+Open your banking or e-wallet app|Buka aplikasi perbankan atau e-dompet anda
+Any app that supports DuitNow QR works.|Mana-mana aplikasi yang menyokong DuitNow QR boleh digunakan.
+Scan the merchant’s DuitNow QR|Imbas DuitNow QR peniaga
+Check the recipient name matches the shop and the amount is right before you confirm.|Pastikan nama penerima sepadan dengan kedai dan jumlahnya betul sebelum anda mengesahkan.
+Keep your receipt|Simpan resit anda
+Your bank app keeps the record. Kampus Kita+ never asks for your banking details or OTP.|Aplikasi bank anda menyimpan rekod. Kampus Kita+ tidak akan meminta butiran perbankan atau OTP anda.
+Participating merchants|Peniaga yang menyertai
+Check-ins|Daftar masuk
+Idea Kita: student ventures|Idea Kita: usaha niaga pelajar
+Running a stall or small business? Ask MPP about joining as a student entrepreneur.|Ada gerai atau perniagaan kecil? Tanya MPP tentang menyertai sebagai usahawan pelajar.
+You both get bonus points after their first check-in.|Anda berdua dapat mata bonus selepas daftar masuk pertama mereka.
+Invite|Jemput
+Your avatar|Avatar anda
+Make a character that’s you. Other students don’t see your real photo.|Cipta watak yang mewakili diri anda. Pelajar lain tidak melihat foto sebenar anda.
+Shuffle|Rawak
+Undo changes|Buat asal perubahan
+Hairstyle|Gaya rambut
+Short|Pendek
+Bob|Bob
+Long|Panjang
+Bun|Sanggul
+Curly|Kerinting
+Spiky|Pacak
+Tudung|Tudung
+Hair or tudung colour|Warna rambut atau tudung
+Skin tone|Ton kulit
+Face|Wajah
+Smile|Senyum
+Grin|Sengih
+Wink|Kenyit
+Glasses|Cermin mata
+Freckles|Jeragat
+Outfit|Pakaian
+T-shirt|Baju-T
+Hoodie|Hoodie
+Overalls|Overall
+Baju kurung|Baju kurung
+Outfit colour|Warna pakaian
+Hat|Topi
+No hat|Tiada topi
+Cap|Kep
+Beanie|Topi kait
+Songkok|Songkok
+Mushroom hat|Topi cendawan
+Graduation cap|Topi graduasi
+Crown|Mahkota
+Bag|Beg
+No bag|Tiada beg
+Backpack|Beg galas
+Tote bag|Beg tote
+Hat and bag colour|Warna topi dan beg
+Background|Latar belakang
+Save avatar|Simpan avatar
+Avatar|Avatar
+Avatar saved.|Avatar disimpan.
+Customise avatar|Ubah suai avatar
+Customise your avatar|Ubah suai avatar anda
+Your Kampus Kita card|Kad Kampus Kita anda
+Map of Kampus Kita+ merchants|Peta peniaga Kampus Kita+
+Map of merchants near you|Peta peniaga berdekatan anda
+Earn here|Kumpul mata di sini
+Walk over|Berjalan ke sana
+Check in when you arrive|Daftar masuk apabila tiba
+Pay cashless if you buy|Bayar tanpa tunai jika membeli
+Check in here|Daftar masuk di sini
+Check-ins today|Daftar masuk hari ini
+New visitors today|Pengunjung baharu hari ini
+Who’s visiting|Siapa yang berkunjung
+Students who check in at your shop will appear here.|Pelajar yang mendaftar masuk di kedai anda akan dipaparkan di sini.
+Student has a voucher?|Pelajar ada baucar?
+Scan it to apply the discount.|Imbas untuk memberi diskaun.
+Redeem|Tebus
+Logo|Logo
+Shop logo|Logo kedai
+Square works best. It appears on the map pin and your shop page. Shrunk to 256 px automatically.|Bentuk segi empat sama paling sesuai. Ia dipaparkan pada pin peta dan halaman kedai anda. Dikecilkan ke 256 px secara automatik.
+Save logo|Simpan logo
+Logo saved.|Logo disimpan.
+Choose a logo image first.|Pilih imej logo dahulu.
+Upload your logo|Muat naik logo anda
+Upload your shop logo first.|Muat naik logo kedai anda dahulu.
+That file isn’t an image we can read. Upload a JPG or PNG logo.|Fail itu bukan imej yang boleh dibaca. Muat naik logo dalam format JPG atau PNG.
+Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students navigate here and must be this close to check in.|Berdiri di kaunter anda dan ketik “Guna lokasi semasa saya”, atau ketik peta dan seret pin ke lokasi tepat anda. Pelajar dipandu ke sini dan mesti berada berdekatan untuk mendaftar masuk.
+Staff know how to redeem a student’s Kampus Kita+ voucher|Kakitangan tahu cara menebus baucar Kampus Kita+ pelajar
+Our Kampus Kita+ poster is displayed next to our DuitNow QR|Poster Kampus Kita+ kami dipamerkan di sebelah DuitNow QR kami
+Redeem a voucher|Tebus baucar
+Students swap their points for vouchers. Scan the voucher QR on their phone, give the discount, and mark it used.|Pelajar menukar mata dengan baucar. Imbas QR baucar pada telefon mereka, beri diskaun, dan tandakan telah digunakan.
+8-letter voucher code|Kod baucar 8 huruf
+That isn’t a Kampus Kita+ voucher. Ask the student to open the voucher in Rewards.|Itu bukan baucar Kampus Kita+. Minta pelajar membuka baucar dalam Ganjaran.
+Offers bring students back. Quiet-hour bonuses give extra check-in points when you’re slow. MPP approves both before students see them.|Tawaran membawa pelajar kembali. Bonus waktu lengang memberi mata daftar masuk tambahan semasa perniagaan perlahan. MPP meluluskan kedua-duanya sebelum pelajar melihatnya.
+Quiet-hour bonuses only switch on while seats taken stay under your limit. Students also see how busy you are on your shop page. Update this when it changes.|Bonus waktu lengang hanya aktif semasa tempat duduk yang diisi kekal di bawah had anda. Pelajar juga melihat tahap kesibukan anda di halaman kedai. Kemas kini apabila ia berubah.
+New bonus|Bonus baharu
+New quiet-hour bonus|Bonus waktu lengang baharu
+Students get bonus points for checking in while you have free seats.|Pelajar mendapat mata bonus kerana mendaftar masuk semasa anda ada tempat duduk kosong.
+No quiet-hour bonuses yet. Try one for your slowest two hours.|Belum ada bonus waktu lengang. Cuba satu untuk dua jam paling perlahan anda.
+Bonus sent to MPP.|Bonus dihantar kepada MPP.
+From students who checked in at your shop on Kampus Kita+.|Daripada pelajar yang mendaftar masuk di kedai anda melalui Kampus Kita+.
+check-ins|daftar masuk
+Top college|Kolej teratas
+Students|Pelajar
+Check-ins, last 7 days|Daftar masuk, 7 hari lalu
+Recent check-ins|Daftar masuk terkini
+No check-ins yet.|Belum ada daftar masuk.
+Bonus|Bonus
+Quiet hour|Waktu lengang
+Check in here, collect points.|Daftar masuk di sini, kumpul mata.
+Scan to open this shop in Kampus Kita+|Imbas untuk membuka kedai ini dalam Kampus Kita+
+Send your details, logo and location|Hantar butiran, logo dan lokasi anda
+Add your logo, pin your exact spot on the map and upload your DuitNow QR for PayNet’s monthly list.|Tambah logo anda, pinkan lokasi tepat pada peta dan muat naik DuitNow QR untuk senarai bulanan PayNet.
+A 2-minute checklist on cashless payments and redeeming vouchers.|Senarai semak 2 minit tentang bayaran tanpa tunai dan penebusan baucar.
+Welcome your first visitors|Sambut pengunjung pertama anda
+Students find you on the map and check in when they arrive.|Pelajar mencari anda pada peta dan mendaftar masuk apabila tiba.
+Promote my shop|Promosikan kedai saya
+Students can find and check in at your shop once MPP checks your details. This usually takes 1–2 working days.|Pelajar boleh mencari dan mendaftar masuk di kedai anda setelah MPP menyemak butiran anda. Biasanya mengambil masa 1–2 hari bekerja.
+Send your business details, logo, location and DuitNow QR to MPP. Once verified, students see you on the Kampus Kita+ map.|Hantar butiran perniagaan, logo, lokasi dan DuitNow QR anda kepada MPP. Setelah disahkan, pelajar akan melihat anda pada peta Kampus Kita+.
+Activity check|Semakan aktiviti
+Check-ins per day|Daftar masuk sehari
+No check-ins yet. Yours could put your college first.|Belum ada daftar masuk. Daftar masuk anda boleh meletakkan kolej anda di tempat pertama.
+Merchant offers and quiet-hour bonuses go live when you approve them. Mission claims add points to the student.|Tawaran peniaga dan bonus waktu lengang akan aktif apabila anda meluluskannya. Tuntutan misi menambah mata kepada pelajar.
+Progress is counted from the student’s check-ins.|Kemajuan dikira daripada daftar masuk pelajar.
+Compare check-ins with PayNet’s monthly DuitNow QR counts, and review unusual check-ins before reporting.|Bandingkan daftar masuk dengan kiraan bulanan DuitNow QR PayNet, dan semak daftar masuk luar biasa sebelum melapor.
+PayNet transactions|Transaksi PayNet
+Transactions per check-in|Transaksi bagi setiap daftar masuk
+Kampus Kita+ doesn’t record payments. PayNet’s counts show cashless volume at each listed merchant; check-ins show foot traffic the app brought.|Kampus Kita+ tidak merekod bayaran. Kiraan PayNet menunjukkan jumlah tanpa tunai di setiap peniaga tersenarai; daftar masuk menunjukkan kunjungan yang dibawa aplikasi.
+Unusual check-ins|Daftar masuk luar biasa
+Campus visits|Kunjungan kampus
+Verified merchants with at least one check-in this month|Peniaga disahkan dengan sekurang-kurangnya satu daftar masuk bulan ini
+Points per check-in|Mata bagi setiap daftar masuk
+At a merchant’s pin|Di pin peniaga
+Check-in distance (metres)|Jarak daftar masuk (meter)
+How close to the pin|Sejauh mana dari pin
+Hours between check-ins|Jam antara daftar masuk
+Same student, same shop|Pelajar sama, kedai sama
+Check-ins that earn per day|Daftar masuk yang layak mendapat mata sehari
+Per student|Bagi setiap pelajar
+After friend’s first check-in|Selepas daftar masuk pertama rakan
+After their first check-in|Selepas daftar masuk pertama mereka
+The map pin is at the shop (on campus or within 100 m of a UM gate)|Pin peta berada di kedai (di kampus atau dalam lingkungan 100 m dari pintu UM)
+No logo|Tiada logo
+Close popup|Tutup tetingkap
+Set up Kampus Kita+|Sediakan Kampus Kita+
+Sign in to Kampus Kita+|Log masuk ke Kampus Kita+
+Install Kampus Kita+|Pasang Kampus Kita+
+Opening Kampus Kita+…|Membuka Kampus Kita+…
+Kampus Kita+ couldn’t start|Kampus Kita+ tidak dapat dimulakan
+Kampus Kita+ needs JavaScript turned on.|Kampus Kita+ memerlukan JavaScript dihidupkan.
+Kampus Kita+ isn’t open for students yet. The MPP admin needs to sign in once to set it up.|Kampus Kita+ belum dibuka untuk pelajar. Pentadbir MPP perlu log masuk sekali untuk menyediakannya.
+I agree that Kampus Kita+ stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).|Saya bersetuju Kampus Kita+ menyimpan nama, e-mel, avatar dan daftar masuk saya, untuk menjalankan dan melaporkan program kampus ini (notis PDPA).
+Discover campus, check in at shops and collect rewards|Terokai kampus, daftar masuk di kedai dan kumpul ganjaran
+Join the campus map so students can find and visit you|Sertai peta kampus supaya pelajar boleh mencari dan mengunjungi anda
+Code added. Your bonus arrives after your first check-in.|Kod ditambah. Bonus anda akan diterima selepas daftar masuk pertama.
+Checked in for the first time|Daftar masuk buat kali pertama
+Hasn’t checked in yet|Belum mendaftar masuk
+Google Maps isn’t set up for this address yet, so the basic map is shown.|Google Maps belum disediakan untuk alamat ini, jadi peta asas dipaparkan.
+Google Maps could not load.|Google Maps tidak dapat dimuatkan.
+This device can’t share its location.|Peranti ini tidak dapat berkongsi lokasinya.
+Location only works on the https:// address of the app.|Lokasi hanya berfungsi pada alamat https:// aplikasi.
+Location permission is blocked. Allow it in your browser settings, then try again.|Kebenaran lokasi disekat. Benarkan dalam tetapan pelayar, kemudian cuba lagi.
+Finding your location took too long. Try again outdoors.|Mencari lokasi anda mengambil masa terlalu lama. Cuba lagi di luar bangunan.
+Your location isn’t available right now. Try again in a moment.|Lokasi anda tidak tersedia sekarang. Cuba lagi sebentar lagi.
+Couldn’t check in. You may be too far away, or you already checked in here recently.|Tidak dapat mendaftar masuk. Anda mungkin terlalu jauh, atau sudah mendaftar masuk di sini baru-baru ini.
+The quiet-hour bonus wasn’t available, so you got the normal points.|Bonus waktu lengang tidak tersedia, jadi anda mendapat mata biasa.
+Join Kampus Kita+, UM’s campus app for merchants, events and rewards.|Sertai Kampus Kita+, aplikasi kampus UM untuk peniaga, acara dan ganjaran.
+Public listings of where to eat on campus. Only places in Niaga Kita give Kampus Kita+ points.|Senarai awam tempat makan di kampus. Hanya tempat dalam Niaga Kita memberi mata Kampus Kita+.
 `;

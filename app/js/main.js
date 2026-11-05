@@ -5,17 +5,18 @@ import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText } from './ui.js';
 import * as Auth from './views/auth.js';
 import { initI18n, langToggleHTML } from './i18n.js';
+import { avatarSVG, defaultFor } from './avatar.js';
 initI18n();
 
 const app = {
   backend: null, ctx: null, user: null, profile: null, isMpp: false, rules: D.DEFAULT_RULES, role: null,
-  merchant: null, txs: [], ledger: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
+  merchant: null, visits: [], ledger: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
 };
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['home', 'Home', 'house'], ['explore', 'Explore', 'compass'], ['pay', 'Pay', 'qr-code', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Scan', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
+  student: [['home', 'Home', 'house'], ['explore', 'Niaga', 'store'], ['checkin', 'Check in', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
 export function go(path) { if (location.hash !== '#/' + path) location.hash = '#/' + path; else render(); }
@@ -27,7 +28,7 @@ async function boot() {
   try {
     app.backend = await initBackend();
   } catch (e) {
-    document.body.innerHTML = `<div class="boot"><div><h2>UM Connect+ couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
+    document.body.innerHTML = `<div class="boot"><div><h2>Kampus Kita+ couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
     return;
   }
   const { sdk, auth, mode } = app.backend;
@@ -39,11 +40,12 @@ async function boot() {
   if (sdk.getRedirectResult) sdk.getRedirectResult(auth).catch((e) => toast(errText(e), true));
   sdk.onAuthStateChanged(auth, (user) => onUser(user).catch((e) => { console.error(e); toast(errText(e), true); }));
   window.addEventListener('hashchange', () => render());
+  window.addEventListener('kk-maps-fallback', () => { toast('Google Maps isn’t set up for this address yet, so the basic map is shown.'); render(); });
 }
 
 async function onUser(user) {
   stopWatchers(); closeSheet();
-  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.txs = []; app.ledger = []; app.shellRole = null;
+  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
   if (mode === 'live' && !user.emailVerified && !mppBootstrapEmails.includes(String(user.email).toLowerCase())) return Auth.renderVerify(app);
@@ -64,20 +66,17 @@ function startRole(role) {
       if (!s.exists()) return;
       app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
       $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
+      paintAvatar();
     }, () => {}));
   }
   if (role === 'student') {
-    app.watchers.push(D.watchMyTransactions(app.ctx, (txs) => {
-      app.txs = txs;
-      const first = txs.filter((t) => t.status === 'confirmed').pop();
-      if (first && app.profile && !app.profile.firstTx) D.markFirstTx(app.ctx, first.id).catch(() => {});
-      app.emit && app.emit('txs');
-    }, () => {}));
+    app.watchers.push(D.watchMyVisits(app.ctx, (v) => { app.visits = v; app.emit && app.emit('visits'); }, () => {}));
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.emit && app.emit('ledger'); }, () => {}));
   }
   if (role === 'merchant') {
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'merchants', app.ctx.uid), (s) => {
       app.merchant = s.exists() ? { id: s.id, ...s.data() } : null; app.ctx.merchantName = app.merchant?.name || '';
+      paintAvatar();
       app.emit && app.emit('merchant');
     }, () => {}));
   }
@@ -104,7 +103,7 @@ function shell(role) {
   document.body.innerHTML = `
     <div class="shell">
       <header class="topbar">
-        <a class="brand" href="#/home"><img src="icons/icon-192.png" alt=""><span>UM Connect<b>+</b></span></a>
+        <a class="brand" href="#/home"><img src="icons/icon-192.png" alt=""><span>Kampus Kita<b>+</b></span></a>
         <span class="spacer"></span>
         ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}
@@ -116,13 +115,22 @@ function shell(role) {
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
+  paintAvatar();
+}
+// Students see their avatar in the top bar; merchants see their logo.
+function paintAvatar() {
+  const el = $('#avatar'); if (!el) return;
+  const p = app.profile || {};
+  if (app.role === 'student') { el.classList.add('has-art'); el.innerHTML = avatarSVG(p.avatar || defaultFor(app.ctx?.uid), { variant: 'head', size: 40, title: p.name }); }
+  else if (app.role === 'merchant' && app.merchant?.logo) { el.classList.add('has-art'); el.innerHTML = `<img src="${app.merchant.logo}" alt="">`; }
+  else { el.classList.remove('has-art'); el.textContent = initials(p.name); }
 }
 
 function accountSheet() {
   const p = app.profile || {};
   const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
     <div class="stack" style="margin-top:18px">
-      ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a>' : ''}
+      ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
       ${app.isMpp ? '<button class="btn block" id="to-mpp">Open the MPP dashboard</button>' : ''}
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
@@ -138,7 +146,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); defe
 function installApp() {
   if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; closeSheet(); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  sheet(`<h2>Install UM Connect+</h2><p class="muted">${ios
+  sheet(`<h2>Install Kampus Kita+</h2><p class="muted">${ios
     ? 'In Safari, tap the Share button, then “Add to Home Screen”.'
     : 'Open your browser menu and choose “Install app” or “Add to Home screen”. If it’s already installed, open it from your home screen.'}</p>`);
 }
@@ -170,7 +178,7 @@ async function render() {
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
   view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
-  document.title = `${r.title} · UM Connect+`;
+  document.title = `${r.title} · Kampus Kita+`;
   const token = Symbol(); render.token = token;
   try {
     const html = await r.render(app, parts.slice(1));
