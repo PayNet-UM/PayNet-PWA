@@ -103,7 +103,7 @@ function shell(role) {
   document.body.innerHTML = `
     <div class="shell">
       <header class="topbar">
-        <a class="brand" href="#/home"><img src="icons/icon-192.png" alt=""><span>Kampus Kita<b>+</b></span></a>
+        <a class="brand" href="#/home"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a>
         <span class="spacer"></span>
         ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}
