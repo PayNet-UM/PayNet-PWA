@@ -889,3 +889,31 @@ input[type=range].av-range { -webkit-appearance: none; appearance: none; width: 
 .av-swatches button { width: 36px; height: 36px; border-radius: 12px; background: var(--sw); border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--line-2); cursor: pointer; }
 .av-swatches button[aria-checked="true"] { box-shadow: 0 0 0 3px var(--ink); }
 .av-toggles button .ic { width: 16px; height: 16px; }
+
+button.link { background:none; border:0; padding:0; color:inherit; font:inherit; font-weight:800; text-decoration:underline; cursor:pointer; }
+
+/* ------------------------------------------------------------------ readability
+   Font-size floor so text is comfortable on a phone: body 16px, supporting text 14px,
+   small labels (badges, tab names, chart labels) never below 12-13px. Inputs stay at
+   16px so iPhone Safari doesn't zoom in when a field is tapped. */
+body { font-size: 16px; line-height: 1.55; }
+input, select, textarea { font-size: 16px; }
+.faint, .item p, .mcard p, .step p, .mpop p, .notice, .stat .k, .kk-pillar p,
+.mpp .rail .who, .code-text { font-size: 14px; line-height: 1.5; }
+.btn, .btn.small, .chips button, .state-pill, .pass .actions .btn, .kk-hero .actions .btn { font-size: 14px; }
+.badge, .mcard .offer, .mcard .dist, .stat .s, .section>.head>a, .award, .ring>span,
+.pass .level, .pass .streak, .kk-hero .level, .kk-tag, .lang-toggle button, .pts-chip { font-size: 13px; }
+table.data th { font-size: 12.5px; }
+.bars .b small, .bars .b .v, .demo-ribbon.in-bar { font-size: 12px; }
+.tabbar a { font-size: 12px; }
+.av-opts .av-name { font-size: 12.5px; }
+.kk-pillars-title { font-size: 13px; }
+@media (min-width: 1024px) { .tabbar a { font-size: 15px; } }
+@media (max-width: 520px) {
+  .pass .level, body:has(.pts-chip) .pass .level { font-size: 13px; }
+  .quick a, body:has(.pts-chip) .quick a { font-size: 12.5px; line-height: 1.25; }
+  .award { font-size: 12.5px; }
+  .pass .actions .btn, body:has(.pts-chip) .pass .actions .btn { font-size: 13px; }
+  .brand span::after { font-size: 7.5px; letter-spacing: 1.1px; }
+}
+@media (max-width: 360px) { .brand span::after { font-size: 7px; letter-spacing: .9px; } }

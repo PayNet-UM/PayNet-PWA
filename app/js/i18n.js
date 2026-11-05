@@ -22,6 +22,7 @@ const RM = '(RM[\\d.,]+)';
 // [regex, (match groups…) => Malay]; t() translates a fragment recursively.
 const PATTERNS = [
   [/^Hi (.+)$/, (n) => `Hai ${n}`],
+  [/^Google sign-in didn’t work \((.+)\)\. Try again, or use email and password\.$/, (c) => `Log masuk Google tidak berjaya (${c}). Cuba lagi, atau guna e-mel dan kata laluan.`],
   [new RegExp(`^${N} points?$`), (n) => `${n} mata`],
   [new RegExp(`^\\+${N} (?:pts|points)$`), (n) => `+${n} mata`],
   [new RegExp(`^${N} pts$`), (n) => `${n} mata`],

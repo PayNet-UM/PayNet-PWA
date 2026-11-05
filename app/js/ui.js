@@ -40,7 +40,7 @@ export function toast(msg, bad = false) {
   let el = $('#toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.append(el); }
   el.textContent = msg; el.classList.toggle('bad', bad); el.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3600);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), bad ? 6500 : 3600);
 }
 
 // ------------------------------------------------------------- sheet (modal)

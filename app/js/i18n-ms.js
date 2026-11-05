@@ -1081,4 +1081,18 @@ Pay Cashless|Bayar Kita
 Community|Komuniti Kita
 Student Ventures|Idea Kita
 Shops|Niaga
+You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari.|Anda berada dalam pelayar terbina dalam aplikasi lain. Log masuk Google hanya berfungsi dalam Chrome atau Safari.
+Open in browser|Buka dalam pelayar
+Open in Chrome to sign in|Buka dalam Chrome untuk log masuk
+Open in Safari to sign in|Buka dalam Safari untuk log masuk
+You opened Kampus Kita+ inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.|Anda membuka Kampus Kita+ dalam aplikasi lain (seperti WhatsApp, Instagram atau Telegram). Google tidak membenarkan log masuk di situ.
+Open in Chrome|Buka dalam Chrome
+Copy the link|Salin pautan
+Or tap ⋮ at the top right and choose “Open in browser”.|Atau ketik ⋮ di penjuru kanan atas dan pilih “Buka dalam pelayar”.
+Then open Safari, paste it in the address bar and sign in. Or tap ••• / the share button and choose “Open in Safari”.|Kemudian buka Safari, tampal di bar alamat dan log masuk. Atau ketik ••• / butang kongsi dan pilih “Buka dalam Safari”.
+You can also use “Use email and password instead” below.|Anda juga boleh guna “Guna e-mel dan kata laluan” di bawah.
+Link copied. Paste it in your browser.|Pautan disalin. Tampal dalam pelayar anda.
+Google sign-in didn’t finish. If you use private browsing or block cookies, switch that off, or use email and password.|Log masuk Google tidak selesai. Jika anda guna pelayaran peribadi atau menyekat kuki, matikannya, atau guna e-mel dan kata laluan.
+Your browser is blocking storage (private mode or strict cookie settings). Turn that off, or sign in with email and password.|Pelayar anda menyekat storan (mod peribadi atau tetapan kuki ketat). Matikannya, atau log masuk dengan e-mel dan kata laluan.
+Google sign-in doesn’t work inside this app. Open the link in Chrome or Safari.|Log masuk Google tidak berfungsi dalam aplikasi ini. Buka pautan dalam Chrome atau Safari.
 `;

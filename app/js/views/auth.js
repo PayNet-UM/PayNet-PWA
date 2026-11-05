@@ -22,24 +22,69 @@ function frame(app, inner) {
 
 const GOOGLE_G = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
 
+// ------------------------------------------------------------- device checks for Google sign-in
+const UA = navigator.userAgent || '';
+// Google refuses sign-in inside apps' built-in browsers (WhatsApp, Instagram, Telegram, Facebook, TikTok, LINE…).
+export const inAppBrowser = () => /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Telegram|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|MicroMessenger|WhatsApp|GSA\/|; wv\)/i.test(UA)
+  || (/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
+const isPhone = () => /Android|iPhone|iPad|iPod|Mobile/i.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
+
+function openInBrowserSheet() {
+  const url = location.origin + location.pathname;
+  const android = /Android/i.test(UA);
+  const el = sheet(`<h2>Open in ${android ? 'Chrome' : 'Safari'} to sign in</h2>
+    <p class="muted">You opened Kampus Kita+ inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.</p>
+    <div class="stack" style="margin-top:14px">
+      ${android ? `<a class="btn primary block" href="intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
+      <button class="btn block ${android ? '' : 'primary'}" id="copy-link">Copy the link</button>
+      <p class="faint">${android ? 'Or tap ⋮ at the top right and choose “Open in browser”.' : 'Then open Safari, paste it in the address bar and sign in. Or tap ••• / the share button and choose “Open in Safari”.'}</p>
+      <p class="faint">You can also use “Use email and password instead” below.</p>
+    </div>`);
+  $('#copy-link', el).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in your browser.'); } catch { prompt('Copy this link', url); } };
+}
+
+const REDIRECT_KEY = 'kk-google-redirect';
 async function googleSignIn(app, demoEmail) {
   const { sdk, auth, mode } = app.backend;
   const provider = new sdk.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   if (mode === 'demo') provider.demoEmail = demoEmail;
+  if (mode === 'live' && inAppBrowser()) return openInBrowserSheet();
+  const redirect = () => { try { sessionStorage.setItem(REDIRECT_KEY, String(Date.now())); } catch { /* */ } return sdk.signInWithRedirect(auth, provider); };
+  // Phones: a full-page redirect is more reliable than a popup (mobile browsers often lose the popup tab).
+  // The installed iPhone app is the exception: a redirect would finish in Safari, outside the app.
+  if (mode === 'live' && isPhone() && !(isStandalone() && isIOS())) return redirect();
   try {
     await sdk.signInWithPopup(auth, provider);
   } catch (err) {
-    // Installed iPhone apps and some in-app browsers block popups: fall back to a full-page redirect.
-    if (mode === 'live' && ['auth/popup-blocked', 'auth/operation-not-supported-in-environment', 'auth/web-storage-unsupported'].includes(err.code)) {
-      return sdk.signInWithRedirect(auth, provider);
-    }
+    if (mode === 'live' && ['auth/popup-blocked', 'auth/operation-not-supported-in-environment', 'auth/web-storage-unsupported'].includes(err.code)) return redirect();
     if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
-    if (err.code === 'auth/unauthorized-domain') return toast('This web address isn’t authorised for Google sign-in yet. Add it in Firebase > Authentication > Settings > Authorized domains.', true);
-    if (err.code === 'auth/operation-not-allowed') return toast('Google sign-in isn’t switched on yet. Turn it on in Firebase > Authentication > Sign-in method.', true);
-    if (err.code === 'auth/account-exists-with-different-credential') return toast('This email already has a password account. Sign in with email instead.', true);
-    toast(errText(err), true);
+    toast(googleErrorText(err), true);
   }
+}
+export function googleErrorText(err) {
+  const c = err && err.code;
+  if (c === 'auth/unauthorized-domain') return 'This web address isn’t authorised for Google sign-in yet. Add it in Firebase > Authentication > Settings > Authorized domains.';
+  if (c === 'auth/operation-not-allowed') return 'Google sign-in isn’t switched on yet. Turn it on in Firebase > Authentication > Sign-in method.';
+  if (c === 'auth/account-exists-with-different-credential') return 'This email already has a password account. Sign in with email instead.';
+  if (c === 'auth/web-storage-unsupported') return 'Your browser is blocking storage (private mode or strict cookie settings). Turn that off, or sign in with email and password.';
+  if (c === 'auth/network-request-failed') return 'No connection. Check your internet and try again.';
+  if (c === 'auth/internal-error' && inAppBrowser()) return 'Google sign-in doesn’t work inside this app. Open the link in Chrome or Safari.';
+  return `Google sign-in didn’t work (${c || 'unknown error'}). Try again, or use email and password.`;
+}
+// Called once at start-up: reports a failed redirect sign-in instead of silently returning to the sign-in page.
+export async function finishRedirect(app) {
+  const { sdk, auth } = app.backend;
+  let started = 0; try { started = +sessionStorage.getItem(REDIRECT_KEY) || 0; sessionStorage.removeItem(REDIRECT_KEY); } catch { /* */ }
+  if (!sdk.getRedirectResult) return;
+  try {
+    const res = await sdk.getRedirectResult(auth);
+    if (!res && started && Date.now() - started < 10 * 60000 && !auth.currentUser) {
+      setTimeout(() => { if (!auth.currentUser) toast('Google sign-in didn’t finish. If you use private browsing or block cookies, switch that off, or use email and password.', true); }, 1500);
+    }
+  } catch (e) { toast(googleErrorText(e), true); }
 }
 
 function demoGoogleChooser(app) {
@@ -59,6 +104,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
     <div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
     <div><h1>Sign in to Kampus Kita+</h1>
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
+    ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">
@@ -73,6 +119,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
       <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">MPP</button></div></div>` : ''}`);
   const { sdk, auth } = app.backend;
+  if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
   $('#google').onclick = (e) => { if (demo) demoGoogleChooser(app); else busy(e.currentTarget, () => googleSignIn(app)); };
   $$('.seg [data-mode]').forEach((b) => { b.onclick = () => renderSignIn(app, b.dataset.mode, true); });
   $('#auth-form').onsubmit = (e) => {
