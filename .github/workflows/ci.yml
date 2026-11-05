@@ -1,0 +1,22 @@
+# Tests every pull request. Uses no secrets and deploys nothing.
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:legacy
