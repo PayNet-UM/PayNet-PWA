@@ -1103,4 +1103,15 @@ Google sign-in is blocked in the installed app|Log masuk Google disekat dalam ap
 On some phones, Google’s sign-in window can’t hand back to an app added to the home screen.|Pada sesetengah telefon, tetingkap log masuk Google tidak dapat kembali ke aplikasi di skrin utama.
 Or sign in from Safari instead of the home-screen icon. On iPhone the installed app keeps its own sign-in, separate from Safari.|Atau log masuk dari Safari dan bukan ikon skrin utama. Pada iPhone, aplikasi yang dipasang menyimpan log masuknya sendiri, berasingan daripada Safari.
 Or open the site in Chrome and sign in there: the installed app shares Chrome’s sign-in.|Atau buka laman dalam Chrome dan log masuk di sana: aplikasi yang dipasang berkongsi log masuk Chrome.
+On iPhone, use email and password in the home-screen app.|Pada iPhone, guna e-mel dan kata laluan dalam aplikasi skrin utama.
+Apple opens Google’s sign-in in a separate Safari window, so it can’t sign you in here.|Apple membuka log masuk Google dalam tetingkap Safari yang berasingan, jadi ia tidak dapat log masuk anda di sini.
+Already signed up with Google?|Sudah daftar dengan Google?
+Set a password|Tetapkan kata laluan
+for the same account: your points and profile stay the same.|untuk akaun yang sama: mata dan profil anda kekal.
+I signed up with Google: set a password|Saya daftar dengan Google: tetapkan kata laluan
+Set a password for your account|Tetapkan kata laluan untuk akaun anda
+Enter the email you use with Google. We’ll email you a link to choose a password. Open it, set the password, then come back here and sign in with email and password.|Masukkan e-mel yang anda guna dengan Google. Kami akan e-mel pautan untuk memilih kata laluan. Buka pautan, tetapkan kata laluan, kemudian kembali ke sini dan log masuk dengan e-mel dan kata laluan.
+Email me the link|E-mel pautan kepada saya
+It’s the same account, so your points, avatar and history stay the same. You can still use Google in Safari.|Ini akaun yang sama, jadi mata, avatar dan sejarah anda kekal. Anda masih boleh guna Google dalam Safari.
+Link sent. Check your inbox (and spam), set a password, then sign in here.|Pautan dihantar. Semak peti masuk (dan spam), tetapkan kata laluan, kemudian log masuk di sini.
 `;

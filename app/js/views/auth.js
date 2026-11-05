@@ -71,11 +71,31 @@ function standaloneHelp(kind) {
     <p class="muted">On some phones, Google’s sign-in window can’t hand back to an app added to the home screen.</p>
     <div class="stack" style="margin-top:14px">
       <button class="btn primary block" id="sa-email">Use email and password instead</button>
+      <button class="btn block" id="sa-setpw">I signed up with Google: set a password</button>
       <p class="faint">${isIOS() ? 'Or sign in from Safari instead of the home-screen icon. On iPhone the installed app keeps its own sign-in, separate from Safari.' : 'Or open the site in Chrome and sign in there: the installed app shares Chrome’s sign-in.'}</p>
     </div>`);
+  $('#sa-setpw', el).onclick = () => { closeSheet(); setPasswordSheet(window.__kkApp); };
   $('#sa-email', el).onclick = () => { closeSheet(); const box = document.getElementById('email-box'); if (box) { box.open = true; box.scrollIntoView({ block: 'center' }); box.querySelector('input')?.focus(); } };
 }
+// Lets a student who signed up with Google add a password to the SAME account (Firebase links it on reset),
+// so they can sign in inside the iPhone home-screen app, where Google sign-in can't finish.
+function setPasswordSheet(app) {
+  const { sdk, auth } = app.backend;
+  const el = sheet(`<h2>Set a password for your account</h2>
+    <p class="muted">Enter the email you use with Google. We’ll email you a link to choose a password. Open it, set the password, then come back here and sign in with email and password.</p>
+    <form id="spw" class="stack" style="margin-top:14px"><label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
+      <button class="btn primary block">Email me the link</button></form>
+    <p class="faint" style="margin-top:10px">It’s the same account, so your points, avatar and history stay the same. You can still use Google in Safari.</p>`);
+  $('#spw', el).onsubmit = (e) => {
+    e.preventDefault(); const email = e.target.email.value.trim();
+    busy($('button', e.target), async () => {
+      try { await sdk.sendPasswordResetEmail(auth, email); closeSheet(); toast('Link sent. Check your inbox (and spam), set a password, then sign in here.'); }
+      catch (err) { toast(errText(err), true); }
+    });
+  };
+}
 async function googleSignIn(app, demoEmail) {
+  window.__kkApp = app;
   const { sdk, auth, mode } = app.backend;
   const provider = new sdk.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -117,6 +137,7 @@ export function googleErrorText(err) {
 }
 // Called once at start-up: reports a failed redirect sign-in instead of silently returning to the sign-in page.
 export async function finishRedirect(app) {
+  window.__kkApp = app;
   const { sdk, auth } = app.backend;
   let started = null; try { started = JSON.parse(ls.get(REDIRECT_KEY) || 'null'); } catch { /* */ }
   ls.del(REDIRECT_KEY);
@@ -147,11 +168,15 @@ function demoGoogleChooser(app) {
 
 export function renderSignIn(app, mode = 'in', showEmail = false) {
   const demo = app.backend.mode === 'demo';
+  const iosApp = !demo && isStandalone() && isIOS();
+  if (iosApp) showEmail = true;
   frame(app, `
     <div><a class="brand"><img src="icons/um-connect-shield.svg" alt=""><span>Kampus Kita<b>+</b></span></a></div>
     <div><h1>Sign in to Kampus Kita+</h1>
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
+    ${iosApp ? `<div class="notice warn" id="ios-app">${icon('info')}<span><b>On iPhone, use email and password in the home-screen app.</b> Apple opens Google’s sign-in in a separate Safari window, so it can’t sign you in here.
+      Already signed up with Google? <button class="link" id="set-pw">Set a password</button> for the same account: your points and profile stay the same.</span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">
@@ -168,6 +193,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
       <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">MPP</button></div></div>` : ''}`);
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
+  if ($('#set-pw')) $('#set-pw').onclick = () => setPasswordSheet(app);
   $('#google').onclick = (e) => { if (demo) demoGoogleChooser(app); else busy(e.currentTarget, () => googleSignIn(app)); };
   $$('.seg [data-mode]').forEach((b) => { b.onclick = () => renderSignIn(app, b.dataset.mode, true); });
   $('#auth-form').onsubmit = (e) => {
