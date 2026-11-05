@@ -1,13 +1,10 @@
 {
   "firestore": {
-    "rules": "firestore.rules",
+    "rules": "dist/firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
     "public": "dist",
-    "predeploy": [
-      "node scripts/build.mjs"
-    ],
     "ignore": [
       "firebase.json",
       "**/.*"

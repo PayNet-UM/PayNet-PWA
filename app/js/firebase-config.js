@@ -1,21 +1,21 @@
-// Paste your Firebase web app config here (Firebase console > Project settings > Your apps > Web app).
-// `npm run setup` fills this in for you. While apiKey is the placeholder, the app runs in Demo mode,
+// Placeholder values: don't put real values here. scripts/build.mjs and scripts/serve.mjs fill these in
+// from .env.local (staging) or .env.production. While apiKey is the placeholder, the app runs in Demo mode,
 // keeping data in this browser so you can try every feature without a backend.
 export const firebaseConfig = {
-  "apiKey": "AIzaSyBBMGAkY-jNxvVIoWedjKwAFfK24Fpsh4c",
-  "authDomain": "umconnect-e455a.firebaseapp.com",
-  "projectId": "umconnect-e455a",
-  "storageBucket": "umconnect-e455a.firebasestorage.app",
-  "messagingSenderId": "692789716239",
-  "appId": "1:692789716239:web:386980b6d1f3ab5c4c0a7a"
+  "apiKey": "REPLACE_ME",
+  "authDomain": "REPLACE_ME",
+  "projectId": "REPLACE_ME",
+  "storageBucket": "REPLACE_ME",
+  "messagingSenderId": "REPLACE_ME",
+  "appId": "REPLACE_ME"
 };
 
-// Emails that get MPP admin access on day one. Keep this in sync with bootstrapAdmins() in firestore.rules
-// (`npm run setup` updates both). More MPP reviewers can be added later in the app under Settings.
-export const mppBootstrapEmails = ['admin@umconnect-e455a.web.app'];
+// Emails that get MPP admin access on day one, from MPP_ADMIN_EMAILS. The same list fills bootstrapAdmins()
+// in firestore.rules. More MPP reviewers can be added later in the app under Settings.
+export const mppBootstrapEmails = ['mpp-admin@demo.invalid'];
 
-// Google Maps (optional). Paste a browser key from Google Cloud > APIs & Services > Credentials with the
-// "Maps JavaScript API" enabled and restricted to your site. Leave it empty to use the built-in OpenStreetMap map.
+// Google Maps (optional), from GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_MAP_ID. A browser key with the "Maps JavaScript API"
+// enabled and restricted to your site. Left empty, the app uses the built-in OpenStreetMap map.
 export const googleMapsApiKey = '';
 // Optional Map ID from Google Cloud > Google Maps Platform > Map management (needed for custom map styles).
 export const googleMapsMapId = '';

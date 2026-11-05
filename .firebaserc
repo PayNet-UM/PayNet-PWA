@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "umconnect-e455a"
+    "staging": "umconnect-e455a",
+    "production": "umconnectproduction"
   }
 }

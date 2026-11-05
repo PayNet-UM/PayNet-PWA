@@ -38,12 +38,16 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     throw new Error('sign-up was accepted before setup');
   });
   await denied('student cannot initialise the programme', () => D.initProgramme(stuA));
+  await denied('an unverified account using the admin email cannot initialise the programme', async () => {
+    const claimer = await makeCtx({ uid: 'claimer', email: adminEmail, emailVerified: false });
+    await D.initProgramme(claimer);
+  });
   await ok('bootstrap MPP admin initialises config, stats and rewards', () => D.initProgramme(mpp));
   await ok('MPP is recognised as MPP', async () => eq(await D.isMppUser(mpp), true));
   await ok('a student is not MPP', async () => eq(await D.isMppUser(stuA), false));
 
-  await ok('bootstrap admin works without email verification', async () => {
-    const raw = await makeCtx({ uid: 'mpp0', email: adminEmail, emailVerified: false }); eq(await D.isMppUser(raw), true);
+  await ok('an unverified account using the admin email is not MPP', async () => {
+    const raw = await makeCtx({ uid: 'mpp0', email: adminEmail, emailVerified: false }); eq(await D.isMppUser(raw), false);
   });
   log('Sign-up');
   await ok('student with a UM email signs up', async () => {

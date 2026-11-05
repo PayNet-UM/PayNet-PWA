@@ -1,5 +1,5 @@
 // Runs the same scenarios against Google's official Firestore emulator.
-// Usage (needs Java 11+ and internet the first time):  npm run test:emulator
+// Usage (needs Java 21+ and internet the first time):  npm run test:emulator
 import fs from 'fs';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import * as sdk from 'firebase/firestore';

@@ -1,11 +1,12 @@
 // Browser test of the real UI in Demo mode: student, merchant and MPP on separate pages, plus a
 // pass with a fake Google Maps API key so the Google Maps code path is exercised.
-// Usage: `npm run dev` (or node scripts/serve.mjs dist), then `node tests/e2e.mjs`.
+// Usage: `npm run dev:demo` in one terminal, then `npm run test:e2e` in another.
 import { chromium } from 'playwright';
 import fs from 'fs';
 const BASE = process.env.BASE || 'http://localhost:5173/';
 const shots = process.env.SHOTS || '/tmp/e2e';
 fs.mkdirSync(shots, { recursive: true });
+const adminEmail = /function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'))[1];
 const LAUNDRY = { latitude: 3.10994, longitude: 101.65856, accuracy: 10 }; // demo pin for Fresh Laundry
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1, geolocation: LAUNDRY, permissions: ['geolocation'] });
@@ -21,6 +22,9 @@ const pointsOf = async (p) => Number((await p.textContent('.pts-chip [data-bind=
 // ---------- student
 const stu = await ctx.newPage(); watch(stu, 'student');
 await stu.goto(BASE); await stu.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+// Never run this test's writes against a real project.
+await stu.reload(); await stu.waitForFunction(() => document.documentElement.dataset.backend, null, { timeout: 60000 });
+if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo') { console.error('Stopped: the server is not in Demo mode. Use npm run dev:demo.'); await b.close(); process.exit(1); }
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
 const pillars = await stu.locator('.kk-pillar').count();
 if (pillars !== 6) throw new Error('expected 6 Kampus Kita pillars, got ' + pillars);
@@ -117,7 +121,7 @@ ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent th
 
 // ---------- MPP on desktop
 const mpp = await ctx.newPage(); watch(mpp, 'mpp'); await fresh(mpp); await mpp.setViewportSize({ width: 1360, height: 900 });
-await login(mpp, 'admin@umconnect-e455a.web.app');
+await login(mpp, adminEmail);
 await mpp.waitForSelector('#mpp-rail', { timeout: 30000 });
 await mpp.goto(BASE + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');

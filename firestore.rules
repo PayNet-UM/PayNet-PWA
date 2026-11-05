@@ -4,23 +4,23 @@ rules_version = '2';
 // Every points change is paired with an immutable ledger entry in the same batch,
 // and each ledger type can only be written by the role allowed to earn it.
 // Students earn by checking in at a merchant's map pin (no purchase tracking).
-// Run `npm run setup` to replace the admin email below before deploying.
+// The admin email below is a placeholder. The build fills it in from MPP_ADMIN_EMAILS for each environment.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------- identity ----------
-    function bootstrapAdmins() { return ['admin@umconnect-e455a.web.app']; }
+    function bootstrapAdmins() { return ['mpp-admin@demo.invalid']; }
     function signedIn() { return request.auth != null; }
     function uid() { return request.auth.uid; }
     function email() { return request.auth.token.email; }
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function docPath(p) { return /databases/$(database)/documents/$(p); }
     function access() { return get(/databases/$(database)/documents/config/access).data; }
-    // Bootstrap admins are created by the project owner in the Firebase console, so they don't need email
-    // verification. Reviewers added later in the app must verify their email first.
+    // Every admin must verify their email. Without this, anyone could register an unclaimed admin address
+    // with Email/Password sign-in and gain admin access.
     function isMpp() {
-      return signedIn() && (email() in bootstrapAdmins() || (verified() && email() in access().mppEmails));
+      return verified() && (email() in bootstrapAdmins() || email() in access().mppEmails);
     }
     function cfg() { return get(/databases/$(database)/documents/config/rules).data; }
     function userDoc(u) { return get(/databases/$(database)/documents/users/$(u)).data; }
