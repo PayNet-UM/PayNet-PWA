@@ -3,13 +3,13 @@ rules_version = '2';
 // UM Connect+ security rules (Spark plan, no Cloud Functions).
 // Every points change is paired with an immutable ledger entry in the same batch,
 // and each ledger type can only be written by the role allowed to earn it.
-// Run `npm run setup` to replace the admin email below before deploying.
+// The admin email below is a placeholder. The build fills it in from MPP_ADMIN_EMAILS for each environment.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------- identity ----------
-    function bootstrapAdmins() { return ['admin@umconnect-e455a.web.app']; }
+    function bootstrapAdmins() { return ['mpp-admin@demo.invalid']; }
     function signedIn() { return request.auth != null; }
     function uid() { return request.auth.uid; }
     function email() { return request.auth.token.email; }

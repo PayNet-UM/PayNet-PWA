@@ -1,9 +1,10 @@
 // Browser test of the real UI in Demo mode: student and merchant on separate "devices" (pages),
-// plus every MPP screen. Usage: serve app/ on :8765, then `node tests/e2e.mjs`.
+// plus every MPP screen. Usage: `npm run dev:demo` in one terminal, then `npm run test:e2e` in another.
 import { chromium } from 'playwright';
 const BASE = process.env.BASE || 'http://localhost:5173/';
 const shots = process.env.SHOTS || '/tmp/e2e';
 import fs from 'fs'; fs.mkdirSync(shots, { recursive: true });
+const adminEmail = /function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'))[1];
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1 });
 const errors = [];
@@ -13,6 +14,9 @@ const login = async (p, email) => { await p.goto(BASE); await p.waitForSelector(
 
 const stu = await ctx.newPage(); watch(stu, 'student');
 await stu.goto(BASE); await stu.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+// Never run this test's writes against a real project.
+await stu.reload(); await stu.waitForFunction(() => document.documentElement.dataset.backend, null, { timeout: 60000 });
+if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo') { console.error('Stopped: the server is not in Demo mode. Use npm run dev:demo.'); await b.close(); process.exit(1); }
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.pass', { timeout: 60000 });
 const before = Number((await stu.textContent('.pass [data-bind=points]')).replace(/\D/g, ''));
 ok(`student signed in with ${before} points`);
@@ -83,7 +87,7 @@ ok('new Gmail student reached their home screen');
 
 // MPP on desktop
 const mpp = await ctx.newPage(); watch(mpp, 'mpp'); await fresh(mpp); await mpp.setViewportSize({ width: 1360, height: 900 });
-await login(mpp, 'admin@umconnect-e455a.web.app');
+await login(mpp, adminEmail);
 await mpp.waitForSelector('#mpp-rail', { timeout: 30000 });
 await mpp.goto(BASE + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
