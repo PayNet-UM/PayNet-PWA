@@ -144,9 +144,10 @@ function handoffOrigin() {
 const handoffUrl = (hash) => `${handoffOrigin()}/?${HANDOFF_PARAM}=${hash}`;
 // Must stay synchronous from the tap to window.open, or iPhone blocks the new window.
 function handoffStart(app) {
-  const secret = b64url(crypto.getRandomValues(new Uint8Array(32)));
-  const hash = sha256hex(secret);
-  ls.set(HANDOFF_KEY, JSON.stringify({ secret, hash, at: Date.now() }));
+  // Reuse an unfinished attempt, so a second tap opens the same code the app is already waiting for.
+  let h = handoffPending();
+  if (!h) { const secret = b64url(crypto.getRandomValues(new Uint8Array(32))); h = { secret, hash: sha256hex(secret), at: Date.now() }; ls.set(HANDOFF_KEY, JSON.stringify(h)); }
+  const hash = h.hash;
   // From a home-screen app, iPhone opens a new window in Safari, where Google sign-in works.
   try { window.open(handoffUrl(hash), '_blank', 'noopener'); } catch { /* blocked: the sheet has a link */ }
   handoffWait(app);
@@ -181,8 +182,12 @@ function startPoll(app) {
         closeSheet(); toast(r.email ? `Signed in as ${r.email}` : 'Signed in.');
       }
     } catch (e) {
+      const st = document.getElementById('ho-status');
       if (e.code === 'expired' || e.status === 404) { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); toast(e.status === 404 ? 'The sign-in server isn’t set up yet. Use email and password for now.' : e.message, true); }
-      else { const st = document.getElementById('ho-status'); if (st) st.textContent = 'Can’t reach the server. Retrying…'; }
+      else if (e.code === 'setup') { stopPoll(); if (st) st.textContent = e.message; }
+      else if (e.status) { if (st) st.textContent = `${e.message} Retrying…`; }
+      else if (e.code && String(e.code).startsWith('auth/')) { if (st) st.textContent = `Couldn’t finish signing in (${e.code}). Retrying…`; }
+      else if (st) st.textContent = 'Can’t reach the server. Retrying…';
     } finally { busyNow = false; }
   };
   const vis = () => { if (document.visibilityState === 'visible') tick(); };
@@ -317,7 +322,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
       <p class="lede">Students and merchants both use their Google account. New here? Signing in creates your account.</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
-    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the Kampus Kita+ app on your home screen.</b> Sign in here, then go back to the app.</span></div>` : ''}
+    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the Kampus Kita+ app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">

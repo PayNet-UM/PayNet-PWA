@@ -1116,7 +1116,7 @@ It’s the same account, so your points, avatar and history stay the same. You c
 Link sent. Check your inbox (and spam), set a password, then sign in here.|Pautan dihantar. Semak peti masuk (dan spam), tetapkan kata laluan, kemudian log masuk di sini.
 Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.|Log masuk Google akan membuka Safari seketika. Log masuk di sana, kemudian kembali ke aplikasi ini dan anda sudah masuk.
 Signing in for the Kampus Kita+ app on your home screen.|Log masuk untuk aplikasi Kampus Kita+ di skrin utama anda.
-Sign in here, then go back to the app.|Log masuk di sini, kemudian kembali ke aplikasi.
+Sign in here (no need to switch to the Safari app), then go back to the app.|Log masuk di sini (tidak perlu tukar ke aplikasi Safari), kemudian kembali ke aplikasi.
 Sign in through the browser|Log masuk melalui pelayar
 Finish signing in in Safari|Selesaikan log masuk dalam Safari
 Sign in with Google in the Safari window that just opened. Then come back to this app: you’ll be signed in automatically.|Log masuk dengan Google dalam tetingkap Safari yang baru dibuka. Kemudian kembali ke aplikasi ini: anda akan log masuk secara automatik.

@@ -17,7 +17,7 @@ export class HttpError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
 
-// deps: { verifyIdToken(token) -> {uid, email, email_verified}, store: { create(id, data), take(id) -> data|null }, mintToken(uid) -> string, now() }
+// deps: { verifyIdToken(token) -> {uid, email, email_verified}, store: { create(id, data), peek(id) -> data|null, take(id) -> data|null }, mintToken(uid) -> string, now() }
 export async function create(deps, { hash, idToken }) {
   if (typeof hash !== 'string' || !HASH.test(hash)) throw new HttpError(400, 'bad-request', 'Missing or invalid hand-off code.');
   if (typeof idToken !== 'string' || idToken.length < 20) throw new HttpError(401, 'unauthenticated', 'Sign in first.');
@@ -28,7 +28,12 @@ export async function create(deps, { hash, idToken }) {
   try {
     await deps.store.create(hash, { uid: user.uid, email: user.email || null, createdAt: now, expiresAt: now + TTL_MS });
   } catch (e) {
-    if (e && e.code === 'already-exists') throw new HttpError(409, 'used', 'This sign-in link was already used. Start again from the app.');
+    if (e && e.code === 'already-exists') {
+      // The same person reloading the Safari page is fine; a different account can't take over the code.
+      const rec = await deps.store.peek(hash);
+      if (rec && rec.uid === user.uid) return { ok: true, email: user.email || null };
+      throw new HttpError(409, 'used', 'This sign-in link was already used. Start again from the app.');
+    }
     throw e;
   }
   return { ok: true, email: user.email || null };
@@ -36,8 +41,12 @@ export async function create(deps, { hash, idToken }) {
 
 export async function redeem(deps, { secret }) {
   if (typeof secret !== 'string' || !SECRET.test(secret)) throw new HttpError(400, 'bad-request', 'Missing or invalid hand-off secret.');
-  const rec = await deps.store.take(sha256hex(secret));
+  const id = sha256hex(secret);
+  const rec = await deps.store.peek(id);
   if (!rec) return { status: 'pending' };
-  if (deps.now() > rec.expiresAt) throw new HttpError(410, 'expired', 'That sign-in took too long. Start again from the app.');
-  return { status: 'ready', token: await deps.mintToken(rec.uid), email: rec.email };
+  if (deps.now() > rec.expiresAt) { await deps.store.take(id); throw new HttpError(410, 'expired', 'That sign-in took too long. Start again from the app.'); }
+  // Make the token first, then use up the record: if making the token fails, the app can still try again.
+  const token = await deps.mintToken(rec.uid);
+  if (!(await deps.store.take(id))) return { status: 'pending' }; // someone else just used it
+  return { status: 'ready', token, email: rec.email };
 }

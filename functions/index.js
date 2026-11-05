@@ -15,6 +15,11 @@ const store = {
   async create(id, data) {
     await db.collection('handoffs').doc(id).create({ ...data, expiresAt: Timestamp.fromMillis(data.expiresAt) });
   },
+  async peek(id) {
+    const snap = await db.collection('handoffs').doc(id).get();
+    if (!snap.exists) return null;
+    const d = snap.data(); return { ...d, expiresAt: d.expiresAt.toMillis() };
+  },
   async take(id) {
     const ref = db.collection('handoffs').doc(id);
     return db.runTransaction(async (tx) => {
