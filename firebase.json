@@ -1,13 +1,10 @@
 {
   "firestore": {
-    "rules": "firestore.rules",
+    "rules": "dist/firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
     "public": "dist",
-    "predeploy": [
-      "node scripts/build.mjs"
-    ],
     "ignore": [
       "firebase.json",
       "**/.*"
@@ -36,7 +33,7 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public, max-age=3600"
+            "value": "no-cache"
           }
         ]
       },
@@ -71,6 +68,15 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "api",
+          "region": "asia-southeast1"
+        }
+      }
     ]
   },
   "emulators": {
@@ -86,5 +92,17 @@
     "ui": {
       "enabled": false
     }
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log"
+      ]
+    }
+  ]
 }

@@ -1,0 +1,151 @@
+/* Campus Events: festive paper, bunting and colour accents inspired by page 1.
+   All +Onz typography and surrounding app layout remain inherited. */
+.campus-event-showcase { --fest-blue:#145a86;--fest-coral:#ed503d;--fest-gold:#ffc52d;--fest-teal:#009f8a;position:relative;margin:28px 0 30px;padding:29px 22px 0;border:1px solid #e4d7c7;border-radius:26px;background:radial-gradient(#c1a98b20 .8px,transparent .8px) 0 0/12px 12px,linear-gradient(140deg,#fffdf8,#fbf0dc);box-shadow:0 8px 28px -18px #72503550;overflow:hidden; }
+.campus-event-showcase::before { content:'';position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#145a86 0 20%,#ffc52d 20% 40%,#ed503d 40% 60%,#009f8a 60% 80%,#8b6fb5 80%); }
+.event-bunting { position:absolute;top:5px;right:0;width:225px;height:65px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 270 80'%3E%3Cpath d='M0 0Q130 50 270 2' fill='none' stroke='%23164061' stroke-width='2'/%3E%3Cpath d='M10 5L23 40L42 15' fill='%23ffc52d'/%3E%3Cpath d='M55 19L71 57L88 26' fill='%23ed503d'/%3E%3Cpath d='M102 28L122 65L138 29' fill='%23009f8a'/%3E%3Cpath d='M152 29L173 61L186 23' fill='%23145a86'/%3E%3Cpath d='M200 20L222 50L231 12' fill='%23ed0064'/%3E%3Cpath d='M242 9L263 34L267 2' fill='%23ffc52d'/%3E%3C/svg%3E") center/contain no-repeat;opacity:.85; }
+.event-showcase-heading { display:flex;align-items:flex-end;justify-content:space-between;gap:15px;margin:5px 0 23px;position:relative; }
+.event-showcase-eyebrow { font-size:8px;letter-spacing:1.8px;font-weight:800;color:#9c4d37;display:block;margin-bottom:7px; }
+.event-showcase-heading h2 { font-size:29px;letter-spacing:-1px;color:#103c5d;line-height:1.15; }
+.event-showcase-heading h2>span { color:#e9a419;font-size:24px;margin-left:8px; }
+.event-showcase-heading>a { font-size:12px;color:#145a86;white-space:nowrap;display:flex;align-items:center;gap:7px; }
+.event-showcase-heading>a svg { width:15px;height:15px; }
+.event-showcase-body { background:#fff;border:1px solid #dfd6ca;border-radius:18px;overflow:hidden;position:relative; }
+.event-poster { display:block;position:relative;width:100%;border:0;padding:0;background:#efe8db;cursor:zoom-in;text-align:left;touch-action:pan-y; }
+.event-poster img { display:block;width:100%;height:auto;aspect-ratio:1600/710;object-fit:contain;user-select:none; }
+.event-poster-hint { position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:5px;background:#fffdf3eb;color:#183d53;border:1px solid #fff8;border-radius:30px;font-size:10px;font-weight:700;padding:6px 10px;box-shadow:0 2px 8px #0002; }
+.event-poster-hint svg { width:14px;height:14px; }
+.event-slide-caption { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 22px; }
+.event-slide-tag { display:inline-block;font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:1.3px;color:#b74834;background:#fff0e3;border:1px solid #f4d9c5;border-radius:99px;padding:4px 8px;margin-bottom:8px; }
+.event-slide-caption h3 { font-size:23px;color:#103c5d;letter-spacing:-.6px;margin-bottom:8px; }
+.event-slide-caption p { display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.5;color:#566677;margin-top:4px; }
+.event-slide-caption p svg { width:14px;height:14px;margin-top:2px; }
+.event-slide-caption>.btn { flex-shrink:0;background:#145a86;color:#fff;border:0;min-height:41px;padding:0 16px;font-size:12px; }
+.event-slide-controls { display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #eee5da;background:#fffcf6;padding:12px 18px; }
+.event-slide-buttons { display:flex;align-items:center;gap:6px; }
+.event-slide-buttons button { display:grid;place-items:center;width:33px;height:33px;border:1px solid #d8d2c8;border-radius:50%;background:#fff;color:#145a86;cursor:pointer; }
+.event-slide-buttons button svg { width:15px;height:15px; }
+.event-slide-buttons button[data-play] { background:#ffdf78;border-color:#ebc65b;color:#344c51; }
+.event-slide-dots { display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:1px; }
+.event-slide-dots button { position:relative;width:17px;height:28px;display:grid;place-items:center;border:0;background:none;padding:0;cursor:pointer; }
+.event-slide-dots button::before { content:'';width:5px;height:5px;border-radius:50%;background:#c7c3bc; }
+.event-slide-dots button[aria-pressed=true]::before { width:13px;border-radius:5px;background:#ed503d; }
+.event-slide-count { font-size:10px;letter-spacing:1px;font-weight:700;font-variant-numeric:tabular-nums;color:#6f746e;white-space:nowrap; }
+.event-showcase-footer { display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px 16px;font-size:9px;color:#7a756b; }
+.event-showcase-footer span { display:flex;align-items:center;gap:5px; }
+.event-showcase-footer svg { width:12px;height:12px;flex-shrink:0; }
+.event-showcase-footer a { display:flex;align-items:center;gap:5px;color:#145a86;font-weight:800;white-space:nowrap;font-size:10px; }
+.event-poster-dialog h2 { color:#103c5d;margin-bottom:8px;font-size:27px; }
+.event-poster-dialog>p { font-size:14px;line-height:1.65;margin-top:4px; }
+.event-poster-dialog>a:not(.btn) { display:block;margin:18px 0;border-radius:13px;overflow:hidden;background:#f7f2e9; }
+.event-poster-dialog img { width:100%;height:auto;display:block; }
+.event-poster-dialog .faint { font-size:11px;margin:12px 0 18px; }
+.campus-event-showcase button:focus-visible { outline:3px solid #145a86;outline-offset:-4px; }
+/* Carry the same festival palette into the Campus Events feature and booth explorer. */
+.festival-entry { background:radial-gradient(#c1a98b20 .8px,transparent .8px) 0 0/12px 12px,linear-gradient(120deg,#fffdf7,#ffedc9);color:#103c5d;border:1px solid #e4d7c7;box-shadow:0 8px 25px -18px #765a3950; }
+.festival-entry em { color:#df5538; }.festival-entry p,.festival-entry-meta { color:#566778; }
+.festival-entry .festival-eyebrow { color:#9e533b; }.festival-entry-cta { color:#fff;background:#145a86; }
+.festival-entry-art>svg { stroke:#009f8a; }.festival-entry-art span { color:#9e533b; }
+.festival-hero { background:linear-gradient(120deg,#fffdf5,#ffedcf);color:#103c5d;border:1px solid #e4d7c7; }
+.festival-hero h1 { color:#103c5d; }.festival-hero em { color:#df5538; }.festival-hero p,.festival-stats { color:#5b6974; }
+.festival-hero .festival-eyebrow { color:#9e533b; }.festival-stats b { color:#008b7a; }.festival-orbit,.festival-hero-art i { color:#d6a114; }
+.festival-hero:after { background-image:radial-gradient(#c1a98b30 1px,transparent 1px); }
+@media(max-width:600px) {
+  .campus-event-showcase { padding:24px 13px 0;margin:24px 0;border-radius:23px; }
+  .event-bunting { width:140px;height:44px;opacity:.5; }.event-showcase-heading { margin-bottom:17px; }.event-showcase-heading h2 { font-size:25px; }
+  .event-showcase-eyebrow { font-size:7px;letter-spacing:1px; }.event-showcase-heading>a { font-size:11px;gap:4px; }
+  .event-slide-caption { padding:16px;gap:12px;align-items:flex-start;flex-direction:column; }.event-slide-caption h3 { font-size:21px; }.event-slide-caption>.btn { min-height:36px;font-size:11px; }
+  .event-slide-caption p { font-size:11px; }.event-poster-hint { right:7px;bottom:7px;font-size:8px;padding:4px 7px; }.event-poster-hint svg { width:11px;height:11px; }
+  .event-slide-controls { padding:10px;gap:6px;flex-wrap:wrap; }.event-slide-count { font-size:9px; }.event-slide-dots button { width:14px; }
+  .event-slide-buttons button { width:30px;height:30px; }.event-showcase-footer { align-items:flex-start;flex-direction:column;gap:8px;font-size:8px; }
+}
+@media(max-width:370px) { .event-slide-dots { order:3;flex:1 0 100%; }.event-slide-controls { row-gap:3px; }.event-slide-count { margin-left:auto; }.event-showcase-heading h2 { font-size:22px; }.event-showcase-heading h2>span { font-size:18px;margin-left:4px; }.event-slide-tag { font-size:8px; } }
+.event-showcase-heading h1 { font-size:29px;letter-spacing:-1px;color:#103c5d;line-height:1.15;margin:0; }
+.event-showcase-heading h1>span { color:#e9a419;font-size:24px;margin-left:8px; }
+.event-poster-hint { padding:6px; }
+@media(max-width:600px) { .event-showcase-heading h1 { font-size:25px; } }
+
+
+.campus-event-showcase-home {
+  width:92%;
+  max-width:520px;
+  margin:16px auto 20px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+  box-shadow:none;
+}
+.campus-event-showcase-home::before { content:none; }
+.campus-event-showcase-home .event-showcase-heading { margin:0 0 6px; }
+.campus-event-showcase-home .event-showcase-heading h2 { width:100%;font-size:18px; }
+.campus-event-showcase-home .event-showcase-heading a {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:32px;
+  color:inherit;
+}
+.campus-event-showcase-home .event-showcase-heading a:hover { text-decoration:underline; }
+.campus-event-showcase-home .event-showcase-heading .ic { width:20px;height:20px; }
+.campus-event-showcase-home .event-showcase-body { border-radius:12px; }
+.event-home-play {
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  display:grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  border:1px solid #fff;
+  border-radius:50%;
+  background:#103c5d;
+  color:#fff;
+  cursor:pointer;
+}
+.event-home-play .ic { width:16px;height:16px; }
+
+@media (min-width: 900px) {
+  .onz-home-feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 27%);
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .onz-home-feature .kk-hero { margin-top: 0; }
+  .onz-home-feature .campus-event-showcase-home {
+    display: grid;
+    width: 100%;
+    margin: 0;
+    border-radius: 18px;
+  }
+  .onz-home-feature .event-showcase-heading {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    margin: 0;
+    padding: 8px 12px;
+    background: linear-gradient(#080d68e8, #080d6800);
+  }
+  .onz-home-feature .event-showcase-heading h2 { color: #fff; }
+  .onz-home-feature .event-showcase-body {
+    min-height: 210px;
+    border: 0;
+    border-radius: inherit;
+  }
+  .onz-home-feature .event-poster { height: 100%; }
+  .onz-home-feature .event-poster img {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    aspect-ratio: auto;
+    object-fit: cover;
+  }
+  .onz-home-feature .event-poster:focus-visible::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 3px solid #fff;
+    border-radius: 14px;
+    pointer-events: none;
+  }
+}

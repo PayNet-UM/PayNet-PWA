@@ -1,11 +1,19 @@
 .DS_Store
 node_modules/
-.env
-.env.*
-.openai/
-
-
-node_modules/
 dist/
 .firebase/
 *.log
+.openai/
+
+# Environment values. Only the example is committed.
+.env
+.env.*
+!.env.example
+
+# Credentials that must never be committed
+*adminsdk*.json
+*service*account*.json
+*.pem
+gha-creds-*.json
+# Server settings per project (no secrets: only which service account the server runs as)
+!functions/.env.*
