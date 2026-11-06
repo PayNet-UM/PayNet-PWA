@@ -517,8 +517,11 @@ Mark as used|Tandakan telah digunakan
 Mark used|Tandakan digunakan
 Voucher marked as used.|Baucar ditandakan telah digunakan.
 Voucher marked used.|Baucar ditandakan digunakan.
-Voucher not found for your shop.|Baucar tidak dijumpai untuk kedai anda.
-This voucher belongs to another merchant.|Baucar ini milik peniaga lain.
+No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.|Tiada baucar dengan kod ini untuk kedai anda. Semak kod, atau baucar pelajar untuk lokasi penggunaannya.
+This voucher isn’t for your shop. The student’s voucher shows where to use it.|Baucar ini bukan untuk kedai anda. Baucar pelajar menunjukkan lokasi penggunaannya.
+Collect at the HEP counter|Tuntut di kaunter HEP
+Use at|Gunakan di
+a selected shop|kedai terpilih
 This voucher has been used.|Baucar ini telah digunakan.
 No voucher with that code.|Tiada baucar dengan kod itu.
 Voucher added. Show it at the counter.|Baucar ditambah. Tunjukkan di kaunter.

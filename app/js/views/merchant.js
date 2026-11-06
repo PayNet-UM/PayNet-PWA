@@ -102,8 +102,8 @@ function scanMount(root, app) {
 }
 async function voucherFlow(app, raw) {
   let v;
-  try { v = await D.findVoucher(app.ctx, raw); } catch (e) { return toast(e.code === 'permission-denied' ? 'This voucher belongs to another merchant.' : errText(e), true); }
-  if (!v) return toast('Voucher not found for your shop.', true);
+  try { v = await D.findVoucher(app.ctx, raw); } catch (e) { return toast(e.code === 'permission-denied' ? 'This voucher isn’t for your shop. The student’s voucher shows where to use it.' : errText(e), true); }
+  if (!v) return toast('No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.', true);
   if (v.status === 'used') return toast(`Voucher already used on ${fmtDate(v.usedAt)}.`, true);
   if (D.voucherExpired(v)) return toast('This voucher has expired.', true);
   const el = sheet(`<h2>Redeem voucher</h2><div class="ticket" style="margin-top:12px"><span class="stub">${icon('ticket')}</span><span class="body"><h3>${esc(v.title)}</h3><p class="faint">${esc(v.studentName)} · worth ${rm(v.valueCents)}</p></span></div>
