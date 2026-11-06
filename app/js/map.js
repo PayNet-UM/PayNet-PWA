@@ -5,7 +5,7 @@
 //   m.setPins(list, { popup }) · m.setMe(pos) · m.fit(points) · m.setView(lat, lng, zoom)
 //   m.onClick(cb) · m.dragPin(lat, lng, onMove) · m.remove()
 import { GEO_BOX, inGeoBox } from './data.js';
-import { esc, colorFor, initials } from './ui.js';
+import { safeImg, esc, colorFor, initials } from './ui.js';
 import * as CFG from './firebase-config.js';
 
 export const UM_CENTER = [3.1218, 101.6551];
@@ -33,7 +33,7 @@ const TYPE_COLORS = { 'Food & drinks': '#F4A019', Printing: '#258DCE', Laundry: 
 // The pin is plain HTML, so both engines show the merchant's logo the same way.
 export function pinHTML(m) {
   const c = TYPE_COLORS[m && m.type] || '#00A547';
-  const inner = m && m.logo ? `<img src="${m.logo}" alt="">` : m && m.name ? `<b style="background:${colorFor(m.name)}">${esc(initials(m.name))}</b>` : '<i></i>';
+  const inner = m && safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="">` : m && m.name ? `<b style="background:${colorFor(m.name)}">${esc(initials(m.name))}</b>` : '<i></i>';
   return `<span class="kk-pin" style="--c:${c}"><span class="kk-pin-head">${inner}</span></span>`;
 }
 const meHTML = () => '<span class="kk-me"><span></span></span>';
@@ -156,9 +156,9 @@ async function leafletMap(el, { center, zoom, interactive }) {
   const L = await loadLeaflet();
   const map = L.map(el, { zoomControl: interactive, dragging: interactive, scrollWheelZoom: false, tap: true, zoomAnimation: false, markerZoomAnimation: false,
     maxBounds: [[GEO_BOX.latMin - 0.03, GEO_BOX.lngMin - 0.03], [GEO_BOX.latMax + 0.03, GEO_BOX.lngMax + 0.03]], minZoom: 13 }).setView(center, zoom);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20, subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
   }).addTo(map);
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   setTimeout(() => map.invalidateSize(), 60);

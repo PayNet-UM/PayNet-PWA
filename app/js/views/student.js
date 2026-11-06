@@ -6,7 +6,7 @@ import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
-import { $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
+import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, chevron, countUp } from '../ui.js';
 
 export const defaultRoute = 'home';
@@ -31,7 +31,7 @@ function streak(visits) {
 }
 const firstName = (p) => (p?.name || '').split(' ')[0];
 export const myAvatar = (app) => app.profile?.avatar || AV.defaultFor(app.ctx?.uid);
-export const merchantLogo = (m, cls = 'logo') => (m.logo ? `<img class="${cls}" src="${m.logo}" alt="">`
+export const merchantLogo = (m, cls = 'logo') => (safeImg(m.logo) ? `<img class="${cls}" src="${safeImg(m.logo)}" alt="">`
   : `<span class="${cls}" style="background:${colorFor(m.name)}">${esc(initials(m.name))}</span>`);
 const isIdea = (m) => m.segment === IDEA_SEGMENT;
 
@@ -441,7 +441,7 @@ function rewardsMount(root, app) {
     b.onclick = async () => {
       const r = (await D.listRewards(app.ctx)).find((x) => x.id === b.dataset.redeem);
       if (!(await confirmSheet(`Swap ${n(r.cost)} points for ${r.title}?`, `You’ll have ${n(app.profile.points - r.cost)} points left. The voucher is valid for ${r.validDays || 30} days.`, 'Swap points'))) return;
-      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it at the counter.'); await app.render(); showVoucher(app, vid); }
+      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it at the counter.'); await app.render(); showVoucher(app, vid, [{ id: vid, title: r.title, merchantId: r.merchantId, status: 'issued' }]); }
       catch (e) { toast(errText(e), true); }
     };
   });
