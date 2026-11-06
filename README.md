@@ -1,14 +1,16 @@
-# UM Connect+
+# +Onz
 
-UM Connect+ is a campus cashless-rewards app for Universiti Malaya. It's an installable web app (PWA) built on Firebase, with three roles:
++Onz is a campus rewards app for Universiti Malaya. It's an installable web app (PWA) built on Firebase, with three roles:
 
 | Role | What they do |
 |---|---|
-| **Student** | Pays cafes and collects points through one-use QR codes, then redeems rewards and completes missions and lessons |
-| **Merchant** | Registers a shop, confirms student purchases by scanning their QR codes, and runs offers |
-| **MPP (admin)** | Verifies merchants, approves offers and missions, manages rules and reconciles against PayNet's monthly counts |
+| **Student** | Checks in at shops using GPS to collect points, then redeems rewards and completes missions and lessons |
+| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals |
+| **HEP (admin)** | Verifies merchants, approves offers, deals and missions, manages rules and compares activity with PayNet's monthly counts |
 
-The app records purchases that merchants confirm. It never moves money.
+The app doesn't record payments and never moves money. Students pay with DuitNow QR in their own bank or e-wallet app.
+
+The code and settings still say `mpp` in places, such as `MPP_ADMIN_EMAILS` and the `mppEmails` database field. These all mean the HEP admin role.
 
 ## Links
 
@@ -88,6 +90,7 @@ Deploys normally run through GitHub Actions. See [docs/DEPLOY.md](docs/DEPLOY.md
 
 ```
 app/                 The PWA: js/views for each role, js/fake for Demo mode, vendor for libraries
+functions/           Server code for Google sign-in in the iPhone home-screen app
 scripts/             Dev server, build and deploy; lib/env.mjs holds the environment logic
 tests/               Rule scenarios, deploy-guard tests and the browser test
 docs/                Deployment guide, Git workflow, project PDF
@@ -110,10 +113,12 @@ firebase.json        Hosting, Firestore and emulator settings
 Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 
 - [ ] Firestore region is confirmed; it can't be changed later
-- [ ] Admin account exists **before** Email/Password sign-in is turned on
-- [ ] Google and Email/Password sign-in are enabled
+- [ ] Google sign-in is on, and the admin has signed in **before** Email/Password sign-in is turned on
+- [ ] Email/Password sign-in is on, for merchants without a Google account
 - [ ] API key is restricted in Google Cloud Console, for both projects
 - [ ] GitHub Environments, variables and secrets are set up
+- [ ] The sign-in server is set up: `functions/.env.umconnectproduction` is committed, and its account has the **Service Account Token Creator** role
+- [ ] Students are told what location and personal data the app collects
 - [ ] `main` and `development` are protected
 - [ ] Scheduled Firestore backups are on (this may need the Blaze plan)
 - [ ] Programme defaults are reviewed on first admin login, especially the allocation and allowed student domains (`gmail.com` is allowed by default)

@@ -32,7 +32,7 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   let rules = D.DEFAULT_RULES;
 
   log('Programme setup');
-  await ok('students get a clear message before MPP has set up the programme', async () => {
+  await ok('students get a clear message before HEP has set up the programme', async () => {
     const early = await makeCtx({ uid: 'early1', email: 'early@gmail.com' });
     try { await D.createProfile(early, { role: 'student', name: 'Early Bird', matric: '23000001', college: 'KK1' }); } catch (e) { if (e.notReady) return; throw e; }
     throw new Error('sign-up was accepted before setup');
@@ -42,11 +42,11 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     const claimer = await makeCtx({ uid: 'claimer', email: adminEmail, emailVerified: false });
     await D.initProgramme(claimer);
   });
-  await ok('bootstrap MPP admin initialises config, stats and rewards', () => D.initProgramme(mpp));
-  await ok('MPP is recognised as MPP', async () => eq(await D.isMppUser(mpp), true));
-  await ok('a student is not MPP', async () => eq(await D.isMppUser(stuA), false));
+  await ok('bootstrap HEP admin initialises config, stats and rewards', () => D.initProgramme(mpp));
+  await ok('HEP is recognised as HEP', async () => eq(await D.isMppUser(mpp), true));
+  await ok('a student is not HEP', async () => eq(await D.isMppUser(stuA), false));
 
-  await ok('an unverified account using the admin email is not MPP', async () => {
+  await ok('an unverified account using the admin email is not HEP', async () => {
     const raw = await makeCtx({ uid: 'mpp0', email: adminEmail, emailVerified: false }); eq(await D.isMppUser(raw), false);
   });
   log('Sign-up');
@@ -99,7 +99,7 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await denied('merchant cannot verify itself', () => D.reviewMerchant(merch, 'mer1', 'verified'));
   await denied('students cannot see unverified merchants', () => D.getMerchant(stuA, 'mer1'));
   await denied('student cannot check in at an unverified merchant', () => D.checkIn(stuA, { id: 'mer1', name: 'Kopi Kolej' }, { lat: 3.1268, lng: 101.6553, accuracy: 10 }, rules));
-  await ok('MPP reads the private QR and verifies the merchants', async () => {
+  await ok('HEP reads the private QR and verifies the merchants', async () => {
     const p = await D.getMerchantPrivate(mpp, 'mer1'); eq(p.qrImage.length, qr.length, 'qr length');
     await D.reviewMerchant(mpp, 'mer1', 'verified', 'Names match');
     await D.reviewMerchant(mpp, 'mer2', 'verified', 'Names match');
@@ -187,7 +187,7 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await ok('A’s refCount is 1', async () => { eq(stuA.profile.refCount, 1); });
 
   log('Rewards, vouchers, welfare');
-  await ok('MPP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
+  await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
     cost: 200, valueCents: 200, stock: 2, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' }));
   let vid;
   await ok('A redeems the reward for 200 points', async () => {
@@ -208,13 +208,13 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
 
   log('Offers and quiet-hour bonuses');
   merch.merchantName = 'Kopi Kolej';
-  await ok('merchant proposes an offer; MPP approves it', async () => {
+  await ok('merchant proposes an offer; HEP approves it', async () => {
     await D.createOffer(merch, { title: 'Double points Tuesdays', type: 'Extra points', endDate: '2026-12-31' });
     const [o] = await D.pendingOffers(mpp); await D.reviewOffer(mpp, o, 'approved');
     eq((await D.getMerchant(stuA, 'mer1')).offer, 'Double points Tuesdays');
   });
   let deal;
-  await ok('merchant creates a quiet-hour bonus and sets seats; MPP approves', async () => {
+  await ok('merchant creates a quiet-hour bonus and sets seats; HEP approves', async () => {
     await D.createDeal(merch, { title: 'Quiet afternoon', startMin: canSetTime ? 14 * 60 : 0, endMin: canSetTime ? 17 * 60 : 1440, threshold: 60, bonus: 40, limit: 1 });
     await D.setOccupancy(merch, 40, 39);
     const [d] = await D.pendingDeals(mpp); await D.reviewDeal(mpp, d.id, 'approved'); deal = { ...d, status: 'approved' };
@@ -233,8 +233,8 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     farah.profile = await D.getProfile(farah); const before = await pts(farah); await D.checkIn(farah, kopi, at(kopi), rules, null); eq(await pts(farah), before + 10);
   });
 
-  log('Missions and MPP tools');
-  await ok('student claims a mission; MPP approves; points added', async () => {
+  log('Missions and HEP tools');
+  await ok('student claims a mission; HEP approves; points added', async () => {
     const before = (await D.getProfile(stuA)).points;
     await D.claimMission(stuA, D.MISSIONS[1], D.weekKey(T), 3);
     const [c] = await D.pendingMissionClaims(mpp); await D.reviewMissionClaim(mpp, c, true);
@@ -245,9 +245,9 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     const c = { id: `stuB_${D.weekKey(T)}_five-days`, uid: 'stuB', bonus: 100, title: 'x', week: D.weekKey(T) };
     await D.reviewMissionClaim(stuB, c, true);
   });
-  await ok('MPP adjusts points with a note', async () => { await D.adjustPoints(mpp, 'stuB', -5, 'Correction: duplicate'); });
-  await denied('MPP adjustment cannot make a balance negative', () => D.adjustPoints(mpp, 'stuB', -100000, 'Too much'));
-  await ok('MPP lists users and this month’s check-ins', async () => {
+  await ok('HEP adjusts points with a note', async () => { await D.adjustPoints(mpp, 'stuB', -5, 'Correction: duplicate'); });
+  await denied('HEP adjustment cannot make a balance negative', () => D.adjustPoints(mpp, 'stuB', -100000, 'Too much'));
+  await ok('HEP lists users and this month’s check-ins', async () => {
     eq((await D.listUsers(mpp)).length >= 4, true, 'users');
     eq((await D.monthVisits(mpp, D.monthKey(T))).length >= 4, true, 'visits');
   });
@@ -258,16 +258,16 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await denied('nobody can create a sign-in hand-off code from the app', async () => {
     const { sdk, db } = mpp; await sdk.setDoc(sdk.doc(db, 'handoffs', 'b'.repeat(64)), { uid: 'mpp1', expiresAt: 0 });
   });
-  await ok('MPP can flag a visit after review', async () => { const [v] = await D.monthVisits(mpp, D.monthKey(T)); await D.flagVisit(mpp, v.id, 'ok', 'Reviewed'); });
-  await ok('MPP adds another MPP reviewer by email', async () => {
+  await ok('HEP can flag a visit after review', async () => { const [v] = await D.monthVisits(mpp, D.monthKey(T)); await D.flagVisit(mpp, v.id, 'ok', 'Reviewed'); });
+  await ok('HEP adds another HEP reviewer by email', async () => {
     const a = await D.getConfig(mpp, 'access'); await D.saveConfig(mpp, 'access', { ...a, mppEmails: ['reviewer@um.edu.my'] });
   });
   const reviewer = await makeCtx({ uid: 'mpp2', email: 'reviewer@um.edu.my' });
-  await ok('the new reviewer has MPP access', async () => eq(await D.isMppUser(reviewer), true));
+  await ok('the new reviewer has HEP access', async () => eq(await D.isMppUser(reviewer), true));
   await ok('an added reviewer must verify their email first', async () => {
     const unv = await makeCtx({ uid: 'mpp3', email: 'reviewer@um.edu.my', emailVerified: false }); eq(await D.isMppUser(unv), false);
   });
-  await ok('MPP saves Lampiran 2 rows and PayNet counts', async () => {
+  await ok('HEP saves Lampiran 2 rows and PayNet counts', async () => {
     await D.saveManualVolume(mpp, null, { name: 'Dobi KK3', location: 'KK3', method: 'Card', provider: 'Kiplepay', month: '2026-11', volume: 120 });
     await D.savePaynetCounts(mpp, '2026-11', [{ merchantId: 'mer1', merchantName: 'Kopi Kolej', count: 40 }]);
   });

@@ -1,4 +1,4 @@
-// Browser test of the real UI in Demo mode: student, merchant and MPP on separate pages, plus a
+// Browser test of the real UI in Demo mode: student, merchant and HEP on separate pages, plus a
 // pass with a fake Google Maps API key so the Google Maps code path is exercised.
 // Usage: `npm run dev:demo` in one terminal, then `npm run test:e2e` in another.
 import { chromium } from 'playwright';
@@ -131,22 +131,22 @@ if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caugh
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to MPP', { timeout: 15000 });
+await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to HEP', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
-// ---------- MPP on desktop
+// ---------- HEP on desktop
 const mpp = await ctx.newPage(); watch(mpp, 'mpp'); await fresh(mpp); await mpp.setViewportSize({ width: 1360, height: 900 });
 await login(mpp, adminEmail);
 await mpp.waitForSelector('#mpp-rail', { timeout: 30000 });
 await mpp.goto(BASE + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
-await mpp.waitForSelector('#toast.show'); ok('MPP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
+await mpp.waitForSelector('#toast.show'); ok('HEP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
 for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings']) {
   await mpp.goto(BASE + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
-  if (await mpp.$('text=This page didn’t load')) throw new Error('MPP page failed: ' + r);
+  if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }
 const ci = (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/);
-ok('all MPP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
+ok('all HEP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
 const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(BASE + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
 await dl.saveAs(`${shots}/Lampiran1.xlsx`); ok('Lampiran 1 Excel exported: ' + dl.suggestedFilename());
 

@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Kampus Kita+ security rules (Spark plan, no Cloud Functions).
+// +Onz security rules.
 // Every points change is paired with an immutable ledger entry in the same batch,
 // and each ledger type can only be written by the role allowed to earn it.
 // Students earn by checking in at a merchant's map pin (no purchase tracking).
@@ -330,7 +330,7 @@ service cloud.firestore {
         && D().points == getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(id)).data.delta;
       allow update: if isMpp() && changed().hasOnly(['flag', 'flagNote', 'flaggedBy']);
     }
-    // Purchase codes from the first pilot version: kept readable for MPP records only.
+    // Purchase codes from the first pilot version: kept readable for HEP records only.
     match /txRequests/{id} {
       allow read: if isMpp();
     }
@@ -401,7 +401,7 @@ service cloud.firestore {
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
     }
 
-    // ---------- MPP-only programme records ----------
+    // ---------- HEP-only programme records ----------
     match /campaigns/{id} {
       allow read: if signedIn();
       allow write: if isMpp();

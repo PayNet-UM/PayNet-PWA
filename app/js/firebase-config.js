@@ -10,8 +10,8 @@ export const firebaseConfig = {
   "appId": "REPLACE_ME"
 };
 
-// Emails that get MPP admin access on day one, from MPP_ADMIN_EMAILS. The same list fills bootstrapAdmins()
-// in firestore.rules. More MPP reviewers can be added later in the app under Settings.
+// Emails that get HEP admin access on day one, from MPP_ADMIN_EMAILS. The same list fills bootstrapAdmins()
+// in firestore.rules. More HEP reviewers can be added later in the app under Settings.
 export const mppBootstrapEmails = ['mpp-admin@demo.invalid'];
 
 // Google Maps (optional), from GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_MAP_ID. A browser key with the "Maps JavaScript API"
