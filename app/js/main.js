@@ -53,12 +53,13 @@ async function onUser(user) {
   if (mode === 'live' && !user.emailVerified) return Auth.renderVerify(app);
   // Opened from the iPhone home-screen app to sign in: hand the sign-in back instead of opening the app here.
   const hoHash = mode === 'live' ? Auth.handoffHash() : null;
-  if (hoHash) return Auth.renderHandoffDone(app, user, hoHash);
+  if (hoHash) return Auth.renderHandoffDone(app, user, hoHash, await D.isMppUser({ sdk, db, uid: user.uid, email: user.email }));
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
   if (isMpp && (!profile || sessionStorage.getItem('umc-view') !== profile.role)) return startRole('mpp');
+  if (profile?.disabled) return Auth.renderBlocked(app);
   if (!profile) return Auth.renderOnboarding(app, async () => { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); });
   startRole(profile.role);
 }

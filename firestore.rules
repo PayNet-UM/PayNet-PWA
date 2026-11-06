@@ -28,8 +28,10 @@ service cloud.firestore {
     function cfg() { return get(/databases/$(database)/documents/config/rules).data; }
     function userDoc(u) { return get(/databases/$(database)/documents/users/$(u)).data; }
     function userAfter(u) { return getAfter(/databases/$(database)/documents/users/$(u)).data; }
-    function isStudent() { return verified() && userDoc(uid()).role == 'student'; }
-    function isMerchantRole() { return verified() && userDoc(uid()).role == 'merchant'; }
+    // HEP can block an account: blocked users can't earn, redeem, check in or trade.
+    function notBlocked() { return userDoc(uid()).get('disabled', false) != true; }
+    function isStudent() { return verified() && userDoc(uid()).role == 'student' && notBlocked(); }
+    function isMerchantRole() { return verified() && userDoc(uid()).role == 'merchant' && notBlocked(); }
     function isVerifiedMerchant() {
       return isMerchantRole() && get(/databases/$(database)/documents/merchants/$(uid())).data.status == 'verified';
     }
@@ -117,7 +119,7 @@ service cloud.firestore {
             && D().matric is string && D().matric.matches('^[A-Z0-9]{5,15}$')
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
-          (uid() == u && selfUpdate())
+          (uid() == u && resource.data.get('disabled', false) != true && selfUpdate())
           || (isMpp() && changed().hasOnly(['points', 'lastTx', 'disabled'])
               && (!ptsChanged() || ledgerAfter().type == 'adjust'))
         );
@@ -259,7 +261,8 @@ service cloud.firestore {
       allow create, update: if isMerchantRole() && m == uid()
         && getAfter(/databases/$(database)/documents/merchants/$(m)).data.status != 'verified'
         && D().keys().hasOnly(['accountName', 'phone', 'ambassadorId', 'qrImage', 'qrUpdatedAt'])
-        && (!('qrImage' in D()) || (D().qrImage is string && D().qrImage.size() < 700000));
+        && (!('qrImage' in D()) || (D().qrImage is string && D().qrImage.size() < 700000
+            && D().qrImage.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')));
     }
 
     // ---------- offers and off-peak deals ----------
@@ -375,6 +378,10 @@ service cloud.firestore {
       function reward() { return get(/databases/$(database)/documents/rewards/$(D().rewardId)).data; }
       allow read: if signedIn() && (resource.data.studentUid == uid() || resource.data.merchantId == uid() || isMpp());
       allow create: if isStudent() && D().studentUid == uid() && D().status == 'issued'
+        && D().keys().hasOnly(['studentUid', 'studentName', 'rewardId', 'title', 'merchantId', 'cost', 'valueCents', 'status', 'code', 'validDays', 'createdAt'])
+        && D().studentName == userDoc(uid()).name
+        && D().code.matches('^[A-Z0-9]{8}$') && v.upper().matches(D().code + '.*')
+        && D().validDays == reward().get('validDays', 30)
         && D().createdAt == request.time && reward().active == true
         && D().cost == reward().cost && D().valueCents == reward().valueCents
         && D().merchantId == reward().merchantId && D().title == reward().title
@@ -383,6 +390,7 @@ service cloud.firestore {
       allow update: if signedIn() && resource.data.status == 'issued'
         && changed().hasOnly(['status', 'usedAt', 'usedBy']) && D().status == 'used'
         && D().usedAt == request.time && D().usedBy == uid()
+        && request.time < resource.data.createdAt + duration.value(resource.data.get('validDays', 30), 'd')
         && ((resource.data.merchantId == uid() && isVerifiedMerchant()) || isMpp());
     }
 

@@ -312,6 +312,9 @@ export async function findVoucher(ctx, raw, asMpp = false) {
   const rows = await list(ctx, 'vouchers', ...cons);
   return rows[0] || null;
 }
+export function voucherExpired(v, nowMs = Date.now()) {
+  const at = toMs(v.createdAt); return !!at && nowMs >= at + (v.validDays || 30) * 86400000;
+}
 export async function useVoucher(ctx, id) {
   await ctx.sdk.updateDoc(R(ctx).voucher(id), { status: 'used', usedAt: ctx.sdk.serverTimestamp(), usedBy: ctx.uid });
 }
@@ -415,6 +418,9 @@ export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
 export async function saveConfig(ctx, name, data) { await ctx.sdk.setDoc(R(ctx).config(name), data, { merge: true }); }
 export async function listUsers(ctx) { return list(ctx, 'users'); }
+export async function setBlocked(ctx, uid, blocked) { await ctx.sdk.updateDoc(R(ctx).user(uid), { disabled: !!blocked }); }
+// Frees a matric number claimed by the wrong person, so the real student can sign up.
+export async function releaseMatric(ctx, matric) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric))); }
 export async function listSurveys(ctx) { return list(ctx, 'surveys'); }
 export async function listReferrals(ctx) { return list(ctx, 'referrals'); }
 export async function listManualVolumes(ctx) { return list(ctx, 'manualVolumes'); }

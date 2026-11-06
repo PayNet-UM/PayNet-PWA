@@ -12,7 +12,7 @@ const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1, geolocation: LAUNDRY, permissions: ['geolocation'] });
 // map tiles come from the internet; serve a blank tile so the test runs offline
 const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
-await ctx.route(/basemaps\.cartocdn\.com/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
+await ctx.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: TILE }));
 const errors = [];
 const watch = (p, who) => { p.on('pageerror', (e) => errors.push(`${who} pageerror: ${e.message}`)); p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(`${who} console: ${m.text()}`); }); };
 let step = 0; const ok = (m) => console.log(`  ✓ ${++step}. ${m}`);
