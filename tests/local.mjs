@@ -1,6 +1,6 @@
 // Runs tests/scenarios.mjs against the local rules evaluator (no network, no Java).
 import fs from 'fs';
-import * as sdk from '../app/js/fake/fakefb.js';
+import * as sdk from '../app/shared/js/fake/fakefb.js';
 import { runScenarios } from './scenarios.mjs';
 
 let now = Date.now();

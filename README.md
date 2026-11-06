@@ -68,19 +68,19 @@ Demo mode keeps all data in your browser, so it's the quickest way to try the ap
 | `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID` | Firebase console > Project settings > General > Your apps |
 | `MPP_ADMIN_EMAILS` | Comma-separated admin addresses. Each one must be able to receive mail, because admins must verify their email. |
 
-Don't put real values in `app/js/firebase-config.js` or `firestore.rules`. The committed versions hold placeholders, and the build fills them in for each environment.
+Don't put real values in `app/shared/js/firebase-config.js` or `firestore.rules`. The committed versions hold placeholders, and the build fills them in for each environment.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `npm run dev:demo` | Runs locally in Demo mode |
-| `npm run dev` | Runs locally against **staging** |
+| `npm run dev:demo` | Runs locally in Demo mode: the student/merchant app at `http://localhost:5173/`, the HEP dashboard at `http://localhost:5173/admin/` |
+| `npm run dev` | Same, against **staging** |
 | `npm test` | Runs the rule, business and deploy-guard tests |
 | `npm run test:e2e` | Drives the real UI in a browser; start `npm run dev:demo` first. Run `npx playwright install chromium` once beforehand. |
 | `npm run test:emulator` | Runs the scenarios on Google's Firestore emulator; needs Java 21 or newer |
 | `npm run test:legacy` | Tests the old demo |
-| `npm run build` | Builds `dist/` for staging |
+| `npm run build` | Builds both sites for staging: `dist/client` and `dist/admin` |
 | `npm run deploy:staging` | Manually deploys to staging |
 | `npm run deploy:production` | Manually deploys to production, from a clean `main` only |
 
@@ -89,22 +89,26 @@ Deploys normally run through GitHub Actions. See [docs/DEPLOY.md](docs/DEPLOY.md
 ## Project layout
 
 ```
-app/                 The PWA: js/views for each role, js/fake for Demo mode, vendor for libraries
+app/                 The two websites, built by laying shared/ under each site's own folder
+  client/            Students and merchants: the installable PWA (main.js, views/student, views/merchant, sw.js)
+  admin/             HEP admin dashboard (admin.js, views/mpp.js); no service worker
+  shared/            Used by both: data layer, sign-in, UI, i18n, map, js/fake for Demo mode, vendor, css
 functions/           Server code for Google sign-in in the iPhone home-screen app
-scripts/             Dev server, build and deploy; lib/env.mjs holds the environment logic
+scripts/             Dev server, build and deploy; lib/env.mjs holds the environment logic, lib/sites.mjs the two sites
 tests/               Rule scenarios, deploy-guard tests and the browser test
 docs/                Deployment guide, Git workflow, project PDF
 legacy/              The old browser-only demo, kept for reference and not deployed to Firebase
 .github/workflows/   ci.yml tests pull requests; deploy.yml deploys branches
 firestore.rules      Database security rules, with a placeholder admin
-firebase.json        Hosting, Firestore and emulator settings
-.firebaserc          Maps staging and production to their Firebase projects
+firebase.json        Hosting (client and admin sites), Firestore and emulator settings
+.firebaserc          Maps staging and production to their Firebase projects, and each project's two Hosting sites
 ```
 
 ## Security notes
 
 - **The Firebase web API key isn't a secret.** Every web app sends it to the browser, so moving it to `.env` keeps environments apart but doesn't hide it. Protection comes from `firestore.rules`, plus restricting the key in Google Cloud Console.
 - **Service account keys are secret.** They give admin access to a project, so they belong only in GitHub Environment secrets. Never commit or share one.
+- **The separate HEP dashboard site is not a security boundary.** It keeps the dashboard code off the student app and gives HEP its own address, but what each account can read and change is still decided by `firestore.rules`.
 - **Admin emails are publicly readable.** They appear in the site's JavaScript and at `/firestore.rules`, so use a shared team mailbox rather than a personal address.
 - **Keep staging free of real personal data.** It has weaker controls and more people with access.
 

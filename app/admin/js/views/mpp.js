@@ -4,6 +4,7 @@ import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, 
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML } from '../i18n.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
+import { siteUrls } from '../firebase-config.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
@@ -24,12 +25,11 @@ export async function renderShell(app, route) {
       <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button></header>
       <nav aria-label="HEP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
       <div class="who">${langToggleHTML('on-dark')}<b style="color:#fff;display:block;margin-top:12px">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
-        ${app.profile ? `<button class="btn small" id="as-user" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Open my ${esc(app.profile.role)} app</button>` : ''}
+        ${app.profile ? `<a class="btn small" id="as-user" href="${esc(siteUrls.client)}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Open my ${esc(app.profile.role)} app</a>` : ''}
         <button class="btn small" id="mpp-out" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">${icon('log-out')} Sign out</button></div></div></aside>
       <main class="view" id="view"></main></div>`;
     $('#menu').onclick = () => $('#mpp-rail').classList.toggle('open');
     $('#mpp-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
-    if ($('#as-user')) $('#as-user').onclick = () => { sessionStorage.setItem('umc-view', app.profile.role); location.hash = '#/home'; location.reload(); };
     if (app.addDemoRibbon) app.addDemoRibbon();
   }
   $('#mpp-rail').classList.remove('open');

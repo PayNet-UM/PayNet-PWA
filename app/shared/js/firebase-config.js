@@ -14,6 +14,11 @@ export const firebaseConfig = {
 // in firestore.rules. More HEP reviewers can be added later in the app under Settings.
 export const mppBootstrapEmails = ['mpp-admin@demo.invalid'];
 
+// Where each website lives. The student/merchant app and the HEP admin dashboard are separate sites.
+// On the dev server both share one address (the dashboard at /admin/). The build fills in each project's
+// Firebase Hosting addresses from the hosting targets in .firebaserc.
+export const siteUrls = { client: '/', admin: '/admin/' };
+
 // Google Maps (optional), from GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_MAP_ID. A browser key with the "Maps JavaScript API"
 // enabled and restricted to your site. Left empty, the app uses the built-in OpenStreetMap map.
 export const googleMapsApiKey = '';

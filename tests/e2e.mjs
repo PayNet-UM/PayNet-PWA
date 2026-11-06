@@ -1,9 +1,11 @@
 // Browser test of the real UI in Demo mode: student, merchant and HEP on separate pages, plus a
 // pass with a fake Google Maps API key so the Google Maps code path is exercised.
+// The student/merchant app is at BASE and the HEP admin dashboard (a separate site) at ADMIN.
 // Usage: `npm run dev:demo` in one terminal, then `npm run test:e2e` in another.
 import { chromium } from 'playwright';
 import fs from 'fs';
 const BASE = process.env.BASE || 'http://localhost:5173/';
+const ADMIN = process.env.ADMIN || new URL('admin/', BASE).href;
 const shots = process.env.SHOTS || '/tmp/e2e';
 fs.mkdirSync(shots, { recursive: true });
 const adminEmail = /function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'))[1];
@@ -16,7 +18,7 @@ await ctx.route(/basemaps\.cartocdn\.com/, (r) => r.fulfill({ status: 200, conte
 const errors = [];
 const watch = (p, who) => { p.on('pageerror', (e) => errors.push(`${who} pageerror: ${e.message}`)); p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(`${who} console: ${m.text()}`); }); };
 let step = 0; const ok = (m) => console.log(`  ✓ ${++step}. ${m}`);
-const login = async (p, email) => { await p.goto(BASE); await p.waitForSelector('#google', { timeout: 60000 }); await p.click(`[data-demo="${email}"]`); };
+const login = async (p, email, site = BASE) => { await p.goto(site); await p.waitForSelector('#google', { timeout: 60000 }); await p.click(`[data-demo="${email}"]`); };
 const pointsOf = async (p) => Number((await p.textContent('.pts-chip [data-bind=points]')).replace(/\D/g, ''));
 
 // ---------- student
@@ -35,6 +37,7 @@ for (const route of ['bayar', 'explore/idea']) {
   if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
 }
 if (await stu.locator('.tabbar a[href="#/events"]').count() !== 1) throw new Error('missing Campus Events navigation');
+if (await stu.locator('#to-mpp').count() !== 0) throw new Error('student app offers the HEP dashboard to a student');
 const before = await pointsOf(stu);
 await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
 ok(`student home shows the +Onz hub (${pillars} directories) and ${before} points`);
@@ -106,7 +109,7 @@ await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', {
 await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
 if (!/Location saved/.test(await mer.textContent('#toast'))) throw new Error('pin not saved');
-const png = fs.readFileSync(new URL('../app/icons/icon-192.png', import.meta.url));
+const png = fs.readFileSync(new URL('../app/shared/icons/icon-192.png', import.meta.url));
 await mer.setInputFiles('#logo-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png });
 await mer.waitForSelector('#logo-prev img'); await mer.click('#logo-save'); await mer.waitForSelector('#toast.show');
 if (!/Logo saved/.test(await mer.textContent('#toast'))) throw new Error('logo not saved: ' + await mer.textContent('#toast'));
@@ -134,20 +137,37 @@ await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'i
 await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to HEP', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
-// ---------- HEP on desktop
+// ---------- the two websites keep to their own people
+const sep = await ctx.newPage(); watch(sep, 'site separation'); await fresh(sep);
+await sep.goto(BASE); await sep.waitForSelector('#google', { timeout: 60000 });
+if (await sep.locator(`[data-demo="${adminEmail}"]`).count() !== 0) throw new Error('student app sign-in offers the HEP account');
+const googleAs = async (p, email) => { await p.click('#google'); await p.fill('#gnew [name=email]', email); await p.click('#gnew button'); };
+await sep.goto(ADMIN); await sep.waitForSelector('#google', { timeout: 60000 });
+if (await sep.locator('[data-demo="aina@siswa.um.edu.my"]').count() !== 0) throw new Error('dashboard sign-in offers a student account');
+await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t a HEP admin', { timeout: 30000 });
+if (await sep.locator('#mpp-rail').count() !== 0) throw new Error('a student got into the HEP dashboard');
+await sep.click('#out'); await sep.waitForSelector('#google');
+await sep.goto(BASE); await sep.waitForSelector('#google'); await googleAs(sep, adminEmail);
+await sep.waitForSelector('#to-admin', { timeout: 30000 });
+if (await sep.getAttribute('#to-admin', 'href') !== '/admin/') throw new Error('HEP admin was not sent to the dashboard site');
+await sep.close();
+ok('a student is turned away from the HEP dashboard, and a HEP admin on the student app is sent to the dashboard');
+
+// ---------- HEP on desktop, on the dashboard site
 const mpp = await ctx.newPage(); watch(mpp, 'mpp'); await fresh(mpp); await mpp.setViewportSize({ width: 1360, height: 900 });
-await login(mpp, adminEmail);
+await login(mpp, adminEmail, ADMIN);
 await mpp.waitForSelector('#mpp-rail', { timeout: 30000 });
-await mpp.goto(BASE + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
+if (await mpp.locator('script[src*="views/student"], .tabbar').count() !== 0) throw new Error('dashboard loaded the student app');
+await mpp.goto(ADMIN + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
 await mpp.waitForSelector('#toast.show'); ok('HEP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
 for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings']) {
-  await mpp.goto(BASE + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
+  await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }
 const ci = (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/);
 ok('all HEP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
-const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(BASE + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
+const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(ADMIN + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
 await dl.saveAs(`${shots}/Lampiran1.xlsx`); ok('Lampiran 1 Excel exported: ' + dl.suggestedFilename());
 
 // ---------- Google Maps path (fake API key + stub script)

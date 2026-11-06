@@ -1,17 +1,20 @@
-// Sign in, sign up, email verification and first-time profile.
+// Sign in, sign up, email verification and first-time profile. Shared by both websites:
+// app.site is 'client' (students and merchants) or 'admin' (the HEP dashboard).
 import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
-import { mppBootstrapEmails, firebaseConfig } from '../firebase-config.js';
+import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
 import { langToggleHTML } from '../i18n.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
+const isAdminSite = (app) => app.site === 'admin';
 
 function frame(app, inner) {
   document.body.classList.remove('mpp-mode');
+  const admin = isAdminSite(app);
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
       <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a>
-      <div><h2>Add on to campus life.</h2>
-        <p>Shops, events, check-ins and rewards in one place.</p></div>
+      <div><h2>${admin ? 'HEP admin dashboard' : 'Add on to campus life.'}</h2>
+        <p>${admin ? 'Review merchants, approve deals and report on the +Onz programme.' : 'Shops, events, check-ins and rewards in one place.'}</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
@@ -302,9 +305,11 @@ export async function finishRedirect(app) {
 }
 
 function demoGoogleChooser(app) {
+  const accounts = isAdminSite(app) ? [[MPP_EMAIL, 'HEP admin', 'Dashboard']]
+    : [['aina@siswa.um.edu.my', 'Aina Nadhirah', 'Student, has history'], ['kopikolej@demo.my', 'Kopi Kolej', 'Merchant']];
   const el = sheet(`<h2>Choose a Google account</h2><p class="muted">Demo mode stands in for Google’s account picker. Live, this is Google’s own sign-in window.</p>
     <div class="stack" style="margin-top:14px">
-      ${[['aina@siswa.um.edu.my', 'Aina Nadhirah', 'Student, has history'], ['kopikolej@demo.my', 'Kopi Kolej', 'Merchant'], [MPP_EMAIL, 'HEP admin', 'Dashboard']]
+      ${accounts
         .map(([e, n, d]) => `<button class="btn block" data-g="${e}" style="justify-content:flex-start;height:auto;padding:10px 16px;text-align:left;white-space:normal;min-width:0"><span class="avatar" style="width:32px;height:32px;flex:none">${esc(n[0])}</span><span><b>${esc(n)}</b><br><span class="faint">${esc(e)} · ${esc(d)}</span></span></button>`).join('')}
       <form id="gnew" class="stack"><label class="field">Or use another Gmail address<input name="email" type="email" required placeholder="you@gmail.com"></label><button class="btn primary">Continue</button></form>
     </div>`);
@@ -314,12 +319,13 @@ function demoGoogleChooser(app) {
 
 export function renderSignIn(app, mode = 'in', showEmail = false) {
   const demo = app.backend.mode === 'demo';
-  const iosApp = !demo && isStandalone() && isIOS();
-  const forApp = !demo && !!handoffHash();
+  const admin = isAdminSite(app);
+  const iosApp = !admin && !demo && isStandalone() && isIOS();
+  const forApp = !admin && !demo && !!handoffHash();
   frame(app, `
     <div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
-    <div><h1>Sign in to +Onz</h1>
-      <p class="lede">Sign in with Google. New users get an account.</p></div>
+    <div><h1>${admin ? 'Sign in to the HEP dashboard' : 'Sign in to +Onz'}</h1>
+      <p class="lede">${admin ? 'For HEP staff only. Use the email HEP gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
     ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
@@ -336,11 +342,13 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
         </form></div></details>
     <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
-      <div class="row"><button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button><button class="btn small" data-demo="${MPP_EMAIL}">HEP</button></div></div>` : ''}`);
+      <div class="row">${admin ? `<button class="btn small" data-demo="${MPP_EMAIL}">HEP admin</button>`
+        : '<button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button>'}</div></div>` : ''}
+    ${admin ? `<p class="faint" style="text-align:center">Student or merchant? <a href="${esc(siteUrls.client)}">Open the +Onz app</a></p>` : ''}`);
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
   if ($('#set-pw')) $('#set-pw').onclick = () => setPasswordSheet(app);
-  if (!demo && !forApp && isStandalone()) resumeHandoff(app);
+  if (!admin && !demo && !forApp && isStandalone()) resumeHandoff(app);
   $('#google').onclick = (e) => { if (demo) demoGoogleChooser(app); else busy(e.currentTarget, () => googleSignIn(app)); };
   $$('.seg [data-mode]').forEach((b) => { b.onclick = () => renderSignIn(app, b.dataset.mode, true); });
   $('#auth-form').onsubmit = (e) => {
@@ -378,6 +386,25 @@ export function renderVerify(app) {
     try { await sdk.sendEmailVerification(auth.currentUser, { url: location.origin + location.pathname }); toast('Verification email sent.'); } catch (err) { toast(errText(err), true); }
   });
   $('#out').onclick = () => sdk.signOut(auth);
+}
+
+// Client site: a HEP admin with no student or merchant profile most likely wanted the dashboard.
+export function renderAdminElsewhere(app, setUpProfile) {
+  frame(app, `<div><h1>You’re a HEP admin</h1><p class="lede">Signed in as ${esc(app.user.email || '')}. The HEP dashboard is a separate website.</p></div>
+    <div class="stack"><a class="btn primary block" id="to-admin" href="${esc(siteUrls.admin)}">Open the HEP dashboard</a>
+      <button class="btn block" id="setup">Set up a student or merchant profile here</button>
+      <button class="btn ghost block" id="out">Sign out</button></div>`);
+  $('#setup').onclick = () => setUpProfile();
+  $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
+}
+
+// Admin site: signed in, but this account isn't on the HEP admin list.
+export function renderNotAdmin(app) {
+  frame(app, `<div><h1>This account isn’t a HEP admin</h1><p class="lede">${esc(app.user.email || 'This account')} doesn’t have access to the HEP dashboard.
+      If you should, ask an existing HEP admin to add your email under Settings.</p></div>
+    <div class="stack"><a class="btn primary block" href="${esc(siteUrls.client)}">Open the +Onz app for students and merchants</a>
+      <button class="btn ghost block" id="out">Sign out and use another account</button></div>`);
+  $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 
 export function renderOnboarding(app, done) {

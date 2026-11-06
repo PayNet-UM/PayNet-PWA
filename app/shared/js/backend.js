@@ -1,5 +1,5 @@
 // Chooses the live Firebase backend or Demo mode and exposes one SDK-shaped object.
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, siteUrls } from './firebase-config.js';
 
 export const configured = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('REPLACE');
 
@@ -22,10 +22,16 @@ export async function initBackend() {
   const sdk = await import('../vendor/firebase.js');
   // Run Google sign-in on the same domain as the app. Chrome blocks the popup handshake when the
   // auth domain (firebaseapp.com) differs from the site (web.app). Firebase Hosting serves
-  // /__/auth/handler on both domains, so this works without extra hosting setup.
+  // /__/auth/handler on every site of the project (the student/merchant app and the HEP dashboard),
+  // on both their web.app and firebaseapp.com addresses.
   const cfg = { ...firebaseConfig };
   const host = location.hostname;
-  if (cfg.projectId && (host === `${cfg.projectId}.web.app` || host === `${cfg.projectId}.firebaseapp.com`)) cfg.authDomain = host;
+  const ours = [`${cfg.projectId}.web.app`, `${cfg.projectId}.firebaseapp.com`];
+  for (const u of Object.values(siteUrls)) {
+    if (!/^https:\/\//.test(u)) continue;
+    const h = new URL(u).hostname; ours.push(h, h.replace(/\.web\.app$/, '.firebaseapp.com'));
+  }
+  if (cfg.projectId && ours.includes(host)) cfg.authDomain = host;
   const app = sdk.initializeApp(cfg);
   let db;
   try {
