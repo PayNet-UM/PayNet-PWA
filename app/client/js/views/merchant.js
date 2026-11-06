@@ -1,6 +1,6 @@
 // Merchant app: application (logo + exact location), readiness, voucher redemption, offers, quiet-hour bonuses, visitor insights, poster.
 import * as D from '../data.js';
-import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, busy, errText, fmtDate, fmtTime, timeAgo, confetti, renderQR,
+import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, busy, errText, fmtDate, fmtTime, timeAgo, confetti, renderQR,
   startScanner, compressImage, barChart, colorFor, initials, downloadCSV } from '../ui.js';
 import { pinPicker, hasPin, inGeoBox } from '../map.js';
 import { surveyHTML, surveyMount, merchantLogo } from './student.js';
@@ -102,9 +102,10 @@ function scanMount(root, app) {
 }
 async function voucherFlow(app, raw) {
   let v;
-  try { v = await D.findVoucher(app.ctx, raw); } catch (e) { return toast(e.code === 'permission-denied' ? 'This voucher belongs to another merchant.' : errText(e), true); }
-  if (!v) return toast('Voucher not found for your shop.', true);
+  try { v = await D.findVoucher(app.ctx, raw); } catch (e) { return toast(e.code === 'permission-denied' ? 'This voucher isn’t for your shop. The student’s voucher shows where to use it.' : errText(e), true); }
+  if (!v) return toast('No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.', true);
   if (v.status === 'used') return toast(`Voucher already used on ${fmtDate(v.usedAt)}.`, true);
+  if (D.voucherExpired(v)) return toast('This voucher has expired.', true);
   const el = sheet(`<h2>Redeem voucher</h2><div class="ticket" style="margin-top:12px"><span class="stub">${icon('ticket')}</span><span class="body"><h3>${esc(v.title)}</h3><p class="faint">${esc(v.studentName)} · worth ${rm(v.valueCents)}</p></span></div>
     <p class="muted" style="margin-top:12px">Give the student ${rm(v.valueCents)} off, then mark the voucher used.</p>
     <button class="btn go block" id="use" style="margin-top:12px">Mark as used</button>`);
@@ -142,7 +143,7 @@ async function shopRender(app) {
       ${editable ? logoBlock(m) : ''}
       ${editable ? pinBlock(m) : ''}
       <label class="field">Photo of your DuitNow QR<input name="qr" type="file" accept="image/*" ${priv && priv.qrImage ? '' : 'required'}><small>A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.</small></label>
-      ${priv && priv.qrImage ? `<img class="qr-thumb" style="width:120px;height:120px" src="${priv.qrImage}" alt="Your uploaded DuitNow QR">` : ''}
+      ${priv && safeImg(priv.qrImage) ? `<img class="qr-thumb" style="width:120px;height:120px" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR">` : ''}
       ${editable ? `<button class="btn primary">${m ? 'Send updated details to HEP' : 'Send to HEP for verification'}</button>` : '<p class="faint">Verified details are locked. Ask HEP if something needs to change.</p>'}
     </form></section>
     ${!editable ? `<section class="section"><div class="head"><h2>Logo</h2></div><form id="logo-form" class="card stack">${logoBlock(m, true)}
@@ -158,7 +159,7 @@ async function shopRender(app) {
 }
 function logoBlock(m, standalone = false) {
   return `<div class="field logo-field">${standalone ? '' : '<span>Shop logo</span>'}
-    <div class="row" style="gap:14px;flex-wrap:nowrap"><span class="logo-preview" id="logo-prev">${m && m.logo ? `<img src="${m.logo}" alt="Your logo">` : icon('image')}</span>
+    <div class="row" style="gap:14px;flex-wrap:nowrap"><span class="logo-preview" id="logo-prev">${m && safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span>
       <div style="flex:1"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" ${m && m.logo ? '' : 'required'} aria-label="Upload your logo">
       <small>Square works best. It appears on the map pin and your shop page. Shrunk to 256 px automatically.</small></div></div>
     <input type="hidden" name="logoData" value=""></div>`;

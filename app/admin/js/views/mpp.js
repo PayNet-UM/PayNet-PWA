@@ -1,6 +1,6 @@
 // HEP dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
-import { $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
+import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML } from '../i18n.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
@@ -123,8 +123,8 @@ function merchantsMount(root, app) {
   $$('[data-review]', root).forEach((b) => {
     b.onclick = async () => {
       const m = app._m.find((x) => x.id === b.dataset.review); const p = await D.getMerchantPrivate(app.ctx, m.id).catch(() => ({}));
-      const el = sheet(`<div class="row" style="gap:12px">${m.logo ? `<img class="logo big" src="${m.logo}" alt="${esc(m.name)} logo">` : '<span class="badge bad">No logo</span>'}<div><h2>${esc(m.name)}</h2><p class="muted">${esc(m.type)} · ${esc(m.segment)} · ${esc(m.location)}</p></div></div>
-        <div class="cols two" style="margin-top:14px"><div>${p && p.qrImage ? `<a href="${p.qrImage}" target="_blank" rel="noopener"><img class="qr-large" src="${p.qrImage}" alt="Uploaded DuitNow QR for ${esc(m.name)}"></a>` : '<div class="card empty">No QR image uploaded</div>'}</div>
+      const el = sheet(`<div class="row" style="gap:12px">${safeImg(m.logo) ? `<img class="logo big" src="${safeImg(m.logo)}" alt="${esc(m.name)} logo">` : '<span class="badge bad">No logo</span>'}<div><h2>${esc(m.name)}</h2><p class="muted">${esc(m.type)} · ${esc(m.segment)} · ${esc(m.location)}</p></div></div>
+        <div class="cols two" style="margin-top:14px"><div>${p && safeImg(p.qrImage) ? `<a href="${safeImg(p.qrImage)}" target="_blank" rel="noopener"><img class="qr-large" src="${safeImg(p.qrImage)}" alt="Uploaded DuitNow QR for ${esc(m.name)}"></a>` : '<div class="card empty">No QR image uploaded</div>'}</div>
           <table class="data"><tbody><tr><td class="faint">Account name on QR</td><td><b>${esc(p?.accountName || '—')}</b></td></tr><tr><td class="faint">Phone</td><td>${esc(p?.phone || '—')}</td></tr>
             <tr><td class="faint">Ambassador</td><td>${esc(p?.ambassadorId || '—')}</td></tr><tr><td class="faint">Zone</td><td>${esc(m.zone || '—')}</td></tr>
             ${m.eventName ? `<tr><td class="faint">Event</td><td>${esc(m.eventName)} (ends ${esc(m.eventEnd || '?')})</td></tr>` : ''}
@@ -181,7 +181,7 @@ async function paynetRender(app) {
     <section class="card pad-lg"><div class="row between"><h2>Lampiran 1: DuitNow QR merchants (${app._pn.length})</h2><div class="row"><button class="btn small" id="csv1">${icon('download')} CSV</button><button class="btn small primary" id="xlsx1">${icon('file-spreadsheet')} Excel with QR images</button></div></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>No.</th><th>Merchant name / name on QR</th><th>Account name</th><th>Location / type</th><th>Category</th><th>QR</th><th>Remark</th></tr></thead><tbody>
       ${app._pn.map((m, i) => `<tr><td>${i + 1}</td><td><b>${esc(m.name)}</b></td><td>${esc(m.priv.accountName || '')}</td><td>${esc(m.location)} / ${esc(m.type)}</td><td>${esc(m.segment)}</td>
-        <td>${m.priv.qrImage ? `<img class="qr-thumb" src="${m.priv.qrImage}" alt="QR for ${esc(m.name)}">` : '<span class="badge bad">Missing</span>'}</td><td>${remarkFor(m)}</td></tr>`).join('') || '<tr><td colspan="7" class="faint">No verified merchants yet.</td></tr>'}</tbody></table></div></section>
+        <td>${safeImg(m.priv.qrImage) ? `<img class="qr-thumb" src="${safeImg(m.priv.qrImage)}" alt="QR for ${esc(m.name)}">` : '<span class="badge bad">Missing</span>'}</td><td>${remarkFor(m)}</td></tr>`).join('') || '<tr><td colspan="7" class="faint">No verified merchants yet.</td></tr>'}</tbody></table></div></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Lampiran 2: volumes PayNet can’t see</h2><div class="row"><button class="btn small" id="add2">${icon('plus')} Add row</button><button class="btn small" id="xlsx2">${icon('file-spreadsheet')} Excel</button></div></div>
       <p class="faint">Card terminals, self-service laundry, vending machines. Get the monthly transaction count from the operator.</p>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Merchant</th><th>Location / type</th><th>Payment method</th><th>Provider</th><th class="r">Transactions</th><th></th></tr></thead><tbody>
@@ -208,7 +208,7 @@ function paynetMount(root, app) {
       [6, 32, 30, 30, 26, 22, 24].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
       app._pn.forEach((m, i) => {
         const r = ws.addRow(rows()[i].map((v, j) => (j === 5 ? '' : v))); r.height = 120; r.alignment = { vertical: 'middle', wrapText: true };
-        if (m.priv.qrImage) {
+        if (safeImg(m.priv.qrImage)) {
           const id = wb.addImage({ base64: m.priv.qrImage, extension: m.priv.qrImage.startsWith('data:image/png') ? 'png' : 'jpeg' });
           ws.addImage(id, { tl: { col: 5.1, row: i + 1.05 }, ext: { width: 140, height: 150 } });
         }
@@ -340,12 +340,12 @@ function rewardsMount(root, app) {
   };
   $('#new-rw', root).onclick = () => edit(null);
   $$('[data-rw]', root).forEach((b) => { b.onclick = () => edit(app._rw.rewards.find((r) => r.id === b.dataset.rw)); });
-  $$('[data-use]', root).forEach((b) => { b.onclick = () => busy(b, async () => { await D.useVoucher(app.ctx, b.dataset.use); toast('Voucher marked used.'); app.render(); }); });
+  $$('[data-use]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.useVoucher(app.ctx, b.dataset.use); toast('Voucher marked used.'); app.render(); } catch (err) { toast(D.voucherExpired(app._rw?.vouchers?.find((x) => x.id === b.dataset.use) || {}) ? 'This voucher has expired.' : errText(err), true); } }); });
   $('#vfind', root).onsubmit = async (e) => {
     e.preventDefault(); const v = await D.findVoucher(app.ctx, e.target.code.value, true).catch(() => null);
     if (!v) return toast('No voucher with that code.', true);
-    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : 'not used yet'}</p>${v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
-    if ($('#u', el)) $('#u', el).onclick = (ev) => busy(ev.currentTarget, async () => { await D.useVoucher(app.ctx, v.id); closeSheet(); app.render(); });
+    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : 'not used yet'}</p>${v.status === 'issued' && D.voucherExpired(v) ? '<p class="notice warn" style="margin-top:14px">This voucher has expired.</p>' : v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
+    if ($('#u', el)) $('#u', el).onclick = (ev) => busy(ev.currentTarget, async () => { try { await D.useVoucher(app.ctx, v.id); closeSheet(); app.render(); } catch (err) { toast(errText(err), true); } });
   };
 }
 
@@ -417,13 +417,21 @@ let peopleQ = '';
 async function peopleRender(app) {
   const users = (await D.listUsers(app.ctx)).filter((u) => u.role === 'student').sort((a, b) => (b.points || 0) - (a.points || 0)); app._pp = users;
   return `<div class="page-title"><h1>Students</h1><p>${users.length} signed up. Adjust points to correct mistakes; every change is recorded with your note.</p></div>
-    <input type="search" id="pq" placeholder="Search name, email or matric" value="${esc(peopleQ)}"><div class="card" style="margin-top:12px"><div class="table-wrap"><table class="data"><thead><tr><th>Student</th><th>College</th><th class="r">Points</th><th>Joined</th><th></th></tr></thead><tbody id="pt"></tbody></table></div></div>`;
+    <input type="search" id="pq" placeholder="Search name, email or matric" value="${esc(peopleQ)}"><div class="card" style="margin-top:12px"><div class="table-wrap"><table class="data"><thead><tr><th>Student</th><th>College</th><th class="r">Points</th><th>Joined</th><th></th></tr></thead><tbody id="pt"></tbody></table></div></div>
+    <section class="card pad-lg" style="margin-top:16px"><h2>Matric number claimed by the wrong person?</h2><p class="muted">Check their student ID first, then release the number so the real student can sign up. Block the other account if needed.</p><form id="rel" class="row" style="margin-top:10px;gap:8px"><input name="m" required minlength="5" placeholder="Matric number" aria-label="Matric number to release"><button class="btn small">Release</button></form></section>`;
 }
 function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
     $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button></td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+    $$('[data-block]', root).forEach((b) => {
+      b.onclick = () => {
+        const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
+        if (next && !confirm(`Block ${u.name}? They won't be able to earn or redeem until you unblock them.`)) return;
+        busy(b, async () => { try { await D.setBlocked(app.ctx, u.id, next); toast(next ? 'Student blocked.' : 'Student unblocked.'); app.render(); } catch (err) { toast(errText(err), true); } });
+      };
+    });
     $$('[data-adj]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.adj);
@@ -435,6 +443,7 @@ function peopleMount(root, app) {
     });
   };
   $('#pq', root).oninput = (e) => { peopleQ = e.target.value; draw(); }; draw();
+  $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(`Release matric number ${m}?`)) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
 }
 
 // ------------------------------------------------------------- settings

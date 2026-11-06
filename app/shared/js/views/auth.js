@@ -31,7 +31,9 @@ const UA = navigator.userAgent || '';
 export const inAppBrowser = () => /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Telegram|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|MicroMessenger|WhatsApp|GSA\/|; wv\)/i.test(UA)
   || (/iPhone|iPad|iPod/.test(UA) && !/Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
 const isPhone = () => /Android|iPhone|iPad|iPod|Mobile/i.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
-const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const displayStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+// A sign-in page opened from the home-screen app can report itself as standalone on iPhone, so a hand-off code wins.
+const isStandalone = () => !handoffHash() && displayStandalone();
 const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
 
 function openInBrowserSheet() {
@@ -127,14 +129,16 @@ async function api(path, body, idToken) {
 }
 // In the browser: the hash this page was opened with, kept across Google's redirect.
 export function handoffHash() {
-  // The installed app itself is never the hand-off page (an older version could leave a stale code behind).
-  if (isStandalone()) { try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ } return null; }
   try {
     const q = new URLSearchParams(location.search).get(HANDOFF_PARAM);
-    if (q && /^[a-f0-9]{64}$/.test(q)) { sessionStorage.setItem(HANDOFF_KEY + '-hash', q); return q; }
+    if (q && /^[a-f0-9]{64}$/.test(q)) { sessionStorage.setItem(HANDOFF_KEY + '-hash', q); sessionStorage.setItem(HANDOFF_KEY + '-at', String(Date.now())); return q; }
+    // Kept across Google's redirect, but never for long, so an old code can't linger.
+    const at = Number(sessionStorage.getItem(HANDOFF_KEY + '-at')) || 0;
+    if (Date.now() - at > HANDOFF_MAX_MS) { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); sessionStorage.removeItem(HANDOFF_KEY + '-at'); return null; }
     return sessionStorage.getItem(HANDOFF_KEY + '-hash');
   } catch { return null; }
 }
+const handoffCode = (hash) => hash.slice(0, 6).toUpperCase();
 let polling = null;
 // The browser page must be on a DIFFERENT address from the installed app: iPhone pulls a link to the app's own
 // address back into the app (where Google sign-in can't finish). Firebase Hosting serves the site on two
@@ -163,6 +167,7 @@ function handoffWait(app) {
   const el = sheet(`<h2>Finish signing in in Safari</h2>
     <p class="muted">Sign in with Google in Safari. Then come back to this app: you’ll be signed in automatically.</p>
     <div class="row" style="margin-top:14px;gap:10px;align-items:center"><span class="spinner" aria-hidden="true"></span><span class="faint" id="ho-status">Waiting for Safari…</span></div>
+    <p style="margin-top:12px">Your code: <span class="code-text">${esc(handoffCode(h.hash))}</span></p>
     <div class="stack" style="margin-top:14px"><a class="btn primary block" id="ho-open" href="${esc(handoffUrl(h.hash))}" target="_blank" rel="noopener">Open Safari</a><button class="btn ghost block" id="ho-cancel">Cancel</button></div>
     <p class="faint" style="margin-top:10px">Safari didn’t open? Tap “Open Safari”.</p>`);
   $('#ho-cancel', el).onclick = () => { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); };
@@ -204,13 +209,32 @@ export function resumeHandoff(app) {
   handoffWait(app);
 }
 // In the browser, once signed in: register the hash so the home-screen app can collect the sign-in.
-export async function renderHandoffDone(app, user, hash) {
+export async function renderHandoffDone(app, user, hash, isAdmin = false) {
+  const leave = () => { try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); sessionStorage.removeItem(HANDOFF_KEY + '-at'); } catch { /* */ } history.replaceState(null, '', location.pathname); location.reload(); };
+  // Never hand over an admin session through a link.
+  if (isAdmin) {
+    frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+      <div><h1>Not available for HEP accounts</h1><p class="lede">For security, HEP accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.</p>
+      <button class="btn block" id="ho-here" style="margin-top:14px">Continue in Safari</button></div>`);
+    $('#ho-here').onclick = leave;
+    return;
+  }
+  // A link alone must never sign anyone in: someone else could have sent it. Ask first.
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    <div id="ho-ask"><h1>Sign in to the +Onz app?</h1>
+      <p class="lede">You're signed in as <b>${esc(user.email || 'this account')}</b>. Continue only if you just tapped Continue with Google in the +Onz app on this phone, and it shows this code:</p>
+      <p style="margin:14px 0;text-align:center"><span class="code-text">${esc(handoffCode(hash))}</span></p>
+      <p class="faint">If you didn't start this, or someone sent you this link, tap "This wasn't me". Otherwise they could get into your account.</p>
+      <button class="btn primary block" id="ho-yes" style="margin-top:14px">Yes, sign in to the app</button>
+      <button class="btn ghost block" id="ho-no" style="margin-top:8px">This wasn't me</button></div>`);
+  $('#ho-no').onclick = leave;
+  await new Promise((resolve) => { $('#ho-yes').onclick = resolve; });
   frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
     <div id="ho-box"><h1>Finishing sign-in…</h1><p class="lede">One moment.</p></div>`);
   const box = $('#ho-box');
   try {
     await api('create', { hash }, await user.getIdToken());
-    try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); } catch { /* */ }
+    try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); sessionStorage.removeItem(HANDOFF_KEY + '-at'); } catch { /* */ }
     history.replaceState(null, '', location.pathname);
     box.innerHTML = `<h1>You’re signed in</h1><p class="lede">Go back to the +Onz app on your home screen. It will open signed in as <b>${esc(user.email || 'you')}</b>.</p>
       <p class="faint" style="margin-top:14px">You can close this Safari window. Tap “Done” at the top, or switch apps.</p>
@@ -371,6 +395,12 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   $$('[data-demo]').forEach((b) => { b.onclick = () => googleSignIn(app, b.dataset.demo); });
 }
 
+export function renderBlocked(app) {
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    <div><h1>This account is blocked</h1><p class="lede">Contact HEP if you think this is a mistake.</p>
+    <button class="btn block" id="blk-out" style="margin-top:14px">Sign out</button></div>`);
+  $('#blk-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
+}
 export function renderVerify(app) {
   const { sdk, auth } = app.backend;
   frame(app, `<div><h1>Check your email</h1><p class="lede">We sent a verification link to <b>${esc(app.user.email)}</b>. Open it, then come back and tap “I’ve verified”.</p></div>

@@ -272,6 +272,57 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     await D.savePaynetCounts(mpp, '2026-11', [{ merchantId: 'mer1', merchantName: 'Kopi Kolej', count: 40 }]);
   });
 
+  log('Security audit fixes');
+  const qrEvil = 'x" onerror="alert(1)';
+  const qrOwner = await makeCtx({ uid: 'merQ', email: 'qr@shop.my' });
+  await ok('new merchant with a pending application for QR checks', async () => {
+    await D.createProfile(qrOwner, { role: 'merchant', name: 'QR Shop' });
+    await qrOwner.sdk.setDoc(qrOwner.sdk.doc(qrOwner.db, 'merchants', 'merQ'), { ownerUid: 'merQ', status: 'pending', submittedAt: qrOwner.sdk.serverTimestamp(), name: 'QR Shop', lat: 3.12, lng: 101.65, logo: 'data:image/png;base64,AA==' });
+  });
+  await ok('a harmless private update works, so the refusals below come from the image check', () => qrOwner.sdk.setDoc(qrOwner.sdk.doc(qrOwner.db, 'merchantPrivate', 'merQ'), { accountName: 'QR Shop' }));
+  await denied('script payload as own QR is refused', () => qrOwner.sdk.setDoc(qrOwner.sdk.doc(qrOwner.db, 'merchantPrivate', 'merQ'), { qrImage: qrEvil }));
+  await denied('a web link as own QR is refused', () => qrOwner.sdk.setDoc(qrOwner.sdk.doc(qrOwner.db, 'merchantPrivate', 'merQ'), { qrImage: 'https://evil.example/x.png' }));
+  await ok('a real QR image is still accepted', () => qrOwner.sdk.setDoc(qrOwner.sdk.doc(qrOwner.db, 'merchantPrivate', 'merQ'), { qrImage: 'data:image/jpeg;base64,' + 'A'.repeat(600000) }));
+
+  const forge = (c, over) => { const { sdk, db } = c; const r = stuRewardRef; const id = 'forgedvoucher' + Math.random().toString(36).slice(2, 8); const b = sdk.writeBatch(db);
+    b.set(sdk.doc(db, 'vouchers', id), { studentUid: c.uid, studentName: c.profile.name, rewardId: r.id, title: r.title, merchantId: r.merchantId, cost: r.cost, valueCents: r.valueCents, status: 'issued', code: id.slice(0, 8).toUpperCase(), validDays: r.validDays, createdAt: sdk.serverTimestamp(), ...over });
+    b.update(sdk.doc(db, 'rewards', r.id), { issued: sdk.increment(1), lastVoucher: id });
+    b.set(sdk.doc(db, 'users', c.uid, 'ledger', id), { type: 'redeem', delta: -r.cost, reward: r.id, by: c.uid, createdAt: sdk.serverTimestamp() });
+    b.update(sdk.doc(db, 'users', c.uid), { points: sdk.increment(-r.cost), lastTx: id });
+    return b.commit(); };
+  await ok('HEP adds a cheap reward for voucher checks', () => D.saveReward(mpp, 'sec-test', { title: 'Sec test', merchantId: '', cost: 1, valueCents: 100, stock: 100, issued: 0, lastVoucher: '', validDays: 14, active: true, icon: 'coffee' }));
+  const stuRewardRef = (await D.listRewards(stuA)).find((r) => r.id === 'sec-test');
+  stuA.profile = await D.getProfile(stuA);
+  await denied('a voucher cannot carry a forged student name', () => forge(stuA, { studentName: 'Someone Else' }));
+  await denied('a voucher cannot carry a chosen code', () => forge(stuA, { code: 'CHOSEN01' }));
+  await denied('a voucher cannot set its own validity', () => forge(stuA, { validDays: 99999 }));
+  await denied('a voucher cannot carry extra fields', () => forge(stuA, { note: 'free' }));
+  await ok('an honest voucher still works', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, (await D.listRewards(stuA)).find((r) => r.id === 'sec-test')); });
+  await ok('voucher expiry is calculated from its validity', () => { eq(D.voucherExpired({ createdAt: new Date(T), validDays: 14 }, T + 13 * 86400000), false); eq(D.voucherExpired({ createdAt: new Date(T), validDays: 14 }, T + 14 * 86400000), true); });
+  if (canSetTime) {
+    let expVid;
+    await ok('voucher for the expiry check', async () => { stuA.profile = await D.getProfile(stuA); expVid = await D.redeemReward(stuA, (await D.listRewards(stuA)).find((r) => r.id === 'sec-test')); });
+    tick(15 * 86400000);
+    await denied('HEP cannot mark an expired voucher used', () => D.useVoucher(mpp, expVid));
+    tick(-15 * 86400000);
+  }
+
+  stuB.profile = await D.getProfile(stuB);
+  await ok('HEP blocks a student', () => D.setBlocked(mpp, 'stuB', true));
+  await denied('a blocked student cannot redeem', async () => D.redeemReward(stuB, (await D.listRewards(stuB)).find((r) => r.id === 'sec-test')));
+  await denied('a blocked student cannot edit their profile', () => D.updateProfile(stuB, { faculty: 'x' }));
+  await denied('a student cannot unblock themselves', () => D.updateProfile(stuB, { disabled: false }));
+  await denied('a student cannot block someone else', () => D.setBlocked(stuA, 'stuB', false));
+  await ok('HEP unblocks a student', () => D.setBlocked(mpp, 'stuB', false));
+  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { faculty: 'Science' }));
+
+  const squatter = await makeCtx({ uid: 'squat1', email: 'squat@gmail.com' });
+  await ok('someone claims a matric number first', () => D.createProfile(squatter, { role: 'student', name: 'Squatter', matric: 'U7777777', college: 'KK1' }));
+  await denied('a student cannot release a matric number', () => D.releaseMatric(stuA, 'U7777777'));
+  await ok('HEP releases the matric number', () => D.releaseMatric(mpp, 'U7777777'));
+  const realOwner = await makeCtx({ uid: 'real1', email: 'real@siswa.um.edu.my' });
+  await ok('the real student can then sign up', () => D.createProfile(realOwner, { role: 'student', name: 'Real Owner', matric: 'U7777777', college: 'KK1' }));
+
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };
 }

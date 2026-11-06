@@ -6,7 +6,7 @@ import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
-import { $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
+import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, chevron, countUp } from '../ui.js';
 
 export const defaultRoute = 'home';
@@ -31,7 +31,7 @@ function streak(visits) {
 }
 const firstName = (p) => (p?.name || '').split(' ')[0];
 export const myAvatar = (app) => app.profile?.avatar || AV.defaultFor(app.ctx?.uid);
-export const merchantLogo = (m, cls = 'logo') => (m.logo ? `<img class="${cls}" src="${m.logo}" alt="">`
+export const merchantLogo = (m, cls = 'logo') => (safeImg(m.logo) ? `<img class="${cls}" src="${safeImg(m.logo)}" alt="">`
   : `<span class="${cls}" style="background:${colorFor(m.name)}">${esc(initials(m.name))}</span>`);
 const isIdea = (m) => m.segment === IDEA_SEGMENT;
 
@@ -405,6 +405,11 @@ function checkinMount(root, app, [focusId]) {
 // ------------------------------------------------------------- Ganjaran Kita: rewards, vouchers, missions, badges
 async function rewardsRender(app) {
   const [rewards, claims] = await Promise.all([D.listRewards(app.ctx), D.myMissionClaims(app.ctx)]);
+  const shops = rewards.some((r) => r.active && r.merchantId) ? await D.listVerifiedMerchants(app.ctx).catch(() => []) : [];
+  // Where a voucher can be used, shown before the student spends points.
+  const whereTo = (r) => (r.merchantId
+    ? `<span>Use at</span> <b>${shops.find((m) => m.id === r.merchantId) ? esc(shops.find((m) => m.id === r.merchantId).name) : 'a selected shop'}</b>`
+    : 'Collect at the HEP counter');
   const prog = D.missionProgress(app.visits);
   const p = app.profile;
   return `<div class="page-title"><h1>Rewards</h1><p>You have <b data-bind="points">${n(p.points)}</b> points available.</p></div>
@@ -412,7 +417,7 @@ async function rewardsRender(app) {
       <div class="stack">${rewards.filter((r) => r.active).map((r) => {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
         return `<div class="card row" style="gap:14px"><span class="tile-icon orange">${icon(r.icon || 'gift')}</span><div style="flex:1;min-width:0"><h3>${esc(r.title)}</h3>
-          <p class="faint">${n(r.cost)} points · ${left > 0 ? `${left} left` : 'All claimed'} · valid ${r.validDays || 30} days</p></div>
+          <p class="faint">${n(r.cost)} points · ${left > 0 ? `${left} left` : 'All claimed'} · valid ${r.validDays || 30} days</p><p class="faint reward-where">${whereTo(r)}</p></div>
           <button class="btn small ${can ? 'primary' : ''}" data-redeem="${esc(r.id)}" ${can ? '' : 'disabled'}>${can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`}</button></div>`;
       }).join('') || `<div class="card empty">${icon('gift')}<p>HEP hasn’t added rewards yet.</p></div>`}</div></section>
     <section class="section"><div class="head"><h2>My vouchers</h2></div><div id="vouchers" class="stack"><div class="skeleton" style="height:80px"></div></div></section>
@@ -441,7 +446,7 @@ function rewardsMount(root, app) {
     b.onclick = async () => {
       const r = (await D.listRewards(app.ctx)).find((x) => x.id === b.dataset.redeem);
       if (!(await confirmSheet(`Swap ${n(r.cost)} points for ${r.title}?`, `You’ll have ${n(app.profile.points - r.cost)} points left. The voucher is valid for ${r.validDays || 30} days.`, 'Swap points'))) return;
-      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it at the counter.'); await app.render(); showVoucher(app, vid); }
+      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it at the counter.'); await app.render(); showVoucher(app, vid, [{ id: vid, title: r.title, merchantId: r.merchantId, status: 'issued' }]); }
       catch (e) { toast(errText(e), true); }
     };
   });

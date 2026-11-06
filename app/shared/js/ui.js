@@ -3,6 +3,8 @@ import { icon } from './icons.js';
 export { icon };
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Only real uploaded image data may reach an src or href. Anything else, such as a script payload, is dropped.
+export const safeImg = (s) => (typeof s === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s) ? s : '');
 export const $ = (s, el = document) => el.querySelector(s);
 export const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 export const rm = (cents) => 'RM' + (Number(cents || 0) / 100).toFixed(2);
@@ -209,8 +211,10 @@ export function compressImage(file, maxSide = 900, quality = 0.82) {
 }
 
 // ------------------------------------------------------------- files
+// Spreadsheet apps run cells starting with these as formulas, so a leading apostrophe keeps them as text.
+export const csvCell = (v) => { const s = String(v ?? ''); return '"' + (/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replaceAll('"', '""') + '"'; };
 export function downloadCSV(name, rows) {
-  const csv = rows.map((r) => r.map((v) => '"' + String(v ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
+  const csv = rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
   downloadBlob(name, new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
 }
 export function downloadBlob(name, blob) {
