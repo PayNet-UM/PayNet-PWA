@@ -1,12 +1,19 @@
 # +Onz
 
-+Onz is a campus rewards app for Universiti Malaya. It's an installable web app (PWA) built on Firebase, with three roles:
++Onz is a campus rewards app for Universiti Malaya, built on Firebase. It has three roles, split across two websites:
 
-| Role | What they do |
-|---|---|
-| **Student** | Checks in at shops using GPS to collect points, then redeems rewards and completes missions and lessons |
-| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals |
-| **HEP (admin)** | Verifies merchants, approves offers, deals and missions, manages rules and compares activity with PayNet's monthly counts |
+| Role | What they do | Website |
+|---|---|---|
+| **Student** | Checks in at shops using GPS to collect points, then redeems rewards and completes missions and lessons | Student and merchant app |
+| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals | Student and merchant app |
+| **HEP (admin)** | Verifies merchants, approves offers, deals and missions, manages rules and compares activity with PayNet's monthly counts | HEP admin dashboard |
+
+| Website | What it is | Source |
+|---|---|---|
+| **Student and merchant app** | The installable web app (PWA), built for phones. Works offline after the first visit. | `app/client` + `app/shared` |
+| **HEP admin dashboard** | A desktop web dashboard for HEP staff only. Not installable. Anyone who isn't a HEP admin is turned away. | `app/admin` + `app/shared` |
+
+Both websites use the same Firebase project, accounts and database. A HEP admin who signs in to the student and merchant app is offered a link to the dashboard.
 
 The app doesn't record payments and never moves money. Students pay with DuitNow QR in their own bank or e-wallet app.
 
@@ -16,7 +23,8 @@ The code and settings still say `mpp` in places, such as `MPP_ADMIN_EMAILS` and 
 
 | | Production | Staging |
 |---|---|---|
-| **PWA** | https://umconnectproduction.web.app *(live after the first production release)* | https://umconnect-e455a.web.app |
+| **Student and merchant app** | https://umconnectproduction.web.app *(live after the first production release)* | https://umconnect-e455a.web.app |
+| **HEP admin dashboard** | https://umconnectproduction-admin.web.app *(live after the first production release)* | https://umconnect-e455a-admin.web.app |
 | **Git branch** | `main` | `development` |
 | **Firebase console** | https://console.firebase.google.com/project/umconnectproduction | https://console.firebase.google.com/project/umconnect-e455a |
 | **Database** | Production Firestore | Staging Firestore |
@@ -43,15 +51,20 @@ You need [Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
 npm ci
-npm run dev:demo     # http://localhost:5173, no setup needed
+npm run dev:demo     # no setup needed
 ```
 
-Demo mode keeps all data in your browser, so it's the quickest way to try the app. The demo accounts are on the sign-in screen, and the demo password is `demo1234`.
+| Open | For |
+|---|---|
+| http://localhost:5173/ | The student and merchant app |
+| http://localhost:5173/admin/ | The HEP admin dashboard |
+
+Demo mode keeps all data in your browser, so it's the quickest way to try the app. Both sites share the same demo data, so a merchant you approve in the dashboard shows up in the app. The demo accounts are on each site's sign-in screen (Student and Merchant on the app, HEP admin on the dashboard), and the demo password is `demo1234`.
 
 ### Connect to staging
 1. Copy `.env.example` to `.env.local`.
 2. Fill in the values from the [staging project settings](https://console.firebase.google.com/project/umconnect-e455a/settings/general), under **Your apps**.
-3. Run `npm run dev`.
+3. Run `npm run dev`. The same two addresses as above now use the staging database.
 
 `npm run dev` uses the **real staging database**, so anything you do there is saved and shared with the team.
 
@@ -81,8 +94,8 @@ Don't put real values in `app/shared/js/firebase-config.js` or `firestore.rules`
 | `npm run test:emulator` | Runs the scenarios on Google's Firestore emulator; needs Java 21 or newer |
 | `npm run test:legacy` | Tests the old demo |
 | `npm run build` | Builds both sites for staging: `dist/client` and `dist/admin` |
-| `npm run deploy:staging` | Manually deploys to staging |
-| `npm run deploy:production` | Manually deploys to production, from a clean `main` only |
+| `npm run deploy:staging` | Manually deploys both sites to staging |
+| `npm run deploy:production` | Manually deploys both sites to production, from a clean `main` only |
 
 Deploys normally run through GitHub Actions. See [docs/DEPLOY.md](docs/DEPLOY.md).
 
@@ -117,6 +130,8 @@ firebase.json        Hosting (client and admin sites), Firestore and emulator se
 Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 
 - [ ] Firestore region is confirmed; it can't be changed later
+- [ ] The HEP dashboard's Hosting site exists (`umconnectproduction-admin`), and its two addresses are under Authentication > Authorized domains and in the OAuth client's redirect URIs
+- [ ] HEP staff know the dashboard's address: https://umconnectproduction-admin.web.app
 - [ ] Google sign-in is on, and the admin has signed in **before** Email/Password sign-in is turned on
 - [ ] Email/Password sign-in is on, for merchants without a Google account
 - [ ] API key is restricted in Google Cloud Console, for both projects
@@ -136,6 +151,10 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 | `npm ci` says the lockfile is out of sync | Update npm (`npm install -g npm@latest`), then try again. |
 | Emulator says Java version is too old | Install JDK 21 or newer. |
 | An admin only sees "verify your email" | Open the link sent to that mailbox, or sign in with Google using that address. |
-| The app looks stale after a deploy | The service worker is serving its cache. Reload twice, or clear the site's data. |
+| The dashboard says "This account isn't a HEP admin" | That email isn't in `MPP_ADMIN_EMAILS` or under Settings in the dashboard. Ask an existing HEP admin to add it. |
+| Google sign-in on the dashboard shows `redirect_uri_mismatch` | The dashboard's `/__/auth/handler` addresses aren't in the OAuth client's redirect URIs. See [docs/DEPLOY.md](docs/DEPLOY.md). |
+| Sign-in on the dashboard says the address "isn't authorised" | Add the dashboard's `.web.app` and `.firebaseapp.com` addresses under Authentication > Settings > Authorized domains. |
+| A deploy fails on the `admin` hosting target | The dashboard's Hosting site doesn't exist in that project yet. Create it (see [docs/DEPLOY.md](docs/DEPLOY.md)) or fix its name in `.firebaserc`. |
+| The student and merchant app looks stale after a deploy | The service worker is serving its cache. Reload twice, or clear the site's data. The dashboard has no service worker. |
 | You're stuck in Demo mode on a live site | Open the site with `?mode=live` added to the URL. |
 | Old GitHub Pages links stop working | The repo moved to the `PayNet-UM` organization, and the old demo moved to `legacy/`. The app itself is on Firebase, so use the links above. |
