@@ -245,6 +245,15 @@ function setPasswordSheet(app) {
     });
   };
 }
+const DESKTOP_KEY = 'kk-google-desktop';
+function popupFailedSheet(redirect) {
+  const el = sheet(`<h2>Google sign-in didn’t finish</h2>
+    <p class="muted">The Google window closed before the sign-in reached +Onz. This happens in some browsers. Sign in on a full page instead: it opens Google in this tab and brings you back.</p>
+    <div class="stack" style="margin-top:14px"><button class="btn primary block" id="pf-redirect">Continue with Google (full page)</button>
+      <button class="btn ghost block" id="pf-cancel">Cancel</button></div>`);
+  $('#pf-redirect', el).onclick = () => { ls.set(DESKTOP_KEY, 'redirect'); closeSheet(); redirect(); };
+  $('#pf-cancel', el).onclick = () => closeSheet();
+}
 async function googleSignIn(app, demoEmail) {
   window.__kkApp = app;
   const { sdk, auth, mode } = app.backend;
@@ -265,6 +274,11 @@ async function googleSignIn(app, demoEmail) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         // In the installed app a popup that can't hand back looks like the person closed it, after a while.
         if (standalone && Date.now() - t0 > 6000) standaloneHelp(markFailed('popup'));
+        // On computers Chrome can hide the popup's result from Firebase (Cross-Origin-Opener-Policy), so a finished
+        // sign-in is reported as "closed". Offer the full-page sign-in, and use it from then on in this browser.
+        else if (mode === 'live' && !standalone && err.code === 'auth/popup-closed-by-user') {
+          setTimeout(() => { if (!auth.currentUser) popupFailedSheet(redirect); }, 1200);
+        }
         return;
       }
       if (standalone) return standaloneHelp(markFailed('popup'));
@@ -274,7 +288,7 @@ async function googleSignIn(app, demoEmail) {
   if (standalone && isIOS()) return handoffStart(app);
   if (standalone) return nextMethod() === 'redirect' ? redirect() : popup();
   // Phones in the browser: a full-page redirect is more reliable than a popup (mobile browsers often lose the popup tab).
-  if (mode === 'live' && isPhone()) return redirect();
+  if (mode === 'live' && (isPhone() || ls.get(DESKTOP_KEY) === 'redirect')) return redirect();
   return popup();
 }
 export function googleErrorText(err) {

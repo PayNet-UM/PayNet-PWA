@@ -1203,4 +1203,7 @@ I’ve signed in|Saya sudah log masuk
 Check code|Kod semakan
 : Safari shows the same code.|: Safari menunjukkan kod yang sama.
 : the app shows the same code.|: aplikasi menunjukkan kod yang sama.
+Google sign-in didn’t finish|Log masuk Google tidak selesai
+The Google window closed before the sign-in reached +Onz. This happens in some browsers. Sign in on a full page instead: it opens Google in this tab and brings you back.|Tetingkap Google tertutup sebelum log masuk sampai ke +Onz. Ini berlaku dalam sesetengah pelayar. Log masuk pada halaman penuh: ia membuka Google dalam tab ini dan membawa anda kembali.
+Continue with Google (full page)|Teruskan dengan Google (halaman penuh)
 `;
