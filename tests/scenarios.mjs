@@ -1,7 +1,7 @@
-// End-to-end business scenarios. Each step calls the app's own data layer (app/js/data.js),
+// End-to-end business scenarios. Each step calls the app's own data layer (app/shared/js/data.js),
 // so these tests check that the app's writes satisfy firestore.rules and that abuse is blocked.
 // Backends: the local rules evaluator (default) or the official emulator (tests/emulator.mjs).
-import * as D from '../app/js/data.js';
+import * as D from '../app/shared/js/data.js';
 
 export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
   let passed = 0, failed = 0;

@@ -1,7 +1,7 @@
 // Demo mode only: builds a small, realistic campus (through the same rules as live) on first open.
 import * as D from './data.js';
 import { sheet, closeSheet, toast, esc, icon, $, $$ } from './ui.js';
-import { mppBootstrapEmails } from './firebase-config.js';
+import { mppBootstrapEmails, siteUrls } from './firebase-config.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
 
 export const DEMO_PASSWORD = 'demo1234';
@@ -116,13 +116,15 @@ export async function ensureDemoData(backend, progress = () => {}) {
 
 export function demoSheet(app) {
   const { sdk, auth } = app.backend;
+  const admin = app.site === 'admin';
   const el = sheet(`<h2>You’re in Demo mode</h2><p class="muted">No Firebase project is connected, so everything is stored in this browser and checked against the same security rules as the live app. On the Check in screen you can pretend to stand at any merchant.</p>
     <h3 style="margin-top:18px">Switch account</h3><p class="faint">All demo passwords are ${DEMO_PASSWORD}.</p>
-    <div class="stack" style="margin-top:8px">${DEMO_ACCOUNTS.map(([e, l]) => `<button class="btn block" data-as="${esc(e)}" style="justify-content:flex-start">${icon('user')} ${esc(l)}</button>`).join('')}</div>
+    <div class="stack" style="margin-top:8px">${DEMO_ACCOUNTS.filter(([e]) => (e === MPP_EMAIL) === admin).map(([e, l]) => `<button class="btn block" data-as="${esc(e)}" style="justify-content:flex-start">${icon('user')} ${esc(l)}</button>`).join('')}
+      <a class="btn block" href="${esc(admin ? siteUrls.client : siteUrls.admin)}" style="justify-content:flex-start">${icon(admin ? 'house' : 'layout-dashboard')} ${admin ? 'Open the student and merchant app' : 'Open the HEP dashboard'}</a></div>
     <h3 style="margin-top:18px">Start over</h3><p class="faint">Deletes every demo account and record in this browser, then rebuilds the demo campus.</p>
     <button class="btn warn block" id="reset" style="margin-top:8px">${icon('rotate-ccw')} Reset demo data</button>`);
   $$('[data-as]', el).forEach((b) => {
-    b.onclick = async () => { closeSheet(); sessionStorage.removeItem('umc-view'); await sdk.signOut(auth); location.hash = ''; await sdk.signInWithEmailAndPassword(auth, b.dataset.as, DEMO_PASSWORD).catch((e) => toast(e.code || e.message, true)); };
+    b.onclick = async () => { closeSheet(); await sdk.signOut(auth); location.hash = ''; await sdk.signInWithEmailAndPassword(auth, b.dataset.as, DEMO_PASSWORD).catch((e) => toast(e.code || e.message, true)); };
   });
   $('#reset', el).onclick = () => { sdk.resetDemoData(); sessionStorage.clear(); location.hash = ''; location.reload(); };
 }

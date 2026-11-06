@@ -1,7 +1,7 @@
 // Output safety helpers from the security audit. No browser or network.
 import assert from 'assert/strict';
 globalThis.document ??= {}; globalThis.window ??= globalThis; globalThis.addEventListener ??= () => {};
-const { safeImg, csvCell } = await import('../app/js/ui.js');
+const { safeImg, csvCell } = await import('../app/shared/js/ui.js');
 let passed = 0, failed = 0;
 const test = (name, fn) => { try { fn(); passed++; console.log('  ✓ ' + name); } catch (e) { failed++; console.log('  ✗ ' + name + '\n    ' + e.message); } };
 console.log('Output safety');

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "node scripts/serve.mjs app",
-    "dev:demo": "node scripts/serve.mjs app --demo",
+    "dev": "node scripts/serve.mjs",
+    "dev:demo": "node scripts/serve.mjs --demo",
     "test": "node tests/local.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/safety.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:legacy": "node legacy/campus.test.cjs",
@@ -12,7 +12,7 @@
     "build": "node scripts/build.mjs --env staging",
     "deploy:staging": "node scripts/deploy.mjs staging",
     "deploy:production": "node scripts/deploy.mjs production",
-    "vendor:firebase": "esbuild scripts/firebase-entry.js --bundle --format=esm --minify --target=es2020 --outfile=app/vendor/firebase.js"
+    "vendor:firebase": "esbuild scripts/firebase-entry.js --bundle --format=esm --minify --target=es2020 --outfile=app/shared/vendor/firebase.js"
   },
   "keywords": [],
   "author": "",

@@ -2,7 +2,17 @@
 
 "HEP" is the admin role. The code and settings still say `mpp` in places, such as `MPP_ADMIN_EMAILS`.
 
-The installable web app for students, merchants and HEP lives in `app/`. It runs in two modes:
+There are two websites, both on the same Firebase project and database:
+
+| Site | Who | Source | Address |
+|---|---|---|---|
+| `client` | Students and merchants (installable PWA) | `app/client` + `app/shared` | `https://<project>.web.app` |
+| `admin` | HEP admin dashboard | `app/admin` + `app/shared` | `https://<project>-admin.web.app` |
+
+The Hosting site IDs are set per project under `targets` in `.firebaserc`. The build reads them so each site can link to the other.
+On the dev server both sites share one address (the dashboard at `/admin/`), so Demo mode shows the same data on both.
+
+Both sites run in two modes:
 
 - **Demo mode** (no setup): if no environment values are loaded, data stays in the browser and every read and write is checked against `firestore.rules`. It's useful for pitching and for trying the flows. Open two tabs to act as a student and a merchant at the same time. The demo password is `demo1234`.
 - **Live mode**: real accounts and a shared database on Firebase (Auth + Firestore + Hosting). This needs the **Blaze** plan, because the iPhone sign-in server runs on Cloud Functions.
@@ -13,7 +23,7 @@ The original demonstrator is now in `legacy/`. For branches, links and day-to-da
 
 ```bash
 npm ci
-npm run dev:demo     # http://localhost:5173 opens in Demo mode
+npm run dev:demo     # Demo mode: http://localhost:5173 (students, merchants), http://localhost:5173/admin/ (HEP)
 npm test             # rule, business and deploy-guard tests against the local rules evaluator
 ```
 
@@ -24,18 +34,26 @@ Do this once for each environment. Staging is `umconnect-e455a`; the steps matte
 1. **Create a Firebase project** at console.firebase.google.com. Skip Google Analytics.
 2. **Turn on sign-in in this order,** so nobody else can claim the admin address:
    - Enable **Google** under Build > Authentication > Sign-in method. Pick a project support email, then save.
-   - Enable **Email/Password** only after the admin has signed in (step 6). It's a fallback for merchants without a Google account.
-   - Under Settings > Authorized domains, `localhost` and your `*.web.app` / `*.firebaseapp.com` domains are already listed. Add any custom domain you use.
+   - Enable **Email/Password** only after the admin has signed in (step 7). It's a fallback for merchants without a Google account.
+   - Under Settings > Authorized domains, `localhost` and the default `<project>.web.app` / `<project>.firebaseapp.com` are already listed. **Add the dashboard's** `<project>-admin.web.app` and `<project>-admin.firebaseapp.com`, and any custom domain you use.
 3. **Create the Firestore database.** Go to Build > Firestore Database > Create database, choose **asia-southeast1 (Singapore)**, and start in production mode.
 4. **Register a web app** under Project settings > General > Your apps > `</>`, and copy the `firebaseConfig`.
-5. **Add the values and deploy:**
+5. **Create the HEP dashboard's Hosting site** (once per project):
+   ```bash
+   npx firebase hosting:sites:create <project>-admin --project <project>
+   ```
+   If that ID is taken, pick another and put it under `targets.<project>.hosting.admin` in `.firebaserc`.
+   Then, for Google sign-in on the dashboard: Google Cloud Console > APIs & Services > Credentials > the **Web client (auto created by Google Service)** OAuth client >
+   Authorized redirect URIs: add `https://<project>-admin.web.app/__/auth/handler` and `https://<project>-admin.firebaseapp.com/__/auth/handler`.
+   Without it, Google sign-in on the dashboard fails with `redirect_uri_mismatch`; email and password still work.
+6. **Add the values and deploy:**
    - Put the config and `MPP_ADMIN_EMAILS` in `.env.local` (staging) or `.env.production`, and in that GitHub Environment.
-   - For production, put the project ID in `.firebaserc`.
+   - For production, put the project ID in `.firebaserc`, under `projects` and `targets`.
    - Merge to the matching branch, or see [Manual deploys](#manual-deploys).
 
-   The site is then at `https://<project>.web.app`.
-6. **Sign in as HEP** with an address from `MPP_ADMIN_EMAILS`. If it's a Google account, use **Continue with Google**; otherwise verify it via the link Firebase emails you. Admins can't do anything until their email is verified. The dashboard opens on **Set up the programme**. Click it once to create the points rules, rewards and counters.
-7. Under **Settings**, add other HEP reviewers and any pilot testers who don't have a `@siswa.um.edu.my` email.
+   The student/merchant app is then at `https://<project>.web.app` and the HEP dashboard at `https://<project>-admin.web.app`.
+7. **Sign in to the HEP dashboard** (`https://<project>-admin.web.app`) with an address from `MPP_ADMIN_EMAILS`. If it's a Google account, use **Continue with Google**; otherwise verify it via the link Firebase emails you. Admins can't do anything until their email is verified. The dashboard opens on **Set up the programme**. Click it once to create the points rules, rewards and counters.
+8. Under **Settings**, add other HEP reviewers and any pilot testers who don't have a `@siswa.um.edu.my` email.
 
 Students install it from the browser: Chrome shows **Install app**, and on iPhone use Safari > Share > **Add to Home Screen**. The camera scanner needs HTTPS, which Firebase Hosting provides.
 
@@ -77,6 +95,8 @@ The script refuses to deploy if:
 - the config's project doesn't match `.firebaserc`
 - the config points at the other environment's project
 - a production deploy isn't on a clean `main`
+- `.firebaserc` has no `client` and `admin` hosting targets for the project
+- the built sites don't carry the right site addresses, or the dashboard ended up in the student app
 
 ## Google Maps (optional, about 10 minutes)
 
@@ -85,7 +105,7 @@ Without a key the app shows a free OpenStreetMap map. To use Google Maps:
 1. Open console.cloud.google.com and pick the **same project** as Firebase (one key per environment). Google Maps needs a **billing account** on the project; Essentials map loads include a free monthly allowance, so a campus pilot normally costs nothing. Set a budget alert anyway (Billing > Budgets & alerts).
 2. APIs & Services > Library: enable **Maps JavaScript API**.
 3. APIs & Services > Credentials > Create credentials > API key. Then edit the key:
-   - Application restrictions: **Websites**. Add `https://<project>.web.app/*`, `https://<project>.firebaseapp.com/*` and `http://localhost:5173/*`.
+   - Application restrictions: **Websites**. Add `https://<project>.web.app/*`, `https://<project>.firebaseapp.com/*`, the dashboard's `https://<project>-admin.web.app/*` and `https://<project>-admin.firebaseapp.com/*`, and `http://localhost:5173/*`.
    - API restrictions: **Restrict key** to Maps JavaScript API.
 4. Put the key in `GOOGLE_MAPS_API_KEY` in `.env.local` / `.env.production` and in each GitHub Environment's variables, then deploy.
 5. Optional: Google Maps Platform > Map management > Create Map ID (JavaScript, Vector) and put it in `GOOGLE_MAPS_MAP_ID`. Without one the app uses Google's demo map ID, which works but can't be styled.
@@ -134,9 +154,9 @@ Artifact Registry for the project. Tests: `node tests/handoff.mjs`.
 
 ## Testing before real students
 
-- `npm test` runs the rules locally using the rules evaluator in `app/js/fake/rules-engine.js`.
+- `npm test` runs the rules locally using the rules evaluator in `app/shared/js/fake/rules-engine.js`, and checks that each site gets the right files.
 - `npm run test:emulator` runs **the same scenarios on Google's official Firestore emulator**. It needs Java 21+ and an internet connection the first time. **Run this before the pilot**, because the local evaluator is a close copy of the rules language, not Google's own engine.
-- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student checks in at a shop, customises an avatar and redeems a voucher at the merchant; a new merchant must give a logo and pin; every HEP screen is opened; and a pass with a fake Google Maps key checks the Google Maps path.
+- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student checks in at a shop, customises an avatar and redeems a voucher at the merchant; a new merchant must give a logo and pin; a student is turned away from the dashboard site; every HEP screen is opened on it; and a pass with a fake Google Maps key checks the Google Maps path.
   It refuses to run against a live config.
 
 ## Limits worth knowing

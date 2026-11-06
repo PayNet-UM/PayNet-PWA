@@ -16,6 +16,7 @@ const CONFIG_BLOCK = /export const firebaseConfig = \{[\s\S]*?\};/;
 const ADMINS_LINE = /export const mppBootstrapEmails = \[.*?\];/;
 const MAPS_KEY_LINE = /export const googleMapsApiKey = .*?;/;
 const MAPS_ID_LINE = /export const googleMapsMapId = .*?;/;
+const SITE_URLS_LINE = /export const siteUrls = \{.*?\};/;
 
 export const isPlaceholder = (v) => !v || /^REPLACE/i.test(v) || /\.invalid$/i.test(v);
 
@@ -59,11 +60,16 @@ function replaceOnce(text, pattern, value, what) {
   return text.replace(new RegExp(pattern.source), () => value);
 }
 
-export function renderConfig(template, { firebaseConfig, adminEmails, googleMaps = { apiKey: '', mapId: '' } }) {
+// siteUrls is left as committed (same-address paths) when not given, as on the dev server.
+export function renderConfig(template, { firebaseConfig, adminEmails, googleMaps = { apiKey: '', mapId: '' }, siteUrls = null }) {
   let out = replaceOnce(template, CONFIG_BLOCK, `export const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)};`, 'firebaseConfig block');
   out = replaceOnce(out, ADMINS_LINE, `export const mppBootstrapEmails = ${JSON.stringify(adminEmails)};`, 'mppBootstrapEmails line');
   out = replaceOnce(out, MAPS_KEY_LINE, `export const googleMapsApiKey = ${JSON.stringify(googleMaps.apiKey)};`, 'googleMapsApiKey line');
-  return replaceOnce(out, MAPS_ID_LINE, `export const googleMapsMapId = ${JSON.stringify(googleMaps.mapId)};`, 'googleMapsMapId line');
+  out = replaceOnce(out, MAPS_ID_LINE, `export const googleMapsMapId = ${JSON.stringify(googleMaps.mapId)};`, 'googleMapsMapId line');
+  if (!siteUrls) return out;
+  const urls = { client: siteUrls.client, admin: siteUrls.admin };
+  for (const [k, v] of Object.entries(urls)) if (!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+\/$/.test(v || '')) throw new Error(`Invalid ${k} site address: ${v}`);
+  return replaceOnce(out, SITE_URLS_LINE, `export const siteUrls = ${JSON.stringify(urls)};`, 'siteUrls line');
 }
 
 export function renderRules(template, { adminEmails }) {

@@ -1,6 +1,7 @@
 // Tests the environment and deploy safety checks. No network, no real project values.
 import assert from 'assert/strict'; import fs from 'fs'; import os from 'os'; import path from 'path';
 import { parseEnv, resolveEnv, renderConfig, renderRules, deployProblems, loadEnv } from '../scripts/lib/env.mjs';
+import { SITES, copySite, siteUrlsFor, resolveSiteFile } from '../scripts/lib/sites.mjs';
 
 let passed = 0, failed = 0;
 const test = (name, fn) => { try { fn(); passed++; console.log(`  ✓ ${name}`); } catch (e) { failed++; console.log(`  ✗ ${name}\n    ${e.message}`); } };
@@ -14,7 +15,8 @@ const projects = { staging: 'stage-proj', production: 'prod-proj' };
 const envFor = (projectId) => resolveEnv(raw({ FIREBASE_PROJECT_ID: projectId }));
 const deploy = (o) => deployProblems({ target: 'staging', env: envFor('stage-proj'), projects, branch: 'development', dirty: false, ...o });
 const rulesTpl = fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
-const configTpl = fs.readFileSync(new URL('../app/js/firebase-config.js', import.meta.url), 'utf8');
+const configTpl = fs.readFileSync(new URL('../app/shared/js/firebase-config.js', import.meta.url), 'utf8');
+const firebaserc = JSON.parse(fs.readFileSync(new URL('../.firebaserc', import.meta.url), 'utf8'));
 
 console.log('Env parsing');
 test('parses values, quotes and comments', () => {
@@ -61,6 +63,49 @@ test('rules render the admins and nothing else changes', () => {
   assert.doesNotMatch(out, /\.invalid/);
 });
 test('rendering refuses a template without the expected line', () => assert.throws(() => renderRules('no admins here', resolveEnv(raw())), /Expected exactly one/));
+
+console.log('Two websites');
+const sites = { client: 'https://stage-proj.web.app/', admin: 'https://stage-proj-admin.web.app/' };
+test('committed config links the sites by path, for the dev server', () => assert.match(configTpl, /export const siteUrls = \{ client: '\/', admin: '\/admin\/' \};/));
+test('config renders both site addresses', () => {
+  const out = renderConfig(configTpl, { ...resolveEnv(raw()), siteUrls: sites });
+  assert.match(out, /export const siteUrls = \{"client":"https:\/\/stage-proj\.web\.app\/","admin":"https:\/\/stage-proj-admin\.web\.app\/"\};/);
+});
+test('without site addresses the config keeps the dev paths', () => assert.match(renderConfig(configTpl, resolveEnv(raw())), /siteUrls = \{ client: '\/'/));
+test('rejects a site address that could break out of the config', () => assert.throws(() => renderConfig(configTpl, { ...resolveEnv(raw()), siteUrls: { ...sites, admin: 'https://x.web.app/";alert(1)//' } }), /admin site address/));
+test('.firebaserc has both hosting targets for every project', () => {
+  for (const id of Object.values(firebaserc.projects)) {
+    const urls = siteUrlsFor(firebaserc, id);
+    assert.equal(urls.client, `https://${id}.web.app/`);
+    assert.notEqual(urls.admin, urls.client);
+  }
+});
+test('a project without hosting targets is refused', () => assert.throws(() => siteUrlsFor(firebaserc, 'other-proj'), /no hosting target "client"/));
+test('each site gets the shared files and only its own views', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'umc-sites-'));
+  for (const site of Object.keys(SITES)) copySite(site, path.join(dir, site));
+  const has = (site, f) => fs.existsSync(path.join(dir, site, f));
+  for (const site of Object.keys(SITES)) {
+    for (const f of ['index.html', 'js/data.js', 'js/views/auth.js', 'js/firebase-config.js', 'vendor/firebase.js']) assert.ok(has(site, f), `${site} is missing ${f}`);
+  }
+  assert.ok(has('client', 'js/views/student.js') && has('client', 'sw.js') && !has('client', 'js/views/mpp.js'), 'client files');
+  assert.ok(has('admin', 'js/views/mpp.js') && !has('admin', 'js/views/student.js') && !has('admin', 'js/views/merchant.js') && !has('admin', 'sw.js'), 'admin files');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+test('site files cannot escape their folders', () => assert.equal(resolveSiteFile('client', '/../../package.json'), null));
+test('every relative import resolves on the site that loads it', () => {
+  const seen = new Set();
+  const walk = (site, file) => {
+    const key = site + ':' + file; if (seen.has(key)) return; seen.add(key);
+    const src = fs.readFileSync(resolveSiteFile(site, file), 'utf8');
+    for (const [, spec] of src.matchAll(/(?:from\s+|import\()\s*'(\.{1,2}\/[^']+)'/g)) {
+      const next = path.posix.normalize(path.posix.join(path.posix.dirname(file), spec));
+      assert.ok(resolveSiteFile(site, next), `${site}: ${file} imports ${spec}, which isn't there`);
+      if (next.endsWith('.js') && !next.startsWith('/vendor/')) walk(site, next);
+    }
+  };
+  walk('client', '/js/main.js'); walk('admin', '/js/admin.js');
+});
 
 console.log('Deploy guards');
 test('staging passes from a feature branch', () => assert.deepEqual(deploy({ branch: 'feature/x' }), []));

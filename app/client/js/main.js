@@ -1,14 +1,16 @@
-// App bootstrap: backend choice, sign-in state, role shells and hash routing.
+// Student and merchant app: backend choice, sign-in state, role shells and hash routing.
+// The HEP admin dashboard is a separate website (app/admin), linked from the account menu for HEP admins.
 import { initBackend } from './backend.js';
 import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText } from './ui.js';
 import * as Auth from './views/auth.js';
 import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
+import { siteUrls } from './firebase-config.js';
 initI18n();
 
 const app = {
-  backend: null, ctx: null, user: null, profile: null, isMpp: false, rules: D.DEFAULT_RULES, role: null,
+  site: 'client', backend: null, ctx: null, user: null, profile: null, isMpp: false, rules: D.DEFAULT_RULES, role: null,
   merchant: null, visits: [], ledger: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
 };
 window.__umc = app; // handy for debugging in the console
@@ -58,23 +60,22 @@ async function onUser(user) {
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
-  if (isMpp && (!profile || sessionStorage.getItem('umc-view') !== profile.role)) return startRole('mpp');
   if (profile?.disabled) return Auth.renderBlocked(app);
-  if (!profile) return Auth.renderOnboarding(app, async () => { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); });
+  if (isMpp && !profile) return Auth.renderAdminElsewhere(app, () => Auth.renderOnboarding(app, onboarded));
+  if (!profile) return Auth.renderOnboarding(app, onboarded);
   startRole(profile.role);
 }
+async function onboarded() { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
 
 function startRole(role) {
   app.role = role;
   const { sdk, db } = app.backend;
-  if (role !== 'mpp') {
-    app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'users', app.ctx.uid), (s) => {
-      if (!s.exists()) return;
-      app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
-      $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
-      paintAvatar();
-    }, () => {}));
-  }
+  app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'users', app.ctx.uid), (s) => {
+    if (!s.exists()) return;
+    app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
+    $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
+    paintAvatar();
+  }, () => {}));
   if (role === 'student') {
     app.watchers.push(D.watchMyVisits(app.ctx, (v) => { app.visits = v; app.emit && app.emit('visits'); }, () => {}));
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.emit && app.emit('ledger'); }, () => {}));
@@ -95,16 +96,12 @@ app.emit = (topic) => listeners.forEach((f) => f(topic));
 app.on = (f) => { listeners.add(f); return () => listeners.delete(f); };
 
 async function loadRoleModule(role) {
-  if (role === 'student') return import('./views/student.js');
-  if (role === 'merchant') return import('./views/merchant.js');
-  return import('./views/mpp.js');
+  return role === 'merchant' ? import('./views/merchant.js') : import('./views/student.js');
 }
 
 function shell(role) {
   if (app.shellRole === role) return;
   app.shellRole = role;
-  document.body.classList.toggle('mpp-mode', role === 'mpp');
-  if (role === 'mpp') { document.body.innerHTML = `<div id="root"></div>`; return; }
   const p = app.profile || {};
   document.body.innerHTML = `
     <div class="shell">
@@ -137,13 +134,12 @@ function accountSheet() {
   const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
-      ${app.isMpp ? '<button class="btn block" id="to-mpp">Open the HEP dashboard</button>' : ''}
+      ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
     </div>`);
-  $('#signout', el).onclick = async () => { closeSheet(); sessionStorage.removeItem('umc-view'); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
+  $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
-  if ($('#to-mpp', el)) $('#to-mpp', el).onclick = () => { sessionStorage.removeItem('umc-view'); closeSheet(); onUser(app.user); };
 }
 app.accountSheet = accountSheet;
 
@@ -177,14 +173,11 @@ async function render() {
   const r = mod.routes[route];
   if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }
   if (sheetOpen()) closeSheet();
-  if (app.role === 'mpp') { await mod.renderShell(app, route); }
-  else {
-    $$('.tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.tab === (r.tab || route)));
-  }
+  $$('.tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.tab === (r.tab || route)));
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
   view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
-  document.title = `${r.title} · +Onz ${app.role === 'mpp' ? 'HEP' : app.role === 'student' ? 'Student' : 'Merchant'}`;
+  document.title = `${r.title} · +Onz ${app.role === 'student' ? 'Student' : 'Merchant'}`;
   const token = Symbol(); render.token = token;
   try {
     const html = await r.render(app, parts.slice(1));
