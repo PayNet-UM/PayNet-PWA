@@ -269,7 +269,7 @@ College leaderboard|Papan pendahulu kolej
 Colleges, all time|Kolej, sepanjang masa
 My college|Kolej saya
 Campus together|Kampus bersama
-Your check-ins count towards your college on the leaderboard.|Daftar masuk anda dikira untuk kolej anda di papan pendahulu.
+Your points count towards your college on the leaderboard.|Mata anda dikira untuk kolej anda di papan pendahulu.
 No purchases yet. Yours could put your college first.|Belum ada pembelian. Pembelian anda boleh meletakkan kolej anda di tempat pertama.
 Student welfare fund|Tabung kebajikan pelajar
 Welfare fund|Tabung kebajikan
@@ -1072,7 +1072,7 @@ Opening +Onz…|Membuka +Onz…
 +Onz needs JavaScript turned on.|+Onz memerlukan JavaScript dihidupkan.
 +Onz isn’t open for students yet. The HEP admin needs to sign in once to set it up.|+Onz belum dibuka untuk pelajar. Pentadbir HEP perlu log masuk sekali untuk menyediakannya.
 I agree that +Onz stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).|Saya bersetuju +Onz menyimpan nama, e-mel, avatar dan daftar masuk saya, untuk menjalankan dan melaporkan program kampus ini (notis PDPA).
-Discover campus, check in at shops and collect rewards|Terokai kampus, daftar masuk di kedai dan kumpul ganjaran
+Join campus events, learn and collect rewards|Sertai acara kampus, belajar dan kumpul ganjaran
 Join the campus map so students can find and visit you|Sertai peta kampus supaya pelajar boleh mencari dan mengunjungi anda
 Code added. Your bonus arrives after your first check-in.|Kod ditambah. Bonus anda akan diterima selepas daftar masuk pertama.
 Checked in for the first time|Daftar masuk buat kali pertama
@@ -1174,7 +1174,7 @@ HEP-verified shops and student businesses.|Kedai dan perniagaan pelajar yang dis
 Claims reviewed by HEP, usually within a day.|Tuntutan disemak HEP, biasanya dalam sehari.
 Unlock hats as you earn points.|Buka topi dengan mengumpul mata.
 Pay with DuitNow QR in your bank or e-wallet app.|Bayar dengan DuitNow QR dalam aplikasi bank atau e-dompet anda.
-Shops, events, check-ins and rewards in one place.|Kedai, acara, daftar masuk dan ganjaran di satu tempat.
+Events, lessons and rewards in one place.|Acara, pelajaran dan ganjaran di satu tempat.
 Sign in with Google. New users get an account.|Log masuk dengan Google. Pengguna baharu akan mendapat akaun.
 Usually reviewed within 1–2 working days.|Biasanya disemak dalam 1–2 hari bekerja.
 Submit your shop details for HEP verification.|Hantar butiran kedai untuk pengesahan HEP.

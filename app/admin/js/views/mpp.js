@@ -277,10 +277,11 @@ async function rewardsRender(app) {
   const spent = vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + (v.valueCents || 0), 0);
   const campBudget = camps.reduce((s, c) => s + (c.budgetCents || 0), 0);
   const open = vouchers.filter((v) => v.status === 'issued' && !v.merchantId);
+  const voucherCount = (status) => { const count = vouchers.filter((v) => v.status === status).length; return `${count} voucher${count === 1 ? '' : 's'}`; };
   return `<div class="page-title"><h1>Rewards and budget</h1><p>Vouchers are paid from the activation fund. Track what’s promised (issued, not yet used) and what’s paid out.</p></div>
     <div class="stats"><div class="stat"><div class="k">Activation fund</div><div class="v num">${rm(alloc)}</div><div class="s"><button class="btn small ghost" id="alloc" style="padding:0;min-height:0">${icon('pencil')} Edit</button></div></div>
-      <div class="stat"><div class="k">Promised</div><div class="v num">${rm(committed)}</div><div class="s">${vouchers.filter((v) => v.status === 'issued').length} vouchers not yet used</div></div>
-      <div class="stat"><div class="k">Paid out</div><div class="v num">${rm(spent)}</div><div class="s">${vouchers.filter((v) => v.status === 'used').length} vouchers used</div></div>
+      <div class="stat"><div class="k">Promised</div><div class="v num">${rm(committed)}</div><div class="s">${voucherCount('issued')} not yet used</div></div>
+      <div class="stat"><div class="k">Paid out</div><div class="v num">${rm(spent)}</div><div class="s">${voucherCount('used')} used</div></div>
       <div class="stat"><div class="k">Left to commit</div><div class="v num" style="color:${alloc - committed - spent - campBudget < 0 ? 'var(--red)' : 'inherit'}">${rm(alloc - committed - spent - campBudget)}</div><div class="s">after ${rm(campBudget)} set aside for campaigns</div></div></div>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Reward catalogue</h2><button class="btn small primary" id="new-rw">${icon('plus')} New reward</button></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Reward</th><th>Redeem at</th><th class="r">Points</th><th class="r">Value</th><th class="r">Issued / stock</th><th>Status</th><th></th></tr></thead><tbody>

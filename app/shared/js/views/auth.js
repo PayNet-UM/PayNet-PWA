@@ -14,7 +14,7 @@ function frame(app, inner) {
     <aside class="art">
       <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a>
       <div><h2>${admin ? 'HEP admin dashboard' : 'Add on to campus life.'}</h2>
-        <p>${admin ? 'Review merchants, approve deals and report on the +Onz programme.' : 'Shops, events, check-ins and rewards in one place.'}</p></div>
+        <p>${admin ? 'Review merchants, approve deals and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
@@ -451,7 +451,7 @@ export function renderOnboarding(app, done) {
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
-          <span><b>I’m a student</b><br><span class="faint">Discover campus, check in at shops and collect rewards</span></span></label>
+          <span><b>I’m a student</b><br><span class="faint">Join campus events, learn and collect rewards</span></span></label>
         ${merchantsOpen ? `<label><input type="radio" name="role" value="merchant" ${looksStudent ? '' : 'checked'}><span class="tile-icon orange">${icon('store')}</span>
           <span><b>I run a business or stall</b><br><span class="faint">Join the campus map so students can find and visit you</span></span></label>` : ''}
       </div>
@@ -459,7 +459,7 @@ export function renderOnboarding(app, done) {
       <div id="student-fields" class="stack">
         <label class="field">Matric number<input name="matric" autocomplete="off" placeholder="e.g. 23001234" pattern="[A-Za-z0-9]{5,15}" title="Letters and numbers only"><small>One account per matric number. You can’t change it later, so check it.</small></label>
         <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>
-          <small>Your check-ins count towards your college on the leaderboard.</small></label>
+          <small>Your points count towards your college on the leaderboard.</small></label>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
       </div>
       <label class="check"><input type="checkbox" required> I agree that +Onz stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).</label>

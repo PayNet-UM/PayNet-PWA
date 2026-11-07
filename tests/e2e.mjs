@@ -227,12 +227,15 @@ ok('with switches off, a merchant account sees Coming soon');
 await offMer.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); await sdk.createUserWithEmailAndPassword(auth, 'switchtest@shop.my', 'demo1234'); });
 await offMer.waitForSelector('#ob', { timeout: 30000 });
 if (await offMer.locator('input[value=merchant]').count() !== 0) throw new Error('sign-up still offers merchant');
+if (/check in at shops|your check-ins/i.test(await offMer.locator('body').innerText())) throw new Error('sign-up still advertises check-ins');
 ok('with switches off, sign-up has no merchant option');
 await off.check('#features input[name=overview]'); await off.click('#features button'); await off.waitForTimeout(600);
 await offStu.goto(BASE); await offStu.reload(); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not bring it back');
 await offStu.goto(BASE + '#/explore'); await offStu.waitForSelector('#cmap', { timeout: 20000 });
 if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live deals shown while its switch is off');
+await offStu.locator('#clist h3 a[href^="#/merchant/"]').first().click(); await offStu.waitForSelector('text=Visit this shop', { timeout: 20000 });
+if (await offStu.locator('text=Pay cashless if you buy').count() !== 0) throw new Error('shop page shows the cashless step while its switch is off');
 ok('HEP turned Overview back on, and the directory returned without Live deals');
 
 console.log(errors.length ? '\nErrors:\n' + errors.join('\n') : '\nNo page errors.');

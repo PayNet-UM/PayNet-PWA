@@ -2,7 +2,7 @@
   "id": "./",
   "name": "+Onz",
   "short_name": "+Onz",
-  "description": "+Onz brings campus shops, events, cashless check-ins and rewards together for Universiti Malaya.",
+  "description": "+Onz brings campus events, lessons and rewards together for Universiti Malaya.",
   "lang": "en-MY",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -37,8 +37,8 @@
   ],
   "shortcuts": [
     {
-      "name": "Check in",
-      "url": "./#/checkin",
+      "name": "Rewards",
+      "url": "./#/rewards",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -47,8 +47,8 @@
       ]
     },
     {
-      "name": "Niaga Kita map",
-      "url": "./#/explore",
+      "name": "Campus Events",
+      "url": "./#/events",
       "icons": [
         {
           "src": "icons/icon-192.png",
