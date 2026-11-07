@@ -19,6 +19,7 @@ function crowdHTML(app, g) {
 }
 
 export function hereNowSection(app) {
+  if (!D.featureOn(app.rules, 'hereNow')) return '';
   const on = !!app.profile?.showOnMap;
   return `<section class="section" id="herenow-sec">
     <div class="head"><h2>${icon('users')} Here now</h2><button class="link" id="hn-settings">${on ? 'You’re visible' : 'Show me'}</button></div>
@@ -31,6 +32,7 @@ export function hereNowSection(app) {
 
 // Starts the live list (and the map bubbles, when a map is given). Returns a stop function.
 export function mountHereNow(root, app, { getMap, merchants = () => app._merchants || [] } = {}) {
+  if (!D.featureOn(app.rules, 'hereNow')) return { stop() {}, redraw() {} };
   let groups = [];
   const box = $('#herenow', root);
   const draw = () => {

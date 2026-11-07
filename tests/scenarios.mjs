@@ -43,6 +43,10 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     await D.initProgramme(claimer);
   });
   await ok('bootstrap HEP admin initialises config, stats and rewards', () => D.initProgramme(mpp));
+  const allFeatures = (on) => D.saveConfig(mpp, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, on])) });
+  await ok('features start off', async () => { const r = await D.getRules(mpp); for (const [k] of D.FEATURES) eq(D.featureOn(r, k), false, k); });
+  await denied('a student cannot turn features on', () => D.saveConfig(stuA, 'rules', { features: { shops: true } }));
+  await ok('HEP turns all features on for the scenarios below', async () => { await allFeatures(true); rules = await D.getRules(mpp); });
   await ok('HEP is recognised as HEP', async () => eq(await D.isMppUser(mpp), true));
   await ok('a student is not HEP', async () => eq(await D.isMppUser(stuA), false));
 
@@ -368,6 +372,43 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     });
     await denied('after 2 hours you can no longer be waved at', async () => { tick(2.5 * 3600000); await D.sendWave(hn1, 'hn2', { first: 'Hana' }, 'Kopi Kolej'); });
       }
+
+  log('Feature switches');
+  await D.saveReward(mpp, 'sw-shop', { title: 'Switch shop', merchantId: 'mer1', cost: 1, valueCents: 100, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+  await D.saveReward(mpp, 'sw-hep', { title: 'Switch HEP', merchantId: '', cost: 1, valueCents: 100, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+  const rw = async (id) => (await D.listRewards(stuA)).find((x) => x.id === id);
+  stuA.profile = await D.getProfile(stuA);
+  const shopVoucher = await D.redeemReward(stuA, await rw('sw-shop'));
+  const swMerchant = await makeCtx({ uid: 'swMer', email: 'sw@shop.my' });
+  await D.createProfile(swMerchant, { role: 'merchant', name: 'Switch Shop' });
+  await D.setMapVisibility(stuB, true, 'everyone'); stuB.profile = await D.getProfile(stuB);
+  const swFresh = await makeCtx({ uid: 'swStu', email: 'swstu@gmail.com' });
+  await D.createProfile(swFresh, { role: 'student', name: 'Switch Student', matric: 'SW000001', college: 'KK1' }); swFresh.profile = await D.getProfile(swFresh);
+  const swRules = await D.getRules(mpp);
+  await ok('HEP turns every feature off', async () => { await allFeatures(false); const r = await D.getRules(stuA); for (const [k] of D.FEATURES) eq(D.featureOn(r, k), false, k); });
+  const newMerchant = await makeCtx({ uid: 'swNew', email: 'new@shop.my' });
+  await denied('merchantSignup off: no new merchant accounts', () => D.createProfile(newMerchant, { role: 'merchant', name: 'New Shop' }));
+  await denied('merchantSignup off: an existing merchant account cannot apply', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchants', 'swMer'), { ownerUid: 'swMer', status: 'pending', submittedAt: swMerchant.sdk.serverTimestamp(), name: 'Switch Shop', lat: 3.12, lng: 101.65, logo: 'data:image/png;base64,AA==' }));
+  await denied('merchantSignup off: an existing merchant cannot upload a QR', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchantPrivate', 'swMer'), { accountName: 'Switch' }));
+  await denied('merchantTools off: no new offers', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw1'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
+  await denied('merchantTools off: no new deals', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw1'), { merchantId: 'mer1', status: 'pending', enabled: true, bonus: 5, limit: 5, minSpendCents: 0, startMin: 0, endMin: 100, threshold: 50 }));
+  await denied('merchantTools off: a merchant cannot mark a voucher used', () => D.useVoucher(merch, shopVoucher));
+  await denied('shops off: no check-outs', () => D.checkIn(swFresh, kopi, at(kopi), swRules));
+  await denied('shops off: no shop vouchers', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-shop')); });
+  await denied('shops off: no mission claims', () => D.claimMission(swFresh, D.MISSIONS[0], 'sw-week', 5));
+  await denied('hereNow off: nobody can read who is at a shop', () => stuA.sdk.getDocs(stuA.sdk.query(stuA.sdk.collection(stuA.db, 'presence'), stuA.sdk.where('audience', '==', 'everyone'))));
+  await denied('hereNow off: nobody can add themselves to the map', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'presence', 'stuB'), { uid: 'stuB', zone: 'mer1', zoneName: 'Kopi Kolej', first: 'B', college: stuB.profile.college, audience: 'everyone', at: stuB.sdk.serverTimestamp(), expiresAt: new Date(T + 7200000) }));
+  await denied('hereNow off: nobody can wave', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'waves', 'stuA', 'inbox', 'stuB'), { fromFirst: 'B', zoneName: 'Kopi Kolej', at: stuB.sdk.serverTimestamp() }));
+  await ok('switches off: HEP can still mark a shop voucher used', () => D.useVoucher(mpp, shopVoucher));
+  await ok('switches off: HEP counter vouchers still work', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-hep')); });
+  await ok('switches off: a student can still edit their profile', () => D.updateProfile(stuA, { faculty: 'Science' }));
+  await ok('switches off: students can still sign up', () => makeCtx({ uid: 'swStu2', email: 'swstu2@gmail.com' }).then((c) => D.createProfile(c, { role: 'student', name: 'Second Student', matric: 'SW000002', college: 'KK1' })));
+  await ok('HEP turns only shops on', () => D.saveConfig(mpp, 'rules', { features: { shops: true } }));
+  await ok('other switches stay off when one is saved', async () => { const r = await D.getRules(mpp); eq(D.featureOn(r, 'shops'), true); eq(D.featureOn(r, 'hereNow'), false); eq(D.featureOn(r, 'merchantTools'), false); });
+  await ok('shops on, hereNow off: a student who opted in can still check out', async () => {
+    await D.setMapVisibility(swFresh, true, 'everyone'); swFresh.profile = await D.getProfile(swFresh);
+    const r = await D.getRules(swFresh); const res = await D.checkIn(swFresh, kopi, at(kopi), r); eq(res.points, r.checkinPoints);
+  });
 
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };

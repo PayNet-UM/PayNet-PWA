@@ -17,6 +17,7 @@ The code and settings still say `mpp` in places, such as `MPP_ADMIN_EMAILS` and 
 | | Production | Staging |
 |---|---|---|
 | **PWA** | https://umconnectproduction.web.app *(live after the first production release)* | https://umconnect-e455a.web.app |
+| **HEP dashboard** | https://umconnectproduction-admin.web.app *(live after the first production release)* | https://umconnect-e455a-admin.web.app |
 | **Git branch** | `main` | `development` |
 | **Firebase console** | https://console.firebase.google.com/project/umconnectproduction | https://console.firebase.google.com/project/umconnect-e455a |
 | **Database** | Production Firestore | Staging Firestore |
@@ -54,6 +55,24 @@ Demo mode keeps all data in your browser, so it's the quickest way to try the ap
 3. Run `npm run dev`.
 
 `npm run dev` uses the **real staging database**, so anything you do there is saved and shared with the team.
+
+## Turning features on and off
+
+HEP chooses what's live under **Settings > Features** on the dashboard, with no deploy. Everything here starts **off**, and people see changes the next time they open or refresh the app. Turned-off features are hidden and also blocked by `firestore.rules`. Nothing is deleted.
+
+| Switch | Covers |
+|---|---|
+| **Merchant sign-up** | Registering a business and applying to join |
+| **Merchant tools** | Promote, Insights, voucher Redeem and the readiness check |
+| **Shops and check-out** | Campus Shops map, shop pages, check-out points, referrals, missions, Student Ventures and shop vouchers |
+| **Live deals and Pay Cashless** | Off-peak bonuses and the DuitNow QR guide |
+| **Here now** | Students who opt in appear at a shop on the map, and can wave |
+
+Events, FESKUM, lessons, surveys, avatars, the welfare fund and HEP counter vouchers are always on.
+
+Students can only check out at verified shops, and shops are added through merchant sign-up. To launch with a few shops but no public sign-up, turn on **Merchant sign-up** while your shops register, verify them, then turn it off. Verified shops stay on the map.
+
+To add a switch, add it to `FEATURES` in `app/shared/js/data.js`, gate the screens with `feature:` on the route or `D.featureOn()`, and gate the writes with `featureOn()` in `firestore.rules`.
 
 ## Environment files
 
@@ -125,6 +144,7 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 - [ ] Students are told what location and personal data the app collects
 - [ ] `main` and `development` are protected
 - [ ] Scheduled Firestore backups are on (this may need the Blaze plan)
+- [ ] The feature switches are set in **Settings > Features** for what's launching
 - [ ] Programme defaults are reviewed on first admin login, especially the allocation and allowed student domains (`gmail.com` is allowed by default)
 
 ## Troubleshooting
@@ -137,5 +157,6 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 | Emulator says Java version is too old | Install JDK 21 or newer. |
 | An admin only sees "verify your email" | Open the link sent to that mailbox, or sign in with Google using that address. |
 | The app looks stale after a deploy | The service worker is serving its cache. Reload twice, or clear the site's data. |
+| A feature is missing, like Check out | It may be switched off. Check **Settings > Features** on the HEP dashboard, then refresh the app. |
 | You're stuck in Demo mode on a live site | Open the site with `?mode=live` added to the URL. |
 | Old GitHub Pages links stop working | The repo moved to the `PayNet-UM` organization, and the old demo moved to `legacy/`. The app itself is on Firebase, so use the links above. |

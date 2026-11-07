@@ -54,6 +54,7 @@ Do this once for each environment. Staging is `umconnect-e455a`; the steps matte
    The student/merchant app is then at `https://<project>.web.app` and the HEP dashboard at `https://<project>-admin.web.app`.
 7. **Sign in to the HEP dashboard** (`https://<project>-admin.web.app`) with an address from `MPP_ADMIN_EMAILS`. If it's a Google account, use **Continue with Google**; otherwise verify it via the link Firebase emails you. Admins can't do anything until their email is verified. The dashboard opens on **Set up the programme**. Click it once to create the points rules, rewards and counters.
 8. Under **Settings**, add other HEP reviewers and any pilot testers who don't have a `@siswa.um.edu.my` email.
+9. Under **Settings > Features**, turn on what's launching. Everything there starts off. See [Turning features on and off](../README.md#turning-features-on-and-off).
 
 Students install it from the browser: Chrome shows **Install app**, and on iPhone use Safari > Share > **Add to Home Screen**. The camera scanner needs HTTPS, which Firebase Hosting provides.
 

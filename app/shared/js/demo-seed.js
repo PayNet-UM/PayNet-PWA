@@ -80,6 +80,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
   try {
     let mpp = await as(MPP_EMAIL);
     await D.initProgramme(mpp);
+    await D.saveConfig(mpp, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, true])) });
     await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Visit +Onz merchants and pay cashless. Every check-in counts for your college.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
     await D.saveCampaign(mpp, null, { name: 'Student Makers Bazaar', description: 'Student-run stalls with DuitNow QR. Check in at three for the explorer mission.', start: D.dayKey(Date.now() + 9 * 86400000), end: D.dayKey(Date.now() + 11 * 86400000), location: 'Kompleks Perdanasiswa', budgetCents: 80000 });
     const ids = {};

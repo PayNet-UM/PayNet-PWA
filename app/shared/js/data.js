@@ -19,7 +19,17 @@ export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone',
 
 // checkinPoints: points per check-in · checkinCooldownH: hours before the same student can check in at the same merchant
 // checkinDailyCap: check-ins that earn points per student per day · checkinRadiusM: how close to the merchant's pin
-export const DEFAULT_RULES = { surveyBonus: 50, lessonBonus: 50, referrerBonus: 100, friendBonus: 100, referralCap: 5,
+// Features HEP can switch on and off in Settings. Off unless HEP turns them on; firestore.rules enforces the same switches.
+export const FEATURES = [
+  ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
+  ['merchantTools', 'Merchant tools', 'Promote, Insights, voucher Redeem and the readiness check.'],
+  ['shops', 'Shops and check-out', 'Campus Shops map, shop pages, check-out points, referrals, missions and shop vouchers.'],
+  ['dealsAndPay', 'Live deals and Pay Cashless', 'Off-peak bonuses and the DuitNow QR guide.'],
+  ['hereNow', 'Here now', 'Students who opt in appear at a shop on the map, and can wave.'],
+];
+export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
+export const featureOn = (rules, key) => rules?.features?.[key] === true;
+export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, referrerBonus: 100, friendBonus: 100, referralCap: 5,
   checkinPoints: 10, checkinCooldownH: 3, checkinDailyCap: 5, checkinRadiusM: 60 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -217,7 +227,7 @@ export async function checkIn(ctx, merchant, pos, rules, deal = null) {
   b.update(r.user(ctx.uid), u);
   b.update(r.stats('campus'), { checkins: sdk.increment(1), ['colleges.' + p.college]: sdk.increment(1), lastVisit: id });
   if (deal) b.set(sdk.doc(ctx.db, 'dealDays', `${deal.id}_${day}`), { count: sdk.increment(1), last: id }, { merge: true });
-  if (p.showOnMap) b.set(r.presence(ctx.uid), presenceDoc(ctx, merchant, now));
+  if (p.showOnMap && featureOn(rules, 'hereNow')) b.set(r.presence(ctx.uid), presenceDoc(ctx, merchant, now));
   await b.commit();
   if (u.firstVisit && p.inviterUid) { try { await sdk.updateDoc(sdk.doc(ctx.db, 'referrals', ctx.uid), { qualified: true }); } catch { /* no referral */ } }
   return { id, points };

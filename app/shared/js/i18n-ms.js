@@ -520,6 +520,9 @@ Voucher marked used.|Baucar ditandakan digunakan.
 No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.|Tiada baucar dengan kod ini untuk kedai anda. Semak kod, atau baucar pelajar untuk lokasi penggunaannya.
 This voucher isn’t for your shop. The student’s voucher shows where to use it.|Baucar ini bukan untuk kedai anda. Baucar pelajar menunjukkan lokasi penggunaannya.
 Collect at the HEP counter|Tuntut di kaunter HEP
+Earn. Redeem.|Kumpul. Tebus.
+Merchant features are coming soon|Ciri peniaga akan datang tidak lama lagi
+Your account is safe. We’ll open this up soon, so please check back later.|Akaun anda selamat. Kami akan membukanya tidak lama lagi, jadi sila semak semula kemudian.
 Use at|Gunakan di
 a selected shop|kedai terpilih
 This voucher has been used.|Baucar ini telah digunakan.

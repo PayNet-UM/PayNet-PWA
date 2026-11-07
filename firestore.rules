@@ -26,6 +26,8 @@ service cloud.firestore {
       return verified() && (email() in bootstrapAdmins() || email() in access().mppEmails);
     }
     function cfg() { return get(/databases/$(database)/documents/config/rules).data; }
+    // Features HEP switches on and off in Settings. Off unless set, so hiding a screen is backed up here.
+    function featureOn(k) { return 'features' in cfg() && cfg().features.get(k, false) == true; }
     function userDoc(u) { return get(/databases/$(database)/documents/users/$(u)).data; }
     function userAfter(u) { return getAfter(/databases/$(database)/documents/users/$(u)).data; }
     // HEP can block an account: blocked users can't earn, redeem, check in or trade.
@@ -118,7 +120,7 @@ service cloud.firestore {
                                'referralCode', 'goalCents', 'createdAt'])
         && D().points == 0 && D().lastTx == '' && D().email == email()
         && D().createdAt == request.time && D().name is string && D().name.size() > 1
-        && (D().role == 'merchant' || (D().role == 'student' && studentEmailAllowed()
+        && ((D().role == 'merchant' && featureOn('merchantSignup')) || (D().role == 'student' && studentEmailAllowed()
             && D().matric is string && D().matric.matches('^[A-Z0-9]{5,15}$')
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
@@ -141,7 +143,7 @@ service cloud.firestore {
           let d = get(/databases/$(database)/documents/deals/$(L().deal)).data;
           let m = get(/databases/$(database)/documents/merchants/$(mid)).data;
           let kp = /databases/$(database)/documents/dealDays/$(L().deal + '_' + dayKey(request.time));
-          return d.status == 'approved' && d.enabled == true && d.merchantId == mid
+          return featureOn('dealsAndPay') && d.status == 'approved' && d.enabled == true && d.merchantId == mid
             && minuteOfDay(request.time) >= d.startMin && minuteOfDay(request.time) < d.endMin
             && m.occupied * 100 < d.threshold * m.seats
             && L().delta == cfg().checkinPoints + d.bonus
@@ -238,13 +240,13 @@ service cloud.firestore {
         return ['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd'];
       }
       allow read: if signedIn() && (resource.data.status == 'verified' || m == uid() || isMpp());
-      allow create: if isMerchantRole() && m == uid() && D().ownerUid == uid() && D().status == 'pending'
+      allow create: if isMerchantRole() && featureOn('merchantSignup') && m == uid() && D().ownerUid == uid() && D().status == 'pending'
         && D().submittedAt == request.time && D().name is string && D().name.size() > 1
         && D().keys().hasOnly(['ownerUid', 'status', 'submittedAt', 'name', 'type', 'segment', 'location',
                                'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
         && 'lat' in D() && 'logo' in D() && geoOk() && logoOk();
       allow update: if signedIn() && (
-          (m == uid() && resource.data.status != 'verified'
+          (m == uid() && resource.data.status != 'verified' && featureOn('merchantSignup')
              && changed().hasOnly(['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd',
                                    'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt',
                                    'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
@@ -261,7 +263,7 @@ service cloud.firestore {
 
     match /merchantPrivate/{m} {
       allow read: if signedIn() && (m == uid() || isMpp());
-      allow create, update: if isMerchantRole() && m == uid()
+      allow create, update: if isMerchantRole() && featureOn('merchantSignup') && m == uid()
         && getAfter(/databases/$(database)/documents/merchants/$(m)).data.status != 'verified'
         && D().keys().hasOnly(['accountName', 'phone', 'ambassadorId', 'qrImage', 'qrUpdatedAt'])
         && (!('qrImage' in D()) || (D().qrImage is string && D().qrImage.size() < 700000
@@ -271,7 +273,7 @@ service cloud.firestore {
     // ---------- offers and off-peak deals ----------
     match /offers/{id} {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
-      allow create: if isMerchantRole() && D().merchantId == uid() && D().status == 'pending'
+      allow create: if isMerchantRole() && featureOn('merchantTools') && D().merchantId == uid() && D().status == 'pending'
         && D().createdAt == request.time && D().title is string && D().title.size() > 2;
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt'])
         || (signedIn() && resource.data.merchantId == uid() && changed().hasOnly(['status']) && D().status == 'withdrawn');
@@ -279,7 +281,7 @@ service cloud.firestore {
 
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
-      allow create: if isMerchantRole() && D().merchantId == uid() && D().status == 'pending'
+      allow create: if isMerchantRole() && featureOn('merchantTools') && D().merchantId == uid() && D().status == 'pending'
         && D().enabled == true && D().bonus is int && D().bonus > 0 && D().bonus <= 500
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
         && D().startMin is int && D().endMin is int && D().startMin < D().endMin
@@ -296,8 +298,8 @@ service cloud.firestore {
           && l.type == 'checkin' && l.deal + '_' + dayKey(request.time) == k;
       }
       allow read: if signedIn();
-      allow create: if verified() && D().count == 1 && byCheckin();
-      allow update: if verified() && D().count == resource.data.count + 1 && byCheckin();
+      allow create: if verified() && featureOn('dealsAndPay') && D().count == 1 && byCheckin();
+      allow update: if verified() && featureOn('dealsAndPay') && D().count == resource.data.count + 1 && byCheckin();
     }
 
     // ---------- check-ins: a student at a merchant's map pin ----------
@@ -312,7 +314,7 @@ service cloud.firestore {
     match /checkins/{pair} {
       function visitId() { return 'ci_' + pair + '_' + string(D().n); }
       function base() {
-        return isStudent() && pair == uid() + '_' + D().merchantId && D().uid == uid()
+        return isStudent() && featureOn('shops') && pair == uid() + '_' + D().merchantId && D().uid == uid()
           && D().keys().hasOnly(['uid', 'merchantId', 'n', 'at', 'lat', 'lng', 'acc'])
           && D().n is int && D().at == request.time && nearMerchant(D().merchantId, D().lat, D().lng)
           && existsAfter(/databases/$(database)/documents/visits/$(visitId()));
@@ -329,8 +331,8 @@ service cloud.firestore {
     match /presence/{u} {
       function pCheckin() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().zone)).data; }
       function visibleTo(d) { return d.uid == uid() || d.audience == 'everyone' || d.college == userDoc(uid()).college; }
-      allow read: if isStudent() && visibleTo(resource.data);
-      allow create, update: if isStudent() && u == uid() && D().uid == uid()
+      allow read: if isStudent() && featureOn('hereNow') && visibleTo(resource.data);
+      allow create, update: if isStudent() && featureOn('hereNow') && u == uid() && D().uid == uid()
         && userDoc(uid()).showOnMap == true
         && D().keys().hasOnly(['uid', 'zone', 'zoneName', 'first', 'college', 'audience', 'avatar', 'at', 'expiresAt'])
         && D().first is string && D().first.size() > 0 && D().first.size() <= 24
@@ -347,7 +349,7 @@ service cloud.firestore {
     match /waves/{to}/inbox/{from} {
       function pres(x) { return get(/databases/$(database)/documents/presence/$(x)).data; }
       allow read, delete: if signedIn() && to == uid();
-      allow create, update: if isStudent() && from == uid() && to != uid()
+      allow create, update: if isStudent() && featureOn('hereNow') && from == uid() && to != uid()
         && D().keys().hasOnly(['fromFirst', 'avatar', 'zoneName', 'at'])
         && D().at == request.time && D().fromFirst == pres(uid()).first && D().zoneName == pres(to).zoneName
         && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
@@ -358,7 +360,7 @@ service cloud.firestore {
     match /visits/{id} {
       function pairAfter() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().merchantId)).data; }
       allow read: if signedIn() && (resource.data.uid == uid() || resource.data.merchantId == uid() || isMpp());
-      allow create: if isStudent() && D().uid == uid() && D().at == request.time
+      allow create: if isStudent() && featureOn('shops') && D().uid == uid() && D().at == request.time
         && D().keys().hasOnly(['uid', 'name', 'college', 'merchantId', 'merchantName', 'at', 'day', 'month', 'deal', 'points', 'acc', 'avatar'])
         && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
         && id == 'ci_' + uid() + '_' + D().merchantId + '_' + string(pairAfter().n)
@@ -420,13 +422,14 @@ service cloud.firestore {
         && D().createdAt == request.time && reward().active == true
         && D().cost == reward().cost && D().valueCents == reward().valueCents
         && D().merchantId == reward().merchantId && D().title == reward().title
+        && (D().merchantId == '' || featureOn('shops'))
         && getAfter(/databases/$(database)/documents/rewards/$(D().rewardId)).data.lastVoucher == v
         && existsAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(v));
       allow update: if signedIn() && resource.data.status == 'issued'
         && changed().hasOnly(['status', 'usedAt', 'usedBy']) && D().status == 'used'
         && D().usedAt == request.time && D().usedBy == uid()
         && request.time < resource.data.createdAt + duration.value(resource.data.get('validDays', 30), 'd')
-        && ((resource.data.merchantId == uid() && isVerifiedMerchant()) || isMpp());
+        && ((resource.data.merchantId == uid() && isVerifiedMerchant() && featureOn('merchantTools')) || isMpp());
     }
 
     // ---------- surveys, missions ----------
@@ -439,7 +442,7 @@ service cloud.firestore {
 
     match /missionClaims/{id} {
       allow read: if signedIn() && (resource.data.uid == uid() || isMpp());
-      allow create: if isStudent() && D().uid == uid() && D().status == 'pending'
+      allow create: if isStudent() && featureOn('shops') && D().uid == uid() && D().status == 'pending'
         && id == uid() + '_' + D().week + '_' + D().mission && D().createdAt == request.time;
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
     }

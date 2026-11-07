@@ -395,6 +395,12 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   $$('[data-demo]').forEach((b) => { b.onclick = () => googleSignIn(app, b.dataset.demo); });
 }
 
+export function renderComingSoon(app) {
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    <div id="coming-soon"><h1>Merchant features are coming soon</h1><p class="lede">Your account is safe. We’ll open this up soon, so please check back later.</p>
+    <button class="btn block" id="cs-out" style="margin-top:14px">Sign out</button></div>`);
+  $('#cs-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
+}
 export function renderBlocked(app) {
   frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
     <div><h1>This account is blocked</h1><p class="lede">Contact HEP if you think this is a mistake.</p>
@@ -439,14 +445,15 @@ export function renderNotAdmin(app) {
 
 export function renderOnboarding(app, done) {
   const email = app.user.email || '';
-  const looksStudent = /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
+  const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
+  const looksStudent = !merchantsOpen || /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
   frame(app, `<div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}.</p></div>
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
           <span><b>I’m a student</b><br><span class="faint">Discover campus, check in at shops and collect rewards</span></span></label>
-        <label><input type="radio" name="role" value="merchant" ${looksStudent ? '' : 'checked'}><span class="tile-icon orange">${icon('store')}</span>
-          <span><b>I run a business or stall</b><br><span class="faint">Join the campus map so students can find and visit you</span></span></label>
+        ${merchantsOpen ? `<label><input type="radio" name="role" value="merchant" ${looksStudent ? '' : 'checked'}><span class="tile-icon orange">${icon('store')}</span>
+          <span><b>I run a business or stall</b><br><span class="faint">Join the campus map so students can find and visit you</span></span></label>` : ''}
       </div>
       <label class="field">Your full name<input name="name" required minlength="2" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
       <div id="student-fields" class="stack">
