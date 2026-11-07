@@ -18,7 +18,16 @@ export const SEGMENTS = ['Campus permanent merchant', 'Within 100 m of UM gate',
 export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone', 'Campus edge'];
 
 // Active earning rules; transaction rewards are intentionally deferred.
-export const DEFAULT_RULES = { surveyBonus: 50, lessonBonus: 50 };
+// Features HEP can switch on and off in Settings. Off unless HEP turns them on.
+export const FEATURES = [
+  ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
+  ['merchantTools', 'Merchant tools', 'Voucher Redeem, Promote, Insights, the readiness check and shop vouchers.'],
+  ['overview', 'Overview', 'The shops directory, map, shop pages and Student Ventures.'],
+  ['dealsAndPay', 'Live deals and Pay Cashless', 'Live deals and the DuitNow QR guide.'],
+];
+export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
+export const featureOn = (rules, key) => rules?.features?.[key] === true;
+export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
   { id: 'cafe-rm5', title: 'RM5 café voucher', merchantId: '', cost: 500, valueCents: 500, stock: 100, validDays: 30, active: true, icon: 'coffee' },

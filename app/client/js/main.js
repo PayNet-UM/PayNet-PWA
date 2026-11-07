@@ -21,6 +21,8 @@ const nav = {
   merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
+// A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
+const routeOn = (r) => !r.feature || [].concat(r.feature).every((k) => D.featureOn(app.rules, k));
 export function go(path) { if (location.hash !== '#/' + path) location.hash = '#/' + path; else render(); }
 app.go = go;
 
@@ -62,6 +64,7 @@ async function onUser(user) {
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
   if (profile?.disabled) return Auth.renderBlocked(app);
+  if (profile?.role === 'merchant' && !D.featureOn(app.rules, 'merchantSignup') && !D.featureOn(app.rules, 'merchantTools')) return Auth.renderComingSoon(app);
   if (isMpp && !profile) return Auth.renderAdminElsewhere(app, () => Auth.renderOnboarding(app, onboarded));
   if (!profile) return Auth.renderOnboarding(app, onboarded);
   startRole(profile.role);
@@ -102,7 +105,7 @@ async function loadRoleModule(role) {
   return role === 'merchant' ? import('./views/merchant.js') : import('./views/student.js');
 }
 
-function shell(role) {
+function shell(role, routes) {
   if (app.shellRole === role) return;
   app.shellRole = role;
   const p = app.profile || {};
@@ -116,7 +119,7 @@ function shell(role) {
         <button class="avatar" id="avatar" aria-label="Account menu">${esc(initials(p.name))}</button>
       </header>
       <main class="view" id="view"></main>
-      <nav class="tabbar" aria-label="Main">${nav[role].map(([k, label, ic, center]) =>
+      <nav class="tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, center]) =>
         `<a href="#/${k}" data-tab="${k}" class="${center ? 'center' : ''}">${center ? `<span class="bubble">${icon(ic)}</span>` : icon(ic)}<span>${label}</span></a>`).join('')}</nav>
     </div>`;
   $('#avatar').onclick = () => accountSheet();
@@ -170,12 +173,12 @@ app.addDemoRibbon = addDemoRibbon;
 async function render() {
   if (!app.role || !app.user) return;
   const mod = await loadRoleModule(app.role);
-  shell(app.role);
+  shell(app.role, mod.routes);
   const requestedPath = location.hash.replace(/^#\/?/, '') || mod.defaultRoute;
   const canonical = mod.canonicalPath ? mod.canonicalPath(requestedPath) : requestedPath;
   if (canonical !== requestedPath) history.replaceState(null, '', '#/' + canonical);
   const parts = canonical.split('/');
-  const route = mod.routes[parts[0]] ? parts[0] : mod.defaultRoute;
+  const route = mod.routes[parts[0]] && routeOn(mod.routes[parts[0]]) ? parts[0] : mod.defaultRoute;
   const r = mod.routes[route];
   if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }
   if (sheetOpen()) closeSheet();

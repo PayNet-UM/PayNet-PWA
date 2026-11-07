@@ -19,7 +19,7 @@ filters.push({ dataset: { type: 'Printing' }, setAttribute() {}, classList: { to
 let permissionListener, watch, watchCalls = 0, stopped = 0, removed = false, clearedTimer = false;
 const permission = { state: 'prompt', addEventListener: (_, cb) => { permissionListener = cb; }, removeEventListener: () => { permissionListener = null; } };
 const map = { position: null, pins: [], setMe(p) { this.position = p; }, setPins(pins, opts) { this.pins = pins; this.popup = opts.popup; }, setView() {}, fit() {}, remove() { removed = true; } };
-const D = new Proxy({ listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], hhmm: String }, {
+const D = new Proxy({ featureOn: () => true, listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], hhmm: String }, {
   get(target, key) { if (!(key in target)) throw new Error('Discovery accessed unexpected data operation: ' + key); return target[key]; },
 });
 const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n'];

@@ -24,14 +24,14 @@ function needVerified(app) {
 async function homeRender(app) {
   const m = app.merchant; const name = m ? m.name : app.profile.name;
   const step = !m ? 1 : m.status !== 'verified' ? 2 : !m.ready ? 3 : 4;
-  const verified = m?.status === 'verified';
+  const verified = m?.status === 'verified'; const toolsOn = D.featureOn(app.rules, 'merchantTools');
   const shortcuts = [
     ['shop', 'store', 'My shop', 'Manage your shop details'],
-    ...(verified ? [
+    ...(verified && toolsOn ? [
       ['scan', 'ticket', 'Redeem a voucher', 'Scan a student’s voucher'],
       ['promote', 'badge-percent', 'Promote', 'Manage live deals and offers'],
     ] : []),
-    ['survey', 'target', 'Cashless readiness check', '7 questions to identify support needs.'],
+    ...(toolsOn ? [['survey', 'target', 'Cashless readiness check', '7 questions to identify support needs.']] : []),
   ];
   return `<section class="kk-hero merchant-home-hero">
       <div class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</div>
@@ -348,10 +348,10 @@ async function surveyRender(app) {
 
 export const routes = {
   home: { title: 'Home', render: homeRender, mount: homeMount },
-  scan: { title: 'Scan', render: scanRender, mount: scanMount },
+  scan: { title: 'Scan', render: scanRender, mount: scanMount, feature: 'merchantTools' },
   shop: { title: 'My shop', render: shopRender, mount: shopMount },
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
-  promote: { title: 'Promote', render: promoteRender, mount: promoteMount },
-  insights: { title: 'Insights', render: insightsRender, mount: insightsMount },
-  survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home' },
+  promote: { title: 'Promote', render: promoteRender, mount: promoteMount, feature: 'merchantTools' },
+  insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools' },
+  survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools' },
 };

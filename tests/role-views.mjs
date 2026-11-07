@@ -19,10 +19,13 @@ const adminEmail = /function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(rul
 const context = (uid, email) => ({ uid, email, sdk, db: sdk._testDb(sdk._testAuth({ uid, email, emailVerified: true })) });
 const hep = context('hep', adminEmail), student = context('student', 'student@siswa.um.edu.my'), merchant = context('merchant', 'merchant@demo.my');
 await D.initProgramme(hep);
+// Every feature on, so each screen renders in full. tests/scenarios.mjs and tests/e2e.mjs cover them switched off.
+await D.saveConfig(hep, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, true])) });
+const featureRules = await D.getRules(hep);
 await D.createProfile(student, { role: 'student', name: 'Test Student', matric: 'TEST12345', college: 'KK3', faculty: 'Faculty of Science' });
 await D.createProfile(merchant, { role: 'merchant', name: 'Test Merchant' });
 const makeApp = async (ctx) => ({ ctx, backend: { sdk, db: ctx.db, mode: 'demo' }, profile: await D.getProfile(ctx),
-  rules: D.DEFAULT_RULES, ledger: [],
+  rules: featureRules, ledger: [],
   get visits() { throw new Error('An active view still depends on attendance records'); },
   merchant: { id: 'merchant', name: 'Test Shop', status: 'verified', ready: true, lat: 3.12, lng: 101.65 } });
 let passed = 0;

@@ -43,6 +43,10 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     await D.initProgramme(claimer);
   });
   await ok('bootstrap HEP admin initialises config, stats and rewards', () => D.initProgramme(mpp));
+  const allFeatures = (on) => D.saveConfig(mpp, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, on])) });
+  await ok('features start off', async () => { const r = await D.getRules(mpp); for (const [k] of D.FEATURES) eq(D.featureOn(r, k), false, k); });
+  await denied('a student cannot turn features on', () => D.saveConfig(stuA, 'rules', { features: { overview: true } }));
+  await ok('HEP turns all features on for the scenarios below', async () => { await allFeatures(true); rules = await D.getRules(mpp); });
   await ok('HEP is recognised as HEP', async () => eq(await D.isMppUser(mpp), true));
   await ok('a student is not HEP', async () => eq(await D.isMppUser(stuA), false));
 
@@ -406,6 +410,35 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('removing a friend still revokes access to historical presence', () => D.removeFriend(hn1, pair));
   await denied('removed friends cannot read archived presence', () => presence(hn1, 'hn2'));
   await ok('switching sharing off still removes historical presence', async () => { await D.setMapVisibility(hn2, false); eq(await presence(hn2, 'hn2'), null); });
+
+  log('Feature switches');
+  await D.saveReward(mpp, 'sw-shop', { title: 'Switch shop', merchantId: 'mer1', cost: 1, valueCents: 100, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+  await D.saveReward(mpp, 'sw-hep', { title: 'Switch HEP', merchantId: '', cost: 1, valueCents: 100, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+  await D.adjustPoints(mpp, 'stuA', 10, 'switch tests');
+  const rw = async (id) => (await D.listRewards(stuA)).find((x) => x.id === id);
+  stuA.profile = await D.getProfile(stuA);
+  const shopVoucher = await D.redeemReward(stuA, await rw('sw-shop'));
+  const swMerchant = await makeCtx({ uid: 'swMer', email: 'sw@shop.my' });
+  await D.createProfile(swMerchant, { role: 'merchant', name: 'Switch Shop' });
+  await ok('HEP turns every feature off', async () => { await allFeatures(false); const r = await D.getRules(stuA); for (const [k] of D.FEATURES) eq(D.featureOn(r, k), false, k); });
+  const newMerchant = await makeCtx({ uid: 'swNew', email: 'new@shop.my' });
+  await denied('merchantSignup off: no new merchant accounts', () => D.createProfile(newMerchant, { role: 'merchant', name: 'New Shop' }));
+  await denied('merchantSignup off: an existing merchant account cannot apply', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchants', 'swMer'), { ownerUid: 'swMer', status: 'pending', submittedAt: swMerchant.sdk.serverTimestamp(), name: 'Switch Shop', lat: 3.12, lng: 101.65, logo: 'data:image/png;base64,AA==' }));
+  await denied('merchantSignup off: an existing merchant cannot upload a QR', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchantPrivate', 'swMer'), { accountName: 'Switch' }));
+  await denied('merchantTools off: no new offers', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw1'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
+  const dealDoc = { merchantId: 'mer1', status: 'pending', enabled: true, bonus: 0, limit: 1, minSpendCents: 0, startMin: 0, endMin: 100, threshold: 50 };
+  await denied('merchantTools off: no new deals', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw1'), dealDoc));
+  await denied('merchantTools off: a merchant cannot mark a voucher used', () => D.useVoucher(merch, shopVoucher));
+  await denied('merchantTools off: students cannot buy a shop voucher nobody could redeem', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-shop')); });
+  await ok('switches off: HEP can still mark a shop voucher used', () => D.useVoucher(mpp, shopVoucher));
+  await ok('switches off: HEP counter vouchers still work', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-hep')); });
+  await ok('switches off: students can still sign up', () => makeCtx({ uid: 'swStu2', email: 'swstu2@gmail.com' }).then((c) => D.createProfile(c, { role: 'student', name: 'Second Student', matric: 'SW000002', college: 'KK1' })));
+  await ok('HEP turns only merchantTools on', () => D.saveConfig(mpp, 'rules', { features: { merchantTools: true } }));
+  await ok('other switches stay off when one is saved', async () => { const r = await D.getRules(mpp); eq(D.featureOn(r, 'merchantTools'), true); eq(D.featureOn(r, 'merchantSignup'), false); eq(D.featureOn(r, 'dealsAndPay'), false); });
+  await denied('merchantTools on, dealsAndPay off: still no new deals', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw2'), dealDoc));
+  await ok('merchantTools on: offers are allowed again', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw3'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
+  await ok('dealsAndPay on too: deals are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { dealsAndPay: true } }); await merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw2'), dealDoc); });
+  await ok('merchantSignup on: merchant accounts are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { merchantSignup: true } }); await D.createProfile(newMerchant, { role: 'merchant', name: 'New Shop' }); });
 
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };

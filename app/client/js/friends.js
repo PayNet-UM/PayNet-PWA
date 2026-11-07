@@ -32,7 +32,7 @@ export async function friendsRender(app) {
         <button type="button" data-friends-jump="friends-section-sent" aria-controls="friends-section-sent" disabled><strong id="friends-outgoing">—</strong><span>Sent</span></button>
       </div>
     </section>
-    <nav class="chips friends-tabs" aria-label="Campus map"><a class="btn small" href="#/explore">${icon('map')} Overview</a><a class="btn small primary" href="#/friends" aria-current="page">${icon('users')} Friends</a></nav>
+    <nav class="chips friends-tabs" aria-label="Campus map">${D.featureOn(app.rules, 'overview') ? `<a class="btn small" href="#/explore">${icon('map')} Overview</a>` : ''}<a class="btn small primary" href="#/friends" aria-current="page">${icon('users')} Friends</a></nav>
     ${profile.username ? ''
       : `<form id="friend-username" class="card stack friends-claim"><div class="row"><span class="tile-icon">${icon('user')}</span><div><h2>Choose your username</h2></div></div>
         <label class="field">Username<input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" title="3–24 letters, numbers or underscores. Permanent once saved." autocomplete="off" placeholder="e.g. aina_um"></label><button class="btn primary">Save username</button></form>`}

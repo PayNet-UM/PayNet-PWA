@@ -4,9 +4,9 @@
 
 | Role | What they do |
 |---|---|
-| **Student** | Checks in at shops using GPS to collect points, then redeems rewards and completes missions and lessons |
-| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals |
-| **HEP (admin)** | Verifies merchants, approves offers, deals and missions, manages rules and compares activity with PayNet's monthly counts |
+| **Student** | Joins campus events and FESKUM, earns points from lessons and surveys, redeems rewards, and follows friends and the KK League |
+| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals. These can be switched off, as explained in [Turning features on and off](#turning-features-on-and-off) |
+| **HEP (admin)** | Verifies merchants, approves offers and deals, manages rewards, rules and feature switches, and prepares PayNet's monthly merchant list |
 
 The app doesn't record payments and never moves money. Students pay with DuitNow QR in their own bank or e-wallet app.
 
@@ -54,6 +54,23 @@ Demo mode keeps all data in your browser, so it's the quickest way to try the ap
 3. Run `npm run dev`.
 
 `npm run dev` uses the **real staging database**, so anything you do there is saved and shared with the team.
+
+## Turning features on and off
+
+HEP chooses what's live under **Settings > Features** on the dashboard, with no deploy. Everything here starts **off**, and people see changes the next time they open or refresh the app. Nothing is deleted.
+
+| Switch | Covers | Blocked by the rules too? |
+|---|---|---|
+| **Merchant sign-up** | Registering a business and applying to join | Yes |
+| **Merchant tools** | Voucher Redeem, Promote, Insights, the readiness check and shop vouchers | Yes |
+| **Overview** | The shops directory, map, shop pages and Student Ventures | No, these are hidden on screen only, because verified shop details are public to signed-in users anyway |
+| **Live deals and Pay Cashless** | Live deals and the DuitNow QR guide | New deals, yes. Reading approved deals and the guide, no |
+
+Events, FESKUM, Friends, lessons, surveys, avatars, the welfare fund and HEP counter vouchers are always on. A merchant account sees "Coming soon" while both merchant switches are off.
+
+To launch with a few shops but no public sign-up, turn on **Merchant sign-up** while your shops register, verify them, then turn it off. Verified shops stay in Overview.
+
+To add a switch, add it to `FEATURES` in `app/shared/js/data.js`, gate the screens with `feature:` on the route or `D.featureOn()`, and gate any writes with `featureOn()` in `firestore.rules`.
 
 ## Environment files
 
@@ -125,6 +142,7 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 - [ ] Students are told what location and personal data the app collects
 - [ ] `main` and `development` are protected
 - [ ] Scheduled Firestore backups are on (this may need the Blaze plan)
+- [ ] The feature switches are set in **Settings > Features** for what's launching
 - [ ] Programme defaults are reviewed on first admin login, especially the allocation and allowed student domains (`gmail.com` is allowed by default)
 
 ## Troubleshooting
@@ -137,5 +155,7 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 | Emulator says Java version is too old | Install JDK 21 or newer. |
 | An admin only sees "verify your email" | Open the link sent to that mailbox, or sign in with Google using that address. |
 | The app looks stale after a deploy | The service worker is serving its cache. Reload twice, or clear the site's data. |
+| A feature is missing, like Overview | It may be switched off. Check **Settings > Features** on the HEP dashboard, then refresh the app. |
+| A deploy fails with `We failed to modify the IAM policy` or `Eventarc Service Agent` | It's the one-time setup for database-triggered functions. See "Database-triggered functions" in [docs/DEPLOY.md](docs/DEPLOY.md). |
 | You're stuck in Demo mode on a live site | Open the site with `?mode=live` added to the URL. |
 | Old GitHub Pages links stop working | The repo moved to the `PayNet-UM` organization, and the old demo moved to `legacy/`. The app itself is on Firebase, so use the links above. |
