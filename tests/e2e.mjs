@@ -30,7 +30,7 @@ if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
 const pillars = await stu.locator('.kk-pillar').count();
 if (pillars !== 4) throw new Error('expected 4 +Onz directory cards, got ' + pillars);
-for (const route of ['explore', 'rewards', 'community', 'learn']) {
+for (const route of ['explore', 'rewards', 'explore/deals', 'learn']) {
   if (await stu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 1) throw new Error('missing directory: ' + route);
 }
 for (const route of ['bayar', 'explore/idea']) {
@@ -42,35 +42,47 @@ const before = await pointsOf(stu);
 await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
 ok(`student home shows the +Onz hub (${pillars} directories) and ${before} points`);
 
-await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#mmap .kk-pin', { timeout: 20000 });
-const pins = await stu.locator('#mmap .kk-pin').count(); const logos = await stu.locator('#mmap .kk-pin img').count();
-const navHref = await stu.getAttribute('.mcard-wrap .mnav', 'href');
+await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#cmap .kk-pin', { timeout: 20000 });
+const pins = await stu.locator('#cmap .kk-pin').count(); const logos = await stu.locator('#cmap .kk-pin img').count();
+const navHref = await stu.getAttribute('#clist .checkout-shop-action a', 'href');
 if (pins < 4 || logos < 4 || !/google\.com\/maps\/dir\/.*destination=3\.1\d+,101\.6\d+/.test(navHref)) throw new Error(`pins ${pins}, logos ${logos}, nav ${navHref}`);
-await stu.click('#near'); await stu.waitForSelector('#mmap .kk-me'); await stu.waitForSelector('#mlist .dist');
-const nearest = (await stu.textContent('#mlist .mcard h3')).trim();
+await stu.waitForSelector('#cmap .kk-me'); await stu.waitForSelector('#clist .nearby-distance');
+const nearest = (await stu.textContent('#clist .checkout-shop h3')).trim();
 if (nearest !== 'Fresh Laundry') throw new Error('nearest should be Fresh Laundry, got ' + nearest);
-await stu.locator('#mmap .leaflet-marker-icon:has(.kk-pin)').first().click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
-await stu.screenshot({ path: `${shots}/02-niaga-map.png` });
-ok(`Niaga Kita map shows ${pins} logo pins; live location puts ${nearest} first`);
+// Location centres the map on the nearby shop; the first marker in DOM order
+// may be outside the map viewport. Exercise the visible shop at that location.
+await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
+if (await stu.locator('.tabbar a.on[data-tab="explore"]').count() !== 1) throw new Error('directory footer tab is not active');
+await stu.screenshot({ path: `${shots}/02-campus-shops.png` });
+ok(`central directory shows ${pins} logo pins; live location puts ${nearest} first`);
 
-await stu.goto(BASE + '#/checkin'); await stu.waitForSelector('[data-ci]', { timeout: 20000 });
-await stu.getByText('Pay Cashless', { exact: true }).click();
-await stu.getByText('Scan the merchant’s DuitNow QR', { exact: true }).waitFor();
+await stu.goto(BASE + '#/checkin');
+await stu.waitForFunction(() => location.hash === '#/explore');
+await stu.waitForSelector('#cmap .kk-me', { timeout: 20000 });
+await stu.waitForSelector('#clist .nearby-distance');
+const nearbyBalance = await pointsOf(stu);
+if (await stu.locator('[data-ci], [data-tp], #checkout-action').count()) throw new Error('manual check-in action remains in discovery');
+if ((await stu.textContent('#clist .checkout-shop h3')).trim() !== 'Fresh Laundry') throw new Error('discovery is not nearest-first');
 await stu.getByRole('button', { name: 'Student Ventures', exact: true }).click();
 await stu.waitForSelector('[data-ventures][aria-pressed="true"]');
 await stu.getByRole('button', { name: 'All', exact: true }).click();
-await stu.screenshot({ path: `${shots}/03-checkin.png`, fullPage: true });
-await stu.click('[data-ci]'); await stu.waitForSelector('#sheet .kk-celebrate', { timeout: 15000 });
-const gained = Number((await stu.textContent('#sheet .amount-big')).replace(/\D/g, ''));
-if (gained !== 10) throw new Error('expected +10, got ' + gained);
-await stu.screenshot({ path: `${shots}/04-checked-in.png` });
-await stu.click('#sheet [data-close]'); await stu.waitForSelector('text=Again at');
-ok('student checked in at Fresh Laundry (+10) and the shop now shows a cooldown');
+await stu.screenshot({ path: `${shots}/03-nearby.png`, fullPage: true });
+if (await pointsOf(stu) !== nearbyBalance) throw new Error('map browsing awarded points');
+const privateCtx = await b.newContext({ viewport: { width: 400, height: 860 } });
+const noLocation = await privateCtx.newPage();
+await login(noLocation, 'aina@siswa.um.edu.my');
+await noLocation.goto(BASE + '#/checkin');
+await noLocation.waitForSelector('#clist .checkout-shop');
+if (await noLocation.locator('#cmap .kk-me').count()) throw new Error('location shown without permission');
+await privateCtx.close();
+ok('nearby discovery shows location only with permission, sorts shops by distance and awards no points');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
 await stu.click('[data-t="glasses"]');
-await stu.locator('.av-range[data-k="skin"]').fill('5');
+const skin = stu.locator('.av-range[data-k="skin"]');
+await skin.focus(); await skin.press('Home');
+for (let i = 0; i < 5; i++) await skin.press('ArrowRight');
 await stu.click('[aria-controls="av-gear"]');
 await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
 await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]');
@@ -99,9 +111,9 @@ ok(`student swapped 300 points for voucher ${vcode}`);
 // ---------- merchant
 const fresh = async (pg) => pg.addInitScript(() => { if (sessionStorage.getItem('umc-demo-session') === null) sessionStorage.setItem('umc-demo-session', ''); });
 const mer = await ctx.newPage(); watch(mer, 'merchant'); await fresh(mer);
-await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#feed .item', { timeout: 30000 });
+await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#merchant-wallet .stat', { timeout: 30000 });
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
-ok('merchant home lists visitors: ' + (await mer.textContent('#feed .item h3')).trim());
+ok('merchant home shows recorded voucher activity');
 await mer.goto(BASE + '#/scan'); await mer.waitForSelector('#manual');
 await mer.fill('#manual [name=code]', vcode); await mer.click('#manual button'); await mer.waitForSelector('#use');
 await mer.click('#use'); await mer.waitForSelector('#toast.show'); ok('merchant redeemed the voucher');
@@ -178,10 +190,10 @@ let mapsUrl = '';
 await gctx.route(/maps\.googleapis\.com\/maps\/api\/js/, (r) => { mapsUrl = r.request().url(); r.fulfill({ status: 200, contentType: 'text/javascript', body: stub }); });
 const gp = await gctx.newPage(); watch(gp, 'google-maps');
 await login(gp, 'aina@siswa.um.edu.my'); await gp.waitForSelector('.kk-hero', { timeout: 90000 });
-await gp.goto(BASE + '#/explore'); await gp.waitForSelector('#mmap .gm-stub .kk-pin', { timeout: 20000 });
-const gpins = await gp.locator('#mmap .gm-stub-marker .kk-pin').count();
-await gp.locator('#mmap .gm-stub-marker').first().click(); await gp.waitForSelector('.gm-stub-info .mpop a[href*="google.com/maps/dir"]');
-await gp.click('#near'); await gp.waitForSelector('#mmap .kk-me');
+await gp.goto(BASE + '#/explore'); await gp.waitForSelector('#cmap .gm-stub .kk-pin', { timeout: 20000 });
+const gpins = await gp.locator('#cmap .gm-stub-marker .kk-pin').count();
+await gp.locator('#cmap .gm-stub-marker').first().click(); await gp.waitForSelector('.gm-stub-info .mpop a[href*="google.com/maps/dir"]');
+await gp.click('#nearby-locate'); await gp.waitForSelector('#cmap .kk-me');
 if (!/key=TEST_KEY/.test(mapsUrl) || !/libraries=marker/.test(mapsUrl)) throw new Error('Maps script URL: ' + mapsUrl);
 await gp.screenshot({ path: `${shots}/07-google-maps-path.png` });
 ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, info window, live location)`);

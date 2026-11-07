@@ -139,12 +139,45 @@ Needs the **Blaze** plan. Once per Firebase project (staging and production):
 The first deploy with functions takes a few minutes longer: Google turns on Cloud Functions, Cloud Build and
 Artifact Registry for the project. Tests: `node tests/handoff.mjs`.
 
-## "Here now" campus map (optional clean-up)
+## Retired attendance flows
 
-Students who switch on "Show me on the campus map" appear at a shop for 2 hours after each check-out
-(collection `presence`, one document per student). The app hides entries after 2 hours by itself. To delete
-old entries from the database too: Firestore > TTL policies > create one on collection group `presence`,
-field `expiresAt`. Rules: `presence` and `waves` in `firestore.rules`; tests: "Here now" in `tests/scenarios.mjs`.
+There is no attendance-based system. New check-in, visit, place-presence, wave,
+referral-qualification and attendance-mission writes are denied by security rules.
+Legacy data-layer entry points also reject writes, so old cached clients cannot
+restart the flow. Existing attendance records, points and ledger entries remain
+available as historical records; they are not recast as current transactions.
+
+Daily attendance points/streaks and visit missions are removed from active student
+screens. Daily app streaks count app opens instead (see below).
+Weekly missions are pending a replacement design. Referral codes continue
+connecting friends, without a first-visit requirement or an active points promise.
+Friend requests, acceptance, removal and usernames continue to work. Attendance-based
+place sharing and waves are paused; Overview never publishes a GPS position.
+
+Merchant activity and Insights use actual voucher records. HEP uses registered
+accounts, readiness, welfare, KK earned totals, voucher redemptions and imported
+PayNet counts. It does not derive footfall or conversions from map browsing.
+Live deals use time and occupancy only, with no attendance claim limit or bonus.
+Survey/lesson rewards, vouchers, welfare requests and HEP corrections remain active.
+Deploy the rules and both sites together. There is no attendance enable switch.
+
+## Daily app check-in streaks
+
+Home links to a compact Daily check-in streak card in Rewards (`#/rewards/streak`).
+Opening, resuming or using the signed-in student app records one Malaysia calendar
+date in `users/{uid}/appDays/{YYYY-MM-DD}`. No manual button, lesson, location or
+extra point award is required. Reopening the app on the same day does not change
+the record. A hidden background app does not count a new day. The first foreground
+interaction after midnight can count if the app was left open. Sign-out removes
+the activity listeners.
+
+Rules restrict each record to the authenticated student, today's MYT date and a
+server timestamp. Records cannot be rewritten, backfilled or future-dated. Only
+the student and HEP may read them. A missed calendar day resets the streak; the
+day after the last app use remains available to continue it. App-use records are
+separate from learning completions and legacy attendance, and never increase the
+point balance or KK League score. Existing learning history is not recast as app
+opens. Completed lessons can still be practised without repeated points.
 
 ## How the trust model works
 
@@ -153,18 +186,80 @@ field `expiresAt`. Rules: `presence` and `waves` in `firestore.rules`; tests: "H
 | Sign up as student | Google sign-in (or a verified email) on an allowed domain, `gmail.com` by default, or a tester listed by HEP | yes |
 | One account per student | Each matric number can register once and can't be changed afterwards | yes |
 | Join the map and PayNet list | Merchant sends details, **logo**, **exact map pin** and DuitNow QR, then HEP verifies | logo and pin required; only HEP can set `verified` |
-| Earn points for a check-in | Student taps Check in while standing at a merchant's pin | within 60 m of the pin, once per 3 hours per shop, max 5 a day (all set by HEP in Settings) |
+| Browse Overview | Optional personal GPS and shop discovery | no attendance records, presence writes or point awards |
 | Every points change | Written with an immutable ledger entry in the same batch | balance can't go negative or change without a matching entry |
 | Lessons | Answer keys are hidden from students; the rules check the answer | yes |
-| Referrals, quiet-hour bonuses, vouchers, donations, avatars | Each has its own once-only and limit checks | yes |
-| Mission bonuses, corrections | HEP approves, and the note is stored on the ledger | yes |
+| Vouchers, welfare, donations, avatars | Existing balance, pool and role checks | yes |
+| Historical mission claims and corrections | HEP reviews archived claims or records a correction | yes |
 
 ## Testing before real students
 
 - `npm test` runs the rules locally using the rules evaluator in `app/shared/js/fake/rules-engine.js`, and checks that each site gets the right files.
 - `npm run test:emulator` runs **the same scenarios on Google's official Firestore emulator**. It needs Java 21+ and an internet connection the first time. **Run this before the pilot**, because the local evaluator is a close copy of the rules language, not Google's own engine.
-- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student checks in at a shop, customises an avatar and redeems a voucher at the merchant; a new merchant must give a logo and pin; a student is turned away from the dashboard site; every HEP screen is opened on it; and a pass with a fake Google Maps key checks the Google Maps path.
+- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student browses nearby shops with location permission (and can browse without it), customises an avatar and redeems a voucher at the merchant; a new merchant must give a logo and pin; a student is turned away from the dashboard site; every HEP screen is opened on it; and a pass with a fake Google Maps key checks the Google Maps path.
   It refuses to run against a live config.
+
+## Pooled welfare-point requests
+
+Community shows Give points and Request points cards together. Students request a
+positive whole-number amount with a reason; their own request history updates live.
+Only the applicant and HEP may read `welfareRequests`. HEP reviews pending requests
+under Approvals, with a response required when declining.
+
+Approval atomically marks the request reviewed, subtracts the amount from
+`stats/welfare`, credits the student's wallet and creates the immutable
+`welfare_<request-id>` ledger entry. Rules reject duplicate approvals, approvals
+without a transfer and payouts exceeding available pooled points. These are points,
+not cash payments; no RM conversion is assumed. Welfare credits do not count as
+earned points for levels or KK League. Deploy the updated rules with both sites.
+
+## Central Campus Shops directory
+
+The homepage Shops tile and the footer Campus Shops tab both open `#/explore`,
+the single browsing-only directory. Legacy `#/checkin` bookmarks resolve to
+`#/explore`, preserving a targeted merchant when present. `#/deals` opens the
+directory's deals section, and `#/cafes` opens its public café listings. The
+`#/explore/idea` view applies the student-venture filter in the same directory.
+Merchant detail back-links, rewards, missions, community and friends all link
+back to this directory. Location tracking starts
+when the user selects My location, or automatically if browser permission was
+already granted. Without permission, campus shops remain browsable. Revoking
+permission removes the personal marker and distances. Leaving the page stops the
+location watcher. Positions are not written to Firestore or published as presence.
+
+The page creates no visits, point credits, referral qualifications or deal claims.
+It combines search, shop categories, student ventures, directions, live deals,
+accepted-friends map visibility and public café references. Shops without a map pin
+remain listed without invalid directions or distances. The personal GPS marker is
+separate from friends' shared places and is not published.
+Legacy attendance records remain readable, while their creation paths are denied;
+the replacement transaction-points flow is intentionally deferred.
+
+## KK League totals
+
+KK League uses the sum of positive ledger credits for students currently in each
+KK (KK1–KK13), including lessons, surveys and HEP awards. Previously earned
+legacy credits remain part of the historical cumulative total. Redemptions, donations and other
+negative entries do not reduce the score. Welfare support is a transfer rather than
+earned points, so it is excluded from KK League and level progress. A college change moves that student's
+earned contribution to their new KK; off-campus accounts do not enter KK League.
+
+Deploy the rules and functions together with the sites. `kkLeaguePoints` and
+`kkLeagueCollege` reconcile ledger/profile changes transactionally into the
+signed-in-readable `stats/league` document; duplicate trigger deliveries do not
+double count. Individual contributions remain server-only in `leagueMembers`.
+The existing `stats/campus` attendance counters are archival only.
+
+After the first deployment, backfill existing accounts with Application Default
+Credentials authorised for the intended project:
+
+```sh
+node functions/rebuild-league.js --project YOUR_FIREBASE_PROJECT_ID
+```
+
+The script is safe to rerun, includes historical credits and reconciles removed
+accounts. Demo mode automatically derives the same totals from saved demo ledgers,
+so existing demos need no reset. Live scores update shortly after earning points.
 
 ## Limits worth knowing
 
@@ -172,9 +267,8 @@ field `expiresAt`. Rules: `presence` and `waves` in `firestore.rules`; tests: "H
 - **Installed iPhone app:** Google sign-in can't open a popup from an installed iPhone app, so it uses the server hand-off described above.
 
 - **QR photos are stored in Firestore.** They're compressed to under about 600 KB because Cloud Storage now needs the Blaze plan. This is fine for a few hundred merchants.
-- **The server only handles iPhone sign-in**, so these happen when someone opens the app rather than on a timer:
+- **The server handles iPhone sign-in and KK League aggregation.** These still depend on user activity:
   - Mission claims wait for HEP.
   - Points don't auto-expire.
 - **Usage and cost:** Blaze includes a free daily allowance, then charges for what you use above it. Set a budget alert, and watch Usage in the console before going campus-wide. Alerts warn you but don't stop spending.
-- **Check-ins trust the phone's location.** A determined student could fake GPS, so check-in points are kept small and capped per day. Activity check (HEP) flags check-ins that are too far apart too quickly, or with a rough location fix, and lets you reverse points.
-- **The app doesn't record payments and never moves money.** PayNet's monthly DuitNow QR counts remain the source of truth for transactions; import them on Activity check to compare with check-ins.
+- **The app doesn't record payments and never moves money.** PayNet's monthly DuitNow QR counts remain the source of truth for transactions; import them on Activity check for reporting.

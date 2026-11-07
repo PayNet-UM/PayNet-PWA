@@ -27,7 +27,7 @@ export function eventCarousel({page=false}={}) {
   return `<section class="campus-event-showcase${page?'':' campus-event-showcase-home'}" id="campus-event-carousel" role="region" aria-roledescription="carousel" aria-label="Campus Events slideshow">
     ${page?'<div class="event-bunting" aria-hidden="true"></div>':''}
     <header class="event-showcase-heading">${page
-      ? `<h1>Campus Events<span aria-hidden="true">✦</span></h1>`
+      ? `<h1>Happening Now<span aria-hidden="true">✦</span></h1>`
       : `<h2><a href="#/events" aria-label="Upcoming campus events">Upcoming ${icon('arrow-right')}</a></h2>`}</header>
     <div class="event-showcase-body">
       <button class="event-poster" data-poster aria-label="View full poster: ${esc(s.title)}"><img data-slide-image src="${imageFor(s)}" width="1600" height="710" alt="${esc(s.title)} — original FESKUM event poster" fetchpriority="high" draggable="false">${page?`<span class="event-poster-hint">${icon('image')}</span>`:''}</button>

@@ -295,11 +295,11 @@ Badges|Lencana
 First cashless buy|Belian tanpa tunai pertama
 3 merchants|3 peniaga
 3-day streak|3 hari berturut-turut
-Money check done|Semakan wang selesai
+Money check done|Semakan kewangan selesai
 All lessons|Semua pelajaran
 Welfare donor|Penderma kebajikan
-Starter|Permulaan
-Regular|Tetap
+Starter|Pemula
+Regular|Pengguna tetap
 Explorer|Penjelajah
 Campus champion|Juara kampus
 Legend|Legenda
@@ -322,7 +322,7 @@ You have|Anda ada
 points. Swap them for vouchers, or give them to the student welfare fund.|mata. Tukar dengan baucar, atau berikan kepada tabung kebajikan pelajar.
 Points you earn and spend appear here.|Mata yang anda kumpul dan guna dipaparkan di sini.
 Cashless purchase|Pembelian tanpa tunai
-Money check completed|Semakan wang selesai
+Money check completed|Semakan kewangan selesai
 Lesson completed|Pelajaran selesai
 Referral welcome bonus|Bonus alu-aluan rujukan
 Friend joined with your code|Rakan menyertai dengan kod anda
@@ -354,7 +354,7 @@ Not quite. Think about what keeps your money safe, then try again.|Belum tepat. 
 You’ve already earned points for this lesson.|Anda sudah mendapat mata untuk pelajaran ini.
 Completed|Selesai
 Bonus points|Mata bonus
-Money check|Semakan wang
+Money check|Semakan kewangan
 Take the 2-minute money check|Ambil semakan wang 2 minit
 See where you stand on payment safety and budgeting.|Lihat tahap anda dalam keselamatan bayaran dan bajet.
 Four scenario questions and three about your confidence. It helps HEP plan support; it isn’t a test. First completion: 50 points.|Empat soalan senario dan tiga tentang keyakinan anda. Ia membantu HEP merancang sokongan; ia bukan ujian. Lengkap kali pertama: 50 mata.
@@ -725,8 +725,8 @@ Eligible merchants onboarded|Peniaga layak telah didaftarkan
 Referral sign-ups|Pendaftaran melalui rujukan
 Vouchers redeemed|Baucar ditebus
 Verified merchants with at least one purchase this month|Peniaga disahkan dengan sekurang-kurangnya satu pembelian bulan ini
-Money check results|Keputusan semakan wang
-Money check bonus|Bonus semakan wang
+Money check results|Keputusan semakan kewangan
+Money check bonus|Bonus semakan kewangan
 PDC 5.0 allows up to RM20,000 per university.|PDC 5.0 membenarkan sehingga RM20,000 bagi setiap universiti.
 Amount for rewards (RM)|Jumlah untuk ganjaran (RM)
 Goal (RM)|Sasaran (RM)
@@ -1080,7 +1080,7 @@ Campus Shops|Niaga Kita
 Campus Events|Aktiviti Kita
 Rewards|Ganjaran Kita
 Pay Cashless|Bayar Kita
-Community|Komuniti Kita
+Community|Komuniti
 Student Ventures|Idea Kita
 Shops|Niaga
 You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari.|Anda berada dalam pelayar terbina dalam aplikasi lain. Log masuk Google hanya berfungsi dalam Chrome atau Safari.
@@ -1191,7 +1191,7 @@ Check out there|Daftar keluar di sana
 Check out at quiet cafés for extra points.|Daftar keluar di kafe yang lengang untuk mata tambahan.
 Check-outs|Daftar keluar
 You both get bonus points after their first check-out.|Anda berdua dapat mata bonus selepas daftar keluar pertama mereka.
-Check out at the shop|Daftar keluar apabila tiba
+Check out at the shop|Daftar keluar di kedai
 Check out here|Daftar keluar di sini
 check-outs|daftar keluar
 No check-outs yet.|Belum ada daftar keluar.
@@ -1215,7 +1215,7 @@ Waved|Sudah melambai
 Check out here to say hi: you can wave at people at the same shop.|Daftar keluar di sini untuk menyapa: anda boleh melambai kepada orang di kedai yang sama.
 Hide me now|Sembunyikan saya sekarang
 You’re off the map. You’ll appear again at your next check-out.|Anda tiada di peta. Anda akan muncul semula pada daftar keluar seterusnya.
-Show me on the campus map|Tunjukkan saya pada peta kampus
+Show me on the campus map|Paparkan saya pada peta kampus
 When this is on, you appear at a shop for|Apabila dihidupkan, anda muncul di kedai selama
 2 hours|2 jam
 after you check out there, so friends can see you’re around and say hi.|selepas anda daftar keluar di sana, supaya rakan tahu anda ada dan boleh menyapa.
@@ -1237,4 +1237,510 @@ Change|Tukar
 Want friends to see you’re here?|Mahu rakan tahu anda di sini?
 See who’s here|Lihat siapa di sini
 (you)|(anda)
+Friends|Rakan
+Your circle on campus.|Rakan anda di kampus.
+Choose your username|Pilih nama pengguna anda
+Username|Nama pengguna
+Your username|Nama pengguna anda
+Save username|Simpan nama pengguna
+Add friends|Tambah rakan
+Find by username|Cari mengikut nama pengguna
+Find friend|Cari rakan
+Add friend|Tambah rakan
+Requests|Permintaan
+Your friends|Rakan anda
+Sent requests|Permintaan dihantar
+Accept|Terima
+Decline|Tolak
+Remove|Buang
+Cancel|Batal
+None yet.|Belum ada.
+Request sent|Permintaan dihantar
+Friend added|Rakan ditambah
+Friends here now|Rakan di sini sekarang
+See friends around campus|Lihat rakan di sekitar kampus
+Add friends by username|Tambah rakan melalui nama pengguna
+No friends are showing here right now.|Tiada rakan dipaparkan di sini buat masa ini.
+Visible to accepted friends for 2 hours after each check-out.|Kelihatan kepada rakan yang diterima selama 2 jam selepas setiap daftar keluar.
+Only accepted friends can see your shop presence when map sharing is on.|Hanya rakan yang diterima boleh melihat kehadiran anda di kedai apabila perkongsian peta dihidupkan.
+Choose an existing user|Pilih pengguna sedia ada
+Choose a username|Pilih nama pengguna
+Using a referral code also sends its owner a friend request.|Menggunakan kod rujukan juga menghantar permintaan rakan kepada pemiliknya.
+Using a referral code sends its owner a friend request. Check out to unlock both bonuses.|Menggunakan kod rujukan menghantar permintaan rakan kepada pemiliknya. Daftar keluar untuk mendapat kedua-dua bonus.
+Your circle|Rakan anda
+Your campus circle|Rakan kampus anda
+Request inbox|Peti permintaan
+No requests|Tiada permintaan
+No friends yet|Belum ada rakan
+No sent requests|Tiada permintaan dihantar
+Loading friends…|Memuatkan senarai rakan…
+Copy username|Salin nama pengguna
+Username copied|Nama pengguna disalin
+Couldn’t copy. Select your username to copy it manually.|Nama pengguna tidak dapat disalin. Pilih nama pengguna anda untuk menyalinnya secara manual.
+Your connections|Rangkaian rakan anda
+3–24 letters, numbers or underscores. Permanent once saved.|3–24 huruf, nombor atau garis bawah. Tidak boleh ditukar selepas disimpan.
+e.g. aina_um|cth. aina_um
+@username|@nama_pengguna
+Matching users|Pengguna yang sepadan
+Friend requests and your circle|Permintaan rakan dan rakan anda
+That username is unavailable. Try another.|Nama pengguna itu tidak tersedia. Cuba nama lain.
+No matching users available.|Tiada pengguna yang sepadan.
+That’s you!|Itu anda!
+No student found. Check the username.|Pelajar tidak ditemui. Semak nama pengguna.
+Wants to connect|Mahu menjadi rakan
+Awaiting reply|Menunggu jawapan
+Connected|Sudah menjadi rakan
+Remove friend?|Buang rakan?
+You will stop seeing each other on the campus map.|Anda berdua tidak lagi dapat melihat kehadiran masing-masing pada peta kampus.
+Use 3–24 letters, numbers or underscores.|Gunakan 3–24 huruf, nombor atau garis bawah.
+Enter a valid username.|Masukkan nama pengguna yang sah.
+Choose your username first.|Pilih nama pengguna anda dahulu.
+That’s your username.|Itu nama pengguna anda.
+You’re already friends.|Anda sudah menjadi rakan.
+A request is already pending.|Permintaan masih menunggu jawapan.
+Friend requests|Permintaan rakan
+Accepted friends see your|Rakan yang telah diterima boleh melihat
+Shared with accepted friends only.|Dikongsi dengan rakan yang telah diterima sahaja.
+Manage friends|Urus rakan
+Switch on “Show me on the campus map” to appear at a shop for 2 hours after you check out there. Only accepted friends see your first name, college and avatar.|Hidupkan “Paparkan saya pada peta kampus” untuk muncul di kedai selama 2 jam selepas daftar keluar di situ. Hanya rakan yang telah diterima boleh melihat nama pertama, kolej dan avatar anda.
+Shop activity|Aktiviti kedai
+Merchant shortcuts|Pintasan peniaga
+Manage your shop details|Urus maklumat kedai anda
+Scan a student’s voucher|Imbas baucar pelajar
+Manage live deals and offers|Urus tawaran aktif dan promosi
+Send deals and offers to HEP for approval.|Hantar tawaran dan promosi kepada HEP untuk kelulusan.
+Café occupancy|Pengisian tempat duduk kafe
+Keep seat counts current so off-peak deals switch on when you have space.|Kemas kini bilangan tempat duduk yang digunakan supaya tawaran waktu lengang diaktifkan apabila tempat tersedia.
+No live deals yet.|Belum ada tawaran aktif.
+New live deal|Tawaran aktif baharu
+Award extra points when students check out during off-peak hours.|Berikan mata tambahan apabila pelajar mendaftar keluar pada waktu lengang.
+Live deals|Tawaran aktif
+Live now|Aktif sekarang
+Claim count unavailable|Bilangan tuntutan tidak tersedia
+Shop unavailable|Kedai tidak tersedia
+Availability unknown|Status ketersediaan tidak diketahui
+Deal approved.|Tawaran diluluskan.
+Your uploaded DuitNow QR|DuitNow QR yang anda muat naik
+Your logo|Logo anda
+see details|lihat butiran
+Programme activity|Aktiviti program
+Reporting month|Bulan pelaporan
+No approved deals yet.|Belum ada tawaran yang diluluskan.
+Approve offers and off-peak deals before students can see them. Mission claims add points to the student.|Luluskan promosi dan tawaran waktu lengang sebelum dipaparkan kepada pelajar. Tuntutan misi menambahkan mata kepada pelajar.
+Matric number claimed by the wrong person?|Nombor matrik digunakan oleh orang lain?
+Check their student ID first, then release the number so the real student can sign up. Block the other account if needed.|Semak kad pelajar terlebih dahulu, kemudian lepaskan nombor matrik supaya pemilik sebenar boleh mendaftar. Sekat akaun yang satu lagi jika perlu.
+Release|Lepaskan
+Blocked|Disekat
+Matric number to release|Nombor matrik untuk dilepaskan
+HEP shortcuts|Pintasan HEP
+The HEP dashboard couldn’t start|Papan pemuka HEP tidak dapat dimulakan
+No.|Bil.
+This voucher has expired.|Baucar ini telah tamat tempoh.
+Location accuracy (m)|Ketepatan lokasi (m)
+DuitNow QR (QR code image)|DuitNow QR (imej kod QR)
+DuitNow QR (QR Code Image)|DuitNow QR (imej kod QR)
+MERCHANT NAME/NAME ON THE QR|NAMA PENIAGA/NAMA PADA QR
+MERCHANT ACCOUNT NAME|NAMA AKAUN PENIAGA
+LOCATION/TYPE OF BUSINESS|LOKASI/JENIS PERNIAGAAN
+MERCHANT NAME|NAMA PENIAGA
+LOCATION / TYPE OF BUSINESS|LOKASI / JENIS PERNIAGAAN
+PAYMENT METHOD|KAEDAH PEMBAYARAN
+PAYMENT SERVICE PROVIDER|PENYEDIA PERKHIDMATAN PEMBAYARAN
+Points run|Misi mata
+Finding your location…|Mencari lokasi anda…
+Allow location to find nearby shops.|Benarkan akses lokasi untuk mencari kedai berdekatan.
+Off-peak bonuses apply automatically at checkout.|Bonus waktu lengang ditambahkan secara automatik semasa daftar keluar.
+Finding café deals…|Mencari tawaran kafe…
+No off-peak deals right now.|Tiada tawaran waktu lengang buat masa ini.
+Deals are temporarily unavailable.|Tawaran tidak tersedia buat sementara waktu.
+bonus pts|mata bonus
+claims left today|tuntutan berbaki hari ini
+No student ventures available for check-out yet.|Belum ada perniagaan pelajar yang tersedia untuk daftar keluar.
+Head to a shop|Pergi ke kedai
+Use the map to find a +Onz merchant.|Gunakan peta untuk mencari peniaga +Onz.
+No shops in this view.|Tiada kedai dalam paparan ini.
+Location is approximate|Lokasi adalah anggaran
+Step outside for a better signal.|Pergi ke kawasan terbuka untuk mendapatkan isyarat yang lebih baik.
+Come back tomorrow.|Kembali esok.
+Ready to collect points|Sedia untuk mengumpul mata
+Daily streak|Rentetan harian
+Daily check in points|Mata daftar masuk harian
+day|hari
+days|hari
+running|berturut-turut
+3-day badge earned|Lencana 3 hari diperoleh
+Today counted. Check out tomorrow to keep it going.|Hari ini sudah dikira. Daftar keluar esok untuk meneruskan rentetan.
+Check out today to keep your streak going.|Daftar keluar hari ini untuk meneruskan rentetan anda.
+Check out at a campus shop to start your streak.|Daftar keluar di kedai kampus untuk memulakan rentetan anda.
+One checkout day at a time · MYT|Satu hari daftar keluar pada satu masa · Waktu Malaysia
+Next level|Tahap seterusnya
+Top level|Tahap tertinggi
+One-time survey bonus.|Bonus sekali sahaja untuk melengkapkan tinjauan.
+Financial literacy|Literasi kewangan
+Check out + live deals|Daftar keluar + tawaran aktif
++ bonus|+ bonus
+Keep earning|Terus kumpul mata
+You’ve reached the top level.|Anda telah mencapai tahap tertinggi.
+points to your next level|mata lagi ke tahap seterusnya
+Levels follow total points earned. Redeeming rewards keeps your level progress.|Tahap berdasarkan jumlah mata yang telah dikumpulkan. Penebusan ganjaran mengekalkan kemajuan tahap anda.
+Level progress|Kemajuan tahap
+Check-out merchant filters|Penapis peniaga untuk daftar keluar
+Claims left today|Tuntutan berbaki hari ini
+Checkout days over the past week|Hari daftar keluar sepanjang minggu lalu
+Avatar categories|Kategori avatar
+Sound and vibration when you earn points|Bunyi dan getaran apabila anda memperoleh mata
+Build your look. Earn points to unlock hats.|Cipta gaya anda. Kumpul mata untuk membuka akses kepada topi.
+Live preview|Pratonton langsung
+Tap a shop for directions. See the|Ketik kedai untuk mendapatkan arah. Lihat
+Only HEP-verified merchants are listed.|Hanya peniaga yang disahkan oleh HEP disenaraikan.
++Onz Student|+Onz Pelajar
++Onz Merchant|+Onz Peniaga
++Onz HEP|+Onz HEP
+Campus Events slideshow|Tayangan slaid acara kampus
+Upcoming campus events|Acara kampus akan datang
+Previous event|Acara sebelumnya
+Pause slideshow|Jeda tayangan slaid
+Play slideshow|Mainkan tayangan slaid
+Next event|Acara seterusnya
+Choose event poster|Pilih poster acara
+Festival launch|Pelancaran festival
+Marquee Tent, beside HIR|Khemah utama, bersebelahan HIR
+Dress code: gold & cream.|Kod pakaian emas dan krim.
+Food & shopping|Makanan dan beli-belah
+HIR & KPS parking areas|Kawasan tempat letak kereta HIR dan KPS
+Booth positions on the map are samples.|Kedudukan gerai pada peta ialah contoh.
+Pre-FESKUM calendar|Kalendar Pra-FESKUM
+Tentative programme|Atur cara tentatif
+Run to the rhythm|Berlari mengikut irama
+Marquee Tent HIR & around UM|Khemah utama HIR dan sekitar UM
+Connect & celebrate|Berkenalan dan meraikan
+Art, community and celebration.|Seni, komuniti dan keraian.
+Discover something new|Terokai sesuatu yang baharu
+Marquee Tent|Khemah utama
+Registration poster|Poster pendaftaran
+NusaRock band registration. Scan the original poster’s QR or check with the organiser for current availability.|Pendaftaran kumpulan muzik NusaRock. Imbas QR pada poster asal atau semak dengan penganjur untuk mengetahui kekosongan terkini.
+Registration: 1–6 November 2026|Pendaftaran 1–6 November 2026
+Performances: 4–6 & 11–14 November 2026|Persembahan 4–6 dan 11–14 November 2026
+Performance and registration details are reproduced from the supplied poster.|Butiran persembahan dan pendaftaran diambil daripada poster yang dibekalkan.
+Join the secretariat|Sertai urus setia
+Poster archive|Arkib poster
+FESKUM organising team|Pasukan penganjur FESKUM
+What is FESKUM?|Apakah FESKUM?
+Meet the festival|Kenali festival
+Get to know the celebration behind the campus festival.|Kenali sambutan di sebalik festival kampus ini.
+CAMPUS SPOTLIGHT · 2026 PREVIEW|TUMPUAN KAMPUS · PRATONTON 2026
+Find your booth. Discover your next favourite.|Cari gerai anda. Temui kegemaran baharu.
+FOOD / FLOWERS / FINDS|MAKANAN / BUNGA / ANEKA BARANG
+Sample vendors, items & prices. 2026 layout pending.|Peniaga, barangan dan harga contoh. Susun atur 2026 belum disahkan.
+SAMPLE LAYOUT|SUSUN ATUR CONTOH
+Area 1 · Campus landmark|Kawasan 1 · Mercu tanda kampus
+A / FOOD FEST|A / PESTA MAKANAN
+FESKUM Bazaar · Area 10|Bazar FESKUM · Kawasan 10
+B / FLOWERS & GIFTS|B / BUNGA DAN HADIAH
+C / PHOTOGRAPHY & CRAFTS|C / FOTOGRAFI DAN KRAF
+Timeline Park · Area 12|Timeline Park · Kawasan 12
+AISLE A|LALUAN A
+AISLE B|LALUAN B
+↓ Open to main walkway|↓ Bersambung ke laluan utama
+MAIN WALKWAY|LALUAN UTAMA
+CENTRE STAGE|PENTAS UTAMA
+Graduate Journey Park · 11|Graduate Journey Park · 11
+REST & RELAX · 13|REHAT DAN SANTAI · 13
+Dining · WC · Surau|Ruang makan · Tandas · Surau
+MAIN ENTRANCE|PINTU MASUK UTAMA
+FESKUM / PREVIEW PLAN|FESKUM / PELAN PRATONTON
+Tap a booth|Ketik gerai
+Not to scale|Tidak mengikut skala
+Interactive booth map|Peta gerai interaktif
+Vendor details|Maklumat peniaga
+FESKUM booth map. Select a booth for vendor details.|Peta gerai FESKUM. Pilih gerai untuk melihat maklumat peniaga.
+Close vendor details|Tutup maklumat peniaga
+Food Fest|Pesta makanan
+Meals, sweet treats & refreshing drinks|Hidangan, pencuci mulut dan minuman menyegarkan
+Dining tent|Khemah makan
+Bazaar entrance|Pintu masuk bazar
+Flower stalls|Gerai bunga
+Bouquets, graduation gifts & keepsakes|Jambangan bunga, hadiah graduasi dan cenderamata
+Collection point|Tempat pengambilan
+Bazaar walkway|Laluan bazar
+Photography & gifts|Fotografi dan hadiah
+Photo sessions, prints & creative finds|Sesi foto, cetakan dan barangan kreatif
+Photo backdrop|Latar foto
+Timeline Park entrance|Pintu masuk Timeline Park
+Comfort food for your festival day.|Hidangan kegemaran sepanjang festival.
+Vegetarian option|Pilihan vegetarian
+Grilled skewers with peanut sauce.|Satay panggang dengan kuah kacang.
+Chicken satay · 5 sticks|Satay ayam · 5 cucuk
+Beef satay · 5 sticks|Satay daging · 5 cucuk
+Contains peanuts|Mengandungi kacang tanah
+Iced drinks and freshly brewed favourites.|Minuman sejuk dan minuman kegemaran yang dibancuh segar.
+Iced matcha latte|Latte matcha ais
+Iced latte|Latte ais
+Lemon tea|Teh lemon
+Dairy-free option|Pilihan tanpa tenusu
+Small-batch bakes and sweet treats.|Pastri dan manisan buatan kelompok kecil.
+Chocolate brownie|Brownie coklat
+Mini cupcakes · 3 pcs|Kek cawan mini · 3 biji
+Cookies|Biskut
+Contains dairy & gluten|Mengandungi tenusu dan gluten
+Handheld bites for exploring the bazaar.|Snek mudah dibawa semasa menjelajah bazar.
+Chicken wrap|Wrap ayam
+Veggie wrap|Wrap sayuran
+Loaded fries|Kentang goreng beraneka topping
+Fruit cups and cooling juices.|Buah potong dan jus menyegarkan.
+Watermelon juice|Jus tembikai
+Mixed fruit cup|Buah potong campuran
+Mango smoothie|Smoothie mangga
+Plant-based option|Pilihan berasaskan tumbuhan
+Graduation bouquets in bright campus colours.|Jambangan graduasi berwarna ceria.
+Mini fresh bouquet|Jambangan bunga segar mini
+Classic bouquet|Jambangan klasik
+Sunflower bouquet|Jambangan bunga matahari
+Made to order|Dibuat mengikut tempahan
+Flowers that last beyond graduation day.|Bunga yang kekal selepas hari graduasi.
+Crochet tulip|Bunga tulip kait
+Crochet bouquet|Jambangan bunga kait
+Single wrapped rose|Sekuntum mawar berbalut
+Little congratulations with a personal touch.|Hadiah ucapan tahniah dengan sentuhan peribadi.
+Graduation bear|Patung beruang graduasi
+Message card|Kad ucapan
+Bear & bouquet set|Set patung beruang dan jambangan bunga
+Gift wrapping and celebration essentials.|Pembalutan hadiah dan keperluan keraian.
+Gift wrapping|Pembalutan hadiah
+Congratulation balloon|Belon ucapan tahniah
+Gift box|Kotak hadiah
+Custom colours|Warna mengikut pilihan
+Edible bouquets for a sweet celebration.|Jambangan makanan untuk keraian manis.
+Chocolate bouquet|Jambangan coklat
+Snack bouquet|Jambangan snek
+Premium gift bouquet|Jambangan hadiah premium
+Contains dairy|Mengandungi tenusu
+Pocket-sized memories to take home.|Kenangan kecil untuk dibawa pulang.
+Name keychain|Rantai kunci nama
+Enamel pin|Pin enamel
+Photo locket|Loket foto
+Portraits with a graduation backdrop.|Potret berlatarbelakangkan suasana graduasi.
+Solo portrait · digital|Potret individu · digital
+Friends session · digital|Sesi foto rakan · digital
+Photo print|Cetakan foto
+Digital delivery|Penghantaran digital
+Printed snapshots for your festival scrapbook.|Cetakan foto untuk buku skrap festival anda.
+Instant photo|Foto segera
+Photo strip|Jalur foto
+Photo sleeve|Sarung foto
+Print on site|Cetakan di lokasi
+Small creative pieces with a campus spirit.|Karya kreatif kecil berjiwa kampus.
+Mini portrait|Potret mini
+Art postcard|Poskad seni
+Sticker sheet|Helaian pelekat
+Handcrafted accessories and thoughtful gifts.|Aksesori buatan tangan dan hadiah bermakna.
+Crochet charm|Hiasan kait
+Beaded bracelet|Gelang manik
+FESKUM 2026 butterfly identity with colourful bunting and paper artwork|Identiti rama-rama FESKUM 2026 dengan panji berwarna-warni dan seni kertas
+4th Residential College|Kolej Kediaman Keempat
+7th Residential College|Kolej Kediaman Ketujuh
+5th Residential College|Kolej Kediaman Kelima
+10th Residential College|Kolej Kediaman Kesepuluh
+Science Faculty Canteen|Kantin Fakulti Sains
+KK7 Cafeteria|Kafeteria KK7
+KK5 Cafeteria|Kafeteria KK5
+No Firebase project is connected, so everything is stored in this browser and checked against the same security rules as the live app. On the Check in screen you can pretend to stand at any merchant.|Tiada projek Firebase disambungkan, jadi semua data disimpan dalam pelayar ini dan disemak menggunakan peraturan keselamatan yang sama seperti aplikasi sebenar. Pada skrin Daftar keluar, anda boleh mencuba lokasi peniaga secara simulasi.
+pts|mata
+day running|hari berturut-turut
+days running|hari berturut-turut
+in progress|sedang berlangsung
+Handmade|Buatan tangan
+Meals|Hidangan
+Drinks|Minuman
+Desserts|Pencuci mulut
+Flowers|Bunga
+Gifts|Hadiah
+Photography|Fotografi
+Crafts|Kraf
+Reach|Capai
+Referral|Rujukan
+Sign in with Google in Safari. Then come back to this app: you’ll be signed in automatically.|Log masuk dengan Google dalam Safari. Kemudian kembali ke aplikasi ini. Anda akan dilog masuk secara automatik.
+Your code:|Kod anda:
+Open Safari|Buka Safari
+Safari didn’t open? Tap “Open Safari”.|Safari tidak terbuka? Ketik “Buka Safari”.
+Not available for HEP accounts|Tidak tersedia untuk akaun HEP
+For security, HEP accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.|Atas sebab keselamatan, akaun HEP tidak boleh log masuk ke aplikasi skrin utama dengan cara ini. Gunakan e-mel dan kata laluan dalam aplikasi, atau gunakan +Onz di Safari.
+Continue in Safari|Teruskan dalam Safari
+Sign in to the +Onz app?|Log masuk ke aplikasi +Onz?
+You're signed in as|Anda telah log masuk sebagai
+If you didn't start this, or someone sent you this link, tap "This wasn't me". Otherwise they could get into your account.|Jika anda tidak memulakan proses ini, atau pautan ini dihantar oleh orang lain, ketik "Bukan saya". Jika tidak, mereka mungkin dapat mengakses akaun anda.
+Yes, sign in to the app|Ya, log masuk ke aplikasi
+This wasn't me|Bukan saya
+Student or merchant?|Pelajar atau peniaga?
+Open the +Onz app|Buka aplikasi +Onz
+This account is blocked|Akaun ini disekat
+Contact HEP if you think this is a mistake.|Hubungi HEP jika anda berpendapat ini satu kesilapan.
+You’re a HEP admin|Anda pentadbir HEP
+Set up a student or merchant profile here|Sediakan profil pelajar atau peniaga di sini
+This account isn’t a HEP admin|Akaun ini bukan akaun pentadbir HEP
+Open the +Onz app for students and merchants|Buka aplikasi +Onz untuk pelajar dan peniaga
+Sign out and use another account|Log keluar dan gunakan akaun lain
+HEP admin dashboard|Papan pemuka pentadbir HEP
+Review merchants, approve deals and report on the +Onz programme.|Semak peniaga, luluskan tawaran dan sediakan laporan program +Onz.
+Signed in.|Berjaya log masuk.
+This account|Akaun ini
+Offline|Luar talian
+carousel|karusel
+Block|Sekat
+Unblock|Nyahsekat
+Student blocked.|Pelajar disekat.
+Student unblocked.|Sekatan pelajar ditarik balik.
+Personalisation|Pemperibadian
+Hoodie|Baju hud
+Shawl|Selendang
+English|Bahasa Inggeris
+Copy this link|Salin pautan ini
+Code added. Your friend connection is in Friends.|Kod ditambah. Hubungan rakan anda boleh dilihat dalam Rakan.
+Learn & Earn|Belajar & Kumpul Mata
+Try the Learn & Earn lessons next.|Cuba pelajaran Belajar & Kumpul Mata seterusnya.
+View mission|Lihat misi
+Explore shops|Terokai kedai
+Reload missions|Muat semula misi
+claim on Home for HEP review.|tuntut di Utama untuk semakan HEP.
+Upcoming|Akan datang
+Happening now|Sedang berlangsung
+Happening Now|Sedang berlangsung
+Campus event|Acara kampus
+Event count|Bilangan acara
+More details soon.|Butiran lanjut akan menyusul.
+Oct|Okt
+Aug|Ogo
+Dec|Dis
+May|Mei
+Mar|Mac
+Available points|Mata tersedia
+Your college|Kolej anda
+Your rank|Kedudukan anda
+College check-outs|Daftar keluar kolej
+Nearby shops|Kedai berdekatan
+KK points|Mata KK
+Total points earned|Jumlah mata terkumpul
+All students’ earned points count. Redeeming or donating won’t lower your KK’s score.|Mata yang dikumpulkan oleh semua pelajar diambil kira. Penebusan atau sumbangan tidak mengurangkan mata KK anda.
+No points earned yet. Get your KK started.|Belum ada mata terkumpul. Mulakan untuk KK anda.
+Scores are syncing.|Mata sedang disegerakkan.
+League is temporarily unavailable.|Liga tidak tersedia buat sementara waktu.
+Around you|Sekitar anda
+Explore campus|Terokai kampus
+Allow location to see what’s nearby.|Benarkan akses lokasi untuk melihat tempat berdekatan.
+My location|Lokasi saya
+Your location|Lokasi anda
+Campus shops|Kedai kampus
+Merchant filters|Penapis peniaga
+Campus shops and your location, when permitted|Kedai kampus dan lokasi anda, jika dibenarkan
+No student ventures in this view.|Tiada perniagaan pelajar dalam paparan ini.
+Browse campus shops or allow location to see what’s nearby.|Terokai kedai kampus atau benarkan akses lokasi untuk melihat tempat berdekatan.
+You’re on the map|Lokasi anda dipaparkan pada peta
+Shops are sorted nearest first.|Kedai disusun mengikut jarak, bermula dengan yang terdekat.
+Map unavailable. Browse shops below.|Peta tidak tersedia. Lihat kedai di bawah.
+Visit this shop|Kunjungi kedai ini
+View nearby shops|Lihat kedai berdekatan
+Transaction points are being updated.|Sistem mata transaksi sedang dikemas kini.
+Share your referral code to connect with friends. Transaction points are being updated.|Kongsi kod rujukan anda untuk berhubung dengan rakan. Sistem mata transaksi sedang dikemas kini.
+Using a referral code sends its owner a friend request. Transaction points are being updated.|Menggunakan kod rujukan akan menghantar permintaan rakan kepada pemilik kod. Sistem mata transaksi sedang dikemas kini.
+Past activity · MYT|Aktiviti terdahulu · MYT
+points available|mata tersedia
+Need support?|Perlukan bantuan?
+Ask HEP for pooled welfare points.|Mohon mata daripada tabung kebajikan melalui HEP.
+Request points|Mohon mata
+My requests|Permohonan saya
+Loading requests…|Memuatkan permohonan…
+Request welfare points|Mohon mata kebajikan
+HEP reviews each request.|HEP menyemak setiap permohonan.
+Points requested|Jumlah mata dimohon
+What do you need help with?|Apakah bantuan yang anda perlukan?
+Meals, study materials or other essentials|Makanan, bahan pembelajaran atau keperluan asas lain
+Only you and HEP can see your request.|Hanya anda dan HEP boleh melihat permohonan anda.
+Send request|Hantar permohonan
+Request sent to HEP.|Permohonan dihantar kepada HEP.
+Points received|Mata diterima
+Declined|Ditolak
+Pending HEP|Menunggu semakan HEP
+No requests yet.|Belum ada permohonan.
+Couldn’t load requests.|Permohonan tidak dapat dimuatkan.
+Welfare requests|Permohonan kebajikan
+Not enough points in the fund|Mata dalam tabung tidak mencukupi
+No welfare requests waiting.|Tiada permohonan kebajikan yang menunggu semakan.
+Approve welfare request|Luluskan permohonan kebajikan
+Decline welfare request|Tolak permohonan kebajikan
+Points move from the welfare pool to the student’s balance.|Mata dipindahkan daripada tabung kebajikan ke baki mata pelajar.
+Response to student|Maklum balas kepada pelajar
+Approve and transfer points|Luluskan dan pindahkan mata
+Decline request|Tolak permohonan
+Points transferred.|Mata dipindahkan.
+Request declined.|Permohonan ditolak.
+Welfare support received|Bantuan kebajikan diterima
+Enter a whole number of points greater than zero.|Masukkan jumlah mata dalam nombor bulat yang lebih besar daripada sifar.
+Please give a reason between 10 and 1,000 characters.|Sila berikan alasan sepanjang 10 hingga 1,000 aksara.
+This request has already been reviewed.|Permohonan ini telah disemak.
+Please add a short response of up to 500 characters.|Sila berikan maklum balas ringkas sehingga 500 aksara.
+The welfare fund does not have enough points for this request.|Mata dalam tabung kebajikan tidak mencukupi untuk permohonan ini.
+Public café listings. Hours and prices aren’t verified.|Senarai kafe awam. Waktu operasi dan harga belum disahkan.
+Places shared with accepted friends. Live GPS isn’t shared.|Tempat dikongsi dengan rakan yang telah diterima. Lokasi GPS secara langsung tidak dikongsi.
+You’re off the map.|Anda tidak dipaparkan pada peta.
+Matching shops|Kedai yang sepadan
+Earn. Save. Redeem.|Kumpul. Simpan. Tebus.
+Coming soon|Akan datang
+Connect with friends using your referral code.|Berhubung dengan rakan menggunakan kod rujukan anda.
+Using a referral code sends its owner a friend request.|Menggunakan kod rujukan akan menghantar permintaan rakan kepada pemilik kod.
+Place sharing is paused. Your GPS location stays private.|Perkongsian tempat dijeda. Lokasi GPS anda kekal peribadi.
+Place sharing is paused|Perkongsian tempat dijeda
+Your GPS location stays private.|Lokasi GPS anda kekal peribadi.
+Archived attendance credit|Kredit kehadiran terdahulu
+Voucher activity|Aktiviti baucar
+Vouchers used|Baucar digunakan
+Ready to redeem|Sedia untuk ditebus
+Value redeemed|Nilai ditebus
+Recent redemptions|Penebusan terkini
+No vouchers redeemed yet.|Belum ada baucar ditebus.
+Recorded voucher redemptions at your shop.|Rekod penebusan baucar di kedai anda.
+Students find your shop, directions and offers in Overview.|Pelajar menemui kedai, arah dan tawaran anda dalam Gambaran keseluruhan.
+Students use this pin for directions to your shop.|Pelajar menggunakan pin ini untuk mendapatkan arah ke kedai anda.
+Find us on +Onz.|Temui kami di +Onz.
+Show your offer during quiet hours when seats are available.|Paparkan tawaran anda pada waktu lengang apabila ada tempat duduk tersedia.
+No offers yet. Create a discount or free-item offer.|Belum ada tawaran. Cipta tawaran diskaun atau item percuma.
+Students enrolled|Pelajar berdaftar
+Cashless-ready merchants|Peniaga sedia tanpa tunai
+Historical claims only. New attendance missions are paused.|Tuntutan terdahulu sahaja. Misi kehadiran baharu dijeda.
+Approve offers and off-peak deals before students can see them. Historical mission claims can be reviewed separately.|Luluskan tawaran dan promosi waktu lengang sebelum dipaparkan kepada pelajar. Tuntutan misi terdahulu boleh disemak secara berasingan.
+Imported PayNet transaction counts.|Jumlah transaksi PayNet yang diimport.
+PayNet transactions|Transaksi PayNet
+Registered student accounts|Akaun pelajar berdaftar
+Referral codes linked to student accounts|Kod rujukan yang dipautkan kepada akaun pelajar
+Lessons and ambassador support|Pelajaran dan sokongan duta
+This activity flow is retired. Transaction points will be defined separately.|Aliran aktiviti ini telah dihentikan. Sistem mata transaksi akan ditentukan secara berasingan.
+Offers, deals and welfare|Tawaran, promosi dan kebajikan
+Find offers around campus.|Temui tawaran di sekitar kampus.
+Badges earned|Lencana diperoleh
+Earned|Diperoleh
+Locked|Terkunci
+View your learning streak|Lihat rentetan pembelajaran anda
+Start a streak|Mulakan rentetan
+Learning streak|Rentetan pembelajaran
+Learning complete|Pembelajaran selesai
+No learning activity|Tiada aktiviti pembelajaran
+Today complete|Selesai hari ini
+Daily goal|Sasaran harian
+Learning over the past seven days|Pembelajaran sepanjang tujuh hari yang lalu
+One correct lesson or practice answer a day.|Satu jawapan pelajaran atau latihan yang betul setiap hari.
+Practise|Latihan
+Start learning|Mula belajar
+Correct practice keeps your streak going. Lesson points are earned once.|Jawapan latihan yang betul meneruskan rentetan anda. Mata pelajaran hanya diberikan sekali.
+Correct practice. Today counts toward your streak.|Jawapan latihan betul. Hari ini dikira dalam rentetan anda.
+View your daily app streak|Lihat rentetan harian aplikasi anda
+Daily check-in streak|Rentetan daftar masuk harian
+App opened|Aplikasi dibuka
+No app activity|Tiada aktiviti aplikasi
+App activity over the past seven days|Aktiviti aplikasi sepanjang tujuh hari yang lalu
+Today counted|Hari ini dikira
+Ready for today|Sedia untuk hari ini
+Open +Onz each day to keep your streak.|Buka +Onz setiap hari untuk meneruskan rentetan anda.
+Automatic|Automatik
+Practice is always available. Lesson points are earned once.|Latihan sentiasa tersedia. Mata pelajaran hanya diberikan sekali.
+Correct practice. No repeat points.|Jawapan latihan betul. Tiada mata tambahan diberikan.
+Couldn’t save today’s app check-in. We’ll retry when you return.|Daftar masuk aplikasi hari ini tidak dapat disimpan. Kami akan mencuba lagi apabila anda kembali.
 `;

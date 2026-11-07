@@ -3,7 +3,7 @@
 // Backends: the local rules evaluator (default) or the official emulator (tests/emulator.mjs).
 import * as D from '../app/shared/js/data.js';
 
-export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
+export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
   let passed = 0, failed = 0;
   const results = [];
   const ok = async (name, fn) => {
@@ -120,38 +120,34 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await denied('an avatar cannot carry extra data', () => D.saveAvatar(stuA, Object.fromEntries(Array.from({ length: 20 }, (_, i) => ['k' + i, i]))));
   stuA.profile = await D.getProfile(stuA);
 
-  log('Check-ins');
+  log('Retired attendance and historical records');
   const kopi = { id: 'mer1', name: 'Kopi Kolej', lat: 3.1270, lng: 101.6551 };
   const laundry = { id: 'mer2', name: 'Fresh Laundry', lat: 3.1099, lng: 101.6586 };
-  const at = (m) => ({ lat: m.lat + 0.0001, lng: m.lng - 0.0001, accuracy: 12 });
+  const at = (m) => ({ lat: m.lat, lng: m.lng, accuracy: 12 });
   const pts = async (c) => (await D.getProfile(c)).points;
-  await denied('student 1 km away cannot check in', () => D.checkIn(stuA, kopi, { lat: kopi.lat + 0.01, lng: kopi.lng, accuracy: 10 }, rules));
-  await ok('student at the shop checks in and earns 10 points', async () => {
-    const before = await pts(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); eq(await pts(stuA), before + 10, 'balance');
+  await denied('attendance API never awards points, even at the merchant', () => D.checkIn(stuA, kopi, at(kopi), rules));
+  await denied('direct attendance documents are also blocked', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'checkins', 'stuA_mer1'), { uid: 'stuA', merchantId: 'mer1', n: 1, at: stuA.sdk.serverTimestamp(), lat: kopi.lat, lng: kopi.lng, acc: 12 }));
+  await denied('direct visit records cannot recreate attendance', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'visits', 'forged'), { uid: 'stuA', merchantId: 'mer1', at: stuA.sdk.serverTimestamp() }));
+  await denied('legacy point credits cannot bypass the retired API', async () => {
+    const b = stuA.sdk.writeBatch(stuA.db);
+    b.set(stuA.sdk.doc(stuA.db, 'users', 'stuA', 'ledger', 'fake_attendance'), { type: 'checkin', delta: 10, by: 'stuA', createdAt: stuA.sdk.serverTimestamp() });
+    b.update(stuA.sdk.doc(stuA.db, 'users', 'stuA'), { points: stuA.sdk.increment(10), lastTx: 'fake_attendance' });
+    await b.commit();
   });
-  await ok('the check-in counts for KK3 on the leaderboard', async () => {
-    const s = (await mpp.sdk.getDoc(mpp.sdk.doc(mpp.db, 'stats', 'campus'))).data(); eq(s.checkins, 1); eq(s.colleges.KK3, 1);
+  await ok('historical records remain readable without permitting new attendance', async () => {
+    const entries = [];
+    for (let i = 0; i < 4; i++) {
+      const owner = i === 3 ? stuB : stuA, id = 'archive_' + i;
+      entries.push(['visits/' + id, { uid: owner.uid, name: owner.uid === 'stuA' ? 'Aina Nadhirah' : 'Badrul Hisham', college: owner.uid === 'stuA' ? 'KK3' : 'KK5', merchantId: i === 3 ? 'mer2' : 'mer1', merchantName: i === 3 ? 'Fresh Laundry' : 'Kopi Kolej', day: D.dayKey(T), month: D.monthKey(T), points: 10, at: stuA.sdk.Timestamp.fromMillis(T - 60000), deal: '', acc: 12 }]);
+      entries.push([`users/${owner.uid}/ledger/${id}`, { type: 'checkin', delta: 10, merchantName: 'Kopi Kolej', createdAt: stuA.sdk.Timestamp.fromMillis(T - 60000) }]);
+    }
+    entries.push(['users/stuA', { points: 30, lastTx: 'archive_2' }], ['users/stuB', { points: 10, lastTx: 'archive_3' }]);
+    await seedHistory(entries);
+    eq((await D.monthVisits(mpp, D.monthKey(T))).length, 4);
+    await D.adjustPoints(mpp, 'stuA', 500, 'Test programme points');
+    await D.adjustPoints(mpp, 'stuB', 500, 'Test programme points');
   });
-  await ok('the merchant sees the visit, with the student’s avatar', async () => {
-    const q = merch.sdk.query(merch.sdk.collection(merch.db, 'visits'), merch.sdk.where('merchantId', '==', 'mer1'));
-    const v = (await merch.sdk.getDocs(q)).docs.map((d) => d.data()); eq(v.length, 1); eq(v[0].name, 'Aina Nadhirah'); eq(v[0].avatar.hair, 'tudung');
-  });
-  await denied('another merchant cannot see that visit', () => merch2.sdk.getDocs(merch2.sdk.query(merch2.sdk.collection(merch2.db, 'visits'), merch2.sdk.where('merchantId', '==', 'mer1'))));
-  stuA.profile = await D.getProfile(stuA);
-  await ok('the first check-in is recorded for referrals', async () => eq(!!stuA.profile.firstVisit, true));
-  await denied('cannot check in at the same shop again within 3 hours', async () => { tick(60 * 60 * 1000); stuA.profile = await D.getProfile(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); });
-  await denied('cannot award yourself extra check-in points', async () => { stuA.profile = await D.getProfile(stuA); await D.checkIn(stuA, laundry, at(laundry), { ...rules, checkinPoints: 500 }); });
-  await denied('cannot record a visit for another student', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'visits', 'ci_stuA_mer2_9'), { uid: 'stuA', name: 'Aina Nadhirah', college: 'KK3', merchantId: 'mer2', merchantName: 'x', at: stuB.sdk.serverTimestamp(), day: D.dayKey(T), month: D.monthKey(T), deal: '', points: 10, acc: 5 }));
-  await ok('after 3 hours the student can check in at the same shop again', async () => {
-    if (!canSetTime) { log('      (skipped: the emulator clock cannot be moved)'); return; }
-    tick(3 * 60 * 60 * 1000); stuA.profile = await D.getProfile(stuA);
-    const before = await pts(stuA); await D.checkIn(stuA, kopi, at(kopi), rules); eq(await pts(stuA), before + 10);
-  });
-  await denied('the daily limit of check-ins is enforced', async () => {
-    await D.saveConfig(mpp, 'rules', { checkinDailyCap: canSetTime ? 2 : 1 }); stuA.profile = await D.getProfile(stuA);
-    try { await D.checkIn(stuA, laundry, at(laundry), { ...rules, checkinDailyCap: 2 }); } finally { await D.saveConfig(mpp, 'rules', { checkinDailyCap: 5 }); }
-  });
-  await ok('with the normal limit the same check-in works', async () => { const before = await pts(stuA); await D.checkIn(stuA, laundry, at(laundry), rules); eq(await pts(stuA), before + 10); });
+  await denied('other merchants cannot read historical visits', () => merch2.sdk.getDoc(merch2.sdk.doc(merch2.db, 'visits', 'archive_0')));
 
   log('Earning');
   stuA.profile = await D.getProfile(stuA);
@@ -173,18 +169,18 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   log('Referrals');
   stuB.profile = await D.getProfile(stuB);
   await ok('student B enters A’s referral code', () => D.applyInviterCode(stuB, stuA.profile.referralCode));
+  await ok('a referral immediately creates a pending friend request without usernames', async () => {
+    const id = ['stuA', 'stuB'].sort().join('_');
+    const friend = await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'friendships', id));
+    eq(friend.data().from, 'stuB'); eq(friend.data().to, 'stuA');
+    eq(friend.data().status, 'pending'); eq(friend.data().referralCode, stuA.profile.referralCode);
+  });
   await denied('B cannot change inviter later', () => D.updateProfile(stuB, { inviterUid: 'mpp1', inviterCode: stuA.profile.referralCode }));
   stuA.profile = await D.getProfile(stuA);
-  await denied('A cannot claim before B’s first check-in', () => D.claimInviterBonus(stuA, 'stuB', rules));
-  await denied('B cannot claim friend bonus before first check-in', () => D.claimFriendBonus(stuB, rules));
-  await ok('B checks in at Fresh Laundry', async () => { stuB.profile = await D.getProfile(stuB); await D.checkIn(stuB, laundry, at(laundry), rules); });
-  await ok('B claims the 100-point friend bonus', () => D.claimFriendBonus(stuB, rules));
-  await denied('B cannot claim the friend bonus twice', () => D.claimFriendBonus(stuB, rules));
-  await ok('A sees B as a qualified referral', async () => { const r = await D.myReferrals(stuA); eq(r.length, 1); eq(r[0].qualified, true); });
-  await ok('A claims the 100-point inviter bonus', () => D.claimInviterBonus(stuA, 'stuB', rules));
-  stuA.profile = await D.getProfile(stuA);
-  await denied('A cannot claim the same friend twice', () => D.claimInviterBonus(stuA, 'stuB', rules));
-  await ok('A’s refCount is 1', async () => { eq(stuA.profile.refCount, 1); });
+  await denied('inviter rewards stay paused instead of depending on attendance', () => D.claimInviterBonus(stuA, 'stuB', rules));
+  await denied('friend rewards stay paused instead of depending on attendance', () => D.claimFriendBonus(stuB, rules));
+  await ok('referral still connects friends without qualifying a point reward', async () => { const rows = await D.myReferrals(stuA); eq(rows.length, 1); eq(rows[0].qualified, false); });
+  await denied('a student cannot mark their own referral reward qualified', () => stuB.sdk.updateDoc(stuB.sdk.doc(stuB.db, 'referrals', 'stuB'), { qualified: true }));
 
   log('Rewards, vouchers, welfare');
   await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
@@ -206,6 +202,59 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   });
   await denied('A cannot donate more points than they have', async () => D.donatePoints(stuA, (await pts(stuA)) + 1));
 
+  log('Welfare support requests');
+  let welfareRequest, rejectedRequest;
+  await ok('student requests pooled points without moving any points', async () => {
+    const before = await pts(stuA);
+    welfareRequest = await D.submitWelfareRequest(stuA, 6, 'Help with meals and study essentials.');
+    eq(await pts(stuA), before);
+    eq((await D.pendingWelfareRequests(mpp)).some((r) => r.id === welfareRequest), true);
+  });
+  await denied('other students cannot read a private welfare reason', () => stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'welfareRequests', welfareRequest)));
+  await ok('another student can submit their own private request', async () => {
+    rejectedRequest = await D.submitWelfareRequest(stuB, 5, 'Help with printing study materials.');
+  });
+  await denied('student cannot list all welfare applications', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'welfareRequests')));
+  await denied('merchant cannot apply for student welfare points', () => D.submitWelfareRequest(merch, 5, 'Not a student application.'));
+  await denied('student cannot approve their own welfare request', () => D.reviewWelfareRequest(stuA, welfareRequest, true));
+  await denied('student cannot edit the requested amount after submission', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'welfareRequests', welfareRequest), { amount: 100 }));
+  await denied('HEP cannot mark a request approved without transferring its points', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'welfareRequests', welfareRequest), {
+    status: 'approved', response: '', reviewedBy: mpp.email, reviewedAt: mpp.sdk.serverTimestamp(),
+  }));
+  await ok('HEP approval debits the pool and credits the student in one ledger-backed batch', async () => {
+    const before = await pts(stuA);
+    await D.reviewWelfareRequest(mpp, welfareRequest, true, 'Approved for essentials.');
+    eq(await pts(stuA), before + 6);
+    eq((await D.getWelfareFund(mpp)).points, 4);
+    eq((await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'users', stuA.uid, 'ledger', 'welfare_' + welfareRequest))).data().type, 'welfare');
+    eq((await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'welfareRequests', welfareRequest))).data().status, 'approved');
+  });
+  await ok('a reviewed welfare request cannot be paid twice', async () => {
+    const before = await pts(stuA);
+    try { await D.reviewWelfareRequest(mpp, welfareRequest, true); throw new Error('duplicate approval succeeded'); }
+    catch (e) { if (!e.message.includes('already been reviewed')) throw e; }
+    eq(await pts(stuA), before); eq((await D.getWelfareFund(mpp)).points, 4);
+  });
+  await ok('insufficient welfare funds leave the request pending and the pool unchanged', async () => {
+    try { await D.reviewWelfareRequest(mpp, rejectedRequest, true); throw new Error('overdraw succeeded'); }
+    catch (e) { if (!e.message.includes('does not have enough points')) throw e; }
+    eq((await D.getWelfareFund(mpp)).points, 4);
+    eq((await stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'welfareRequests', rejectedRequest))).data().status, 'pending');
+  });
+  await denied('rules also prevent an overdraw when HEP bypasses the app check', async () => {
+    const id = 'welfare_' + rejectedRequest, b = mpp.sdk.writeBatch(mpp.db);
+    b.update(mpp.sdk.doc(mpp.db, 'welfareRequests', rejectedRequest), { status: 'approved', response: '', reviewedBy: mpp.email, reviewedAt: mpp.sdk.serverTimestamp() });
+    b.set(mpp.sdk.doc(mpp.db, 'users', stuB.uid, 'ledger', id), { type: 'welfare', delta: 5, requestId: rejectedRequest, by: mpp.uid, createdAt: mpp.sdk.serverTimestamp() });
+    b.update(mpp.sdk.doc(mpp.db, 'users', stuB.uid), { points: mpp.sdk.increment(5), lastTx: id });
+    b.update(mpp.sdk.doc(mpp.db, 'stats', 'welfare'), { points: mpp.sdk.increment(-5), lastRequest: rejectedRequest });
+    await b.commit();
+  });
+  await ok('declining a request records a response and transfers no points', async () => {
+    const before = await pts(stuB); await D.reviewWelfareRequest(mpp, rejectedRequest, false, 'Please contact HEP to discuss other support.');
+    eq(await pts(stuB), before); eq((await D.getWelfareFund(mpp)).points, 4);
+    eq((await stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'welfareRequests', rejectedRequest))).data().status, 'rejected');
+  });
+
   log('Offers and quiet-hour bonuses');
   merch.merchantName = 'Kopi Kolej';
   await ok('merchant proposes an offer; HEP approves it', async () => {
@@ -221,29 +270,17 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   });
   if (canSetTime) { T = Date.UTC(2026, 10, 10, 7, 0, 0); setTime(T); }
   const farah = gmailer; farah.profile = await D.getProfile(farah);
-  await denied('no quiet-hour bonus while the café is busy', () => D.checkIn(farah, kopi, at(kopi), rules, deal));
-  await ok('when the café is quiet, B checks in and gets +10 +40', async () => {
+  await denied('live deals cannot award location-based bonus points', () => D.checkIn(farah, kopi, at(kopi), rules, deal));
+  await ok('live deal availability depends on time and occupancy, not attendance claims', async () => {
     await D.setOccupancy(merch, 40, 10);
-    eq(D.dealStatus(deal, await D.getMerchant(stuB, 'mer1'), 0, T), 'Available');
-    stuB.profile = await D.getProfile(stuB); const before = await pts(stuB);
-    await D.checkIn(stuB, kopi, at(kopi), rules, deal); eq(await pts(stuB), before + 50);
+    eq(D.dealStatus(deal, await D.getMerchant(stuB, 'mer1'), 999, T), 'Available');
   });
-  await denied('the bonus stops after its daily limit (1)', async () => { farah.profile = await D.getProfile(farah); await D.checkIn(farah, kopi, at(kopi), rules, deal); });
-  await ok('the student still gets normal check-in points without the bonus', async () => {
-    farah.profile = await D.getProfile(farah); const before = await pts(farah); await D.checkIn(farah, kopi, at(kopi), rules, null); eq(await pts(farah), before + 10);
-  });
-
-  log('Missions and HEP tools');
-  await ok('student claims a mission; HEP approves; points added', async () => {
-    const before = (await D.getProfile(stuA)).points;
-    await D.claimMission(stuA, D.MISSIONS[1], D.weekKey(T), 3);
-    const [c] = await D.pendingMissionClaims(mpp); await D.reviewMissionClaim(mpp, c, true);
-    eq((await D.getProfile(stuA)).points, before + 150);
-  });
-  await denied('student cannot approve their own mission', async () => {
-    await D.claimMission(stuB, D.MISSIONS[0], D.weekKey(T), 5);
-    const c = { id: `stuB_${D.weekKey(T)}_five-days`, uid: 'stuB', bonus: 100, title: 'x', week: D.weekKey(T) };
-    await D.reviewMissionClaim(stuB, c, true);
+  await denied('attendance mission claims are paused at the API', () => D.claimMission(stuA, {}, D.weekKey(T), 5));
+  await denied('direct mission claims cannot restart attendance missions', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'missionClaims', 'new_claim'), { uid: stuA.uid, status: 'pending', week: D.weekKey(T), mission: 'five-days', createdAt: stuA.sdk.serverTimestamp() }));
+  await ok('HEP can still settle an archived mission claim', async () => {
+    const claim = { id: 'archive_mission', uid: 'stuA', name: 'Aina', title: 'Archived mission', week: D.weekKey(T), bonus: 150, status: 'pending', progress: 3 };
+    await seedHistory([['missionClaims/' + claim.id, claim]]);
+    const before = await pts(stuA); await D.reviewMissionClaim(mpp, claim, true); eq(await pts(stuA), before + 150);
   });
   await ok('HEP adjusts points with a note', async () => { await D.adjustPoints(mpp, 'stuB', -5, 'Correction: duplicate'); });
   await denied('HEP adjustment cannot make a balance negative', () => D.adjustPoints(mpp, 'stuB', -100000, 'Too much'));
@@ -329,45 +366,46 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
   await D.createProfile(hn1, { role: 'student', name: 'Hana Lee', matric: '23009001', college: 'KK3', faculty: '' });
   await D.createProfile(hn2, { role: 'student', name: 'Imran Hakim', matric: '23009002', college: 'KK5', faculty: '' });
   await D.createProfile(hn3, { role: 'student', name: 'Jia Wen', matric: '23009003', college: 'KK1', faculty: '' });
-  const presQ = (c, f, v) => c.sdk.getDocs(c.sdk.query(c.sdk.collection(c.db, 'presence'), c.sdk.where(f, '==', v))).then((s) => s.docs.map((d) => d.data()));
-  if (!canSetTime) log('      (skipped: needs a movable clock)');
-  else {
-    await ok('a student who hasn’t switched it on never appears on the map', async () => eq((await presQ(hn2, 'audience', 'everyone')).length, 0));
-    await ok('student switches on “Show me on the campus map”', async () => { await D.setMapVisibility(hn2, true, 'everyone'); hn2.profile = await D.getProfile(hn2); eq(hn2.profile.showOnMap, true); });
-    await denied('cannot put yourself at a shop without checking out there', () => hn2.sdk.setDoc(hn2.sdk.doc(hn2.db, 'presence', 'hn2'), {
-      uid: 'hn2', zone: 'mer1', zoneName: 'Kopi Kolej', first: 'Imran', college: 'KK5', audience: 'everyone', at: hn2.sdk.serverTimestamp(), expiresAt: hn2.sdk.Timestamp.fromMillis(T + 2 * 3600000) }));
-    await ok('checking out puts the student at that shop for 2 hours', async () => {
-      tick(4 * 3600000); hn2.profile = await D.getProfile(hn2); await D.checkIn(hn2, kopi, at(kopi), rules);
-      const rows = await presQ(hn1, 'audience', 'everyone'); eq(rows.length, 1); eq(rows[0].zone, 'mer1'); eq(rows[0].first, 'Imran');
-      eq(Math.round((D.toMs(rows[0].expiresAt) - D.toMs(rows[0].at)) / 60000), 120);
-    });
-    await ok('only the first name, college and avatar are shared (no position)', async () => {
-      const r = (await presQ(hn1, 'audience', 'everyone'))[0]; eq('lat' in r || 'lng' in r || 'name' in r || 'email' in r, false);
-    });
-    await denied('cannot stretch your time on the map', () => hn2.sdk.updateDoc(hn2.sdk.doc(hn2.db, 'presence', 'hn2'), { expiresAt: hn2.sdk.Timestamp.fromMillis(T + 48 * 3600000) }));
-    await ok('college-only: a student shares with their college only', async () => {
-      await D.setMapVisibility(hn1, true, 'college'); hn1.profile = await D.getProfile(hn1); await D.checkIn(hn1, kopi, at(kopi), rules);
-      eq((await presQ(hn1, 'college', 'KK3')).length, 1);
-    });
-    await denied('a student from another college cannot see a college-only entry', () => presQ(hn2, 'college', 'KK3'));
-    await ok('…and it is not in the everyone list', async () => eq((await presQ(hn2, 'audience', 'everyone')).some((r) => r.uid === 'hn1'), false));
-    await denied('cannot wave at someone who is hidden from you', () => D.sendWave(hn2, 'hn1', { first: 'Imran' }, 'Kopi Kolej'));
-    await ok('a third student shares with everyone at the same shop', async () => {
-      await D.setMapVisibility(hn3, true, 'everyone'); hn3.profile = await D.getProfile(hn3); await D.checkIn(hn3, kopi, at(kopi), rules);
-    });
-    await ok('students at the same shop can wave at each other', async () => {
-      await D.sendWave(hn2, 'hn3', { first: 'Imran' }, 'Kopi Kolej');
-      const inbox = (await hn3.sdk.getDocs(hn3.sdk.collection(hn3.db, 'waves', 'hn3', 'inbox'))).docs.map((d) => d.data());
-      eq(inbox.length, 1); eq(inbox[0].fromFirst, 'Imran');
-    });
-    await denied('cannot wave under another name', () => hn2.sdk.setDoc(hn2.sdk.doc(hn2.db, 'waves', 'hn3', 'inbox', 'hn2'), { fromFirst: 'HEP Admin', zoneName: 'Kopi Kolej', at: hn2.sdk.serverTimestamp() }));
-    await denied('cannot read someone else’s waves', () => hn2.sdk.getDocs(hn2.sdk.collection(hn2.db, 'waves', 'hn3', 'inbox')));
-    await denied('merchants can’t see who is on the map', () => presQ(merch, 'audience', 'everyone'));
-    await ok('switching it off takes you off the map straight away', async () => {
-      await D.setMapVisibility(hn3, false); eq((await presQ(hn2, 'audience', 'everyone')).some((r) => r.uid === 'hn3'), false);
-    });
-    await denied('after 2 hours you can no longer be waved at', async () => { tick(2.5 * 3600000); await D.sendWave(hn1, 'hn2', { first: 'Hana' }, 'Kopi Kolej'); });
-      }
+  const presence = (c, uid) => c.sdk.getDoc(c.sdk.doc(c.db, 'presence', uid)).then((s) => s.exists() ? s.data() : null);
+  const pair = ['hn1', 'hn2'].sort().join('_');
+  await ok('students claim unique usernames', async () => {
+    await D.claimUsername(hn1, 'Hana_UM'); hn1.profile = await D.getProfile(hn1);
+    await D.claimUsername(hn2, 'imran_um'); hn2.profile = await D.getProfile(hn2);
+    await D.claimUsername(hn3, 'jia_um'); hn3.profile = await D.getProfile(hn3);
+    eq((await D.findUsername(hn2, '@HANA_UM')).uid, 'hn1');
+  });
+  await denied('a username cannot be claimed twice', () => D.claimUsername(hn3, 'hana_um'));
+  await denied('a student cannot change a claimed username', () => D.claimUsername(hn1, 'new_hana'));
+  await ok('student sends a friend request by username', async () => {
+    await D.requestFriend(hn1, await D.findUsername(hn1, 'imran_um'));
+  });
+  await ok('a referral preserves an existing pending request', async () => {
+    await D.applyInviterCode(hn1, hn2.profile.referralCode);
+    const friend = await hn1.sdk.getDoc(hn1.sdk.doc(hn1.db, 'friendships', pair));
+    eq(friend.data().status, 'pending'); eq('referralCode' in friend.data(), false);
+  });
+  await ok('the existing-user directory contains usernames only', async () => {
+    const directory = await D.listUsernames(hn1);
+    eq(directory.some((p) => p.username === 'imran_um'), true);
+    eq(directory.every((p) => Object.keys(p).sort().join(',') === 'uid,username'), true);
+  });
+  await denied('the sender cannot accept their own request', () => D.acceptFriend(hn1, pair));
+  await denied('a third student cannot read friend requests', () => hn3.sdk.getDoc(hn3.sdk.doc(hn3.db, 'friendships', pair)));
+  await denied('enabling attendance-based place sharing is paused', () => D.setMapVisibility(hn2, true));
+  await denied('direct presence creation is blocked', () => hn2.sdk.setDoc(hn2.sdk.doc(hn2.db, 'presence', 'hn2'), { uid: 'hn2', zone: 'mer1' }));
+  await denied('direct attendance-dependent waves are blocked', () => hn1.sdk.setDoc(hn1.sdk.doc(hn1.db, 'waves', 'hn2', 'inbox', 'hn1'), { fromFirst: 'Hana', zoneName: 'Kopi Kolej', at: hn1.sdk.serverTimestamp() }));
+  await denied('direct deal-claim counters cannot restart attendance bonuses', () => hn1.sdk.setDoc(hn1.sdk.doc(hn1.db, 'dealDays', 'retired_deal'), { count: 1, last: 'fake' }));
+  await ok('the recipient can still accept a friendship', () => D.acceptFriend(hn2, pair));
+  await ok('historical shared places keep accepted-friend privacy', async () => {
+    await seedHistory([['users/hn2', { showOnMap: true, mapAudience: 'friends' }], ['presence/hn2', { uid: 'hn2', first: 'Imran', college: 'KK5', audience: 'friends', zone: 'mer1', zoneName: 'Kopi Kolej', at: hn2.sdk.Timestamp.fromMillis(T - 60000), expiresAt: hn2.sdk.Timestamp.fromMillis(T + 3600000) }]]);
+    eq((await presence(hn1, 'hn2')).first, 'Imran');
+  });
+  await denied('unrelated students cannot read archived presence', () => presence(hn3, 'hn2'));
+  await denied('merchants cannot read archived student presence', () => presence(merch, 'hn2'));
+  await denied('attendance waves cannot be created', () => D.sendWave(hn1, 'hn2', { first: 'Hana' }, 'Kopi Kolej'));
+  await ok('removing a friend still revokes access to historical presence', () => D.removeFriend(hn1, pair));
+  await denied('removed friends cannot read archived presence', () => presence(hn1, 'hn2'));
+  await ok('switching sharing off still removes historical presence', async () => { await D.setMapVisibility(hn2, false); eq(await presence(hn2, 'hn2'), null); });
 
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };

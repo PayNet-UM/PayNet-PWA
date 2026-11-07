@@ -14,13 +14,92 @@ for (const line of MS.split('\n')) {
 const MONTHS = { January: 'Januari', February: 'Februari', March: 'Mac', April: 'April', May: 'Mei', June: 'Jun', July: 'Julai', August: 'Ogos', September: 'September', October: 'Oktober', November: 'November', December: 'Disember' };
 const MON = { Jan: 'Jan', Feb: 'Feb', Mar: 'Mac', Apr: 'Apr', May: 'Mei', Jun: 'Jun', Jul: 'Jul', Aug: 'Ogo', Sep: 'Sep', Oct: 'Okt', Nov: 'Nov', Dec: 'Dis' };
 const MONTH_RE = /\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g;
-const dates = (s) => s.replace(MONTH_RE, (m) => MONTHS[m] || MON[m] || m).replace(/\b(\d{1,2}:\d{2}) ?(am|pm)\b/gi, (_, t, ap) => `${t} ${ap.toLowerCase() === 'am' ? 'pg' : 'ptg'}`);
+const dates = (s) => s.replace(MONTH_RE, (m) => MONTHS[m] || MON[m] || m)
+  .replace(/\b(\d{1,2}:\d{2}) ?(am|pm)\b/gi, (_, time, meridiem) => {
+    const hour = Number(time.split(':')[0]) % 12 + (meridiem.toLowerCase() === 'pm' ? 12 : 0);
+    const period = hour === 0 ? 'tengah malam' : hour < 12 ? 'pagi' : hour < 14 ? 'tengah hari' : hour < 19 ? 'petang' : 'malam';
+    return time + ' ' + period;
+  });
 const isDateish = (s) => /^[\d\s:,–\-]*(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\d\s:,–\-]*|(?:am|pm)[\d\s:,–\-]*)+$/i.test(s) && /\d/.test(s);
 const N = '([\\d,]+)';
 const RM = '(RM[\\d.,]+)';
 
 // [regex, (match groups…) => Malay]; t() translates a fragment recursively.
 const PATTERNS = [
+  [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) for a welcome bonus: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk mendapat bonus alu-aluan: ${url}`],
+  [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) to connect with me: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk berhubung dengan saya: ${url}`],
+
+  [/^Block (.+)\? They won't be able to earn or redeem until you unblock them\.$/, (name) => `Sekat ${name}? Pelajar ini tidak dapat mengumpul atau menebus mata sehingga sekatan ditarik balik.`],
+  [/^Release matric number (.+)\?$/, (number) => `Lepaskan nombor matrik ${number}?`],
+
+  [/^Signed in as (.+)\. The HEP dashboard is a separate website\.$/, (email) => `Anda telah log masuk sebagai ${email}. Papan pemuka HEP ialah laman web yang berasingan.`],
+  [/^(.+) doesn’t have access to the HEP dashboard\.\s*If you should, ask an existing HEP admin to add your email under Settings\.$/, (email) => `${email} tidak mempunyai akses kepada papan pemuka HEP. Jika anda sepatutnya mempunyai akses, minta pentadbir HEP menambahkan e-mel anda dalam Tetapan.`],
+  [/^Registration until (.+)$/, (date) => `Pendaftaran sehingga ${dates(date)}`],
+  [/^Poster deadline: (.+)$/, (date) => `Tarikh tutup pada poster: ${dates(date)}`],
+  [/^(Hair or tudung colour|Skin tone) (\d+)$/, (label, n) => `${t(label)} ${n}`],
+
+  [/^(\d+) (?:person|people) here((?: · .+)*)$/, (n, rest) => `${n} orang di sini${rest.replace(/ · (\d+) from (\S+)/, ' · $1 dari $2').replace(' · you’re here', ' · anda di sini')}`],
+  [/^(\d+) (?:person|people) here right now\. People show here for 2 hours after they check out\.$/, (n) => `${n} orang di sini sekarang. Kehadiran dipaparkan selama 2 jam selepas daftar keluar.`],
+  [/^(\d+) (?:person|people) here at (.+)$/, (n, place) => `${n} orang di ${place}`],
+  [/^Friends can see you on the campus map at (.+) for 2 hours\.$/, (place) => `Rakan boleh melihat kehadiran anda pada peta kampus di ${place} selama 2 jam.`],
+  [/^(\d+)-day streak\. View your streak in Rewards$/, (n) => `${n} hari berturut-turut. Lihat rentetan anda dalam Ganjaran`],
+  [/^(\d+)\/3 to your badge$/, (n) => `${n}/3 untuk memperoleh lencana`],
+  [/^(\d{4}-\d{2}-\d{2})(, today)?, (checked out|no checkout)$/, (date, today, status) => `${date}${today ? ', hari ini' : ''}, ${status === 'checked out' ? 'telah daftar keluar' : 'tiada daftar keluar'}`],
+  [/^Reach (Starter|Regular|Explorer|Campus champion|Legend)$/, (level) => `Capai tahap ${t(level)}`],
+  [/^(Starter|Regular|Explorer|Campus champion|Legend) — ways to earn points$/, (level) => `${t(level)} — cara mengumpul mata`],
+  [/^(\d+) lessons left$/, (n) => `${n} pelajaran berbaki`],
+  [/^points per correct quiz, once per lesson\.$/, () => 'mata bagi jawapan kuiz yang betul, sekali bagi setiap pelajaran.'],
+  [/^Choose a live off-peak deal\. The best eligible bonus is added automatically\. (\d+) checkouts\/day$/, (n) => `Pilih tawaran waktu lengang yang aktif. Bonus tertinggi yang layak ditambahkan secara automatik. ${n} daftar keluar/hari`],
+  [/^(\d+)h per shop\.$/, (n) => `${n} jam bagi setiap kedai.`],
+  [/^(\d+)\/(\d+) this week$/, (a, b) => `${a}/${b} minggu ini`],
+  [/^claim in Rewards for HEP review\.$/, () => 'tuntut dalam Ganjaran untuk semakan HEP.'],
+  [/^Share your referral code\. Claim after their first checkout$/, () => 'Kongsi kod rujukan anda. Tuntut selepas daftar keluar pertama mereka'],
+  [/^(\d+) bonuses\/month\.$/, (n) => `${n} bonus/bulan.`],
+  [/^Every (\d+)h per shop$/, (n) => `Setiap ${n} jam bagi setiap kedai`],
+  [/^(\d+) per day$/, (n) => `${n} sehari`],
+  [/^\+(\d+) live deal bonus on this checkout$/, (n) => `Bonus tawaran aktif +${n} untuk daftar keluar ini`],
+  [/^(\d+) of (\d+)$/, (a, b) => `${a} daripada ${b}`],
+  [/^(\d{1,2}:\d{2}–\d{1,2}:\d{2}) MYT$/, (time) => `${time} Waktu Malaysia`],
+  [/^(\d+)\/(\d+) claimed today$/, (a, b) => `${a}/${b} dituntut hari ini`],
+  [/^(\d+)\/(\d+) seats taken$/, (a, b) => `${a}/${b} tempat duduk digunakan`],
+  [/^(\d[\d,]*) bonus pts awarded$/, (n) => `${n} mata bonus diberikan`],
+  [/^(\d+) live now$/, (n) => `${n} aktif sekarang`],
+  [/^(\d+) approved$/, (n) => `${n} diluluskan`],
+  [/^Review deals \((\d+)\)$/, (n) => `Semak tawaran (${n})`],
+  [/^Try again at (.+)\.$/, (time) => `Cuba lagi pada ${dates(time)}.`],
+  [/^Move closer to (.+) to check out\.$/, (name) => `Pergi lebih dekat dengan ${name} untuk daftar keluar.`],
+  [/^Check out \+(\d+)$/, (n) => `Daftar keluar +${n}`],
+  [/^Checked out at (.+)$/, (name) => `Daftar keluar di ${name}`],
+  [/^Check out (\d{1,2}:\d{2})–(\d{1,2}:\d{2}) while it’s quiet$/, (a, b) => `Daftar keluar pada ${a}–${b} semasa waktu lengang`],
+  [/^Open Check out while you’re at the shop\. You get (\d+) points, once every (\d+) hours here\.$/, (points, hours) => `Buka Daftar keluar semasa berada di kedai. Anda memperoleh ${points} mata, sekali setiap ${hours} jam di sini.`],
+  [/^Your check-outs count for (.+)\.$/, (college) => `Daftar keluar anda dikira untuk ${college}.`],
+  [/^(\d[\d,]*) check-outs?$/, (n) => `${n} daftar keluar`],
+  [/^Copy referral code$/, () => 'Salin kod rujukan'],
+  [/^Archived mission claims \((\d+)\)$/, (n) => `Tuntutan misi terdahulu (${n})`],
+  [/^(\d{4}-\d{2}-\d{2}): (Learning complete|No learning activity)$/, (day, status) => `${day}: ${t(status)}`],
+  [/^(\d{4}-\d{2}-\d{2}): (App opened|No app activity)$/, (day, status) => `${day}: ${t(status)}`],
+  [/^Find (.+) on \+Onz, explore our offers, and pay cashless with DuitNow QR\.$/, (name) => `Temui ${name} di +Onz, terokai tawaran kami dan bayar tanpa tunai melalui DuitNow QR.`],
+  [/^Show poster (\d+): (.+)$/, (n, title) => `Paparkan poster ${n}: ${t(title)}`],
+  [/^View full poster: (.+)$/, (title) => `Lihat poster penuh: ${t(title)}`],
+  [/^(.+) — original FESKUM event poster$/, (title) => `${t(title)} — poster acara FESKUM asal`],
+  [/^Poster (\d+) of (\d+): (.+)$/, (a, b, title) => `Poster ${a} daripada ${b}: ${t(title)}`],
+  [/^(\d+) booths?$/, (n) => `${n} gerai`],
+  [/^Booth ([A-Z]\d+)$/, (id) => `Gerai ${id}`],
+  [/^Booth ([A-Z]\d+), (.+), ([^,]+)$/, (id, name, category) => `Gerai ${id}, ${name}, ${t(category)}`],
+  [/^(.+) · Row (\d+)$/, (name, row) => `${t(name)} · Baris ${row}`],
+  [/^Position (\d+)$/, (n) => `Kedudukan ${n}`],
+  [/^Aisle ([A-Z])$/, (a) => `Laluan ${a}`],
+  [/^Area (\d+)$/, (n) => `Kawasan ${n}`],
+  [/^(\d+)\/day \(max ([\d,]+) pts a day\)$/, (n, points) => `${n}/hari (maksimum ${points} mata sehari)`],
+  [/^Your last result: (\d+)\/100$/, (n) => `Keputusan terakhir anda: ${n}/100`],
+  [/^Knowledge (\d+)%$/, (n) => `Pengetahuan ${n}%`],
+  [/^Digital confidence (\d+)%((?:\. .+)?)$/, (n, rest) => `Keyakinan digital ${n}%${rest ? '. ' + t(rest.slice(2)) : ''}`],
+  [/^([ABCD]): (.+)$/, (grade, status) => `${grade}: ${t(status)}`],
+  [/^Four scenario questions and three about your confidence\. It helps HEP plan support; it isn’t a test\. First completion: (\d+) points\.$/, (n) => `Empat soalan situasi dan tiga soalan tentang keyakinan anda. Jawapan membantu HEP merancang sokongan. Mata untuk penyertaan pertama: ${n}.`],
+  [/^Get (\d+) points when you finish\.$/, (n) => `Dapatkan ${n} mata selepas selesai.`],
+  [/^((?:\d{1,2})[––-]\d{1,2}) November( \d{4})?$/, (range, year) => `${range} November${year || ''}`],
+  [/^Referral · (.+)$/, (code) => `Rujukan · ${code}`],
+
   [/^(\d+) students? here( right now\. People show here for 2 hours after they check out\.)?((?: · .+)*)$/, (n, long, rest) => `${n} pelajar di sini${long ? ' sekarang. Pelajar dipaparkan selama 2 jam selepas daftar keluar.' : ''}${(rest || '').replace(/ · (\d+) from (\S+)/, ' · $1 dari $2').replace(' · you’re here', ' · anda di sini')}`],
   [/^(.+) waved at you at (.+)$/, (a, b) => `${a} melambai kepada anda di ${b}`],
   [/^You’re on the campus map at (.+) for 2 hours\.$/, (a) => `Anda di peta kampus di ${a} selama 2 jam.`],
@@ -176,7 +255,7 @@ function translate(text) {
 // ------------------------------------------------------------------ DOM
 let lang = 'en';
 try { lang = localStorage.getItem(KEY) || (/^ms\b/i.test(navigator.language || '') ? 'ms' : 'en'); } catch { /* storage blocked */ }
-const ATTRS = ['placeholder', 'aria-label', 'title'];
+const ATTRS = ['placeholder', 'aria-label', 'aria-description', 'aria-valuetext', 'title', 'alt', 'aria-roledescription'];
 const origText = new WeakMap(); const wroteText = new WeakMap();
 const origAttr = new WeakMap();
 const SKIP = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'NOSCRIPT']);

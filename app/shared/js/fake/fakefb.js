@@ -50,6 +50,22 @@ export class FirestoreError extends Error {
 }
 
 // ---------------------------------------------------------------- store
+// Demo equivalent of the server KK League reconciliation, including old saved
+// demo accounts. Only positive ledger credits count; balances are never used.
+function rebuildDemoLeague(docs) {
+  if (!docs.has('stats/campus')) return;
+  const earned = new Map(), colleges = {};
+  for (const [path, entry] of docs) {
+    const match = /^users\/([^/]+)\/ledger\/[^/]+$/.exec(path);
+    if (match && entry.type !== 'welfare' && Number.isSafeInteger(entry.delta) && entry.delta > 0) earned.set(match[1], (earned.get(match[1]) || 0) + entry.delta);
+  }
+  for (const [path, profile] of docs) {
+    const match = /^users\/([^/]+)$/.exec(path);
+    if (!match || profile.role !== 'student' || !/^KK(?:[1-9]|1[0-3])$/.test(profile.college || '')) continue;
+    colleges[profile.college] = (colleges[profile.college] || 0) + (earned.get(match[1]) || 0);
+  }
+  docs.set('stats/league', { colleges, metric: 'totalEarned' });
+}
 class Store {
   constructor() { this.docs = new Map(); this.subs = new Set(); this.load(); }
   load() {
@@ -59,6 +75,7 @@ class Store {
       const raw = env.storage.getItem(env.dbKey);
       if (raw) for (const [k, v] of Object.entries(dec(raw))) this.docs.set(k, v);
     } catch { /* ignore corrupt */ }
+    rebuildDemoLeague(this.docs);
   }
   save() {
     if (!env.storage) return;
@@ -68,6 +85,7 @@ class Store {
   get(path) { const d = this.docs.get(path); return d ? clone(d) : null; }
   apply(writes) {
     for (const [p, d] of writes) { if (d === null) this.docs.delete(p); else this.docs.set(p, clone(d)); }
+    rebuildDemoLeague(this.docs);
     this.save(); this.notify();
   }
   notify() { for (const f of [...this.subs]) { try { f(); } catch (e) { console.error(e); } } }
@@ -86,7 +104,7 @@ function getStore() {
 export function resetDemoData() { getStore().reset(); if (env.storage) env.storage.removeItem(env.authKey); }
 export function _rawDocs() { return getStore().docs; }
 // Demo only: edit stored documents directly (used to keep the demo "Here now" crowd fresh).
-export function _rawUpdate(fn) { const st = getStore(); fn(st.docs, Timestamp); st.save(); st.notify(); }
+export function _rawUpdate(fn) { const st = getStore(); fn(st.docs, Timestamp); rebuildDemoLeague(st.docs); st.save(); st.notify(); }
 
 // ---------------------------------------------------------------- app + auth
 export function initializeApp(options) { return { name: '[DEFAULT]', options }; }
