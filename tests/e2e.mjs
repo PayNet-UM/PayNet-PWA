@@ -49,7 +49,9 @@ if (pins < 4 || logos < 4 || !/google\.com\/maps\/dir\/.*destination=3\.1\d+,101
 await stu.waitForSelector('#cmap .kk-me'); await stu.waitForSelector('#clist .nearby-distance');
 const nearest = (await stu.textContent('#clist .checkout-shop h3')).trim();
 if (nearest !== 'Fresh Laundry') throw new Error('nearest should be Fresh Laundry, got ' + nearest);
-await stu.locator('#cmap .leaflet-marker-icon:has(.kk-pin)').first().click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
+// Location centres the map on the nearby shop; the first marker in DOM order
+// may be outside the map viewport. Exercise the visible shop at that location.
+await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
 if (await stu.locator('.tabbar a.on[data-tab="explore"]').count() !== 1) throw new Error('directory footer tab is not active');
 await stu.screenshot({ path: `${shots}/02-campus-shops.png` });
 ok(`central directory shows ${pins} logo pins; live location puts ${nearest} first`);
