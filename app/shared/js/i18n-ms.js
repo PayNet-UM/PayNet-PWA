@@ -1202,4 +1202,39 @@ Hasn’t checked out yet|Belum mendaftar keluar
 Couldn’t check out. You may be too far away, or you already checked out here recently.|Tidak dapat mendaftar keluar. Anda mungkin terlalu jauh, atau sudah mendaftar keluar di sini baru-baru ini.
 Check out. Earn. Redeem.|Daftar keluar. Kumpul. Tebus.
 Check-out days|Hari daftar keluar
+Here now|Ada di sini
+You’re visible|Anda kelihatan
+Show me|Tunjukkan saya
+See who’s around campus|Lihat siapa ada di kampus
+Switch on “Show me on the campus map” to appear at a shop for 2 hours after you check out there. Only your first name and avatar, never your exact location.|Hidupkan “Tunjukkan saya pada peta kampus” untuk muncul di kedai selama 2 jam selepas anda daftar keluar di sana. Hanya nama pertama dan avatar anda, bukan lokasi tepat anda.
+Loading who’s around…|Memuatkan siapa yang ada…
+Nobody is showing on the map right now. Check out at a shop to be the first.|Tiada sesiapa di peta sekarang. Daftar keluar di kedai untuk menjadi yang pertama.
+1 student here|1 pelajar di sini
+Wave|Lambai
+Waved|Sudah melambai
+Check out here to say hi: you can wave at people at the same shop.|Daftar keluar di sini untuk menyapa: anda boleh melambai kepada orang di kedai yang sama.
+Hide me now|Sembunyikan saya sekarang
+You’re off the map. You’ll appear again at your next check-out.|Anda tiada di peta. Anda akan muncul semula pada daftar keluar seterusnya.
+Show me on the campus map|Tunjukkan saya pada peta kampus
+When this is on, you appear at a shop for|Apabila dihidupkan, anda muncul di kedai selama
+2 hours|2 jam
+after you check out there, so friends can see you’re around and say hi.|selepas anda daftar keluar di sana, supaya rakan tahu anda ada dan boleh menyapa.
+Others see your|Orang lain melihat
+first name, college and avatar|nama pertama, kolej dan avatar
+Never your exact location, and never between check-outs.|Bukan lokasi tepat anda, dan tidak di antara daftar keluar.
+Merchants can’t see it. You can hide yourself any time.|Peniaga tidak dapat melihatnya. Anda boleh sembunyikan diri pada bila-bila masa.
+Who can see me|Siapa boleh lihat saya
+All +Onz students|Semua pelajar +Onz
+Only students from my college|Hanya pelajar dari kolej saya
+Saving takes you off the map now; you’ll appear with the new setting at your next check-out.|Menyimpan akan mengeluarkan anda dari peta sekarang; anda akan muncul dengan tetapan baharu pada daftar keluar seterusnya.
+Done. You’ll show on the map after your next check-out.|Selesai. Anda akan muncul di peta selepas daftar keluar seterusnya.
+You won’t show on the campus map.|Anda tidak akan muncul di peta kampus.
+Campus map|Peta kampus
+Hidden. Switch on to show at shops after you check out.|Tersembunyi. Hidupkan untuk muncul di kedai selepas anda daftar keluar.
+Visible to all students for 2 hours after each check-out.|Kelihatan kepada semua pelajar selama 2 jam selepas setiap daftar keluar.
+Visible to your college for 2 hours after each check-out.|Kelihatan kepada kolej anda selama 2 jam selepas setiap daftar keluar.
+Change|Tukar
+Want friends to see you’re here?|Mahu rakan tahu anda di sini?
+See who’s here|Lihat siapa di sini
+(you)|(anda)
 `;

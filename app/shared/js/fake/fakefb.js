@@ -85,6 +85,8 @@ function getStore() {
 }
 export function resetDemoData() { getStore().reset(); if (env.storage) env.storage.removeItem(env.authKey); }
 export function _rawDocs() { return getStore().docs; }
+// Demo only: edit stored documents directly (used to keep the demo "Here now" crowd fresh).
+export function _rawUpdate(fn) { const st = getStore(); fn(st.docs, Timestamp); st.save(); st.notify(); }
 
 // ---------------------------------------------------------------- app + auth
 export function initializeApp(options) { return { name: '[DEFAULT]', options }; }

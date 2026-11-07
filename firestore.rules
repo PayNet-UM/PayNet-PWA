@@ -100,7 +100,10 @@ service cloud.firestore {
       }
       function selfUpdate() {
         return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
-                                  'inviterUid', 'inviterCode', 'firstVisit', 'refMonth', 'refCount', 'ciDay', 'ciCount'])
+                                  'inviterUid', 'inviterCode', 'firstVisit', 'refMonth', 'refCount', 'ciDay', 'ciCount',
+                                  'showOnMap', 'mapAudience'])
+          && (!changed().hasAny(['showOnMap']) || D().showOnMap is bool)
+          && (!changed().hasAny(['mapAudience']) || D().mapAudience in ['everyone', 'college'])
           && (!changed().hasAny(['inviterUid', 'inviterCode']) || validInviter())
           && (!changed().hasAny(['firstVisit']) || validFirstVisit())
           && (!changed().hasAny(['ciDay', 'ciCount']) || validCiCounter())
@@ -319,6 +322,38 @@ service cloud.firestore {
       allow create: if base() && D().n == 1;
       allow update: if base() && D().merchantId == resource.data.merchantId && D().n == resource.data.n + 1
         && request.time > resource.data.at + duration.value(cfg().checkinCooldownH, 'h');
+    }
+    // ---------- "Here now": opt-in, zone-level presence (no live GPS) ----------
+    // A student who switched on "Show me on the campus map" appears at a shop for 2 hours, and only when they
+    // check out there (the check-out is written in the same batch). Everyone or only their college can see it.
+    match /presence/{u} {
+      function pCheckin() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().zone)).data; }
+      function visibleTo(d) { return d.uid == uid() || d.audience == 'everyone' || d.college == userDoc(uid()).college; }
+      allow read: if isStudent() && visibleTo(resource.data);
+      allow create, update: if isStudent() && u == uid() && D().uid == uid()
+        && userDoc(uid()).showOnMap == true
+        && D().keys().hasOnly(['uid', 'zone', 'zoneName', 'first', 'college', 'audience', 'avatar', 'at', 'expiresAt'])
+        && D().first is string && D().first.size() > 0 && D().first.size() <= 24
+        && D().zoneName is string && D().zoneName.size() <= 80
+        && D().college == userDoc(uid()).college
+        && D().audience == userDoc(uid()).mapAudience
+        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
+        && D().at == request.time && pCheckin().at == request.time
+        && D().expiresAt is timestamp
+        && D().expiresAt > request.time + duration.value(100, 'm') && D().expiresAt < request.time + duration.value(130, 'm');
+      allow delete: if signedIn() && (u == uid() || isMpp());
+    }
+    // A wave from one student to another who is at the same shop right now. One per sender (doc id = sender).
+    match /waves/{to}/inbox/{from} {
+      function pres(x) { return get(/databases/$(database)/documents/presence/$(x)).data; }
+      allow read, delete: if signedIn() && to == uid();
+      allow create, update: if isStudent() && from == uid() && to != uid()
+        && D().keys().hasOnly(['fromFirst', 'avatar', 'zoneName', 'at'])
+        && D().at == request.time && D().fromFirst == pres(uid()).first && D().zoneName == pres(to).zoneName
+        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
+        && pres(uid()).zone == pres(to).zone
+        && pres(uid()).expiresAt > request.time && pres(to).expiresAt > request.time
+        && (pres(to).audience == 'everyone' || pres(to).college == userDoc(uid()).college);
     }
     match /visits/{id} {
       function pairAfter() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().merchantId)).data; }

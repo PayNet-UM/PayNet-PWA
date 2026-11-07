@@ -21,6 +21,10 @@ const RM = '(RM[\\d.,]+)';
 
 // [regex, (match groups…) => Malay]; t() translates a fragment recursively.
 const PATTERNS = [
+  [/^(\d+) students? here( right now\. People show here for 2 hours after they check out\.)?((?: · .+)*)$/, (n, long, rest) => `${n} pelajar di sini${long ? ' sekarang. Pelajar dipaparkan selama 2 jam selepas daftar keluar.' : ''}${(rest || '').replace(/ · (\d+) from (\S+)/, ' · $1 dari $2').replace(' · you’re here', ' · anda di sini')}`],
+  [/^(.+) waved at you at (.+)$/, (a, b) => `${a} melambai kepada anda di ${b}`],
+  [/^You’re on the campus map at (.+) for 2 hours\.$/, (a) => `Anda di peta kampus di ${a} selama 2 jam.`],
+  [/^(\d+) students here at (.+)$/, (n, b) => `${n} pelajar di ${b}`],
   [/^Hi (.+)$/, (n) => `Hai ${n}`],
   [/^Google sign-in didn’t work \((.+)\)\. Try again, or use email and password\.$/, (c) => `Log masuk Google tidak berjaya (${c}). Cuba lagi, atau guna e-mel dan kata laluan.`],
   [new RegExp(`^${N} points?$`), (n) => `${n} mata`],
