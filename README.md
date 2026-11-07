@@ -17,6 +17,7 @@ The code and settings still say `mpp` in places, such as `MPP_ADMIN_EMAILS` and 
 | | Production | Staging |
 |---|---|---|
 | **PWA** | https://umconnectproduction.web.app *(live after the first production release)* | https://umconnect-e455a.web.app |
+| **HEP admin** | https://umconnectproduction-admin.web.app *(live after the first production release)* | https://umconnect-e455a-admin.web.app |
 | **Git branch** | `main` | `development` |
 | **Firebase console** | https://console.firebase.google.com/project/umconnectproduction | https://console.firebase.google.com/project/umconnect-e455a |
 | **Database** | Production Firestore | Staging Firestore |
@@ -57,7 +58,7 @@ Demo mode keeps all data in your browser, so it's the quickest way to try the ap
 
 ## Turning features on and off
 
-HEP chooses what's live under **Settings > Features** on the dashboard, with no deploy. Everything here starts **off**, and people see changes the next time they open or refresh the app. Nothing is deleted.
+HEP chooses what's live under **Settings > Features** on the [HEP admin dashboard](#links), with no deploy. Everything here starts **off**, and people see changes the next time they open or refresh the app. Nothing is deleted.
 
 | Switch | Covers | Blocked by the rules too? |
 |---|---|---|
