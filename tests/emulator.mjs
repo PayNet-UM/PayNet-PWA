@@ -15,6 +15,6 @@ const makeCtx = async ({ uid, email, emailVerified = true }) => {
   return { sdk, db, uid, email, profile: null };
 };
 const adminEmail = (/function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8')) || [])[1];
-const r = await runScenarios({ adminEmail, makeCtx, setTime: () => {}, canSetTime: false });
+const r = await runScenarios({ adminEmail, makeCtx, seedHistory: async (entries) => testEnv.withSecurityRulesDisabled(async (ctx) => { for (const [path, value] of entries) await sdk.setDoc(sdk.doc(ctx.firestore(), path), value, { merge: true }); }), setTime: () => {}, canSetTime: false });
 await testEnv.cleanup();
 process.exit(r.failed ? 1 : 0);

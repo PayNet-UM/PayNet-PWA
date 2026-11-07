@@ -121,7 +121,7 @@ async function googleMap(el, { center, zoom, interactive }) {
       });
     },
     setMe(pos) {
-      if (!pos) return;
+      if (!pos) { if (me) me.map = null; me = null; return; }
       if (me) me.position = { lat: pos.lat, lng: pos.lng };
       else me = new AM({ map, position: { lat: pos.lat, lng: pos.lng }, title: 'You', content: node(meHTML()), zIndex: 1000 });
     },
@@ -190,7 +190,7 @@ async function leafletMap(el, { center, zoom, interactive }) {
       });
     },
     setMe(pos) {
-      if (!pos) return;
+      if (!pos) { if (me) map.removeLayer(me); me = null; return; }
       if (me) me.setLatLng([pos.lat, pos.lng]);
       else me = L.marker([pos.lat, pos.lng], { icon: icon(meHTML(), [22, 22], [11, 11]), title: 'You', zIndexOffset: 1000 }).addTo(map);
     },

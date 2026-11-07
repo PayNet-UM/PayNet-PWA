@@ -55,22 +55,80 @@ const CROWD = [
   ['gayathri@siswa.um.edu.my', 'Gayathri Devi', '23005105', 'KK1', 'dailybowl@demo.my', 'everyone'],
   ['haziq@siswa.um.edu.my', 'Haziq Rahman', '23005106', 'KK5', 'print@demo.my', 'everyone'],
 ];
-// The demo crowd's 2 hours would run out; move them to "just now" each time the demo opens.
-function freshenCrowd(sdk) {
+// Remove ephemeral legacy presence and retire only known demo campaign copy.
+function retireDemoAttendance(sdk) {
+  if (!sdk._rawUpdate) return;
+  sdk._rawUpdate((docs) => {
+    for (const [path, value] of docs) {
+      if (path.startsWith('presence/')) docs.delete(path);
+      if (value.offer === 'Double points on your first visit') docs.set(path, { ...value, offer: 'Campus coffee specials' });
+      if (value.title === 'Double points on your first visit') docs.set(path, { ...value, title: 'Campus coffee specials', type: 'Discount' });
+      if (value.title === 'Late lunch, extra points') docs.set(path, { ...value, title: 'Late lunch specials' });
+      if (path.startsWith('campaigns/')) {
+        const description = String(value.description || '').replace('Every check-in counts for your college.', 'Explore campus merchants in Overview.').replace('Check in at three for the explorer mission.', 'Find student vendors in Overview.');
+        if (description !== value.description) docs.set(path, { ...value, description });
+      }
+    }
+  });
+}
+
+// Add social fixtures once, including to demo campuses created before Friends existed.
+// These records stay editable, so accepted or removed requests survive page reloads.
+function seedDemoFriends(sdk) {
   if (!sdk._rawUpdate) return;
   sdk._rawUpdate((docs, Timestamp) => {
-    let i = 0;
-    for (const [k, v] of docs) {
-      if (!k.startsWith('presence/') || !CROWD.some((c) => v && v.first === D.firstName(c[1]))) continue;
-      const at = Date.now() - (5 + 11 * i++) * 60000;
-      docs.set(k, { ...v, at: new Timestamp(at), expiresAt: new Timestamp(at + D.PRESENCE_HOURS * 3600000) });
+    if (docs.has('stats/demoFriends')) return;
+    const students = [...docs].filter(([path, p]) => /^users\/[^/]+$/.test(path) && p.role === 'student');
+    const aina = students.find(([, p]) => p.email === 'aina@siswa.um.edu.my');
+    const badrul = students.find(([, p]) => p.email === 'badrul@siswa.um.edu.my');
+    if (!aina || !badrul) return;
+    const now = Timestamp.now();
+    const usernameFor = ([path, profile], preferred) => {
+      const uid = path.split('/')[1];
+      if (profile.username) return { uid, username: profile.username };
+      let username = preferred;
+      let suffix = 1;
+      while (docs.has('usernames/' + username)) username = preferred + '_' + suffix++;
+      docs.set('usernames/' + username, { uid });
+      docs.set(path, { ...profile, username });
+      return { uid, username };
+    };
+    const people = new Map();
+    people.set('aina', usernameFor(aina, 'aina_um'));
+    people.set('badrul', usernameFor(badrul, 'badrul_um'));
+    for (const [email, name, matric, college] of CROWD) {
+      const key = email.split('@')[0];
+      let entry = students.find(([, p]) => p.email === email);
+      if (!entry) {
+        const path = 'users/demo_social_' + key;
+        const profile = { role: 'student', email, name, matric, college, faculty: '', points: 0,
+          lastTx: '', createdAt: now };
+        docs.set(path, profile);
+        entry = [path, profile];
+      }
+      people.set(key, usernameFor(entry, key + '_um'));
     }
+    const connect = (sender, recipient, status) => {
+      const from = people.get(sender), to = people.get(recipient);
+      const id = [from.uid, to.uid].sort().join('_');
+      if (!docs.has('friendships/' + id)) docs.set('friendships/' + id, {
+        from: from.uid, to: to.uid, fromUsername: from.username, toUsername: to.username, status, createdAt: now,
+      });
+    };
+    connect('chloe', 'aina', 'pending');
+    connect('danish', 'aina', 'pending');
+    connect('aina', 'elena', 'accepted');
+    connect('aina', 'farid', 'accepted');
+    connect('aina', 'gayathri', 'pending');
+    connect('aina', 'haziq', 'pending');
+    connect('aina', 'badrul', 'pending');
+    docs.set('stats/demoFriends', { version: 1 });
   });
 }
 
 export async function ensureDemoData(backend, progress = () => {}) {
   const { sdk, auth, db } = backend;
-  if (sdk._rawDocs().has('stats/campus')) { freshenCrowd(sdk); return; }
+  if (sdk._rawDocs().has('stats/campus')) { retireDemoAttendance(sdk); seedDemoFriends(sdk); return; }
   progress('Setting up the demo campus…');
   const as = async (email) => {
     try { await sdk.signInWithEmailAndPassword(auth, email, DEMO_PASSWORD); }
@@ -80,8 +138,8 @@ export async function ensureDemoData(backend, progress = () => {}) {
   try {
     let mpp = await as(MPP_EMAIL);
     await D.initProgramme(mpp);
-    await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Visit +Onz merchants and pay cashless. Every check-in counts for your college.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
-    await D.saveCampaign(mpp, null, { name: 'Student Makers Bazaar', description: 'Student-run stalls with DuitNow QR. Check in at three for the explorer mission.', start: D.dayKey(Date.now() + 9 * 86400000), end: D.dayKey(Date.now() + 11 * 86400000), location: 'Kompleks Perdanasiswa', budgetCents: 80000 });
+    await D.saveCampaign(mpp, null, { name: 'Cashless Campus Week', description: 'Visit +Onz merchants and pay cashless. Explore campus merchants in Overview.', start: D.dayKey(), end: D.dayKey(Date.now() + 6 * 86400000), location: 'All of campus', budgetCents: 150000 });
+    await D.saveCampaign(mpp, null, { name: 'Student Makers Bazaar', description: 'Student-run stalls with DuitNow QR. Find student vendors in Overview.', start: D.dayKey(Date.now() + 9 * 86400000), end: D.dayKey(Date.now() + 11 * 86400000), location: 'Kompleks Perdanasiswa', budgetCents: 80000 });
     const ids = {};
     for (const [email, owner, name, account, type, segment, location, zone, seats, , lat, lng] of MERCHANTS) {
       const m = await as(email); ids[email] = m.uid;
@@ -95,8 +153,8 @@ export async function ensureDemoData(backend, progress = () => {}) {
     for (const [email, , name, , , , , , seats, occupied] of MERCHANTS.slice(0, 2)) {
       const m = await as(email); m.merchantName = name;
       await D.setOccupancy(m, seats, occupied);
-      await D.createOffer(m, { title: email.startsWith('kopi') ? 'Double points on your first visit' : 'Free iced tea with any rice bowl', type: 'First-visit bonus', endDate: D.dayKey(Date.now() + 30 * 86400000) });
-      await D.createDeal(m, { title: email.startsWith('kopi') ? 'Afternoon study break' : 'Late lunch, extra points', startMin: email.startsWith('kopi') ? 14 * 60 : 14 * 60 + 30, endMin: email.startsWith('kopi') ? 17 * 60 : 16 * 60 + 30, threshold: 60, bonus: email.startsWith('kopi') ? 40 : 30, limit: 12 });
+      await D.createOffer(m, { title: email.startsWith('kopi') ? 'Campus coffee specials' : 'Free iced tea with any rice bowl', type: 'Discount', endDate: D.dayKey(Date.now() + 30 * 86400000) });
+      await D.createDeal(m, { title: email.startsWith('kopi') ? 'Afternoon study break' : 'Late lunch specials', startMin: email.startsWith('kopi') ? 14 * 60 : 14 * 60 + 30, endMin: email.startsWith('kopi') ? 17 * 60 : 16 * 60 + 30, threshold: 60, bonus: email.startsWith('kopi') ? 40 : 30, limit: 12 });
     }
     mpp = await as(MPP_EMAIL);
     for (const o of await D.pendingOffers(mpp)) await D.reviewOffer(mpp, o, 'approved');
@@ -112,31 +170,14 @@ export async function ensureDemoData(backend, progress = () => {}) {
     badrul.profile = await D.getProfile(badrul);
     await D.applyInviterCode(badrul, aina.profile.referralCode);
 
-    const rules = D.DEFAULT_RULES;
-    const pins = Object.fromEntries(MERCHANTS.map((r) => [r[0], { id: ids[r[0]], name: r[2], lat: r[10], lng: r[11] }]));
-    const visit = async (studentEmail, merchantEmail) => {
-      const s = await as(studentEmail); s.profile = await D.getProfile(s);
-      const m = pins[merchantEmail];
-      await D.checkIn(s, m, { lat: m.lat + 0.00005, lng: m.lng - 0.00004, accuracy: 12 }, rules, null);
-    };
-    progress('Recording a few check-ins…');
-    await visit('aina@siswa.um.edu.my', 'kopikolej@demo.my');
-    await visit('aina@siswa.um.edu.my', 'dailybowl@demo.my');
-    await visit('aina@siswa.um.edu.my', 'print@demo.my');
-    await visit('badrul@siswa.um.edu.my', 'laundry@demo.my');
-    await visit('badrul@siswa.um.edu.my', 'kopikolej@demo.my');
-    const b = await as('badrul@siswa.um.edu.my'); b.profile = await D.getProfile(b); await D.claimFriendBonus(b, rules);
-    progress('Adding students to the campus map…');
-    for (const [email, name, matric, college, shop, audience] of CROWD) {
-      const s = await as(email);
-      await D.createProfile(s, { role: 'student', name, matric, college, faculty: '' });
-      await D.setMapVisibility(s, true, audience);
-      s.profile = await D.getProfile(s);
-      const m = pins[shop];
-      await D.checkIn(s, m, { lat: m.lat + 0.00004, lng: m.lng + 0.00003, accuracy: 10 }, rules, null);
+    progress('Adding demo student accounts…');
+    for (const [email, name, matric, college] of CROWD) {
+      const student = await as(email);
+      await D.createProfile(student, { role: 'student', name, matric, college, faculty: '' });
     }
     const admin = await as(MPP_EMAIL);
     await D.adjustPoints(admin, aina.uid, 300, 'Pilot tester welcome bonus');
+    seedDemoFriends(sdk);
   } catch (e) {
     console.error('Demo setup failed', e);
     toast('Demo setup hit a problem: ' + e.message, true);
@@ -148,7 +189,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
 export function demoSheet(app) {
   const { sdk, auth } = app.backend;
   const admin = app.site === 'admin';
-  const el = sheet(`<h2>You’re in Demo mode</h2><p class="muted">No Firebase project is connected, so everything is stored in this browser and checked against the same security rules as the live app. On the Check in screen you can pretend to stand at any merchant.</p>
+  const el = sheet(`<h2>You’re in Demo mode</h2><p class="muted">No Firebase project is connected, so everything is stored in this browser and checked against the same security rules as the live app. Overview lets you browse merchants and directions without recording attendance.</p>
     <h3 style="margin-top:18px">Switch account</h3><p class="faint">All demo passwords are ${DEMO_PASSWORD}.</p>
     <div class="stack" style="margin-top:8px">${DEMO_ACCOUNTS.filter(([e]) => (e === MPP_EMAIL) === admin).map(([e, l]) => `<button class="btn block" data-as="${esc(e)}" style="justify-content:flex-start">${icon('user')} ${esc(l)}</button>`).join('')}
       <a class="btn block" href="${esc(admin ? siteUrls.client : siteUrls.admin)}" style="justify-content:flex-start">${icon(admin ? 'house' : 'layout-dashboard')} ${admin ? 'Open the student and merchant app' : 'Open the HEP dashboard'}</a></div>

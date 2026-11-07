@@ -16,6 +16,6 @@ const makeCtx = async ({ uid, email, emailVerified = true }) => {
   return { sdk, db: sdk._testDb(auth), uid, email, profile: null, now: () => now };
 };
 const adminEmail = (/function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8')) || [])[1];
-const r = await runScenarios({ adminEmail, makeCtx, setTime: (t) => { now = t; } });
+const r = await runScenarios({ adminEmail, makeCtx, seedHistory: async (entries) => sdk._rawUpdate((docs) => { for (const [path, value] of entries) docs.set(path, { ...docs.get(path), ...value }); }), setTime: (t) => { now = t; } });
 console.log(`Max distinct document lookups in one batch: ${Math.max(...commits)} (Firestore limit 20)`);
 process.exit(r.failed ? 1 : 0);

@@ -41,7 +41,7 @@ async function homeRender(app) {
       ${[['Send your details, logo and location', 'Add your logo, pin your exact spot on the map and upload your DuitNow QR for PayNet’s monthly list.', 'shop'],
         ['HEP verifies your shop', 'They check the QR name matches your business. Usually 1–2 working days.', 'shop'],
         ['Train your staff', 'A 2-minute checklist on cashless payments and redeeming vouchers.', 'shop'],
-        ['Welcome your first visitors', 'Students find you on the map and check in when they arrive.', 'promote']].map(([t, d, h], i) =>
+        ['Welcome your first visitors', 'Students find your shop, directions and offers in Overview.', 'promote']].map(([t, d, h], i) =>
         `<div class="step ${i + 1 < step ? 'done' : i + 1 === step ? 'now' : ''}"><span class="n">${i + 1 < step ? icon('check') : i + 1}</span><div><h3>${t}</h3><p>${d}</p>
           ${i + 1 === step && i !== 1 ? `<a class="btn small primary" style="margin-top:8px" href="#/${h}">${i === 0 ? 'Apply now' : i === 2 ? 'Open checklist' : 'Promote my shop'}</a>` : ''}</div></div>`).join('')}</div></div>` : ''}
     ${m && m.status === 'verified' && !hasPin(m) ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
@@ -50,21 +50,13 @@ async function homeRender(app) {
       ${shortcuts.map(([route, glyph, label, description]) => `<a class="kk-pillar" href="#/${route}"><span class="tile-icon">${icon(glyph)}</span><h3>${label}</h3><p>${description}</p></a>`).join('')}
     </nav>
     ${verified ? `
-      <h2 class="kk-pillars-title">Shop activity</h2>
-      <div class="stats" id="today"><div class="skeleton" style="height:96px"></div><div class="skeleton" style="height:96px"></div></div>
-      <section class="section"><div class="head"><h2>Who’s visiting</h2><a href="#/insights">Insights</a></div><div class="card list" id="feed"><div class="skeleton" style="height:60px"></div></div></section>` : ''}`;
+      <h2 class="kk-pillars-title">Voucher activity</h2><div class="stats" id="merchant-wallet"><div class="skeleton" style="height:96px"></div></div>` : ''}`;
 }
 function homeMount(root, app) {
-  if (!$('#feed', root)) return null;
-  return D.watchMerchantVisits(app.ctx, (vs) => {
-    const today = D.dayKey(); const t = vs.filter((x) => x.day === today);
-    const firstSeen = {}; [...vs].reverse().forEach((x) => { if (!firstSeen[x.uid]) firstSeen[x.uid] = x.id; });
-    const newToday = t.filter((x) => firstSeen[x.uid] === x.id).length;
-    $('#today', root).innerHTML = `
-      <div class="stat"><div class="k">Check-ins today</div><div class="v num">${t.length}</div><div class="s">${new Set(t.map((x) => x.uid)).size} students</div></div>
-      <div class="stat"><div class="k">New visitors today</div><div class="v num">${newToday}</div><div class="s">${t.length - newToday} returning</div></div>`;
-    $('#feed', root).innerHTML = vs.slice(0, 8).map((x) => `<div class="item"><span class="avatar has-art" style="width:36px;height:36px">${avatarSVG(x.avatar || defaultFor(x.uid), { variant: 'head', size: 36 })}</span><div class="grow"><h3>${esc(x.name)}</h3><p>${timeAgo(x.at)}${x.deal ? ' · quiet-hour bonus' : ''}</p></div><span class="badge">${esc(x.college || '')}</span></div>`).join('')
-      || `<div class="empty">${icon('map-pin-check')}<p>Students who check in at your shop will appear here.</p></div>`;
+  if (!$('#merchant-wallet', root)) return null;
+  return D.watchMerchantVouchers(app.ctx, (vouchers) => {
+    const used = vouchers.filter((v) => v.status === 'used');
+    $('#merchant-wallet', root).innerHTML = `<div class="stat"><div class="k">Vouchers used</div><div class="v num">${n(used.length)}</div></div><div class="stat"><div class="k">Ready to redeem</div><div class="v num">${n(vouchers.filter((v) => v.status === 'issued' && !D.voucherExpired(v)).length)}</div></div>`;
   }, () => {});
 }
 
@@ -196,7 +188,7 @@ function pinBlock(m, standalone = false) {
     <div class="pin-map" id="pin-map" aria-label="Map to place your shop"></div>
     <div class="row between pin-bar"><button type="button" class="btn small" id="locate">${icon('locate-fixed')} Use my current location</button>
       <span class="faint num" id="pin-read">${has ? `${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}` : 'No pin yet'}</span></div>
-    <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students navigate here and must be this close to check in.</small>
+    <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students use this pin for directions to your shop.</small>
     <input type="hidden" name="lat" value="${has ? m.lat : ''}"><input type="hidden" name="lng" value="${has ? m.lng : ''}"></div>`;
 }
 async function mountPin(root, form) {
@@ -268,7 +260,7 @@ async function posterRender(app) {
   const m = app.merchant; if (!m) return needVerified(app);
   return `<a class="back no-print" href="#/shop">${icon('arrow-left')} My shop</a>
     <div class="poster" style="margin-top:8px"><img src="icons/icon-192.png" alt="" style="width:56px;height:56px;border-radius:16px">
-      <h1>Check in here, collect points.</h1><p class="muted" style="max-width:36ch">Find ${esc(m.name)} on +Onz, check in when you arrive, and pay cashless with DuitNow QR.</p>
+      <h1>Find us on +Onz.</h1><p class="muted" style="max-width:36ch">Find ${esc(m.name)} on +Onz, explore our offers, and pay cashless with DuitNow QR.</p>
       <div class="qr-frame"><div id="pqr"></div></div><p><b>${esc(m.name)}</b><br><span class="faint">Scan to open this shop in +Onz</span></p></div>
     <div class="row no-print" style="justify-content:center;margin-top:16px"><button class="btn primary" onclick="window.print()">${icon('printer')} Print poster</button></div>`;
 }
@@ -292,14 +284,14 @@ async function promoteRender(app) {
       ${m.occupancyAt ? `<p class="faint" style="margin-top:8px">Last updated ${timeAgo(m.occupancyAt)}</p>` : ''}</section>
     <section class="section"><div class="head"><h2>Live deals</h2><button class="btn small primary" id="new-deal">${icon('plus')} New deal</button></div>
       <div class="stack">${liveDeals.map(({ deal: d, used, status }) => `<article class="card deal-overview-row">
-        <div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · under ${d.threshold}% full · +${d.bonus} pts</p>
-          ${d.status === 'approved' ? `<p class="faint">${used == null ? 'Claim count unavailable' : `${used}/${d.limit} claimed today`}</p>` : ''}</div>
+        <div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · under ${d.threshold}% full</p>
+          </div>
         <div class="row"><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span>
           ${d.status === 'approved' ? `<button class="btn small" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div>
       </article>`).join('') || `<div class="card empty">${icon('clock')}<p>No live deals yet.</p></div>`}</div></section>
     <section class="section"><div class="head"><h2>Offers</h2><button class="btn small primary" id="new-offer">${icon('plus')} New offer</button></div>
       <div class="stack">${offers.map((o) => `<div class="card row between"><div><h3>${esc(o.title)}</h3><p class="faint">${esc(o.type)} · until ${esc(o.endDate)}</p></div><div class="row">${badge(o.status)}
-        ${o.status === 'approved' || o.status === 'pending' ? `<button class="btn small ghost" data-withdraw="${esc(o.id)}">Withdraw</button>` : ''}</div></div>`).join('') || `<div class="card empty">${icon('megaphone')}<p>No offers yet. A first-visit bonus is a good start.</p></div>`}</div></section>`;
+        ${o.status === 'approved' || o.status === 'pending' ? `<button class="btn small ghost" data-withdraw="${esc(o.id)}">Withdraw</button>` : ''}</div></div>`).join('') || `<div class="card empty">${icon('megaphone')}<p>No offers yet. Create a discount or free-item offer.</p></div>`}</div></section>`;
 }
 function promoteMount(root, app) {
   if (!$('#seats', root)) return null;
@@ -310,22 +302,21 @@ function promoteMount(root, app) {
   };
   $('#new-offer', root).onclick = () => {
     const el = sheet(`<h2>New offer</h2><form id="of" class="stack" style="margin-top:12px"><label class="field">What students get<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Free iced tea with any rice set"></label>
-      <label class="field">Type<select name="type"><option>First-visit bonus</option><option>Discount</option><option>Free item</option><option>Extra points day</option></select></label>
+      <label class="field">Type<select name="type"><option>Discount</option><option>Free item</option></select></label>
       <label class="field">Runs until<input name="endDate" type="date" required min="${D.dayKey()}"></label><button class="btn primary">Send to HEP</button></form>`);
     $('#of', el).onsubmit = (e) => { e.preventDefault(); const f = e.target; busy($('button', el), async () => { try { await D.createOffer(app.ctx, { title: f.title.value, type: f.type.value, endDate: f.endDate.value }); closeSheet(); toast('Offer sent to HEP.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
   };
   $('#new-deal', root).onclick = () => {
-    const el = sheet(`<h2>New live deal</h2><p class="muted">Award extra points when students check out during off-peak hours.</p><form id="df" class="stack" style="margin-top:12px">
+    const el = sheet(`<h2>New live deal</h2><p class="muted">Show your offer during quiet hours when seats are available.</p><form id="df" class="stack" style="margin-top:12px">
       <label class="field">Name<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Afternoon study break"></label>
       <div class="grid-2"><label class="field">From<input name="start" type="time" required value="14:00"></label><label class="field">Until<input name="end" type="time" required value="17:00"></label></div>
-      <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="60"></label><label class="field">Bonus points<input name="bonus" type="number" min="1" max="500" required value="40"></label></div>
-      <label class="field">Bonuses per day<input name="limit" type="number" min="1" max="200" required value="12"></label>
+      <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="60"></label></div>
       <button class="btn primary">Send to HEP</button></form>`);
     $('#df', el).onsubmit = (e) => {
       e.preventDefault(); const f = e.target; const s = D.parseHHMM(f.start.value), en = D.parseHHMM(f.end.value);
       if (en <= s) return toast('The end time must be after the start time.', true);
       busy($('button', el), async () => {
-        try { await D.createDeal(app.ctx, { title: f.title.value, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value), bonus: Math.floor(+f.bonus.value), limit: Math.floor(+f.limit.value) }); closeSheet(); toast('Deal sent to HEP.'); app.render(); }
+        try { await D.createDeal(app.ctx, { title: f.title.value, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value), bonus: 0, limit: 1 }); closeSheet(); toast('Deal sent to HEP.'); app.render(); }
         catch (err) { toast(errText(err), true); }
       });
     };
@@ -336,34 +327,17 @@ function promoteMount(root, app) {
   return off;
 }
 
-// ------------------------------------------------------------- insights (from check-ins)
+// ------------------------------------------------------------- insights: recorded voucher redemptions
 async function insightsRender(app) {
   const block = needVerified(app); if (block) return block;
-  return `<div class="page-title"><h1>Insights</h1><p>From students who checked in at your shop on +Onz.</p></div><div id="ins"><div class="skeleton" style="height:240px"></div></div>`;
+  return `<div class="page-title"><h1>Insights</h1><p>Recorded voucher redemptions at your shop.</p></div><div id="ins"><div class="skeleton" style="height:120px"></div></div>`;
 }
 function insightsMount(root, app) {
   if (!$('#ins', root)) return null;
-  return D.watchMerchantVisits(app.ctx, (vs) => {
-    const days = Array.from({ length: 7 }, (_, i) => D.dayKey(Date.now() - (6 - i) * 86400000));
-    const per = days.map((d) => vs.filter((v) => v.day === d).length);
-    const students = new Map(); vs.forEach((v) => students.set(v.uid, (students.get(v.uid) || 0) + 1));
-    const returning = [...students.values()].filter((c) => c > 1).length;
-    const hours = Array.from({ length: 24 }, () => 0); vs.forEach((v) => { hours[new Date((toMs(v.at) || 0) + 8 * 3600000).getUTCHours()]++; });
-    const busiest = hours.indexOf(Math.max(...hours)); const quiet = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].sort((a, b) => hours[a] - hours[b])[0];
-    const month = vs.filter((v) => v.month === D.monthKey());
-    const colleges = {}; vs.forEach((v) => { colleges[v.college] = (colleges[v.college] || 0) + 1; });
-    const topCollege = Object.entries(colleges).sort((a, b) => b[1] - a[1])[0];
-    $('#ins', root).innerHTML = `<div class="stats">
-        <div class="stat"><div class="k">This month</div><div class="v num">${month.length}</div><div class="s">check-ins</div></div>
-        <div class="stat"><div class="k">Students</div><div class="v num">${students.size}</div><div class="s">${returning} came back</div></div>
-        <div class="stat"><div class="k">Top college</div><div class="v num">${topCollege ? esc(topCollege[0]) : '—'}</div><div class="s">${topCollege ? `${topCollege[1]} check-ins` : 'no data yet'}</div></div>
-        <div class="stat"><div class="k">Busiest hour</div><div class="v num">${vs.length ? `${busiest}:00` : '—'}</div><div class="s">${vs.length ? `quietest ${quiet}:00` : 'no data yet'}</div></div></div>
-      <section class="section card pad-lg"><h2>Check-ins, last 7 days</h2><div style="margin-top:12px">${barChart(per, days.map((d) => new Date(d + 'T00:00:00+08:00').toLocaleDateString('en-MY', { weekday: 'short' })), { highlight: 6 })}</div></section>
-      ${vs.length && hours[quiet] < hours[busiest] / 3 ? `<div class="notice" style="margin-top:16px">${icon('info')}<span>${quiet}:00 is your quietest hour. A quiet-hour bonus could bring students in then.</span></div>` : ''}
-      <section class="section"><div class="head"><h2>Recent check-ins</h2><button class="btn small" id="csv">${icon('download')} CSV</button></div><div class="card"><div class="table-wrap"><table class="data"><thead><tr><th>When</th><th>Student</th><th>College</th><th>Bonus</th></tr></thead>
-        <tbody>${vs.slice(0, 50).map((v) => `<tr><td>${fmtDate(v.at)} ${fmtTime(v.at)}</td><td>${esc(v.name)}</td><td>${esc(v.college || '')}</td><td>${v.deal ? 'Quiet hour' : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="faint">No check-ins yet.</td></tr>'}</tbody></table></div></div></section>`;
-    const csv = $('#csv', root);
-    if (csv) csv.onclick = () => (downloadCSV(`${app.merchant.name}-check-ins.csv`, [['Date', 'Time', 'Student', 'College', 'Quiet-hour bonus'], ...vs.map((v) => [v.day, fmtTime(v.at), v.name, v.college, v.deal ? 'yes' : ''])]));
+  return D.watchMerchantVouchers(app.ctx, (vouchers) => {
+    const used = vouchers.filter((v) => v.status === 'used').sort((a, b) => (toMs(b.usedAt) || 0) - (toMs(a.usedAt) || 0));
+    $('#ins', root).innerHTML = `<div class="stats"><div class="stat"><div class="k">Vouchers used</div><div class="v num">${n(used.length)}</div></div><div class="stat"><div class="k">Value redeemed</div><div class="v num">${rm(used.reduce((sum, v) => sum + (v.valueCents || 0), 0))}</div></div></div>
+      <section class="section card pad-lg"><h2>Recent redemptions</h2><div class="list">${used.slice(0, 50).map((v) => `<div class="item"><span class="tile-icon">${icon('ticket')}</span><div class="grow"><h3>${esc(v.title)}</h3><p>${esc(v.studentName)} · ${fmtDate(v.usedAt)}</p></div><b>${rm(v.valueCents)}</b></div>`).join('') || '<p class="faint">No vouchers redeemed yet.</p>'}</div></section>`;
   }, () => {});
 }
 

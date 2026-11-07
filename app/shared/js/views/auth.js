@@ -3,7 +3,7 @@
 import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
-import { langToggleHTML } from '../i18n.js';
+import { langToggleHTML, tr } from '../i18n.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
 const isAdminSite = (app) => app.site === 'admin';
 
@@ -47,7 +47,7 @@ function openInBrowserSheet() {
       <p class="faint">${android ? 'Or tap ⋮ at the top right and choose “Open in browser”.' : 'Then open Safari, paste it in the address bar and sign in. Or tap ••• / the share button and choose “Open in Safari”.'}</p>
       <p class="faint">You can also use “Use email and password instead” below.</p>
     </div>`);
-  $('#copy-link', el).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in your browser.'); } catch { prompt('Copy this link', url); } };
+  $('#copy-link', el).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in your browser.'); } catch { prompt(tr('Copy this link'), url); } };
 }
 
 const REDIRECT_KEY = 'kk-google-redirect';

@@ -7,16 +7,17 @@ import * as Auth from './views/auth.js';
 import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
+import { startDailyAppActivity } from './app-activity.js';
 initI18n();
 
 const app = {
   site: 'client', backend: null, ctx: null, user: null, profile: null, isMpp: false, rules: D.DEFAULT_RULES, role: null,
-  merchant: null, visits: [], ledger: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
+  merchant: null, visits: [], ledger: [], appDays: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
 };
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['home', 'Home', 'house'], ['events', 'Campus Events', 'calendar'], ['checkin', 'Check out', 'map-pin-check', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['community', 'Community', 'handshake'], ['events', 'Campus Events', 'calendar'], ['explore', 'Overview', 'map'], ['home', 'Home', 'house', true], ['friends', 'Friends', 'users'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
@@ -46,7 +47,7 @@ async function boot() {
 
 async function onUser(user) {
   stopWatchers(); closeSheet();
-  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.shellRole = null;
+  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -77,9 +78,10 @@ function startRole(role) {
     paintAvatar();
   }, () => {}));
   if (role === 'student') {
-    import('./herenow.js').then((H) => { if (app.role === 'student') app.watchers.push(H.startWaveListener(app)); }).catch(() => {});
-    app.watchers.push(D.watchMyVisits(app.ctx, (v) => { app.visits = v; app.emit && app.emit('visits'); }, () => {}));
+
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.emit && app.emit('ledger'); }, () => {}));
+    app.watchers.push(D.watchAppDays(app.ctx, (days) => { app.appDays = days; app.emit && app.emit('app-activity'); }, () => {}));
+    app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
   }
   if (role === 'merchant') {
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'merchants', app.ctx.uid), (s) => {
@@ -169,7 +171,10 @@ async function render() {
   if (!app.role || !app.user) return;
   const mod = await loadRoleModule(app.role);
   shell(app.role);
-  const parts = (location.hash.replace(/^#\/?/, '') || mod.defaultRoute).split('/');
+  const requestedPath = location.hash.replace(/^#\/?/, '') || mod.defaultRoute;
+  const canonical = mod.canonicalPath ? mod.canonicalPath(requestedPath) : requestedPath;
+  if (canonical !== requestedPath) history.replaceState(null, '', '#/' + canonical);
+  const parts = canonical.split('/');
   const route = mod.routes[parts[0]] ? parts[0] : mod.defaultRoute;
   const r = mod.routes[route];
   if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }

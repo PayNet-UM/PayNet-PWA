@@ -3,7 +3,7 @@ rules_version = '2';
 // +Onz security rules.
 // Every points change is paired with an immutable ledger entry in the same batch,
 // and each ledger type can only be written by the role allowed to earn it.
-// Students earn by checking in at a merchant's map pin (no purchase tracking).
+// Attendance-based earning and presence writes are retired; historical records stay readable.
 // The admin email below is a placeholder. The build fills it in from MPP_ADMIN_EMAILS for each environment.
 
 service cloud.firestore {
@@ -70,45 +70,26 @@ service cloud.firestore {
           && ledgerAfter().delta == D().points - resource.data.points
         );
       }
-      function hasFirst(d) { return 'firstVisit' in d || 'firstTx' in d; }
       function validInviter() {
-        return !('inviterUid' in resource.data) && !hasFirst(resource.data)
+        return !('inviterUid' in resource.data)
           && D().inviterUid != u
           && get(/databases/$(database)/documents/referralCodes/$(D().inviterCode)).data.uid == D().inviterUid
-          && existsAfter(/databases/$(database)/documents/referrals/$(u));
-      }
-      function validFirstVisit() {
-        return !hasFirst(resource.data)
-          && getAfter(/databases/$(database)/documents/visits/$(D().firstVisit)).data.uid == u;
-      }
-      function validCiCounter() {
-        return D().ciDay == dayKey(request.time) && D().ciCount is int && D().ciCount <= cfg().checkinDailyCap
-          && (('ciDay' in resource.data && resource.data.ciDay == D().ciDay)
-                ? D().ciCount == resource.data.ciCount + 1
-                : D().ciCount == 1)
-          && ptsChanged() && ledgerAfter().type == 'checkin';
+          && existsAfter(/databases/$(database)/documents/referrals/$(u))
+          && existsAfter(/databases/$(database)/documents/friendships/$(u < D().inviterUid ? u + '_' + D().inviterUid : D().inviterUid + '_' + u));
       }
       // avatar: a small map of drawing options (see app/js/avatar.js)
       function validAvatar() { return D().avatar is map && D().avatar.size() <= 16; }
-      function validRefCounter() {
-        return D().refMonth == monthKey(request.time)
-          && D().refCount <= cfg().referralCap
-          && (('refMonth' in resource.data && resource.data.refMonth == D().refMonth)
-                ? D().refCount == resource.data.refCount + 1
-                : D().refCount == 1)
-          && ptsChanged() && ledgerAfter().type == 'inviter';
-      }
       function selfUpdate() {
         return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
-                                  'inviterUid', 'inviterCode', 'firstVisit', 'refMonth', 'refCount', 'ciDay', 'ciCount',
-                                  'showOnMap', 'mapAudience'])
-          && (!changed().hasAny(['showOnMap']) || D().showOnMap is bool)
-          && (!changed().hasAny(['mapAudience']) || D().mapAudience in ['everyone', 'college'])
+                                  'inviterUid', 'inviterCode',
+                                  'showOnMap', 'mapAudience', 'username'])
+          && (!changed().hasAny(['showOnMap']) || D().showOnMap == false)
+          && (!changed().hasAny(['mapAudience']) || D().mapAudience == 'friends')
+          && (!changed().hasAny(['username']) || (!('username' in resource.data)
+            && D().username is string && D().username.matches('^[a-z0-9_]{3,24}$')
+            && getAfter(/databases/$(database)/documents/usernames/$(D().username)).data.uid == u))
           && (!changed().hasAny(['inviterUid', 'inviterCode']) || validInviter())
-          && (!changed().hasAny(['firstVisit']) || validFirstVisit())
-          && (!changed().hasAny(['ciDay', 'ciCount']) || validCiCounter())
           && (!changed().hasAny(['avatar']) || validAvatar())
-          && (!changed().hasAny(['refMonth', 'refCount']) || validRefCounter())
           && (!changed().hasAny(['college']) || D().college is string);
       }
 
@@ -124,36 +105,32 @@ service cloud.firestore {
       allow update: if signedIn() && validPoints() && (
           (uid() == u && resource.data.get('disabled', false) != true && selfUpdate())
           || (isMpp() && changed().hasOnly(['points', 'lastTx', 'disabled'])
-              && (!ptsChanged() || ledgerAfter().type == 'adjust'))
+              && (!ptsChanged() || ledgerAfter().type in ['adjust', 'welfare']))
         );
+
+      // Daily app use is independent of lessons, locations, attendance and points.
+      match /appDays/{day} {
+        allow read: if signedIn() && (uid() == u || isMpp());
+        allow create: if isStudent() && uid() == u
+          && day == dayKey(request.time) && D().day == day
+          && D().keys().hasOnly(['day', 'openedAt']) && D().openedAt == request.time;
+      }
+
+      // One verified learning day per MYT calendar date. Correct practice can
+      // refresh today's record without awarding points or writing attendance.
+      match /activityDays/{day} {
+        allow read: if signedIn() && (uid() == u || isMpp());
+        allow create, update: if isStudent() && uid() == u
+          && day == dayKey(request.time) && D().day == day
+          && D().keys().hasOnly(['day', 'lesson', 'answer', 'completedAt'])
+          && D().lesson in ['lesson0', 'lesson1', 'lesson2'] && D().answer is int
+          && D().answer == get(/databases/$(database)/documents/config/lessonKeys).data[D().lesson]
+          && D().completedAt == request.time;
+      }
 
       // ---------- points ledger (immutable) ----------
       match /ledger/{id} {
         function L() { return request.resource.data; }
-        // Check-in points: the visit is created in the same batch, and a quiet-hour deal adds its bonus.
-        function ciCounted() {
-          return userAfter(u).ciDay == dayKey(request.time)
-            && (userDoc(u).get('ciDay', '') == dayKey(request.time)
-                ? userAfter(u).ciCount == userDoc(u).get('ciCount', 0) + 1
-                : userAfter(u).ciCount == 1);
-        }
-        function dealOk(mid) {
-          let d = get(/databases/$(database)/documents/deals/$(L().deal)).data;
-          let m = get(/databases/$(database)/documents/merchants/$(mid)).data;
-          let kp = /databases/$(database)/documents/dealDays/$(L().deal + '_' + dayKey(request.time));
-          return d.status == 'approved' && d.enabled == true && d.merchantId == mid
-            && minuteOfDay(request.time) >= d.startMin && minuteOfDay(request.time) < d.endMin
-            && m.occupied * 100 < d.threshold * m.seats
-            && L().delta == cfg().checkinPoints + d.bonus
-            && getAfter(kp).data.count <= d.limit
-            && getAfter(kp).data.count == (exists(kp) ? get(kp).data.count + 1 : 1);
-        }
-        function checkinOk() {
-          let v = getAfter(/databases/$(database)/documents/visits/$(id)).data;
-          return !exists(/databases/$(database)/documents/visits/$(id))
-            && v.uid == u && L().merchant == v.merchantId && L().deal == v.deal && ciCounted()
-            && (L().deal == '' ? L().delta == cfg().checkinPoints : dealOk(v.merchantId));
-        }
         function redeemOk() {
           let v = getAfter(/databases/$(database)/documents/vouchers/$(id)).data;
           return !exists(/databases/$(database)/documents/vouchers/$(id))
@@ -164,29 +141,26 @@ service cloud.firestore {
           return L().delta < 0 && w.lastUid == u && w.lastId == id
             && w.points == get(/databases/$(database)/documents/stats/welfare).data.points - L().delta;
         }
-        function hasFirstU(x) { return 'firstVisit' in userDoc(x) || 'firstTx' in userDoc(x); }
-        function refCounted() {
-          return userAfter(u).refMonth == monthKey(request.time)
-            && (userDoc(u).get('refMonth', '') == monthKey(request.time)
-                ? userAfter(u).refCount == userDoc(u).get('refCount', 0) + 1
-                : userAfter(u).refCount == 1);
-        }
         function validEntry() {
           return (uid() == u && isStudent() && (
-                 (L().type == 'checkin' && checkinOk())
-              || (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus)
+                 (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus)
               || (L().type == 'lesson' && id in ['lesson0', 'lesson1', 'lesson2']
                   && L().answer == get(/databases/$(database)/documents/config/lessonKeys).data[id]
                   && L().delta == cfg().lessonBonus)
-              || (L().type == 'friend' && id == 'referral_friend' && 'inviterUid' in userDoc(u)
-                  && hasFirstU(u) && L().delta == cfg().friendBonus)
-              || (L().type == 'inviter' && id == 'ref_' + L().friend
-                  && userDoc(L().friend).inviterUid == u && hasFirstU(L().friend)
-                  && L().delta == cfg().referrerBonus && refCounted())
               || (L().type == 'redeem' && redeemOk())
               || (L().type == 'donate' && donateOk())
             ))
-            || (L().type == 'adjust' && isMpp() && L().note is string && L().note.size() > 2);
+            || (L().type == 'adjust' && isMpp() && L().note is string && L().note.size() > 2)
+            || (L().type == 'welfare' && isMpp() && welfareOk());
+        }
+        function welfareOk() {
+          let w = getAfter(/databases/$(database)/documents/welfareRequests/$(L().requestId)).data;
+          let pool = getAfter(/databases/$(database)/documents/stats/welfare).data;
+          return id == 'welfare_' + L().requestId && w.studentUid == u
+            && get(/databases/$(database)/documents/welfareRequests/$(L().requestId)).data.status == 'pending'
+            && w.status == 'approved' && L().delta == w.amount
+            && pool.lastRequest == L().requestId && pool.points >= 0
+            && pool.points == get(/databases/$(database)/documents/stats/welfare).data.points - w.amount;
         }
         allow read: if signedIn() && (uid() == u || isMpp());
         allow create: if signedIn() && L().by == uid() && L().createdAt == request.time
@@ -217,8 +191,7 @@ service cloud.firestore {
       allow create: if verified() && friend == uid() && D().qualified == false
         && D().inviterUid == userAfter(uid()).inviterUid && D().createdAt == request.time
         && D().keys().hasOnly(['inviterUid', 'friendName', 'createdAt', 'qualified']);
-      allow update: if verified() && friend == uid() && changed().hasOnly(['qualified'])
-        && D().qualified == true && ('firstVisit' in userDoc(uid()) || 'firstTx' in userDoc(uid()));
+      allow update: if false;
     }
 
     // ---------- merchants ----------
@@ -280,7 +253,7 @@ service cloud.firestore {
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
       allow create: if isMerchantRole() && D().merchantId == uid() && D().status == 'pending'
-        && D().enabled == true && D().bonus is int && D().bonus > 0 && D().bonus <= 500
+        && D().enabled == true && D().bonus is int && D().bonus == 0
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
         && D().startMin is int && D().endMin is int && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
@@ -288,84 +261,68 @@ service cloud.firestore {
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 
-    match /dealDays/{k} {
-      function byCheckin() {
-        let l = getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(D().last)).data;
-        return D().keys().hasOnly(['count', 'last'])
-          && !exists(/databases/$(database)/documents/users/$(uid())/ledger/$(D().last))
-          && l.type == 'checkin' && l.deal + '_' + dayKey(request.time) == k;
+    // Retired attendance counters remain readable for archives only.
+    match /dealDays/{k} { allow read: if signedIn(); allow write: if false; }
+    match /checkins/{pair} {
+      allow read: if signedIn() && (pair.matches(uid() + '_.*') || isMpp());
+      allow write: if false;
+    }
+    function friends(a, b) {
+      let id = a < b ? a + '_' + b : b + '_' + a;
+      return exists(/databases/$(database)/documents/friendships/$(id))
+        && get(/databases/$(database)/documents/friendships/$(id)).data.status == 'accepted';
+    }
+    match /usernames/{name} {
+      allow read: if isStudent();
+      allow create: if isStudent() && name.matches('^[a-z0-9_]{3,24}$')
+        && D().keys().hasOnly(['uid']) && D().uid == uid()
+        && !('username' in userDoc(uid()))
+        && userAfter(uid()).username == name;
+    }
+    match /friendships/{id} {
+      function referralRequest() {
+        return 'referralCode' in D() && 'fromName' in D()
+          && userAfter(uid()).inviterUid == D().to
+          && userAfter(uid()).inviterCode == D().referralCode
+          && get(/databases/$(database)/documents/referralCodes/$(D().referralCode)).data.uid == D().to
+          && D().fromName == userDoc(uid()).name.split(' ')[0]
+          && D().fromUsername == userDoc(uid()).get('username', '')
+          && D().toUsername == userDoc(D().to).get('username', '');
       }
-      allow read: if signedIn();
-      allow create: if verified() && D().count == 1 && byCheckin();
-      allow update: if verified() && D().count == resource.data.count + 1 && byCheckin();
+      allow read: if isStudent() && (resource == null || resource.data.from == uid() || resource.data.to == uid());
+      allow create: if isStudent() && D().from == uid() && D().to != uid()
+        && userDoc(D().to).role == 'student'
+        && id == (D().from < D().to ? D().from + '_' + D().to : D().to + '_' + D().from)
+        && D().keys().hasOnly(['from', 'to', 'fromUsername', 'toUsername', 'fromName', 'referralCode', 'status', 'createdAt'])
+        && (referralRequest() || (!('referralCode' in D()) && !('fromName' in D())
+          && D().fromUsername == userDoc(uid()).username
+          && get(/databases/$(database)/documents/usernames/$(D().toUsername)).data.uid == D().to))
+        && D().status == 'pending' && D().createdAt == request.time;
+      allow update: if isStudent() && resource.data.to == uid() && resource.data.status == 'pending'
+        && changed().hasOnly(['status']) && D().status == 'accepted';
+      allow delete: if isStudent() && (resource.data.from == uid() || resource.data.to == uid());
     }
 
-    // ---------- check-ins: a student at a merchant's map pin ----------
-    // One doc per student+merchant holds the last check-in (for the cooldown); every check-in also
-    // writes an immutable visit and a ledger entry with the same id, all in one batch.
-    function nearMerchant(mid, lat, lng) {
-      let m = get(/databases/$(database)/documents/merchants/$(mid)).data;
-      return m.status == 'verified' && 'lat' in m && lat is number && lng is number
-        && math.abs(lat - m.lat) * 111000 <= cfg().checkinRadiusM
-        && math.abs(lng - m.lng) * 111000 <= cfg().checkinRadiusM;
-    }
-    match /checkins/{pair} {
-      function visitId() { return 'ci_' + pair + '_' + string(D().n); }
-      function base() {
-        return isStudent() && pair == uid() + '_' + D().merchantId && D().uid == uid()
-          && D().keys().hasOnly(['uid', 'merchantId', 'n', 'at', 'lat', 'lng', 'acc'])
-          && D().n is int && D().at == request.time && nearMerchant(D().merchantId, D().lat, D().lng)
-          && existsAfter(/databases/$(database)/documents/visits/$(visitId()));
-      }
-      // the id starts with the student's uid, so a student can read their own (even before it exists)
-      allow read: if signedIn() && (pair.matches(uid() + '_.*') || isMpp());
-      allow create: if base() && D().n == 1;
-      allow update: if base() && D().merchantId == resource.data.merchantId && D().n == resource.data.n + 1
-        && request.time > resource.data.at + duration.value(cfg().checkinCooldownH, 'h');
-    }
     // ---------- "Here now": opt-in, zone-level presence (no live GPS) ----------
     // A student who switched on "Show me on the campus map" appears at a shop for 2 hours, and only when they
-    // check out there (the check-out is written in the same batch). Everyone or only their college can see it.
+    // check out there (the check-out is written in the same batch). Only accepted friends can see it.
     match /presence/{u} {
-      function pCheckin() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().zone)).data; }
-      function visibleTo(d) { return d.uid == uid() || d.audience == 'everyone' || d.college == userDoc(uid()).college; }
-      allow read: if isStudent() && visibleTo(resource.data);
-      allow create, update: if isStudent() && u == uid() && D().uid == uid()
-        && userDoc(uid()).showOnMap == true
-        && D().keys().hasOnly(['uid', 'zone', 'zoneName', 'first', 'college', 'audience', 'avatar', 'at', 'expiresAt'])
-        && D().first is string && D().first.size() > 0 && D().first.size() <= 24
-        && D().zoneName is string && D().zoneName.size() <= 80
-        && D().college == userDoc(uid()).college
-        && D().audience == userDoc(uid()).mapAudience
-        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
-        && D().at == request.time && pCheckin().at == request.time
-        && D().expiresAt is timestamp
-        && D().expiresAt > request.time + duration.value(100, 'm') && D().expiresAt < request.time + duration.value(130, 'm');
+      function visibleTo() { return u == uid() || (friends(uid(), u)
+        && userDoc(u).get('showOnMap', false) == true
+        && (resource == null || resource.data.expiresAt > request.time)); }
+      allow get: if isStudent() && visibleTo();
+      allow create, update: if false;
       allow delete: if signedIn() && (u == uid() || isMpp());
     }
     // A wave from one student to another who is at the same shop right now. One per sender (doc id = sender).
     match /waves/{to}/inbox/{from} {
       function pres(x) { return get(/databases/$(database)/documents/presence/$(x)).data; }
       allow read, delete: if signedIn() && to == uid();
-      allow create, update: if isStudent() && from == uid() && to != uid()
-        && D().keys().hasOnly(['fromFirst', 'avatar', 'zoneName', 'at'])
-        && D().at == request.time && D().fromFirst == pres(uid()).first && D().zoneName == pres(to).zoneName
-        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
-        && pres(uid()).zone == pres(to).zone
-        && pres(uid()).expiresAt > request.time && pres(to).expiresAt > request.time
-        && (pres(to).audience == 'everyone' || pres(to).college == userDoc(uid()).college);
+      allow create, update: if false;
     }
     match /visits/{id} {
-      function pairAfter() { return getAfter(/databases/$(database)/documents/checkins/$(uid() + '_' + D().merchantId)).data; }
       allow read: if signedIn() && (resource.data.uid == uid() || resource.data.merchantId == uid() || isMpp());
-      allow create: if isStudent() && D().uid == uid() && D().at == request.time
-        && D().keys().hasOnly(['uid', 'name', 'college', 'merchantId', 'merchantName', 'at', 'day', 'month', 'deal', 'points', 'acc', 'avatar'])
-        && (!('avatar' in D()) || (D().avatar is map && D().avatar.size() <= 16))
-        && id == 'ci_' + uid() + '_' + D().merchantId + '_' + string(pairAfter().n)
-        && pairAfter().at == request.time
-        && D().name == userDoc(uid()).name && D().college == userDoc(uid()).college
-        && D().day == dayKey(request.time) && D().month == monthKey(request.time)
-        && D().points == getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(id)).data.delta;
+      allow create: if false;
       allow update: if isMpp() && changed().hasOnly(['flag', 'flagNote', 'flaggedBy']);
     }
     // Purchase codes from the first pilot version: kept readable for HEP records only.
@@ -374,19 +331,20 @@ service cloud.firestore {
     }
 
     // ---------- campus stats (leaderboard and welfare pool) ----------
+    // College totals are published by server triggers. No student profiles or
+    // individual point balances need to be exposed to the leaderboard client.
+    match /stats/league {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /leagueMembers/{u} {
+      allow read, write: if false;
+    }
     match /stats/campus {
       allow read: if signedIn();
       allow create: if isMpp();
-      allow update: if isMpp() || (isStudent() && campusIncrementOk());
-      function campusIncrementOk() {
-        let v = getAfter(/databases/$(database)/documents/visits/$(D().lastVisit)).data;
-        return changed().hasOnly(['checkins', 'colleges', 'lastVisit'])
-          && !exists(/databases/$(database)/documents/visits/$(D().lastVisit))
-          && v.uid == uid()
-          && D().checkins == resource.data.checkins + 1
-          && D().colleges.diff(resource.data.colleges).affectedKeys().hasOnly([v.college])
-          && D().colleges[v.college] == resource.data.colleges.get(v.college, 0) + 1;
-      }
+      allow update: if isMpp();
+
     }
     match /stats/welfare {
       allow read: if signedIn();
@@ -400,6 +358,30 @@ service cloud.firestore {
     }
 
     // ---------- rewards and vouchers ----------
+    match /welfareRequests/{id} {
+      allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
+      allow create: if isStudent()
+        && D().keys().hasOnly(['studentUid', 'name', 'college', 'amount', 'reason', 'status', 'createdAt'])
+        && D().studentUid == uid() && D().name == userDoc(uid()).name && D().college == userDoc(uid()).college
+        && D().amount is int && D().amount > 0
+        && D().reason is string && D().reason.size() >= 10 && D().reason.size() <= 1000
+        && D().status == 'pending' && D().createdAt == request.time;
+      allow update: if isMpp() && resource.data.status == 'pending'
+        && changed().hasOnly(['status', 'response', 'reviewedBy', 'reviewedAt'])
+        && D().reviewedBy == email() && D().reviewedAt == request.time
+        && D().response is string && D().response.size() <= 500
+        && ((D().status == 'rejected' && D().response.size() >= 3)
+          || (D().status == 'approved' && transferOk()));
+      function transferOk() {
+        let ledgerId = 'welfare_' + id;
+        let l = getAfter(/databases/$(database)/documents/users/$(D().studentUid)/ledger/$(ledgerId)).data;
+        let pool = getAfter(/databases/$(database)/documents/stats/welfare).data;
+        return !exists(/databases/$(database)/documents/users/$(D().studentUid)/ledger/$(ledgerId))
+          && l.type == 'welfare' && l.requestId == id && l.delta == D().amount
+          && pool.lastRequest == id && pool.points >= 0
+          && pool.points == get(/databases/$(database)/documents/stats/welfare).data.points - D().amount;
+      }
+    }
     match /rewards/{r} {
       allow read: if signedIn();
       allow write: if isMpp();
@@ -439,8 +421,7 @@ service cloud.firestore {
 
     match /missionClaims/{id} {
       allow read: if signedIn() && (resource.data.uid == uid() || isMpp());
-      allow create: if isStudent() && D().uid == uid() && D().status == 'pending'
-        && id == uid() + '_' + D().week + '_' + D().mission && D().createdAt == request.time;
+      allow create: if false;
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
     }
 

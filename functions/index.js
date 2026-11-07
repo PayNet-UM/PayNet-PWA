@@ -1,14 +1,25 @@
 // Kampus Kita+ server functions. Firebase Hosting sends /api/** here (see firebase.json), so the app calls
 // them on its own address with no cross-site setup.
 import { onRequest } from 'firebase-functions/v2/https';
+import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
+import { syncLeagueStudent } from './league.js';
 
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
+
+const leagueOptions = { region: 'asia-southeast1', retry: true, maxInstances: 5 };
+export const kkLeaguePoints = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}/ledger/{entry}' },
+  (event) => syncLeagueStudent(db, event.params.uid));
+export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}' }, (event) => {
+  const before = event.data?.before.data(), after = event.data?.after.data();
+  if (before?.college === after?.college && before?.role === after?.role) return;
+  return syncLeagueStudent(db, event.params.uid);
+});
 
 // Hand-off records live in a collection the app itself can't read or write (firestore.rules denies it).
 const store = {

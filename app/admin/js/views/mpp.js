@@ -2,7 +2,7 @@
 import * as D from '../data.js';
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
-import { langToggleHTML } from '../i18n.js';
+import { langToggleHTML, tr } from '../i18n.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
 
@@ -38,29 +38,25 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, o, d, c] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx)]);
+    const [m, o, d, c, w] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx)]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
-    set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', o.length + d.length + c.length);
+    set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', o.length + d.length + c.length + w.length);
   } catch { /* not initialised yet */ }
 }
 
 // ------------------------------------------------------------- overview
 async function overviewRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
-  const [users, merchants, visits, welfare, campus, deals, waitingDeals] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
-    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'campus')), D.approvedDeals(app.ctx), D.pendingDeals(app.ctx)]);
+  const [users, merchants, welfare, league, deals, waitingDeals] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx),
+    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'league')), D.approvedDeals(app.ctx), D.pendingDeals(app.ctx)]);
   const liveDeals = await D.dealOverview(app.ctx, deals, merchants);
-  const students = users.filter((u) => u.role === 'student'); const conf = visits;
-  const active = new Set(conf.map((t) => t.uid)); const verified = merchants.filter((m) => m.status === 'verified');
+  const students = users.filter((u) => u.role === 'student');
+  const verified = merchants.filter((m) => m.status === 'verified');
   const pending = merchants.filter((m) => m.status === 'pending');
-  const days = [...new Set(Array.from({ length: 31 }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`))].filter((d) => d.slice(0, 7) === month && !Number.isNaN(Date.parse(d)) && d <= D.dayKey());
-  const perDay = days.map((d) => conf.filter((t) => t.day === d).length);
-  const byMerchant = {}; conf.forEach((t) => { byMerchant[t.merchantName] = (byMerchant[t.merchantName] || 0) + 1; });
-  const top = Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const today = new Date(Date.now() + 8 * 3600000).getUTCDate();
+  const today = Number(D.dayKey().slice(-2));
   const shortcuts = [
     ['merchants', 'store', 'Merchants', `${pending.length} waiting for review`],
-    ['approvals', 'list-checks', 'Approvals', 'Offers, deals and missions'],
+    ['approvals', 'list-checks', 'Approvals', 'Offers, deals and welfare'],
     ['paynet', 'file-spreadsheet', 'PayNet list', 'Export Lampiran 1'],
   ];
   return `<section class="kk-hero hep-overview-hero">
@@ -73,23 +69,20 @@ async function overviewRender(app) {
     </nav>
     <h2 class="kk-pillars-title">Programme activity</h2>
     <div class="stats">
-      <div class="stat"><div class="k">Check-ins</div><div class="v num">${n(conf.length)}</div><div class="s">in ${monthLabel(month)}</div></div>
-      <div class="stat"><div class="k">Active students</div><div class="v num">${n(active.size)}</div><div class="s">of ${n(students.length)} signed up</div></div>
+      <div class="stat"><div class="k">Students enrolled</div><div class="v num">${n(students.length)}</div></div>
+      <div class="stat"><div class="k">Cashless-ready merchants</div><div class="v num">${n(verified.filter((m) => m.ready).length)}</div></div>
       <div class="stat"><div class="k">Verified merchants</div><div class="v num">${n(verified.length)}</div><div class="s">${pending.length} waiting for review</div></div>
-      <div class="stat"><div class="k">Welfare fund</div><div class="v num">${n(welfare.exists() ? welfare.data().points : 0)}</div><div class="s">points donated</div></div></div>
+      <div class="stat"><div class="k">Welfare fund</div><div class="v num">${n(welfare.exists() ? welfare.data().points : 0)}</div><div class="s">points available</div></div></div>
     <section class="section card pad-lg"><div class="row between"><h2>Live deals</h2><a class="btn small" href="#/approvals">Review deals (${waitingDeals.length})</a></div>
       <p class="faint">${liveDeals.filter((row) => row.status === 'Available').length} live now · ${deals.length} approved</p>
       <div class="list">${liveDeals.map(({ deal: d, merchant: m, used, status }) => `<article class="item deal-overview-row">
-        <div class="grow"><h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · +${d.bonus} pts</p>
-          <p>${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'} · ${used == null ? 'Claim count unavailable' : `${used}/${d.limit} claimed today · ${n(used * d.bonus)} bonus pts awarded`}</p></div>
+        <div class="grow"><h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p>
+          <p>${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</p></div>
         <span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span>
       </article>`).join('') || '<p class="faint">No approved deals yet.</p>'}</div></section>
-    <section class="section card pad-lg"><div class="row between"><h2>Check-ins per day</h2><span class="faint">${monthLabel(month)}</span></div>
-      <div style="margin-top:12px">${perDay.length ? barChart(perDay, days.map((d) => String(+d.slice(8))), { highlight: days.indexOf(D.dayKey()) }) : '<p class="faint">No days yet.</p>'}</div></section>
-    <div class="cols two" style="margin-top:16px">
-      <section class="card pad-lg"><h2>Top merchants this month</h2><table class="data" style="margin-top:8px"><tbody>${top.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No check-ins yet.</td></tr>'}</tbody></table></section>
-      <section class="card pad-lg"><h2>Colleges, all time</h2><table class="data" style="margin-top:8px"><tbody>${Object.entries((campus.exists() && campus.data().colleges) || {}).sort((a, b) => b[1] - a[1]).slice(0, 6)
-        .map(([k, v]) => `<tr><td>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</td><td class="r num">${n(v)}</td></tr>`).join('') || '<tr><td class="faint">No check-ins yet.</td></tr>'}</tbody></table></section></div>`;
+    <div style="margin-top:16px">
+      <section class="card pad-lg"><h2>KK League</h2><p class="faint">Total points earned</p><table class="data" style="margin-top:8px"><tbody>${Object.entries((league.exists() && league.data().colleges) || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })).slice(0, 6)
+        .map(([k, v]) => `<tr><td>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</td><td class="r num">${n(v)} <small>pts</small></td></tr>`).join('') || `<tr><td class="faint">${league.exists() ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.'}</td></tr>`}</tbody></table></section></div>`;
 }
 function setupHTML() {
   return `<div class="page-title"><h1>Set up the programme</h1><p>This creates the points rules, reward catalogue, leaderboard and welfare counters in your Firebase project. Run it once.</p></div>
@@ -151,22 +144,38 @@ function merchantsMount(root, app) {
 
 // ------------------------------------------------------------- approvals
 async function approvalsRender(app) {
-  const [offers, deals, claims] = await Promise.all([D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx)]);
-  app._ap = { offers, deals, claims };
+  const [offers, deals, claims, requests, welfare] = await Promise.all([D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.getWelfareFund(app.ctx)]);
+  app._ap = { offers, deals, claims, requests };
   const empty = (t) => `<div class="empty" style="padding:16px">${t}</div>`;
-  return `<div class="page-title"><h1>Approvals</h1><p>Approve offers and off-peak deals before students can see them. Mission claims add points to the student.</p></div>
+  return `<div class="page-title"><h1>Approvals</h1><p>Approve offers and off-peak deals before students can see them. Historical mission claims can be reviewed separately.</p></div>
     <div class="cols two">
       <section class="card pad-lg"><h2>Offers (${offers.length})</h2><div class="list" style="margin-top:6px">${offers.map((o) => `<div class="item"><div class="grow"><h3>${esc(o.title)}</h3><p>${esc(o.merchantName)} · ${esc(o.type)} · until ${esc(o.endDate)}</p></div>
         <button class="btn small" data-offer="${esc(o.id)}" data-s="rejected">Reject</button><button class="btn small go" data-offer="${esc(o.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No offers waiting.')}</div></section>
-      <section class="card pad-lg"><h2>Live deals (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · under ${d.threshold}% full · +${d.bonus} pts × ${d.limit}/day (max ${n(d.bonus * d.limit)} pts a day)</p></div>
+      <section class="card pad-lg"><h2>Live deals (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · under ${d.threshold}% full</p></div>
         <button class="btn small" data-deal="${esc(d.id)}" data-s="rejected">Reject</button><button class="btn small go" data-deal="${esc(d.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No deals waiting.')}</div></section></div>
-    <section class="card pad-lg" style="margin-top:16px"><h2>Mission claims (${claims.length})</h2><p class="faint">Progress is counted from the student’s check-ins.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
-      <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section>`;
+    <section class="card pad-lg" style="margin-top:16px"><h2>Archived mission claims (${claims.length})</h2><p class="faint">Historical claims only. New attendance missions are paused.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
+      <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section>
+    <section class="card pad-lg hep-welfare-review" style="margin-top:16px"><div class="row between"><h2>Welfare requests <span>(${requests.length})</span></h2><span class="badge">${n(welfare?.points || 0)} <span>points available</span></span></div>
+      <div class="list">${requests.map((request) => `<article class="item hep-welfare-request"><span class="tile-icon">${icon('hand-heart')}</span><div class="grow"><h3>${esc(request.name)}</h3><p>${esc(request.college)} · ${fmtDate(request.createdAt)}</p><p class="hep-welfare-reason" data-no-i18n>${esc(request.reason)}</p></div>
+      <strong class="hep-welfare-amount">${n(request.amount)} <small>pts</small></strong><div class="row"><button class="btn small warn" data-welfare="${esc(request.id)}" data-ok="0">Decline</button><button class="btn small go" data-welfare="${esc(request.id)}" data-ok="1" ${(welfare?.points || 0) < request.amount ? 'disabled title="Not enough points in the fund"' : ''}>Approve</button></div></article>`).join('') || empty('No welfare requests waiting.')}</div></section>`;
 }
 function approvalsMount(root, app) {
   $$('[data-offer]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewOffer(app.ctx, app._ap.offers.find((o) => o.id === b.dataset.offer), b.dataset.s); toast(b.dataset.s === 'approved' ? 'Offer is live.' : 'Offer rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
   $$('[data-deal]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewDeal(app.ctx, b.dataset.deal, b.dataset.s); toast(b.dataset.s === 'approved' ? 'Deal approved.' : 'Deal rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
   $$('[data-claim]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewMissionClaim(app.ctx, app._ap.claims.find((c) => c.id === b.dataset.claim), b.dataset.ok === '1'); toast('Claim reviewed.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
+  $$('[data-welfare]', root).forEach((button) => { button.onclick = () => {
+    const request = app._ap.requests.find((item) => item.id === button.dataset.welfare), approve = button.dataset.ok === '1';
+    const el = sheet(`<h2>${approve ? 'Approve welfare request' : 'Decline welfare request'}</h2><p class="muted">${esc(request.name)} · ${n(request.amount)} <span>pts</span></p>
+      <p class="hep-welfare-reason" data-no-i18n>${esc(request.reason)}</p>${approve ? '<p class="faint">Points move from the welfare pool to the student’s balance.</p>' : ''}
+      <form id="welfare-review-form" class="stack" style="margin-top:14px"><label class="field">Response to student<textarea name="response" rows="3" maxlength="500" ${approve ? '' : 'required minlength="3"'}></textarea></label>
+      <button class="btn ${approve ? 'go' : 'warn'} block" type="submit">${approve ? 'Approve and transfer points' : 'Decline request'}</button></form>`);
+    $('#welfare-review-form', el).onsubmit = (event) => {
+      event.preventDefault(); busy($('button[type=submit]', el), async () => {
+        try { await D.reviewWelfareRequest(app.ctx, request.id, approve, event.target.response.value); closeSheet(); toast(approve ? 'Points transferred.' : 'Request declined.'); app.render(); }
+        catch (error) { toast(errText(error), true); }
+      });
+    };
+  }; });
 }
 
 // ------------------------------------------------------------- PayNet list (Lampiran 1 and 2)
@@ -237,49 +246,15 @@ function paynetMount(root, app) {
 
 // ------------------------------------------------------------- activity check: check-ins vs PayNet counts, unusual patterns
 async function reconRender(app) {
-  const [visits, counts, merchants] = await Promise.all([D.monthVisits(app.ctx, month), D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx)]);
-  app._rc = { visits, merchants };
-  const per = {}; visits.forEach((v) => { per[v.merchantId] = (per[v.merchantId] || 0) + 1; });
-  const verified = merchants.filter((m) => m.status === 'verified'); const byId = Object.fromEntries(merchants.map((m) => [m.id, m]));
-  // unusual: checking in at shops too far apart too quickly, or with a very rough location fix
-  const ex = []; const byStudent = {};
-  [...visits].sort((a, b) => (toMs(a.at) || 0) - (toMs(b.at) || 0)).forEach((v) => {
-    const prev = byStudent[v.uid]; byStudent[v.uid] = v;
-    if ((v.acc || 0) > 80) ex.push([v, `Rough location (±${v.acc} m)`]);
-    if (prev && prev.merchantId !== v.merchantId) {
-      const a = byId[prev.merchantId], b = byId[v.merchantId]; const mins = ((toMs(v.at) || 0) - (toMs(prev.at) || 0)) / 60000;
-      if (a && b && a.lat && b.lat) {
-        const km = Math.hypot((a.lat - b.lat) * 111, (a.lng - b.lng) * 111);
-        if (mins > 0 && km / (mins / 60) > 12 && km > 0.4) ex.push([v, `${km.toFixed(1)} km from the last shop in ${Math.round(mins)} min`]);
-      }
-    }
-  });
-  return `<div class="page-title row between"><div><h1>Activity check</h1><p>Compare check-ins with PayNet’s monthly DuitNow QR counts, and review unusual check-ins before reporting.</p></div>${monthPicker()}</div>
-    <section class="card pad-lg"><div class="row between"><h2>Check-ins vs PayNet, ${monthLabel(month)}</h2><div class="row"><button class="btn small" id="imp">${icon('upload')} Import PayNet CSV</button><button class="btn small" id="exp">${icon('download')} Export</button></div></div>
-      <p class="faint">CSV columns: merchant name, transaction count. Names are matched to verified merchants.</p>
-      <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Merchant</th><th class="r">Check-ins</th><th class="r">PayNet transactions</th><th class="r">Transactions per check-in</th></tr></thead><tbody>
-      ${verified.map((m) => { const c = counts.find((x) => x.merchantId === m.id); const a = per[m.id] || 0;
-        return `<tr><td>${esc(m.name)}</td><td class="r num">${n(a)}</td><td class="r num">${c ? n(c.count) : '<span class="faint">—</span>'}</td><td class="r num">${c && a ? (c.count / a).toFixed(1) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="4" class="faint">No verified merchants.</td></tr>'}
-      <tr><td><b>Total</b></td><td class="r num"><b>${n(visits.length)}</b></td><td class="r num"><b>${n(counts.reduce((s, c) => s + c.count, 0))}</b></td><td></td></tr></tbody></table></div>
-      <p class="faint" style="margin-top:8px">+Onz doesn’t record payments. PayNet’s counts show cashless volume at each listed merchant; check-ins show foot traffic the app brought.</p></section>
-    <section class="card pad-lg" style="margin-top:16px"><h2>Unusual check-ins (${ex.length})</h2><div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>When</th><th>Student</th><th>Merchant</th><th>Why flagged</th><th></th></tr></thead><tbody>
-      ${ex.map(([v, why]) => `<tr><td>${fmtDateTime(v.at)}</td><td>${esc(v.name)}</td><td>${esc(v.merchantName)}</td><td>${esc(why)}${v.flag ? `<br><span class="badge ${v.flag === 'ok' ? 'ok' : 'bad'}">${v.flag === 'ok' ? 'Checked: fine' : 'Points removed'}</span>` : ''}</td>
-        <td class="r">${v.flag ? '' : `<button class="btn small" data-ok="${esc(v.id)}">Looks fine</button> <button class="btn small warn" data-undo="${esc(v.id)}">Remove points</button>`}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">Nothing unusual this month.</td></tr>'}</tbody></table></div></section>`;
+  const [counts, merchants] = await Promise.all([D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx)]);
+  app._rc = { merchants, counts };
+  return `<div class="page-title row between"><div><h1>Activity check</h1><p>Imported PayNet transaction counts.</p></div>${monthPicker()}</div>
+    <section class="card pad-lg"><div class="row between"><h2>PayNet transactions</h2><div class="row"><button class="btn small" id="imp">${icon('upload')} Import PayNet CSV</button><button class="btn small" id="exp">${icon('download')} Export</button></div></div>
+    <div class="table-wrap"><table class="data"><thead><tr><th>Merchant</th><th class="r">PayNet transactions</th></tr></thead><tbody>${merchants.filter((m) => m.status === 'verified').map((m) => { const row = counts.find((r) => r.merchantId === m.id); return `<tr><td>${esc(m.name)}</td><td class="r num">${row ? n(row.count) : '—'}</td></tr>`; }).join('')}</tbody></table></div></section>`;
 }
 function reconMount(root, app) {
   bindMonth(root, app);
-  const find = (id) => app._rc.visits.find((t) => t.id === id);
-  $$('[data-ok]', root).forEach((b) => { b.onclick = () => busy(b, async () => { await D.flagVisit(app.ctx, b.dataset.ok, 'ok', 'Reviewed'); app.render(); }); });
-  $$('[data-undo]', root).forEach((b) => {
-    b.onclick = async () => {
-      const v = find(b.dataset.undo);
-      if (!(await confirmSheet('Remove these points?', `${esc(v.name)} loses ${v.points} points from the check-in at ${esc(v.merchantName)}. This is recorded in their history.`, 'Remove points', true))) return;
-      try { await D.adjustPoints(app.ctx, v.uid, -v.points, `Reversed check-in at ${v.merchantName} after review`); await D.flagVisit(app.ctx, v.id, 'reversed', 'Points removed'); toast('Points removed.'); app.render(); }
-      catch (e) { toast(e.code === 'permission-denied' ? 'The student has already spent those points. Remove fewer, or note it instead.' : errText(e), true); }
-    };
-  });
-  $('#exp', root).onclick = () => downloadCSV(`Check-ins-UM-${month}.csv`, [['Date', 'Time', 'Student', 'College', 'Merchant', 'Points', 'Quiet-hour bonus', 'Location accuracy (m)', 'Flag'],
-    ...app._rc.visits.map((v) => [v.day, new Date(toMs(v.at)).toISOString(), v.name, v.college, v.merchantName, v.points, v.deal ? 'yes' : '', v.acc || '', v.flag || ''])]);
+  $('#exp', root).onclick = () => downloadCSV(`PayNet-UM-${month}.csv`, [['Merchant', 'Transactions'], ...app._rc.counts.map((r) => [r.merchantName, r.count])]);
   $('#imp', root).onclick = () => {
     const el = sheet(`<h2>Import PayNet counts</h2><p class="muted">For ${monthLabel(month)}. A CSV with merchant name in the first column and transaction count in the second.</p>
       <input type="file" id="f" accept=".csv,text/csv" style="margin-top:12px"><div id="pv" style="margin-top:12px"></div>`);
@@ -374,28 +349,19 @@ function campaignsMount(root, app) {
 
 // ------------------------------------------------------------- KPIs and surveys
 async function kpisRender(app) {
-  const [users, merchants, visits, surveys, claims, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.monthVisits(app.ctx, month),
-    D.listSurveys(app.ctx), app.backend.sdk.getDocs(app.backend.sdk.collection(app.ctx.db, 'missionClaims')).then((s) => s.docs.map((d) => d.data())), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
+  const [users, merchants, surveys, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.listSurveys(app.ctx), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
   app._sv = { surveys, users };
-  const students = users.filter((u) => u.role === 'student'); const conf = visits;
-  const verified = merchants.filter((m) => m.status === 'verified'); const ready = verified.filter((m) => m.ready);
-  const perStudentDays = {}; conf.forEach((t) => { (perStudentDays[t.uid] = perStudentDays[t.uid] || new Set()).add(t.day); });
-  const active = Object.keys(perStudentDays).length; const repeat = Object.values(perStudentDays).filter((s) => s.size >= 2).length;
-  const sustained = verified.filter((m) => conf.some((t) => t.merchantId === m.id)).length;
-  const monthClaims = claims.filter((c) => String(c.week).slice(0, 7) <= month);
+  const students = users.filter((u) => u.role === 'student');
+  const verified = merchants.filter((m) => m.status === 'verified'), ready = verified.filter((m) => m.ready);
   const sStu = surveys.filter((s) => s.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((s, x) => s + x.knowledge, 0) / sStu.length) : 0;
   const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((s) => s.grade === g).length, surveys.filter((s) => s.role === 'merchant' && s.grade === g).length]);
   const kpi = [
     ['Eligible merchants onboarded', n(verified.length), 'Verified merchants on the PayNet list'],
     ['Merchant readiness', verified.length ? Math.round((ready.length / verified.length) * 100) + '%' : '—', `${ready.length} of ${verified.length} finished the staff checklist`],
     ['Transaction frequency', n(counts.reduce((s, c) => s + c.count, 0)), `DuitNow QR transactions PayNet counted at listed merchants in ${monthLabel(month)} (import on Activity check)`],
-    ['Campus visits', n(conf.length), `Student check-ins at merchants in ${monthLabel(month)}`],
-    ['Sustained activity', `${sustained} of ${verified.length}`, 'Verified merchants with at least one check-in this month'],
-    ['Active participants', n(active), `Students who checked in this month (of ${students.length} signed up)`],
-    ['Repeat usage', active ? Math.round((repeat / active) * 100) + '%' : '—', `${repeat} students checked in on 2 or more days`],
-    ['Campaign conversion', `${monthClaims.filter((c) => c.status === 'approved').length}`, 'Mission claims approved'],
+    ['Students enrolled', n(students.length), 'Registered student accounts'],
     ['Financial capability', sStu.length ? avgK + '%' : '—', `Average knowledge score across ${sStu.length} student money checks`],
-    ['Referral sign-ups', n(refs.length), `${refs.filter((r) => r.qualified).length} checked in for the first time`],
+    ['Referral sign-ups', n(refs.length), 'Referral codes linked to student accounts'],
     ['Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), `${rm(vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + v.valueCents, 0))} paid out`],
   ];
   return `<div class="page-title row between"><div><h1>KPIs and surveys</h1><p>The solution map’s KPIs, calculated live from app records.</p></div>${monthPicker()}</div>
@@ -403,7 +369,7 @@ async function kpisRender(app) {
       <div class="row end" style="margin-top:10px"><button class="btn small" id="kcsv">${icon('download')} Export KPIs</button></div></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Money check results</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
       <table class="data" style="margin-top:10px"><thead><tr><th>Grade</th><th class="r">Students</th><th class="r">Merchants</th><th>Suggested support</th></tr></thead><tbody>
-      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons, ambassador check-in', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></section>`;
+      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></section>`;
 }
 function kpisMount(root, app) {
   bindMonth(root, app);
@@ -428,7 +394,7 @@ function peopleMount(root, app) {
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
-        if (next && !confirm(`Block ${u.name}? They won't be able to earn or redeem until you unblock them.`)) return;
+        if (next && !confirm(tr(`Block ${u.name}? They won't be able to earn or redeem until you unblock them.`))) return;
         busy(b, async () => { try { await D.setBlocked(app.ctx, u.id, next); toast(next ? 'Student blocked.' : 'Student unblocked.'); app.render(); } catch (err) { toast(errText(err), true); } });
       };
     });
@@ -443,7 +409,7 @@ function peopleMount(root, app) {
     });
   };
   $('#pq', root).oninput = (e) => { peopleQ = e.target.value; draw(); }; draw();
-  $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(`Release matric number ${m}?`)) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
+  $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(tr(`Release matric number ${m}?`))) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
 }
 
 // ------------------------------------------------------------- settings
@@ -454,11 +420,7 @@ async function settingsRender(app) {
   const list = (k) => esc((access?.[k] || []).join('\n'));
   return `<div class="page-title"><h1>Settings</h1><p>Changes apply to new activity only. Past points stay as they were.</p></div>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
-      <div class="grid-2">${field('checkinPoints', 'Points per check-in', 'At a merchant’s pin', 1, 500)}${field('checkinRadiusM', 'Check-in distance (metres)', 'How close to the pin', 20, 300)}</div>
-      <div class="grid-2">${field('checkinCooldownH', 'Hours between check-ins', 'Same student, same shop', 1, 48)}${field('checkinDailyCap', 'Check-ins that earn per day', 'Per student', 1, 50)}</div>
       <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}</div>
-      <div class="grid-2">${field('referrerBonus', 'Referral: inviter', 'After friend’s first check-in')}${field('friendBonus', 'Referral: new friend', 'After their first check-in')}</div>
-      ${field('referralCap', 'Referral bonuses a month', 'Per inviter', 1, 100)}
       <button class="btn primary">Save rules</button></form>
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
@@ -471,7 +433,7 @@ function settingsMount(root, app) {
   if (!$('#rules', root)) return;
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { checkinPoints: v('checkinPoints'), checkinRadiusM: v('checkinRadiusM'), checkinCooldownH: v('checkinCooldownH'), checkinDailyCap: v('checkinDailyCap'), surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), referrerBonus: v('referrerBonus'), friendBonus: v('friendBonus'), referralCap: v('referralCap') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#access', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const lines = (k) => f[k].value.split(/[\s,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
