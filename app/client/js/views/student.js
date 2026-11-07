@@ -548,7 +548,7 @@ function communityMount(root, app) {
   };
   $('#request-welfare', root).onclick = () => {
     const el = sheet(`<div class="welfare-form-heading"><span class="community-support-icon">${icon('wallet')}</span><div><h2>Request welfare points</h2><p class="faint">HEP reviews each request.</p></div></div>
-      <form id="welfare-request-form" class="stack" style="margin-top:18px"><label class="field">Points requested<input name="amount" type="number" min="1" step="1" inputmode="numeric" required></label>
+      <form id="welfare-request-form" class="stack" style="margin-top:18px"><label class="field">Points requested<input name="amount" type="number" min="1" max="${D.WELFARE_MAX_POINTS}" step="1" inputmode="numeric" required></label>
       <label class="field">What do you need help with?<textarea name="reason" rows="3" minlength="10" maxlength="1000" placeholder="Meals, study materials or other essentials" required></textarea></label>
       <p class="faint">Only you and HEP can see your request.</p><button class="btn primary block" type="submit">Send request ${icon('arrow-right')}</button></form>`);
     $('#welfare-request-form', el).onsubmit = (event) => {
@@ -665,7 +665,7 @@ async function meRender(app) {
       ${!p.inviterUid ? `<form id="inv" class="row" style="margin-top:14px;flex-wrap:nowrap"><input name="code" placeholder="Friend’s code, e.g. AINA-7K2Q" required aria-label="Friend’s referral code"><button class="btn">Add</button></form>` : p.inviterCode ? `<p class="faint" style="margin-top:12px">You joined with code ${esc(p.inviterCode)}.</p>` : ''}
     </section>
     <section class="section"><div class="head"><h2>Profile</h2></div><form id="prof" class="card stack">
-      <label class="field">Name<input name="name" required minlength="2" value="${esc(p.name)}"></label>
+      <label class="field">Name<input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}"></label>
       <label class="field">Matric number<input value="${esc(p.matric || '')}" readonly aria-readonly="true"></label>
       <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === p.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
       <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === p.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>

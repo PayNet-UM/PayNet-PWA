@@ -155,6 +155,12 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
 
   log('Earning');
   stuA.profile = await D.getProfile(stuA);
+  await denied('survey bonus cannot be claimed without a survey on file', async () => {
+    const b = stuB.sdk.writeBatch(stuB.db);
+    b.set(stuB.sdk.doc(stuB.db, 'users', 'stuB', 'ledger', 'survey'), { type: 'survey', delta: 50, by: 'stuB', createdAt: stuB.sdk.serverTimestamp() });
+    b.update(stuB.sdk.doc(stuB.db, 'users', 'stuB'), { points: stuB.sdk.increment(50), lastTx: 'survey' });
+    await b.commit();
+  });
   await ok('baseline survey earns 50 points once', async () => {
     const res = D.scoreSurvey('student', { k0: 1, k1: 0, k2: 1, k3: 1, d0: 2, d1: 2, d2: 2 });
     eq(res.grade, 'A'); eq(await D.submitSurvey(stuA, res, rules), 50);
@@ -217,6 +223,27 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('other students cannot read a private welfare reason', () => stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'welfareRequests', welfareRequest)));
   await ok('another student can submit their own private request', async () => {
     rejectedRequest = await D.submitWelfareRequest(stuB, 5, 'Help with printing study materials.');
+  });
+  await ok('the app refuses a second welfare request on the same day', async () => {
+    let message = '';
+    try { await D.submitWelfareRequest(stuB, 5, 'A second request on the same day.'); } catch (e) { message = e.message; }
+    eq(message.startsWith('You’ve already sent a request today'), true, message);
+  });
+  await denied('a second welfare request cannot overwrite the first', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'welfareRequests', rejectedRequest), { studentUid: 'stuB', name: stuB.profile.name, college: stuB.profile.college, amount: 7, reason: 'Trying to replace my request.', status: 'pending', createdAt: stuB.sdk.serverTimestamp() }));
+  const limitStudent = await makeCtx({ uid: 'stuLimit', email: 'limit@siswa.um.edu.my' });
+  await D.createProfile(limitStudent, { role: 'student', name: 'Limit Student', matric: 'LIMIT0001', college: 'KK1', faculty: 'FS' });
+  const welfareDoc = (amount) => ({ studentUid: 'stuLimit', name: 'Limit Student', college: 'KK1', amount, reason: 'Testing the request limits.', status: 'pending', createdAt: limitStudent.sdk.serverTimestamp() });
+  const limitToday = limitStudent.sdk.doc(limitStudent.db, 'welfareRequests', 'stuLimit_' + D.dayKey(D.clock(limitStudent)));
+  await denied('a welfare request cannot ask for more than 1,000 points', () => limitStudent.sdk.setDoc(limitToday, welfareDoc(1001)));
+  await denied('a welfare request cannot pick its own ID to get round the daily limit', () => limitStudent.sdk.setDoc(limitStudent.sdk.doc(limitStudent.db, 'welfareRequests', 'stuLimit_extra'), welfareDoc(5)));
+  await ok('a welfare request for exactly 1,000 points is allowed', () => limitStudent.sdk.setDoc(limitToday, welfareDoc(1000)));
+  await denied('a name cannot be longer than 100 characters', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'users', 'stuA'), { name: 'A'.repeat(101) }));
+  const matricSquatter = await makeCtx({ uid: 'squatter', email: 'squatter@shop.my' });
+  await denied('a merchant account cannot claim a student matric number', async () => {
+    const b = matricSquatter.sdk.writeBatch(matricSquatter.db);
+    b.set(matricSquatter.sdk.doc(matricSquatter.db, 'users', 'squatter'), { role: 'merchant', name: 'Squatter', email: 'squatter@shop.my', matric: 'SQUAT0001', college: '', faculty: '', points: 0, lastTx: '', referralCode: '', createdAt: matricSquatter.sdk.serverTimestamp() });
+    b.set(matricSquatter.sdk.doc(matricSquatter.db, 'matrics', 'SQUAT0001'), { uid: 'squatter' });
+    await b.commit();
   });
   await denied('student cannot list all welfare applications', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'welfareRequests')));
   await denied('merchant cannot apply for student welfare points', () => D.submitWelfareRequest(merch, 5, 'Not a student application.'));

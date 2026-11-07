@@ -185,6 +185,8 @@ function bagFront(a) {
     <rect x="151" y="189" width="11" height="7" rx="2" fill="${shade(ac, 0.24)}"/>`;
 }
 
+const attr = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 // Returns an SVG string. variant 'full' shows the whole character; 'head' crops to the face (for small circles).
 export function avatarSVG(raw, { variant = 'full', size = 160, bg = true, title = '' } = {}) {
   const a = clean(raw);
@@ -194,7 +196,7 @@ export function avatarSVG(raw, { variant = 'full', size = 160, bg = true, title 
   const h = variant === 'full' ? Math.round(size * 1.3) : size;
   const tud = isTudung(a.hair);
   const hatSvg = tud && !['crown', 'grad'].includes(a.hat) ? '' : hat(a);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${h}" role="img" aria-label="${title || 'Avatar'}" class="kk-avatar">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${h}" role="img" aria-label="${attr(title || 'Avatar')}" class="kk-avatar">
     ${bg ? `<rect x="-20" y="-20" width="240" height="300" fill="${BG_COLORS[a.bg]}"/>` : ''}
     ${bagBack(a)}${hairBack(a, hc)}
     ${body(a)}

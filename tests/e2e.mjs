@@ -237,6 +237,9 @@ if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live 
 await offStu.locator('#clist h3 a[href^="#/merchant/"]').first().click(); await offStu.waitForSelector('text=Visit this shop', { timeout: 20000 });
 if (await offStu.locator('text=Pay cashless if you buy').count() !== 0) throw new Error('shop page shows the cashless step while its switch is off');
 ok('HEP turned Overview back on, and the directory returned without Live deals');
+// Leaving a map straight after it opens must not leave work running against the removed map.
+await offStu.evaluate(async () => { const { createMap } = await import(new URL('js/map.js', location.href).href); const el = document.createElement('div'); el.style.cssText = 'width:200px;height:200px'; document.body.append(el); const m = await createMap(el); m.remove(); el.remove(); await new Promise((r) => setTimeout(r, 300)); });
+ok('a map closed straight after opening leaves nothing running');
 
 console.log(errors.length ? '\nErrors:\n' + errors.join('\n') : '\nNo page errors.');
 await b.close();

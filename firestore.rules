@@ -92,6 +92,7 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/usernames/$(D().username)).data.uid == u))
           && (!changed().hasAny(['inviterUid', 'inviterCode']) || validInviter())
           && (!changed().hasAny(['avatar']) || validAvatar())
+          && (!changed().hasAny(['name']) || (D().name is string && D().name.size() > 1 && D().name.size() <= 100))
           && (!changed().hasAny(['college']) || D().college is string);
       }
 
@@ -100,8 +101,8 @@ service cloud.firestore {
         && D().keys().hasOnly(['role', 'name', 'email', 'matric', 'college', 'faculty', 'points', 'lastTx',
                                'referralCode', 'goalCents', 'createdAt'])
         && D().points == 0 && D().lastTx == '' && D().email == email()
-        && D().createdAt == request.time && D().name is string && D().name.size() > 1
-        && ((D().role == 'merchant' && featureOn('merchantSignup')) || (D().role == 'student' && studentEmailAllowed()
+        && D().createdAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
+        && ((D().role == 'merchant' && featureOn('merchantSignup') && D().get('matric', '') == '') || (D().role == 'student' && studentEmailAllowed()
             && D().matric is string && D().matric.matches('^[A-Z0-9]{5,15}$')
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
@@ -145,7 +146,8 @@ service cloud.firestore {
         }
         function validEntry() {
           return (uid() == u && isStudent() && (
-                 (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus)
+                 (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus
+                  && exists(/databases/$(database)/documents/surveys/$(u)))
               || (L().type == 'lesson' && id in ['lesson0', 'lesson1', 'lesson2']
                   && L().answer == get(/databases/$(database)/documents/config/lessonKeys).data[id]
                   && L().delta == cfg().lessonBonus)
@@ -178,7 +180,7 @@ service cloud.firestore {
       allow get: if signedIn();
       allow list, delete: if isMpp();
       allow create: if verified() && D().uid == uid() && D().keys().hasOnly(['uid'])
-        && userAfter(uid()).matric == m;
+        && userAfter(uid()).role == 'student' && userAfter(uid()).matric == m;
     }
 
     // ---------- referral codes ----------
@@ -214,7 +216,7 @@ service cloud.firestore {
       }
       allow read: if signedIn() && (resource.data.status == 'verified' || m == uid() || isMpp());
       allow create: if isMerchantRole() && featureOn('merchantSignup') && m == uid() && D().ownerUid == uid() && D().status == 'pending'
-        && D().submittedAt == request.time && D().name is string && D().name.size() > 1
+        && D().submittedAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
         && D().keys().hasOnly(['ownerUid', 'status', 'submittedAt', 'name', 'type', 'segment', 'location',
                                'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
         && 'lat' in D() && 'logo' in D() && geoOk() && logoOk();
@@ -223,7 +225,7 @@ service cloud.firestore {
              && changed().hasOnly(['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd',
                                    'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt',
                                    'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
-             && geoOk() && logoOk() && D().status == 'pending' && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
+             && geoOk() && logoOk() && D().status == 'pending' && D().name is string && D().name.size() <= 100 && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
           || (m == uid() && resource.data.status == 'verified'
              && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
              && geoOk() && logoOk()
@@ -362,10 +364,11 @@ service cloud.firestore {
     // ---------- rewards and vouchers ----------
     match /welfareRequests/{id} {
       allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
-      allow create: if isStudent()
+      // The ID is the student and today's date, so each student can send one request a day.
+      allow create: if isStudent() && id == uid() + '_' + dayKey(request.time)
         && D().keys().hasOnly(['studentUid', 'name', 'college', 'amount', 'reason', 'status', 'createdAt'])
         && D().studentUid == uid() && D().name == userDoc(uid()).name && D().college == userDoc(uid()).college
-        && D().amount is int && D().amount > 0
+        && D().amount is int && D().amount > 0 && D().amount <= 1000
         && D().reason is string && D().reason.size() >= 10 && D().reason.size() <= 1000
         && D().status == 'pending' && D().createdAt == request.time;
       allow update: if isMpp() && resource.data.status == 'pending'

@@ -170,7 +170,7 @@ async function leafletMap(el, { center, zoom, interactive }) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
   }).addTo(map);
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
-  setTimeout(() => map.invalidateSize(), 60);
+  const resizeTimer = setTimeout(() => map.invalidateSize(), 60);
   const icon = (html, size = [40, 48], anchor = [20, 46]) => L.divIcon({ className: 'kk-pin-wrap', iconSize: size, iconAnchor: anchor, popupAnchor: [0, -42], html });
   const layer = L.layerGroup().addTo(map); const crowdLayer = L.layerGroup().addTo(map); let me = null, drag = null;
   return {
@@ -207,7 +207,7 @@ async function leafletMap(el, { center, zoom, interactive }) {
       } else drag.setLatLng([lat, lng]);
     },
     zoom: () => map.getZoom(),
-    remove() { try { map.stop(); map.off(); map.remove(); } catch { /* already gone */ } },
+    remove() { clearTimeout(resizeTimer); try { map.stop(); map.off(); map.remove(); } catch { /* already gone */ } },
   };
 }
 

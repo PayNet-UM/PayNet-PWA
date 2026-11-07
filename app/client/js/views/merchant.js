@@ -126,7 +126,7 @@ async function shopRender(app) {
     ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. HEP will check that your QR name matches your business.</span></div>` : ''}
     <section class="section"><div class="head"><h2>Business details</h2></div>
     <form id="app-form" class="card stack" ${editable ? '' : 'inert'}>
-      <label class="field">Business name, as students know it<input name="name" required minlength="2" value="${v('name')}"></label>
+      <label class="field">Business name, as students know it<input name="name" required minlength="2" maxlength="100" value="${v('name')}"></label>
       <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>HEP checks this matches the QR.</small></label>
       <div class="grid-2"><label class="field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
       <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>

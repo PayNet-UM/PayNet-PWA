@@ -1175,6 +1175,8 @@ Claims reviewed by HEP, usually within a day.|Tuntutan disemak HEP, biasanya dal
 Unlock hats as you earn points.|Buka topi dengan mengumpul mata.
 Pay with DuitNow QR in your bank or e-wallet app.|Bayar dengan DuitNow QR dalam aplikasi bank atau e-dompet anda.
 Events, lessons and rewards in one place.|Acara, pelajaran dan ganjaran di satu tempat.
+You can ask for up to 1,000 points at a time.|Anda boleh meminta sehingga 1,000 mata pada satu masa.
+You’ve already sent a request today. You can send another tomorrow.|Anda sudah menghantar permohonan hari ini. Anda boleh menghantar lagi esok.
 Sign in with Google. New users get an account.|Log masuk dengan Google. Pengguna baharu akan mendapat akaun.
 Usually reviewed within 1–2 working days.|Biasanya disemak dalam 1–2 hari bekerja.
 Submit your shop details for HEP verification.|Hantar butiran kedai untuk pengesahan HEP.
