@@ -4,7 +4,7 @@ const VERSION = 'umc-__VERSION__';
 const SHELL = [
   './', 'index.html', 'offline.html', 'manifest.webmanifest', 'firestore.rules',
   'css/app.css?v=__VERSION__', 'css/onz.css?v=__VERSION__', 'css/feskum.css?v=__VERSION__', 'css/event-carousel.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
-  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/feskum.js', 'js/event-carousel.js', 'js/demo-seed.js', 'js/i18n.js', 'js/i18n-ms.js', 'js/map.js', 'js/avatar.js',
+  'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/feskum.js', 'js/event-carousel.js', 'js/demo-seed.js', 'js/i18n.js', 'js/i18n-ms.js', 'js/map.js', 'js/avatar.js', 'js/herenow.js',
   'js/views/auth.js', 'js/views/student.js', 'js/views/merchant.js', 'js/views/mpp.js',
   'js/fake/fakefb.js', 'js/fake/rules-engine.js',
   'vendor/firebase.js', 'vendor/qrcode.min.js', 'vendor/jsQR.js', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',

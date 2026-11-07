@@ -930,3 +930,30 @@ table.data th { font-size: 12.5px; }
 .spinner { display: inline-block; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #d0dbed; border-top-color: #192f59; animation: kk-spin .8s linear infinite; flex: none; }
 @keyframes kk-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+/* ---------- Here now: who's at each shop (zone-level, opt-in) ---------- */
+.hn-stack { display: inline-flex; align-items: center; flex: none; }
+.hn-face { display: inline-block; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(25,47,89,.18); background: #fff; flex: none; }
+.hn-face svg { display: block; width: 100%; height: 100%; }
+.hn-stack .hn-face + .hn-face { margin-left: -10px; }
+.hn-more { margin-left: 4px; font: 800 13px/1 Montserrat, system-ui, sans-serif; color: var(--ink, #192f59); }
+button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.hn-zone .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.hn-zone.you { border-color: #248e49; box-shadow: 0 0 0 2px rgba(36,142,73,.25); }
+.hn-person { gap: 12px; align-items: center; flex-wrap: nowrap; }
+.hn-person .grow { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hn-rules { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; font-size: 15px; }
+.hn-rules li { display: flex; gap: 8px; align-items: flex-start; }
+.hn-rules svg { flex: none; width: 18px; height: 18px; color: #248e49; margin-top: 2px; }
+.hn-invite { flex-wrap: nowrap; align-items: center; gap: 12px; }
+.hn-invite .grow { flex: 1; min-width: 0; }
+@media (max-width: 420px) { .hn-invite { flex-wrap: wrap; } .hn-invite .btn { width: 100%; } }
+/* the bubble next to a shop pin on the map */
+.kk-crowd-wrap { background: none; border: 0; }
+.kk-crowd-anchor { position: relative; width: 0; height: 0; }
+.kk-crowd { position: absolute; left: 10px; bottom: 30px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 4px; border-radius: 999px;
+  background: #fff; border: 2px solid var(--ink, #192f59); box-shadow: 2px 2px 0 rgba(25,47,89,.35); white-space: nowrap; cursor: pointer; }
+.kk-crowd b { font: 800 13px/1 Montserrat, system-ui, sans-serif; color: var(--ink, #192f59); }
+.kk-crowd.you { border-color: #248e49; }
+.kk-crowd .hn-face { border-width: 1.5px; }
+.kk-crowd .hn-stack .hn-face + .hn-face { margin-left: -8px; }

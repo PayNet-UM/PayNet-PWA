@@ -272,6 +272,53 @@ export async function runScenarios({ makeCtx, setTime, canSetTime = true, adminE
     await D.savePaynetCounts(mpp, '2026-11', [{ merchantId: 'mer1', merchantName: 'Kopi Kolej', count: 40 }]);
   });
 
+  log('Here now (campus map presence)');
+  const hn1 = await makeCtx({ uid: 'hn1', email: 'hana.here@gmail.com' });
+  const hn2 = await makeCtx({ uid: 'hn2', email: 'imran.here@gmail.com' });
+  const hn3 = await makeCtx({ uid: 'hn3', email: 'jia.here@gmail.com' });
+  await D.createProfile(hn1, { role: 'student', name: 'Hana Lee', matric: '23009001', college: 'KK3', faculty: '' });
+  await D.createProfile(hn2, { role: 'student', name: 'Imran Hakim', matric: '23009002', college: 'KK5', faculty: '' });
+  await D.createProfile(hn3, { role: 'student', name: 'Jia Wen', matric: '23009003', college: 'KK1', faculty: '' });
+  const presQ = (c, f, v) => c.sdk.getDocs(c.sdk.query(c.sdk.collection(c.db, 'presence'), c.sdk.where(f, '==', v))).then((s) => s.docs.map((d) => d.data()));
+  if (!canSetTime) log('      (skipped: needs a movable clock)');
+  else {
+    await ok('a student who hasn’t switched it on never appears on the map', async () => eq((await presQ(hn2, 'audience', 'everyone')).length, 0));
+    await ok('student switches on “Show me on the campus map”', async () => { await D.setMapVisibility(hn2, true, 'everyone'); hn2.profile = await D.getProfile(hn2); eq(hn2.profile.showOnMap, true); });
+    await denied('cannot put yourself at a shop without checking out there', () => hn2.sdk.setDoc(hn2.sdk.doc(hn2.db, 'presence', 'hn2'), {
+      uid: 'hn2', zone: 'mer1', zoneName: 'Kopi Kolej', first: 'Imran', college: 'KK5', audience: 'everyone', at: hn2.sdk.serverTimestamp(), expiresAt: hn2.sdk.Timestamp.fromMillis(T + 2 * 3600000) }));
+    await ok('checking out puts the student at that shop for 2 hours', async () => {
+      tick(4 * 3600000); hn2.profile = await D.getProfile(hn2); await D.checkIn(hn2, kopi, at(kopi), rules);
+      const rows = await presQ(hn1, 'audience', 'everyone'); eq(rows.length, 1); eq(rows[0].zone, 'mer1'); eq(rows[0].first, 'Imran');
+      eq(Math.round((D.toMs(rows[0].expiresAt) - D.toMs(rows[0].at)) / 60000), 120);
+    });
+    await ok('only the first name, college and avatar are shared (no position)', async () => {
+      const r = (await presQ(hn1, 'audience', 'everyone'))[0]; eq('lat' in r || 'lng' in r || 'name' in r || 'email' in r, false);
+    });
+    await denied('cannot stretch your time on the map', () => hn2.sdk.updateDoc(hn2.sdk.doc(hn2.db, 'presence', 'hn2'), { expiresAt: hn2.sdk.Timestamp.fromMillis(T + 48 * 3600000) }));
+    await ok('college-only: a student shares with their college only', async () => {
+      await D.setMapVisibility(hn1, true, 'college'); hn1.profile = await D.getProfile(hn1); await D.checkIn(hn1, kopi, at(kopi), rules);
+      eq((await presQ(hn1, 'college', 'KK3')).length, 1);
+    });
+    await denied('a student from another college cannot see a college-only entry', () => presQ(hn2, 'college', 'KK3'));
+    await ok('…and it is not in the everyone list', async () => eq((await presQ(hn2, 'audience', 'everyone')).some((r) => r.uid === 'hn1'), false));
+    await denied('cannot wave at someone who is hidden from you', () => D.sendWave(hn2, 'hn1', { first: 'Imran' }, 'Kopi Kolej'));
+    await ok('a third student shares with everyone at the same shop', async () => {
+      await D.setMapVisibility(hn3, true, 'everyone'); hn3.profile = await D.getProfile(hn3); await D.checkIn(hn3, kopi, at(kopi), rules);
+    });
+    await ok('students at the same shop can wave at each other', async () => {
+      await D.sendWave(hn2, 'hn3', { first: 'Imran' }, 'Kopi Kolej');
+      const inbox = (await hn3.sdk.getDocs(hn3.sdk.collection(hn3.db, 'waves', 'hn3', 'inbox'))).docs.map((d) => d.data());
+      eq(inbox.length, 1); eq(inbox[0].fromFirst, 'Imran');
+    });
+    await denied('cannot wave under another name', () => hn2.sdk.setDoc(hn2.sdk.doc(hn2.db, 'waves', 'hn3', 'inbox', 'hn2'), { fromFirst: 'HEP Admin', zoneName: 'Kopi Kolej', at: hn2.sdk.serverTimestamp() }));
+    await denied('cannot read someone else’s waves', () => hn2.sdk.getDocs(hn2.sdk.collection(hn2.db, 'waves', 'hn3', 'inbox')));
+    await denied('merchants can’t see who is on the map', () => presQ(merch, 'audience', 'everyone'));
+    await ok('switching it off takes you off the map straight away', async () => {
+      await D.setMapVisibility(hn3, false); eq((await presQ(hn2, 'audience', 'everyone')).some((r) => r.uid === 'hn3'), false);
+    });
+    await denied('after 2 hours you can no longer be waved at', async () => { tick(2.5 * 3600000); await D.sendWave(hn1, 'hn2', { first: 'Hana' }, 'Kopi Kolej'); });
+      }
+
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };
 }

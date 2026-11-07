@@ -1,5 +1,6 @@
 // Demo mode only: builds a small, realistic campus (through the same rules as live) on first open.
 import * as D from './data.js';
+import * as AV from './avatar.js';
 import { sheet, closeSheet, toast, esc, icon, $, $$ } from './ui.js';
 import { mppBootstrapEmails } from './firebase-config.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
@@ -46,9 +47,31 @@ function fakeQR(name) {
   return c.toDataURL('image/jpeg', 0.8);
 }
 
+// Demo students who show on the "Here now" map: [email, name, matric, college, shop email, audience]
+const CROWD = [
+  ['chloe@siswa.um.edu.my', 'Chloe Tan', '23005101', 'KK3', 'kopikolej@demo.my', 'everyone'],
+  ['danish@siswa.um.edu.my', 'Danish Iskandar', '23005102', 'KK5', 'kopikolej@demo.my', 'everyone'],
+  ['elena@siswa.um.edu.my', 'Elena Raj', '23005103', 'KK3', 'kopikolej@demo.my', 'college'],
+  ['farid@siswa.um.edu.my', 'Farid Azman', '23005104', 'KK8', 'dailybowl@demo.my', 'everyone'],
+  ['gayathri@siswa.um.edu.my', 'Gayathri Devi', '23005105', 'KK1', 'dailybowl@demo.my', 'everyone'],
+  ['haziq@siswa.um.edu.my', 'Haziq Rahman', '23005106', 'KK5', 'print@demo.my', 'everyone'],
+];
+// The demo crowd's 2 hours would run out; move them to "just now" each time the demo opens.
+function freshenCrowd(sdk) {
+  if (!sdk._rawUpdate) return;
+  sdk._rawUpdate((docs, Timestamp) => {
+    let i = 0;
+    for (const [k, v] of docs) {
+      if (!k.startsWith('presence/') || !CROWD.some((c) => v && v.first === D.firstName(c[1]))) continue;
+      const at = Date.now() - (5 + 11 * i++) * 60000;
+      docs.set(k, { ...v, at: new Timestamp(at), expiresAt: new Timestamp(at + D.PRESENCE_HOURS * 3600000) });
+    }
+  });
+}
+
 export async function ensureDemoData(backend, progress = () => {}) {
   const { sdk, auth, db } = backend;
-  if (sdk._rawDocs().has('stats/campus')) return;
+  if (sdk._rawDocs().has('stats/campus')) { freshenCrowd(sdk); return; }
   progress('Setting up the demo campus…');
   const as = async (email) => {
     try { await sdk.signInWithEmailAndPassword(auth, email, DEMO_PASSWORD); }
@@ -104,6 +127,16 @@ export async function ensureDemoData(backend, progress = () => {}) {
     await visit('badrul@siswa.um.edu.my', 'laundry@demo.my');
     await visit('badrul@siswa.um.edu.my', 'kopikolej@demo.my');
     const b = await as('badrul@siswa.um.edu.my'); b.profile = await D.getProfile(b); await D.claimFriendBonus(b, rules);
+    progress('Adding students to the campus map…');
+    for (const [email, name, matric, college, shop, audience] of CROWD) {
+      const s = await as(email);
+      await D.createProfile(s, { role: 'student', name, matric, college, faculty: '' });
+      await D.saveAvatar(s, AV.defaultFor(email));
+      await D.setMapVisibility(s, true, audience);
+      s.profile = await D.getProfile(s);
+      const m = pins[shop];
+      await D.checkIn(s, m, { lat: m.lat + 0.00004, lng: m.lng + 0.00003, accuracy: 10 }, rules, null);
+    }
     const admin = await as(MPP_EMAIL);
     await D.adjustPoints(admin, aina.uid, 300, 'Pilot tester welcome bonus');
   } catch (e) {
