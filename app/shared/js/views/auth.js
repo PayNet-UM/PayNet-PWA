@@ -455,7 +455,7 @@ export function renderOnboarding(app, done) {
         ${merchantsOpen ? `<label><input type="radio" name="role" value="merchant" ${looksStudent ? '' : 'checked'}><span class="tile-icon orange">${icon('store')}</span>
           <span><b>I run a business or stall</b><br><span class="faint">Join the campus map so students can find and visit you</span></span></label>` : ''}
       </div>
-      <label class="field">Your full name<input name="name" required minlength="2" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
+      <label class="field">Your full name<input name="name" required minlength="2" maxlength="100" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
       <div id="student-fields" class="stack">
         <label class="field">Matric number<input name="matric" autocomplete="off" placeholder="e.g. 23001234" pattern="[A-Za-z0-9]{5,15}" title="Letters and numbers only"><small>One account per matric number. You can’t change it later, so check it.</small></label>
         <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>

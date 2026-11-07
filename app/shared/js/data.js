@@ -452,12 +452,15 @@ export async function donatePoints(ctx, n) {
 
 // Welfare requests are private to the applicant and HEP. Approval moves points
 // from the pool to the student's wallet atomically, with one immutable ledger ID.
+export const WELFARE_MAX_POINTS = 1000; // Also set in firestore.rules.
 export async function submitWelfareRequest(ctx, amount, reason) {
   if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error('Enter a whole number of points greater than zero.');
+  if (amount > WELFARE_MAX_POINTS) throw new Error('You can ask for up to 1,000 points at a time.');
   reason = String(reason || '').trim();
   if (reason.length < 10 || reason.length > 1000) throw new Error('Please give a reason between 10 and 1,000 characters.');
   const profile = await getProfile(ctx);
-  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'welfareRequests'));
+  const id = ctx.uid + '_' + dayKey(clock(ctx)), ref = ctx.sdk.doc(ctx.db, 'welfareRequests', id);
+  if ((await list(ctx, 'welfareRequests', eq(ctx, 'studentUid', ctx.uid))).some((request) => request.id === id)) throw new Error('You’ve already sent a request today. You can send another tomorrow.');
   await ctx.sdk.setDoc(ref, { studentUid: ctx.uid, name: profile.name, college: profile.college,
     amount, reason, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
