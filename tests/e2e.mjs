@@ -80,7 +80,9 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
 await stu.click('[data-t="glasses"]');
-await stu.locator('.av-range[data-k="skin"]').fill('5');
+const skin = stu.locator('.av-range[data-k="skin"]');
+await skin.focus(); await skin.press('Home');
+for (let i = 0; i < 5; i++) await skin.press('ArrowRight');
 await stu.click('[aria-controls="av-gear"]');
 await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
 await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]');
