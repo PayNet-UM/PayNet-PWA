@@ -139,6 +139,13 @@ Needs the **Blaze** plan. Once per Firebase project (staging and production):
 The first deploy with functions takes a few minutes longer: Google turns on Cloud Functions, Cloud Build and
 Artifact Registry for the project. Tests: `node tests/handoff.mjs`.
 
+## "Here now" campus map (optional clean-up)
+
+Students who switch on "Show me on the campus map" appear at a shop for 2 hours after each check-out
+(collection `presence`, one document per student). The app hides entries after 2 hours by itself. To delete
+old entries from the database too: Firestore > TTL policies > create one on collection group `presence`,
+field `expiresAt`. Rules: `presence` and `waves` in `firestore.rules`; tests: "Here now" in `tests/scenarios.mjs`.
+
 ## How the trust model works
 
 | Step | Who | Enforced in `firestore.rules` |

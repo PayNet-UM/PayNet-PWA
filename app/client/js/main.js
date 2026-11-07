@@ -77,6 +77,7 @@ function startRole(role) {
     paintAvatar();
   }, () => {}));
   if (role === 'student') {
+    import('./herenow.js').then((H) => { if (app.role === 'student') app.watchers.push(H.startWaveListener(app)); }).catch(() => {});
     app.watchers.push(D.watchMyVisits(app.ctx, (v) => { app.visits = v; app.emit && app.emit('visits'); }, () => {}));
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.emit && app.emit('ledger'); }, () => {}));
   }

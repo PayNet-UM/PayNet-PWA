@@ -6,6 +6,7 @@ import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
+import { hereNowSection, mountHereNow, mapSettingsSheet } from '../herenow.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, chevron, countUp } from '../ui.js';
 
@@ -120,6 +121,7 @@ async function exploreRender(app, [mode]) {
     <div class="chips" style="margin-top:12px" id="types">${types.map((t) => `<button class="${t === exploreFilter ? 'on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="card map-card"><div id="mmap" class="mmap" aria-label="Map of +Onz merchants"></div>
       <div class="row between map-bar"><button class="btn small" id="near" aria-pressed="false">${icon('locate-fixed')} Show where I am</button><span class="faint" id="map-note"></span></div></div>
+    ${hereNowSection(app)}
     <div class="mgrid" id="mlist" style="margin-top:12px"></div>
     <p class="faint" style="margin-top:14px;font-size:13px">Tap a shop for directions. See the <a href="#/cafes">café directory</a>.</p>`;
 }
@@ -159,11 +161,12 @@ function exploreMount(root, app) {
     }, (err) => { toast(err.message, true); near.click(); });
   };
   draw();
+  const hn = mountHereNow(root, app, { getMap: () => map });
   createMap($('#mmap', root), { center: UM_CENTER, zoom: 15 }).then((m) => {
     if (!root.isConnected) { m.remove(); return; }
-    map = m; if (myPos) map.setMe(myPos); drawMap(rowsNow());
+    map = m; if (myPos) map.setMe(myPos); drawMap(rowsNow()); hn.redraw();
   }).catch((err) => { $('#mmap', root).innerHTML = `<div class="empty">${esc(err.message)}</div>`; });
-  return () => { if (stopWatch) stopWatch(); if (map) map.remove(); };
+  return () => { hn.stop(); if (stopWatch) stopWatch(); if (map) map.remove(); };
 }
 
 async function merchantRender(app, [id]) {
@@ -363,7 +366,10 @@ function checkinMount(root, app, [focusId]) {
           <div class="amount-big" style="font-size:56px;color:#00783A">+${res.points}</div><p class="muted">points</p>
           ${dealNote ? `<p class="badge ${dealNote.startsWith('+') ? 'ok' : 'warn'}">${esc(dealNote)}</p>` : ''}${extra.map((x) => `<p class="badge ok">${esc(x)}</p>`).join('')}
           <p>Your balance: <b data-bind="points">${n(app.profile.points)}</b> points</p>
+          ${app.profile.showOnMap ? `<p class="faint">${icon('users')} You’re on the campus map at ${esc(m.name)} for 2 hours. <a href="#/explore" data-close>See who’s here</a></p>`
+            : `<p class="faint">Want friends to see you’re here? <button class="link" id="ci-showmap">Show me on the campus map</button></p>`}
           <div class="row" style="justify-content:center;margin-top:8px"><a class="btn primary" href="#/rewards" data-close>Use my points</a><button class="btn" data-close>Done</button></div></div>`);
+        const sm = document.getElementById('ci-showmap'); if (sm) sm.onclick = () => { closeSheet(); mapSettingsSheet(app, true); };
         draw();
         refreshDeals();
       } catch (e) { toast(e.code === 'permission-denied' ? 'Couldn’t check out. You may be too far away, or you already checked out here recently.' : errText(e), true); }
@@ -722,6 +728,8 @@ async function meRender(app) {
           ${history.slice(3).map(pointsHistoryRow).join('')}</details>` : ''}
       </div>
     </section>
+    <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('users')}</span><div class="grow" style="flex:1;min-width:0"><h3>Campus map</h3><p class="faint">${app.profile.showOnMap ? `Visible to ${app.profile.mapAudience === 'college' ? 'your college' : 'all students'} for 2 hours after each check-out.` : 'Hidden. Switch on to show at shops after you check out.'}</p></div>
+      <button class="btn small" id="mapvis">${app.profile.showOnMap ? 'Change' : 'Show me'}</button></div></section>
     <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
@@ -762,6 +770,7 @@ function meMount(root, app) {
     busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), college: f.college.value, faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#install', root).onclick = () => app.installApp();
+  $('#mapvis', root).onclick = () => mapSettingsSheet(app);
   $('#fx', root).onchange = (e) => { setFx(e.target.checked); if (e.target.checked) pointsFx(); };
   $('#out', root).onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }

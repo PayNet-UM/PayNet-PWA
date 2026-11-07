@@ -95,7 +95,7 @@ async function googleMap(el, { center, zoom, interactive }) {
   });
   const AM = g.marker.AdvancedMarkerElement;
   const info = new g.InfoWindow();
-  let pins = [], me = null, drag = null;
+  let pins = [], me = null, drag = null, crowds = [];
   const onTap = (marker, fn) => {
     let last = 0; const go = () => { const t = Date.now(); if (t - last > 300) { last = t; fn(); } };
     if (marker.addListener) marker.addListener('click', go);
@@ -109,6 +109,15 @@ async function googleMap(el, { center, zoom, interactive }) {
         const mk = new AM({ map, position: { lat: m.lat, lng: m.lng }, title: m.name || '', content: node(pinHTML(m)), gmpClickable: !!popup });
         if (popup) onTap(mk, () => { info.setContent(node(`<div>${popup(m)}</div>`)); info.open({ anchor: mk, map }); });
         pins.push(mk);
+      });
+    },
+    // "Here now" groups: each item { lat, lng, html, title, onTap }, drawn beside its shop pin.
+    setCrowds(list) {
+      crowds.forEach((c) => { c.map = null; }); crowds = [];
+      list.forEach((c) => {
+        const mk = new AM({ map, position: { lat: c.lat, lng: c.lng }, title: c.title || '', content: node(c.html), gmpClickable: !!c.onTap, zIndex: 900 });
+        if (c.onTap) onTap(mk, c.onTap);
+        crowds.push(mk);
       });
     },
     setMe(pos) {
@@ -134,7 +143,7 @@ async function googleMap(el, { center, zoom, interactive }) {
       } else drag.position = { lat, lng };
     },
     zoom: () => map.getZoom(),
-    remove() { pins.forEach((p) => { p.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
+    remove() { pins.forEach((p) => { p.map = null; }); crowds.forEach((c) => { c.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
   };
 }
 
@@ -163,7 +172,7 @@ async function leafletMap(el, { center, zoom, interactive }) {
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   setTimeout(() => map.invalidateSize(), 60);
   const icon = (html, size = [40, 48], anchor = [20, 46]) => L.divIcon({ className: 'kk-pin-wrap', iconSize: size, iconAnchor: anchor, popupAnchor: [0, -42], html });
-  const layer = L.layerGroup().addTo(map); let me = null, drag = null;
+  const layer = L.layerGroup().addTo(map); const crowdLayer = L.layerGroup().addTo(map); let me = null, drag = null;
   return {
     engine: 'leaflet', raw: map,
     setPins(list, { popup } = {}) {
@@ -171,6 +180,13 @@ async function leafletMap(el, { center, zoom, interactive }) {
       list.filter(hasPin).forEach((m) => {
         const mk = L.marker([m.lat, m.lng], { icon: icon(pinHTML(m)), title: m.name || '', alt: m.name || '' }).addTo(layer);
         if (popup) mk.bindPopup(popup(m), { minWidth: 200, autoPanPadding: [12, 12], keepInView: true });
+      });
+    },
+    setCrowds(list) {
+      crowdLayer.clearLayers();
+      list.forEach((c) => {
+        const mk = L.marker([c.lat, c.lng], { icon: L.divIcon({ className: 'kk-crowd-wrap', iconSize: [0, 0], iconAnchor: [0, 0], html: c.html }), title: c.title || '', zIndexOffset: 900, keyboard: !!c.onTap }).addTo(crowdLayer);
+        if (c.onTap) mk.on('click', c.onTap);
       });
     },
     setMe(pos) {

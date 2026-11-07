@@ -63,6 +63,8 @@ const R = (ctx) => {
     reward: (id) => sdk.doc(db, 'rewards', id),
     voucher: (id) => sdk.doc(db, 'vouchers', id),
     newId: (c) => sdk.doc(sdk.collection(db, c)).id,
+    presence: (u) => sdk.doc(db, 'presence', u),
+    wave: (to, from) => sdk.doc(db, 'waves', to, 'inbox', from),
   };
 };
 const snapList = (s) => s.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -215,10 +217,65 @@ export async function checkIn(ctx, merchant, pos, rules, deal = null) {
   b.update(r.user(ctx.uid), u);
   b.update(r.stats('campus'), { checkins: sdk.increment(1), ['colleges.' + p.college]: sdk.increment(1), lastVisit: id });
   if (deal) b.set(sdk.doc(ctx.db, 'dealDays', `${deal.id}_${day}`), { count: sdk.increment(1), last: id }, { merge: true });
+  if (p.showOnMap) b.set(r.presence(ctx.uid), presenceDoc(ctx, merchant, now));
   await b.commit();
   if (u.firstVisit && p.inviterUid) { try { await sdk.updateDoc(sdk.doc(ctx.db, 'referrals', ctx.uid), { qualified: true }); } catch { /* no referral */ } }
   return { id, points };
 }
+// ------------------------------------------------------------- "Here now" (opt-in campus presence)
+export const PRESENCE_HOURS = 2;
+export const firstName = (name) => String(name || '').trim().split(/\s+/)[0].slice(0, 24) || 'Student';
+function presenceDoc(ctx, merchant, now) {
+  const p = ctx.profile;
+  return { uid: ctx.uid, zone: merchant.id, zoneName: String(merchant.name || '').slice(0, 80), first: firstName(p.name), college: p.college,
+    audience: p.mapAudience === 'college' ? 'college' : 'everyone', at: ctx.sdk.serverTimestamp(),
+    expiresAt: ctx.sdk.Timestamp.fromMillis(now + PRESENCE_HOURS * 3600000), ...(p.avatar ? { avatar: p.avatar } : {}) };
+}
+// Any change takes you off the map now; you reappear, with the new setting, at your next check-out.
+export async function setMapVisibility(ctx, on, audience) {
+  const aud = audience === 'college' ? 'college' : 'everyone';
+  await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { showOnMap: !!on, mapAudience: aud });
+  await hideMe(ctx);
+}
+export async function hideMe(ctx) { try { await ctx.sdk.deleteDoc(R(ctx).presence(ctx.uid)); } catch { /* not on the map */ } }
+// Everyone visible to me: students sharing with everyone, plus my college. Expired entries are dropped here.
+export function watchPresence(ctx, cb, err) {
+  const { sdk, db } = ctx; const col = sdk.collection(db, 'presence');
+  const parts = { all: [], mine: [], college: [] };
+  const emit = () => {
+    const now = clock(ctx); const seen = new Map();
+    for (const r of [...parts.all, ...parts.college, ...parts.mine]) if ((toMs(r.expiresAt) || 0) > now) seen.set(r.uid, r);
+    cb([...seen.values()]);
+  };
+  const subs = [
+    sdk.onSnapshot(sdk.query(col, eq(ctx, 'audience', 'everyone')), (s) => { parts.all = snapList(s); emit(); }, err),
+    sdk.onSnapshot(R(ctx).presence(ctx.uid), (s) => { parts.mine = s.exists() ? [{ id: s.id, ...s.data() }] : []; emit(); }, () => {}),
+  ];
+  if (ctx.profile && ctx.profile.college) subs.push(sdk.onSnapshot(sdk.query(col, eq(ctx, 'college', ctx.profile.college)), (s) => { parts.college = snapList(s); emit(); }, err));
+  const t = setInterval(emit, 60000); // drop people as their 2 hours run out
+  return () => { clearInterval(t); subs.forEach((u) => u()); };
+}
+// Group into zones (one per shop), biggest first.
+export function groupPresence(rows) {
+  const z = new Map();
+  for (const r of rows) { if (!z.has(r.zone)) z.set(r.zone, { zone: r.zone, name: r.zoneName, people: [] }); z.get(r.zone).people.push(r); }
+  for (const g of z.values()) g.people.sort((a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0));
+  return [...z.values()].sort((a, b) => b.people.length - a.people.length);
+}
+export async function sendWave(ctx, toUid, me, zoneName) {
+  await ctx.sdk.setDoc(R(ctx).wave(toUid, ctx.uid), { fromFirst: me.first, zoneName, at: ctx.sdk.serverTimestamp(), ...(me.avatar ? { avatar: me.avatar } : {}) });
+}
+export function watchWaves(ctx, cb) {
+  const { sdk, db } = ctx; const seen = new Map();
+  return sdk.onSnapshot(sdk.collection(db, 'waves', ctx.uid, 'inbox'), (s) => {
+    for (const d of s.docs) {
+      const w = { id: d.id, ...d.data() }; const at = toMs(w.at) || 0;
+      if (seen.get(w.id) !== at) { seen.set(w.id, at); if (clock(ctx) - at < 10 * 60000) cb(w); }
+    }
+  }, () => {});
+}
+export async function clearWave(ctx, fromUid) { try { await ctx.sdk.deleteDoc(R(ctx).wave(ctx.uid, fromUid)); } catch { /* gone */ } }
+
 const byAtDesc = (a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0);
 export function watchMyVisits(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(R(ctx).visitCol(), eq(ctx, 'uid', ctx.uid)), (s) => cb(snapList(s).sort(byAtDesc)), err);
