@@ -139,7 +139,7 @@ async function merchantRender(app, [id]) {
         <div class="map-bar"><a class="btn primary block" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Navigate there</a></div></div></section>` : ''}
     <section class="section"><div class="head"><h2>Visit this shop</h2></div><div class="card steps">
       <div class="step"><span class="n">1</span><div><h3>Walk over</h3><p>Use the map to find ${esc(m.name)}.</p></div></div>
-      <div class="step"><span class="n">2</span><div><h3>Pay cashless if you buy</h3><p>${esc(m.name)} accepts DuitNow QR. Check the name and amount in your banking app before you pay.</p></div></div>
+      ${D.featureOn(app.rules, 'dealsAndPay') ? `<div class="step"><span class="n">2</span><div><h3>Pay cashless if you buy</h3><p>${esc(m.name)} accepts DuitNow QR. Check the name and amount in your banking app before you pay.</p></div></div>` : ''}
     </div></section>
     ${deals.length ? `<section class="section"><div class="head"><h2>Live deals</h2></div><div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p></div>${icon('zap')}</div>`).join('')}</div></section>` : ''}
     <div style="position:sticky;bottom:calc(var(--nav-h) + 12px);margin-top:20px"><a class="btn primary block" href="#/explore/${esc(m.id)}">${icon('map')} View nearby shops</a></div>`;
