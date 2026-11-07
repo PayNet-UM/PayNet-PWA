@@ -419,6 +419,10 @@ async function settingsRender(app) {
   const field = (k, label, help, min = 0, max = 100000) => `<label class="field">${label}<input name="${k}" type="number" min="${min}" max="${max}" step="1" required value="${rules[k]}"><small>${help}</small></label>`;
   const list = (k) => esc((access?.[k] || []).join('\n'));
   return `<div class="page-title"><h1>Settings</h1><p>Changes apply to new activity only. Past points stay as they were.</p></div>
+    <form id="features" class="card pad-lg stack" style="margin-bottom:16px"><h2>Features</h2>
+      <p class="muted">Choose what students and merchants can use. Changes apply when people next open or refresh the app, and nothing is deleted.</p>
+      ${D.FEATURES.map(([k, label, help]) => `<label class="check"><input type="checkbox" name="${k}" ${D.featureOn(rules, k) ? 'checked' : ''}> <span><b>${esc(label)}</b><br><span class="faint">${esc(help)}</span></span></label>`).join('')}
+      <button class="btn primary">Save features</button></form>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
       <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}</div>
       <button class="btn primary">Save rules</button></form>
@@ -431,6 +435,10 @@ async function settingsRender(app) {
 function settingsMount(root, app) {
   overviewMount(root, app);
   if (!$('#rules', root)) return;
+  $('#features', root).onsubmit = (e) => {
+    e.preventDefault(); const f = e.target;
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, f[k].checked])) }); toast('Features saved.'); app.rules = await D.getRules(app.ctx); } catch (err) { toast(errText(err), true); } });
+  };
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
     busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });

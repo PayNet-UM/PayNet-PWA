@@ -54,6 +54,7 @@ Do this once for each environment. Staging is `umconnect-e455a`; the steps matte
    The student/merchant app is then at `https://<project>.web.app` and the HEP dashboard at `https://<project>-admin.web.app`.
 7. **Sign in to the HEP dashboard** (`https://<project>-admin.web.app`) with an address from `MPP_ADMIN_EMAILS`. If it's a Google account, use **Continue with Google**; otherwise verify it via the link Firebase emails you. Admins can't do anything until their email is verified. The dashboard opens on **Set up the programme**. Click it once to create the points rules, rewards and counters.
 8. Under **Settings**, add other HEP reviewers and any pilot testers who don't have a `@siswa.um.edu.my` email.
+9. Under **Settings > Features**, turn on what's launching. Everything there starts off. See [Turning features on and off](../README.md#turning-features-on-and-off).
 
 Students install it from the browser: Chrome shows **Install app**, and on iPhone use Safari > Share > **Add to Home Screen**. The camera scanner needs HTTPS, which Firebase Hosting provides.
 
@@ -77,6 +78,22 @@ A repo admin does this once. Merging to `development` deploys staging, and mergi
 2. Grant **Firebase Admin**, **Service Usage Consumer**, **Cloud Functions Admin**, **Service Account User** and **Cloud Run Admin**. If the first deploy reports a missing permission, add that role.
 3. Under Keys, add a JSON key and paste its contents into the secret.
 4. Delete the downloaded file. Never commit it.
+
+## Database-triggered functions (once per project)
+
+The KK League functions run when the database changes, so the first deploy on each project needs two extra steps. The deploy account deliberately can't change project permissions, so a project Owner does the first one.
+
+1. **Grant the permissions.** The deploy stops with `We failed to modify the IAM policy` and prints three `gcloud` commands, using that project's number. Run them in [Cloud Shell](https://shell.cloud.google.com/) as an Owner. They give Pub/Sub's service account **Service Account Token Creator**, and the default compute account **Cloud Run Invoker** and **Eventarc Event Receiver**.
+2. **Re-run the deploy.** It may then stop with `Permission denied while using the Eventarc Service Agent`, which means Google is still setting up. Wait about 10 minutes, then use **Re-run failed jobs**.
+
+If that second error doesn't clear, grant the role by hand, wait 5 minutes and re-run:
+
+```bash
+gcloud beta services identity create --service=eventarc.googleapis.com --project=<project>
+gcloud projects add-iam-policy-binding <project> --member=serviceAccount:service-<project-number>@gcp-sa-eventarc.iam.gserviceaccount.com --role=roles/eventarc.serviceAgent
+```
+
+**A failed deploy can leave a project half updated.** The rules can be live before the website, so old screens may fail until a retry succeeds. Don't demo during this.
 
 ## Manual deploys
 

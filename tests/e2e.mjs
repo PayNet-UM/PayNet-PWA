@@ -199,6 +199,42 @@ await gp.screenshot({ path: `${shots}/07-google-maps-path.png` });
 ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, info window, live location)`);
 await gctx.close();
 
+// ---------- feature switches, using the real Settings form
+const off = await ctx.newPage(); watch(off, 'switches'); await fresh(off); await off.setViewportSize({ width: 1360, height: 900 });
+await login(off, adminEmail, ADMIN); await off.waitForSelector('#mpp-rail', { timeout: 30000 });
+await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
+if (await off.locator('#features input[type=checkbox]').count() !== 4) throw new Error('expected 4 feature switches');
+for (const c of await off.$$('#features input[type=checkbox]')) await c.uncheck();
+await off.click('#features button'); await off.waitForSelector('#toast.show');
+ok('HEP turned every feature off in Settings');
+const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
+await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
+if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
+for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
+for (const route of ['explore', 'deals', 'cafes', 'checkin', 'bayar', 'merchant/mer1']) {
+  await offStu.goto(BASE + '#/' + route); await offStu.waitForTimeout(500);
+  if (await offStu.locator('.kk-hero').count() !== 1) throw new Error('typed #/' + route + ' did not go home');
+}
+for (const route of ['events', 'friends', 'rewards', 'community', 'learn', 'me', 'survey', 'avatar']) {
+  await offStu.goto(BASE + '#/' + route); await offStu.waitForTimeout(500);
+  if (await offStu.locator('text=This page didn’t load').count()) throw new Error('page failed with switches off: ' + route);
+  if (await offStu.locator('main a[href="#/explore"], main a[href="#/bayar"], main a[href^="#/explore/"]').count()) throw new Error(route + ' still links to a hidden page');
+}
+ok('with switches off, students see no Overview, deals or Pay Cashless, and typed links go home');
+const offMer = await ctx.newPage(); watch(offMer, 'merchant, switches off'); await fresh(offMer);
+await login(offMer, 'kopikolej@demo.my'); await offMer.waitForSelector('#coming-soon', { timeout: 30000 });
+ok('with switches off, a merchant account sees Coming soon');
+await offMer.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); await sdk.createUserWithEmailAndPassword(auth, 'switchtest@shop.my', 'demo1234'); });
+await offMer.waitForSelector('#ob', { timeout: 30000 });
+if (await offMer.locator('input[value=merchant]').count() !== 0) throw new Error('sign-up still offers merchant');
+ok('with switches off, sign-up has no merchant option');
+await off.check('#features input[name=overview]'); await off.click('#features button'); await off.waitForTimeout(600);
+await offStu.goto(BASE); await offStu.reload(); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
+if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not bring it back');
+await offStu.goto(BASE + '#/explore'); await offStu.waitForSelector('#cmap', { timeout: 20000 });
+if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live deals shown while its switch is off');
+ok('HEP turned Overview back on, and the directory returned without Live deals');
+
 console.log(errors.length ? '\nErrors:\n' + errors.join('\n') : '\nNo page errors.');
 await b.close();
 process.exit(errors.length ? 1 : 0);

@@ -520,6 +520,19 @@ Voucher marked used.|Baucar ditandakan digunakan.
 No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.|Tiada baucar dengan kod ini untuk kedai anda. Semak kod, atau baucar pelajar untuk lokasi penggunaannya.
 This voucher isn’t for your shop. The student’s voucher shows where to use it.|Baucar ini bukan untuk kedai anda. Baucar pelajar menunjukkan lokasi penggunaannya.
 Collect at the HEP counter|Tuntut di kaunter HEP
+Features|Ciri
+Save features|Simpan ciri
+Features saved.|Ciri disimpan.
+Choose what students and merchants can use. Changes apply when people next open or refresh the app, and nothing is deleted.|Pilih perkara yang boleh digunakan oleh pelajar dan peniaga. Perubahan berkuat kuasa apabila aplikasi dibuka atau dimuat semula, dan tiada data dipadam.
+Merchant sign-up|Pendaftaran peniaga
+New businesses can register and apply to join.|Perniagaan baharu boleh mendaftar dan memohon untuk menyertai.
+Merchant tools|Alat peniaga
+Voucher Redeem, Promote, Insights, the readiness check and shop vouchers.|Tebus baucar, Promosi, Cerapan, semakan kesediaan dan baucar kedai.
+The shops directory, map, shop pages and Student Ventures.|Direktori kedai, peta, halaman kedai dan Usaha Pelajar.
+Live deals and Pay Cashless|Tawaran semasa dan Bayar Tanpa Tunai
+Live deals and the DuitNow QR guide.|Tawaran semasa dan panduan QR DuitNow.
+Merchant features are coming soon|Ciri peniaga akan tersedia tidak lama lagi
+Your account is safe. We’ll open this up soon, so please check back later.|Akaun anda selamat. Kami akan membukanya tidak lama lagi, jadi sila semak semula kemudian.
 Use at|Gunakan di
 a selected shop|kedai terpilih
 This voucher has been used.|Baucar ini telah digunakan.
