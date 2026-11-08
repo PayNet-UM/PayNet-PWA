@@ -1,0 +1,43 @@
+# Tests every pull request. Uses no secrets and deploys nothing.
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:legacy
+      - run: npm run test:views
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm run test:emulator
+      - run: npx playwright install --with-deps chromium
+      - name: Browser journeys
+        run: |
+          npm run dev:demo > /tmp/onz-demo.log 2>&1 &
+          node --input-type=module -e 'let ready = false; for (let i = 0; i < 50; i++) { try { if ((await fetch("http://localhost:5173/")).ok) { ready = true; break; } } catch {} await new Promise(r => setTimeout(r, 100)); } if (!ready) throw new Error("Demo server did not start");'
+          npm run test:e2e
+      - name: Browser screenshots and server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug
+          path: |
+            /tmp/e2e/
+            /tmp/onz-demo.log

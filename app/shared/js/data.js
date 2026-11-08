@@ -1,0 +1,663 @@
+// Kampus Kita+ data layer. Every write here is shaped to pass firestore.rules,
+// and the same functions run in the app and in the test suite.
+
+export const COLLEGES = [
+  ['KK1', 'Kolej Kediaman Pertama (KK1)'], ['KK2', 'Kolej Kediaman Kedua (KK2)'], ['KK3', 'Kolej Kediaman Ketiga (KK3)'],
+  ['KK4', 'Kolej Kediaman Keempat (KK4)'], ['KK5', 'Kolej Kediaman Kelima (KK5)'], ['KK6', 'Kolej Kediaman Keenam (KK6)'],
+  ['KK7', 'Kolej Kediaman Ketujuh (KK7)'], ['KK8', 'Kolej Kediaman Kelapan (KK8)'], ['KK9', 'Kolej Kediaman Kesembilan (KK9)'],
+  ['KK10', 'Kolej Kediaman Kesepuluh (KK10)'], ['KK11', 'Kolej Kediaman Kesebelas (KK11)'], ['KK12', 'Kolej Kediaman Kedua Belas (KK12)'],
+  ['KK13', 'Kolej Kediaman Ketiga Belas (KK13)'], ['OFF', 'Off campus'],
+];
+export const FACULTIES = ['Faculty of Science', 'Faculty of Engineering', 'Faculty of Business and Economics',
+  'Faculty of Arts and Social Sciences', 'Faculty of Computer Science and Information Technology', 'Faculty of Medicine',
+  'Faculty of Dentistry', 'Faculty of Pharmacy', 'Faculty of Law', 'Faculty of Education', 'Faculty of Built Environment',
+  'Academy of Malay Studies', 'Academy of Islamic Studies', 'Faculty of Languages and Linguistics',
+  'Faculty of Creative Arts', 'Faculty of Sport and Exercise Sciences', 'Other'];
+export const MERCHANT_TYPES = ['Food & drinks', 'Laundry', 'Printing', 'Shops', 'Services', 'Student event stall'];
+export const SEGMENTS = ['Campus permanent merchant', 'Within 100 m of UM gate', 'Temporary student entrepreneur'];
+export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone', 'Campus edge'];
+
+// Active earning rules; transaction rewards are intentionally deferred.
+// Features HEP can switch on and off in Settings. Off unless HEP turns them on.
+export const FEATURES = [
+  ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
+  ['merchantTools', 'Merchant tools', 'Voucher Redeem, Promote, Insights, the readiness check and shop vouchers.'],
+  ['overview', 'Overview', 'The shops directory, map, shop pages and Student Ventures.'],
+  ['dealsAndPay', 'Live deals and Pay Cashless', 'Live deals and the DuitNow QR guide.'],
+];
+export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
+export const featureOn = (rules, key) => rules?.features?.[key] === true;
+// Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
+// everyone is then asked to accept again.
+export const TERMS_VERSION = '2026-11-08';
+export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50 };
+export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
+export const DEFAULT_REWARDS = [
+  { id: 'cafe-rm5', title: 'RM5 café voucher', merchantId: '', cost: 500, valueCents: 500, stock: 100, validDays: 30, active: true, icon: 'coffee' },
+  { id: 'print-rm2', title: 'RM2 printing credit', merchantId: '', cost: 200, valueCents: 200, stock: 100, validDays: 30, active: true, icon: 'printer' },
+  { id: 'cashback-rm3', title: 'RM3 cashback', merchantId: '', cost: 300, valueCents: 300, stock: 50, validDays: 14, active: true, icon: 'wallet' },
+];
+
+// ------------------------------------------------------------- time helpers (Malaysia time)
+const MYT = 8 * 3600 * 1000;
+export const clock = (ctx) => (ctx && ctx.now ? ctx.now() : Date.now());
+export const toMs = (t) => (t == null ? null : typeof t === 'number' ? t : t.toMillis ? t.toMillis() : t instanceof Date ? t.getTime() : null);
+const mytDate = (ms) => new Date(ms + MYT);
+const pad = (n) => String(n).padStart(2, '0');
+export const dayKey = (ms = Date.now()) => { const d = mytDate(ms); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+export const monthKey = (ms = Date.now()) => dayKey(ms).slice(0, 7);
+export const minuteOfDay = (ms = Date.now()) => { const d = mytDate(ms); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
+export const weekKey = (ms = Date.now()) => {
+  const d = mytDate(ms); const dow = (d.getUTCDay() + 6) % 7; // Monday = 0
+  const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow));
+  return `${monday.getUTCFullYear()}-${pad(monday.getUTCMonth() + 1)}-${pad(monday.getUTCDate())}`;
+};
+export const hhmm = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+export const parseHHMM = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + m; };
+
+
+// ------------------------------------------------------------- refs
+const R = (ctx) => {
+  const { sdk, db } = ctx;
+  return {
+    user: (u) => sdk.doc(db, 'users', u),
+    ledger: (u, id) => sdk.doc(db, 'users', u, 'ledger', id),
+    ledgerCol: (u) => sdk.collection(db, 'users', u, 'ledger'),
+    config: (n) => sdk.doc(db, 'config', n),
+    merchant: (m) => sdk.doc(db, 'merchants', m),
+    merchantPrivate: (m) => sdk.doc(db, 'merchantPrivate', m),
+    checkin: (pair) => sdk.doc(db, 'checkins', pair),
+    visit: (id) => sdk.doc(db, 'visits', id),
+    visitCol: () => sdk.collection(db, 'visits'),
+    stats: (n) => sdk.doc(db, 'stats', n),
+    reward: (id) => sdk.doc(db, 'rewards', id),
+    voucher: (id) => sdk.doc(db, 'vouchers', id),
+    newId: (c) => sdk.doc(sdk.collection(db, c)).id,
+    presence: (u) => sdk.doc(db, 'presence', u),
+    wave: (to, from) => sdk.doc(db, 'waves', to, 'inbox', from),
+  };
+};
+const snapList = (s) => s.docs.map((d) => ({ id: d.id, ...d.data() }));
+const one = async (ctx, ref) => { const s = await ctx.sdk.getDoc(ref); return s.exists() ? { id: s.id, ...s.data() } : null; };
+const list = async (ctx, coll, ...cons) => snapList(await ctx.sdk.getDocs(cons.length ? ctx.sdk.query(ctx.sdk.collection(ctx.db, coll), ...cons) : ctx.sdk.collection(ctx.db, coll)));
+const eq = (ctx, f, v) => ctx.sdk.where(f, '==', v);
+
+// Paired points movement: ledger entry + balance change in one batch.
+function addPoints(ctx, batch, targetUid, id, entry) {
+  const { sdk } = ctx; const r = R(ctx);
+  batch.set(r.ledger(targetUid, id), { ...entry, by: ctx.uid, createdAt: sdk.serverTimestamp() });
+  batch.update(r.user(targetUid), { points: sdk.increment(entry.delta), lastTx: id });
+}
+
+// ------------------------------------------------------------- config and session
+export async function getRules(ctx) {
+  const c = await one(ctx, R(ctx).config('rules'));
+  return { ...DEFAULT_RULES, ...(c || {}) };
+}
+export async function isMppUser(ctx) {
+  try { await ctx.sdk.getDoc(R(ctx).config('access')); return true; } catch { return false; }
+}
+export async function getProfile(ctx, u = ctx.uid) { return one(ctx, R(ctx).user(u)); }
+
+function makeReferralCode(name) {
+  const base = (name || 'UM').normalize('NFKD').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 6) || 'UM';
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+  return `${base}-${rand}`;
+}
+export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
+  const { sdk } = ctx; const r = R(ctx);
+  matric = role === 'student' ? normMatric(matric) : '';
+  if (role === 'student') {
+    // Check the two common reasons a student sign-up is refused, so the message is accurate.
+    const ready = await sdk.getDoc(r.stats('campus')).then((x) => x.exists()).catch(() => false);
+    if (!ready) { const e = new Error('not-ready'); e.notReady = true; throw e; }
+    if (!/^[A-Z0-9]{5,15}$/.test(matric)) { const e = new Error('bad-matric'); e.badMatric = true; throw e; }
+    const taken = await sdk.getDoc(sdk.doc(ctx.db, 'matrics', matric)).then((x) => x.exists() && x.data().uid !== ctx.uid).catch(() => false);
+    if (taken) { const e = new Error('matric-taken'); e.matricTaken = true; throw e; }
+  }
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const code = role === 'student' ? makeReferralCode(name) : '';
+    const b = sdk.writeBatch(ctx.db);
+    b.set(r.user(ctx.uid), { role, name: name.trim(), email: ctx.email, matric, college, faculty, points: 0, lastTx: '',
+      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
+    if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
+    if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
+    try { await b.commit(); return; } catch (e) {
+      if (role !== 'student' || attempt === 3) throw e; // students retry in case the random referral code clashed
+    }
+  }
+}
+// Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
+export async function acceptTerms(ctx, version = TERMS_VERSION) {
+  await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { termsVersion: version, termsAcceptedAt: ctx.sdk.serverTimestamp() });
+}
+export const needsTerms = (profile) => !!profile && profile.termsVersion !== TERMS_VERSION;
+export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
+export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
+
+// ------------------------------------------------------------- HEP: programme setup
+export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 'um.edu.my', 'gmail.com'] } = {}) {
+  const { sdk } = ctx; const r = R(ctx);
+  const b = sdk.writeBatch(ctx.db);
+  const existing = async (ref) => (await sdk.getDoc(ref)).exists();
+  const cur = await one(ctx, r.config('rules'));
+  if (!cur) b.set(r.config('rules'), DEFAULT_RULES);
+  else { const missing = Object.fromEntries(Object.entries(DEFAULT_RULES).filter(([k]) => !(k in cur))); if (Object.keys(missing).length) b.set(r.config('rules'), missing, { merge: true }); }
+  if (!(await existing(r.config('access')))) b.set(r.config('access'), { mppEmails: [], studentDomains, testerEmails: [] });
+  b.set(r.config('lessonKeys'), LESSON_KEYS);
+  if (!(await existing(r.config('budget')))) b.set(r.config('budget'), { allocationCents: 2000000 });
+  if (!(await existing(r.stats('campus')))) b.set(r.stats('campus'), { checkins: 0, colleges: {}, lastVisit: '' });
+  if (!(await existing(r.stats('welfare')))) b.set(r.stats('welfare'), { points: 0, lastUid: '', lastId: '' });
+  for (const rw of DEFAULT_REWARDS) {
+    if (!(await existing(r.reward(rw.id)))) { const { id, ...rest } = rw; b.set(r.reward(id), { ...rest, issued: 0, lastVoucher: '' }); }
+  }
+  await b.commit();
+}
+export async function programmeReady(ctx) {
+  try { return !!(await one(ctx, R(ctx).stats('campus'))); } catch { return false; }
+}
+// After an update adds new rule settings (e.g. check-in points), fill in any that the live config lacks.
+export async function rulesUpToDate(ctx) {
+  const c = await one(ctx, R(ctx).config('rules'));
+  return !!c && Object.keys(DEFAULT_RULES).every((k) => k in c);
+}
+
+// ------------------------------------------------------------- merchants
+export async function listVerifiedMerchants(ctx) {
+  return (await list(ctx, 'merchants', eq(ctx, 'status', 'verified'))).sort((a, b) => a.name.localeCompare(b.name));
+}
+export async function getMerchant(ctx, id) { return one(ctx, R(ctx).merchant(id)); }
+export async function getMerchantPrivate(ctx, id) { return one(ctx, R(ctx).merchantPrivate(id)); }
+export async function submitApplication(ctx, form) {
+  const { sdk } = ctx; const r = R(ctx);
+  const existing = await one(ctx, r.merchant(ctx.uid));
+  const pub = { name: form.name.trim(), type: form.type, segment: form.segment, location: form.location.trim(), zone: form.zone,
+    eventName: form.eventName || '', eventEnd: form.eventEnd || '' };
+  if (form.logo) { pub.logo = form.logo; pub.logoAt = clock(ctx); }
+  if (form.lat != null && form.lng != null && form.lat !== '' && form.lng !== '') { pub.lat = Number(form.lat); pub.lng = Number(form.lng); pub.pinAt = clock(ctx); }
+  const priv = { accountName: form.accountName.trim(), phone: form.phone || '', ambassadorId: (form.ambassadorId || '').trim().toUpperCase() };
+  if (form.qrImage) { priv.qrImage = form.qrImage; priv.qrUpdatedAt = clock(ctx); }
+  const b = sdk.writeBatch(ctx.db);
+  if (!existing) b.set(r.merchant(ctx.uid), { ...pub, ownerUid: ctx.uid, status: 'pending', submittedAt: sdk.serverTimestamp(), ready: false });
+  else b.update(r.merchant(ctx.uid), { ...pub, status: 'pending', submittedAt: sdk.serverTimestamp() });
+  b.set(r.merchantPrivate(ctx.uid), priv, { merge: true });
+  await b.commit();
+}
+// Campus box the rules accept for a map pin (keep in step with geoOk() in firestore.rules).
+export const GEO_BOX = { latMin: 3.09, latMax: 3.15, lngMin: 101.62, lngMax: 101.69 };
+export const inGeoBox = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng)
+  && lat > GEO_BOX.latMin && lat < GEO_BOX.latMax && lng > GEO_BOX.lngMin && lng < GEO_BOX.lngMax;
+export async function setMerchantPin(ctx, lat, lng) {
+  await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { lat: Number(lat), lng: Number(lng), pinAt: clock(ctx) });
+}
+export async function setMerchantLogo(ctx, logo) {
+  await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { logo, logoAt: clock(ctx) });
+}
+export async function setReadiness(ctx) {
+  await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });
+}
+export async function setOccupancy(ctx, seats, occupied) {
+  await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { seats, occupied, occupancyAt: ctx.sdk.serverTimestamp() });
+}
+export async function reviewMerchant(ctx, id, status, note = '') {
+  await ctx.sdk.updateDoc(R(ctx).merchant(id), { status, reviewNote: note, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+}
+export async function listMerchantsAll(ctx) { return list(ctx, 'merchants'); }
+
+// ------------------------------------------------------------- check-ins (the student is at the merchant's pin)
+export const pairId = (uid, merchantId) => `${uid}_${merchantId}`;
+export async function lastCheckin(ctx, merchantId) { return one(ctx, R(ctx).checkin(pairId(ctx.uid, merchantId))); }
+// Why a check-in can't happen right now, or null if it can. Mirrors the rules so students get a clear reason.
+export function checkinBlock() { return { why: 'retired' }; }
+function retiredAttendanceFlow() {
+  const error = new Error('This activity flow is retired. Transaction points will be defined separately.');
+  error.code = 'permission-denied'; throw error;
+}
+export async function checkIn() { retiredAttendanceFlow(); }
+// ------------------------------------------------------------- friends and usernames
+export const normaliseUsername = (value) => String(value || '').trim().replace(/^@/, '').toLowerCase();
+const friendshipId = (a, b) => [a, b].sort().join('_');
+export async function claimUsername(ctx, value) {
+  const username = normaliseUsername(value);
+  if (!/^[a-z0-9_]{3,24}$/.test(username)) throw new Error('Use 3–24 letters, numbers or underscores.');
+  const b = ctx.sdk.writeBatch(ctx.db);
+  b.set(ctx.sdk.doc(ctx.db, 'usernames', username), { uid: ctx.uid });
+  b.update(R(ctx).user(ctx.uid), { username });
+  await b.commit();
+}
+export async function findUsername(ctx, value) {
+  const username = normaliseUsername(value);
+  if (!/^[a-z0-9_]{3,24}$/.test(username)) throw new Error('Enter a valid username.');
+  const owner = await one(ctx, ctx.sdk.doc(ctx.db, 'usernames', username));
+  return owner ? { uid: owner.uid, username } : null;
+}
+export async function listUsernames(ctx) {
+  return (await list(ctx, 'usernames')).map((entry) => ({ uid: entry.uid, username: entry.id }))
+    .sort((a, b) => a.username.localeCompare(b.username));
+}
+export async function requestFriend(ctx, person) {
+  if (!ctx.profile.username) throw new Error('Choose your username first.');
+  if (person.uid === ctx.uid) throw new Error('That’s your username.');
+  const ref = ctx.sdk.doc(ctx.db, 'friendships', friendshipId(ctx.uid, person.uid));
+  const existing = await one(ctx, ref);
+  if (existing) throw new Error(existing.status === 'accepted' ? 'You’re already friends.' : 'A request is already pending.');
+  await ctx.sdk.setDoc(ref, { from: ctx.uid, to: person.uid, fromUsername: ctx.profile.username,
+    toUsername: person.username, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
+}
+export async function acceptFriend(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'friendships', id), { status: 'accepted' });
+}
+export async function removeFriend(ctx, id) {
+  await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'friendships', id));
+}
+export function watchFriendships(ctx, cb, err) {
+  const parts = { from: [], to: [] };
+  const emit = () => cb([...parts.from, ...parts.to]);
+  const stops = ['from', 'to'].map((key) => ctx.sdk.onSnapshot(
+    ctx.sdk.query(ctx.sdk.collection(ctx.db, 'friendships'), eq(ctx, key, ctx.uid)),
+    (s) => { parts[key] = snapList(s); emit(); }, err));
+  return () => stops.forEach((stop) => stop());
+}
+
+// ------------------------------------------------------------- "Here now" (opt-in campus presence)
+export const PRESENCE_HOURS = 2;
+export const firstName = (name) => String(name || '').trim().split(/\s+/)[0].slice(0, 24) || 'Student';
+// Attendance-based sharing is paused. Existing entries can still be hidden.
+export async function setMapVisibility(ctx, on) {
+  if (on) retiredAttendanceFlow();
+  await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { showOnMap: false, mapAudience: 'friends' });
+  await hideMe(ctx);
+}
+export async function hideMe(ctx) { try { await ctx.sdk.deleteDoc(R(ctx).presence(ctx.uid)); } catch { /* not on the map */ } }
+// Read presence only for accepted friends. Legacy public entries are also protected by rules.
+export function watchPresence(ctx, cb, err) {
+  const rows = new Map(), subscriptions = new Map();
+  const emit = () => cb([...rows.values()].filter((r) => (toMs(r.expiresAt) || 0) > clock(ctx)));
+  const follow = (ids) => {
+    for (const [id, stop] of subscriptions) if (!ids.has(id)) {
+      stop(); subscriptions.delete(id); rows.delete(id);
+    }
+    for (const id of ids) if (!subscriptions.has(id)) {
+      subscriptions.set(id, ctx.sdk.onSnapshot(R(ctx).presence(id), (s) => {
+        if (s.exists()) rows.set(id, { id: s.id, ...s.data() }); else rows.delete(id);
+        emit();
+      }, () => { rows.delete(id); emit(); }));
+    }
+    emit();
+  };
+  const stopFriends = watchFriendships(ctx, (friends) => follow(new Set([ctx.uid, ...friends
+    .filter((f) => f.status === 'accepted').map((f) => f.from === ctx.uid ? f.to : f.from)])), err);
+  const timer = setInterval(emit, 60000);
+  return () => { stopFriends(); clearInterval(timer); subscriptions.forEach((stop) => stop()); };
+}
+// Group into zones (one per shop), biggest first.
+export function groupPresence(rows) {
+  const z = new Map();
+  for (const r of rows) { if (!z.has(r.zone)) z.set(r.zone, { zone: r.zone, name: r.zoneName, people: [] }); z.get(r.zone).people.push(r); }
+  for (const g of z.values()) g.people.sort((a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0));
+  return [...z.values()].sort((a, b) => b.people.length - a.people.length);
+}
+export async function sendWave() { retiredAttendanceFlow(); }
+export function watchWaves(ctx, cb) {
+  const { sdk, db } = ctx; const seen = new Map();
+  return sdk.onSnapshot(sdk.collection(db, 'waves', ctx.uid, 'inbox'), (s) => {
+    for (const d of s.docs) {
+      const w = { id: d.id, ...d.data() }; const at = toMs(w.at) || 0;
+      if (seen.get(w.id) !== at) { seen.set(w.id, at); if (clock(ctx) - at < 10 * 60000) cb(w); }
+    }
+  }, () => {});
+}
+export async function clearWave(ctx, fromUid) { try { await ctx.sdk.deleteDoc(R(ctx).wave(ctx.uid, fromUid)); } catch { /* gone */ } }
+
+const byAtDesc = (a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0);
+export function watchMyVisits(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(R(ctx).visitCol(), eq(ctx, 'uid', ctx.uid)), (s) => cb(snapList(s).sort(byAtDesc)), err);
+}
+export function watchMerchantVisits(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(R(ctx).visitCol(), eq(ctx, 'merchantId', ctx.uid)), (s) => cb(snapList(s).sort(byAtDesc)), err);
+}
+export async function monthVisits(ctx, month) { return list(ctx, 'visits', eq(ctx, 'month', month)); }
+// ------------------------------------------------------------- account closures ("Delete my account")
+// Reasons offered on the Delete my account page (the server checks the same codes: functions/account.js).
+export const CLOSE_REASONS = [
+  ['not-useful', 'I don’t find it useful', 'all'], ['not-using', 'I don’t use it often enough', 'all'],
+  ['rewards', 'Not enough rewards or offers', 'student'], ['few-students', 'Not enough students use it', 'merchant'],
+  ['privacy', 'Privacy or data concerns', 'all'], ['problems', 'Sign-in problems or bugs', 'all'],
+  ['too-many-alerts', 'Too many sounds or notifications', 'student'], ['leaving', 'I’m graduating or leaving UM', 'student'],
+  ['business-closing', 'My business is closing or moving', 'merchant'], ['other', 'Something else', 'all'],
+  ['prefer-not', 'I’d rather not say', 'all'],
+];
+export const closeReasonLabel = (code) => (CLOSE_REASONS.find(([k]) => k === code) || [code, code])[1];
+export async function closeMyAccount(user, { reasons, comment }) {
+  const idToken = await user.getIdToken(true);
+  const res = await fetch('/api/account/close', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+    body: JSON.stringify({ reasons, comment }) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) throw new Error(data.message || `The server didn’t answer (${res.status}). Try again, or email admin@addonz.my.`);
+  return data;
+}
+export async function listClosures(ctx) {
+  return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
+}
+export async function markClosuresSeen(ctx, ids) {
+  if (!ids.length) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  ids.forEach((id) => b.update(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true }));
+  await b.commit();
+}
+export async function markClosureDone(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true, status: 'done', handledBy: ctx.email, handledAt: ctx.sdk.serverTimestamp() });
+}
+
+export async function flagVisit(ctx, id, flag, note) {
+  await ctx.sdk.updateDoc(R(ctx).visit(id), { flag, flagNote: note || '', flaggedBy: ctx.email });
+}
+
+// ------------------------------------------------------------- ledger
+export function watchLedger(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(R(ctx).ledgerCol(ctx.uid), (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);
+}
+export async function hasLedger(ctx, id) { return !!(await one(ctx, R(ctx).ledger(ctx.uid, id))); }
+export async function adjustPoints(ctx, studentUid, delta, note) {
+  const b = ctx.sdk.writeBatch(ctx.db); const id = R(ctx).newId('adjustments');
+  addPoints(ctx, b, studentUid, 'adj_' + id, { type: 'adjust', delta, note });
+  await b.commit();
+}
+
+// ------------------------------------------------------------- earning
+export async function submitSurvey(ctx, result, rules) {
+  const { sdk } = ctx;
+  await sdk.setDoc(sdk.doc(ctx.db, 'surveys', ctx.uid), { ...result, at: sdk.serverTimestamp() });
+  if (ctx.profile.role !== 'student' || (await hasLedger(ctx, 'survey'))) return 0;
+  const b = sdk.writeBatch(ctx.db);
+  addPoints(ctx, b, ctx.uid, 'survey', { type: 'survey', delta: rules.surveyBonus });
+  await b.commit();
+  return rules.surveyBonus;
+}
+export async function getSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'surveys', u)); }
+function addLearningDay(ctx, batch, lesson, answer) {
+  const day = dayKey(clock(ctx));
+  batch.set(ctx.sdk.doc(ctx.db, 'users', ctx.uid, 'activityDays', day), {
+    day, lesson, answer, completedAt: ctx.sdk.serverTimestamp(),
+  });
+}
+export function watchLearningDays(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.collection(ctx.db, 'users', ctx.uid, 'activityDays'), (s) => cb(snapList(s)), err);
+}
+export function dailyStreak(activityDays = [], nowMs = Date.now()) {
+  const days = new Set(activityDays.map((entry) => entry.day));
+  const todayDone = days.has(dayKey(nowMs));
+  let time = todayDone ? nowMs : nowMs - 86400000, current = 0;
+  while (days.has(dayKey(time))) { current++; time -= 86400000; }
+  return { current, todayDone, days };
+}
+export async function recordAppDay(ctx) {
+  const day = dayKey(clock(ctx));
+  const ref = ctx.sdk.doc(ctx.db, 'users', ctx.uid, 'appDays', day);
+  if ((await ctx.sdk.getDoc(ref)).exists()) return 'already';
+  try {
+    await ctx.sdk.setDoc(ref, { day, openedAt: ctx.sdk.serverTimestamp() });
+    return 'recorded';
+  } catch (error) {
+    // Another tab can record the same day between the initial read and write.
+    if ((await ctx.sdk.getDoc(ref)).exists()) return 'already';
+    throw error;
+  }
+}
+export function watchAppDays(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.collection(ctx.db, 'users', ctx.uid, 'appDays'), (s) => cb(snapList(s)), err);
+}
+export async function answerLesson(ctx, i, choice, rules) {
+  const id = 'lesson' + i;
+  if (await hasLedger(ctx, id)) return 'done';
+  const b = ctx.sdk.writeBatch(ctx.db);
+  addPoints(ctx, b, ctx.uid, id, { type: 'lesson', delta: rules.lessonBonus, answer: choice });
+  addLearningDay(ctx, b, id, choice);
+  try { await b.commit(); return 'correct'; } catch (e) { if (e.code === 'permission-denied') return 'wrong'; throw e; }
+}
+export async function practiceLesson(ctx, i, choice, rules) {
+  const id = 'lesson' + i;
+  if (!(await hasLedger(ctx, id))) return answerLesson(ctx, i, choice, rules);
+  const b = ctx.sdk.writeBatch(ctx.db);
+  addLearningDay(ctx, b, id, choice);
+  try { await b.commit(); return 'practised'; } catch (e) { if (e.code === 'permission-denied') return 'wrong'; throw e; }
+}
+// ------------------------------------------------------------- referrals
+export async function applyInviterCode(ctx, code) {
+  const { sdk } = ctx; code = String(code).trim().toUpperCase();
+  const owner = await one(ctx, sdk.doc(ctx.db, 'referralCodes', code));
+  if (!owner) throw new Error('That referral code does not exist.');
+  if (owner.uid === ctx.uid) throw new Error('You cannot use your own code.');
+  const profile = await getProfile(ctx);
+  const ref = sdk.doc(ctx.db, 'friendships', friendshipId(ctx.uid, owner.uid));
+  const existing = await one(ctx, ref);
+  const usernames = existing ? [] : await list(ctx, 'usernames', eq(ctx, 'uid', owner.uid));
+  const b = sdk.writeBatch(ctx.db);
+  b.update(R(ctx).user(ctx.uid), { inviterUid: owner.uid, inviterCode: code });
+  b.set(sdk.doc(ctx.db, 'referrals', ctx.uid), { inviterUid: owner.uid, friendName: profile.name, createdAt: sdk.serverTimestamp(), qualified: false });
+  if (!existing) b.set(ref, {
+    from: ctx.uid, to: owner.uid, fromUsername: profile.username || '', toUsername: usernames[0]?.id || '',
+    fromName: profile.name.split(' ')[0], referralCode: code, status: 'pending', createdAt: sdk.serverTimestamp(),
+  });
+  await b.commit();
+}
+export async function claimFriendBonus() { retiredAttendanceFlow(); }
+export async function myReferrals(ctx) { return list(ctx, 'referrals', eq(ctx, 'inviterUid', ctx.uid)); }
+export async function claimInviterBonus() { retiredAttendanceFlow(); }
+
+// ------------------------------------------------------------- rewards, vouchers, welfare
+export async function listRewards(ctx) { return list(ctx, 'rewards'); }
+export async function saveReward(ctx, id, data) { await ctx.sdk.setDoc(R(ctx).reward(id), data, { merge: true }); }
+export async function redeemReward(ctx, reward) {
+  const { sdk } = ctx; const r = R(ctx); const vid = r.newId('vouchers');
+  const b = sdk.writeBatch(ctx.db);
+  b.set(r.voucher(vid), { studentUid: ctx.uid, studentName: ctx.profile.name, rewardId: reward.id, title: reward.title,
+    merchantId: reward.merchantId, cost: reward.cost, valueCents: reward.valueCents, status: 'issued',
+    code: vid.slice(0, 8).toUpperCase(), validDays: reward.validDays || 30, createdAt: sdk.serverTimestamp() });
+  b.update(r.reward(reward.id), { issued: sdk.increment(1), lastVoucher: vid });
+  addPoints(ctx, b, ctx.uid, vid, { type: 'redeem', delta: -reward.cost, reward: reward.id });
+  await b.commit();
+  return vid;
+}
+export function watchMerchantVouchers(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'merchantId', ctx.uid)), (s) => cb(snapList(s)), err);
+}
+export function watchMyVouchers(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s)), err);
+}
+export async function findVoucher(ctx, raw, asMpp = false) {
+  const s = String(raw).trim();
+  const id = s.startsWith('UMV1:') ? s.slice(5) : null;
+  if (id) return one(ctx, R(ctx).voucher(id));
+  const cons = [eq(ctx, 'code', s.toUpperCase())];
+  if (!asMpp) cons.unshift(eq(ctx, 'merchantId', ctx.uid));
+  const rows = await list(ctx, 'vouchers', ...cons);
+  return rows[0] || null;
+}
+export function voucherExpired(v, nowMs = Date.now()) {
+  const at = toMs(v.createdAt); return !!at && nowMs >= at + (v.validDays || 30) * 86400000;
+}
+export async function useVoucher(ctx, id) {
+  await ctx.sdk.updateDoc(R(ctx).voucher(id), { status: 'used', usedAt: ctx.sdk.serverTimestamp(), usedBy: ctx.uid });
+}
+export async function listVouchers(ctx) { return list(ctx, 'vouchers'); }
+export async function donatePoints(ctx, n) {
+  const { sdk } = ctx; const r = R(ctx); const id = 'don_' + r.newId('donations');
+  const b = sdk.writeBatch(ctx.db);
+  addPoints(ctx, b, ctx.uid, id, { type: 'donate', delta: -n });
+  b.update(r.stats('welfare'), { points: sdk.increment(n), lastUid: ctx.uid, lastId: id });
+  await b.commit();
+}
+
+// Welfare requests are private to the applicant and HEP. Approval moves points
+// from the pool to the student's wallet atomically, with one immutable ledger ID.
+export const WELFARE_MAX_POINTS = 1000; // Also set in firestore.rules.
+export async function submitWelfareRequest(ctx, amount, reason) {
+  if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error('Enter a whole number of points greater than zero.');
+  if (amount > WELFARE_MAX_POINTS) throw new Error('You can ask for up to 1,000 points at a time.');
+  reason = String(reason || '').trim();
+  if (reason.length < 10 || reason.length > 1000) throw new Error('Please give a reason between 10 and 1,000 characters.');
+  const profile = await getProfile(ctx);
+  const id = ctx.uid + '_' + dayKey(clock(ctx)), ref = ctx.sdk.doc(ctx.db, 'welfareRequests', id);
+  if ((await list(ctx, 'welfareRequests', eq(ctx, 'studentUid', ctx.uid))).some((request) => request.id === id)) throw new Error('You’ve already sent a request today. You can send another tomorrow.');
+  await ctx.sdk.setDoc(ref, { studentUid: ctx.uid, name: profile.name, college: profile.college,
+    amount, reason, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
+  return ref.id;
+}
+export function watchMyWelfareRequests(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'welfareRequests'), eq(ctx, 'studentUid', ctx.uid)),
+    (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);
+}
+export async function pendingWelfareRequests(ctx) { return list(ctx, 'welfareRequests', eq(ctx, 'status', 'pending')); }
+export async function getWelfareFund(ctx) { return one(ctx, R(ctx).stats('welfare')); }
+export async function reviewWelfareRequest(ctx, id, approve, response = '') {
+  const { sdk } = ctx, r = R(ctx);
+  const ref = sdk.doc(ctx.db, 'welfareRequests', id), request = await one(ctx, ref);
+  if (!request || request.status !== 'pending') throw new Error('This request has already been reviewed.');
+  response = String(response).trim();
+  if (response.length > 500 || (!approve && response.length < 3)) throw new Error('Please add a short response of up to 500 characters.');
+  if (approve && ((await getWelfareFund(ctx))?.points || 0) < request.amount) throw new Error('The welfare fund does not have enough points for this request.');
+  const b = sdk.writeBatch(ctx.db);
+  b.update(ref, { status: approve ? 'approved' : 'rejected', response, reviewedBy: ctx.email, reviewedAt: sdk.serverTimestamp() });
+  if (approve) {
+    addPoints(ctx, b, request.studentUid, 'welfare_' + id, { type: 'welfare', delta: request.amount, requestId: id });
+    b.update(r.stats('welfare'), { points: sdk.increment(-request.amount), lastRequest: id });
+  }
+  await b.commit();
+}
+
+// ------------------------------------------------------------- offers and deals
+export async function createOffer(ctx, { title, type, endDate }) {
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'offers')), { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
+    title: title.trim(), type, endDate, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
+}
+export async function myOffers(ctx) { return list(ctx, 'offers', eq(ctx, 'merchantId', ctx.uid)); }
+export async function approvedOffers(ctx) { return list(ctx, 'offers', eq(ctx, 'status', 'approved')); }
+export async function pendingOffers(ctx) { return list(ctx, 'offers', eq(ctx, 'status', 'pending')); }
+export async function reviewOffer(ctx, offer, status) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  b.update(ctx.sdk.doc(ctx.db, 'offers', offer.id), { status, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+  if (status === 'approved') b.update(R(ctx).merchant(offer.merchantId), { offer: offer.title });
+  await b.commit();
+}
+export async function createDeal(ctx, d) {
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'deals')), { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
+    title: d.title.trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold, bonus: 0,
+    minSpendCents: 0, limit: 1, status: 'pending', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
+}
+export async function myDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid)); }
+export async function approvedDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'approved')); }
+export async function pendingDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'pending')); }
+export async function toggleDeal(ctx, id, enabled) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { enabled }); }
+export async function reviewDeal(ctx, id, status) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { status, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+}
+export async function dealUsesToday(ctx, dealId) {
+  const d = await one(ctx, ctx.sdk.doc(ctx.db, 'dealDays', `${dealId}_${dayKey(clock(ctx))}`));
+  return d ? d.count : 0;
+}
+// Mirrors the rules' availability checks so students only see claimable deals.
+export function dealStatus(deal, merchant, usesToday, nowMs = Date.now()) {
+  if (deal.status === 'rejected') return 'Not approved';
+  if (deal.status !== 'approved') return 'Awaiting HEP';
+  if (!deal.enabled) return 'Paused';
+  if (merchant?.status && merchant.status !== 'verified') return 'Shop unavailable';
+  const m = minuteOfDay(nowMs);
+  if (m < deal.startMin || m >= deal.endMin) return `Opens ${hhmm(deal.startMin)}`;
+  if (!merchant || !merchant.seats) return 'Seat count not set';
+  if (merchant.occupied * 100 >= deal.threshold * merchant.seats) return 'Busy right now';
+  return 'Available';
+}
+
+export async function dealOverview(ctx, deals, merchants) {
+  const shops = new Map(merchants.map((m) => [m.id, m]));
+  return deals.map((deal) => { const merchant = shops.get(deal.merchantId);
+    return { deal, merchant, used: null, status: dealStatus(deal, merchant, null, clock(ctx)) };
+  });
+}
+
+// ------------------------------------------------------------- missions
+export const MISSIONS = [];
+export const LEGACY_MISSIONS = [
+  { id: 'five-days', title: 'Five days on campus', desc: 'Check in on 5 different days this week', target: 5, bonus: 100, icon: 'flame' },
+  { id: 'explorer', title: 'Campus explorer', desc: 'Visit 3 different merchants this week', target: 3, bonus: 150, icon: 'compass' },
+];
+export function missionProgress(visits, nowMs = Date.now()) {
+  const wk = weekKey(nowMs);
+  const mine = visits.filter((v) => toMs(v.at) && weekKey(toMs(v.at)) === wk);
+  return { week: wk, 'five-days': new Set(mine.map((v) => v.day)).size, explorer: new Set(mine.map((v) => v.merchantId)).size };
+}
+export async function claimMission() { retiredAttendanceFlow(); }
+export async function myMissionClaims(ctx) { return list(ctx, 'missionClaims', eq(ctx, 'uid', ctx.uid)); }
+export async function pendingMissionClaims(ctx) { return list(ctx, 'missionClaims', eq(ctx, 'status', 'pending')); }
+export async function reviewMissionClaim(ctx, claim, approve) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  b.update(ctx.sdk.doc(ctx.db, 'missionClaims', claim.id), { status: approve ? 'approved' : 'rejected', reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+  if (approve) addPoints(ctx, b, claim.uid, 'mission_' + claim.id, { type: 'adjust', delta: claim.bonus, note: `Mission: ${claim.title} (${claim.week})` });
+  await b.commit();
+}
+
+// ------------------------------------------------------------- stats, campaigns, admin
+export function watchStats(ctx, name, cb, err) { return ctx.sdk.onSnapshot(R(ctx).stats(name), (s) => cb(s.exists() ? s.data() : null), err); }
+export async function listCampaigns(ctx) { return list(ctx, 'campaigns'); }
+export async function saveCampaign(ctx, id, data) {
+  const ref = id ? ctx.sdk.doc(ctx.db, 'campaigns', id) : ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'campaigns'));
+  await ctx.sdk.setDoc(ref, data, { merge: true });
+}
+export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
+export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
+export async function saveConfig(ctx, name, data) { await ctx.sdk.setDoc(R(ctx).config(name), data, { merge: true }); }
+export async function listUsers(ctx) { return list(ctx, 'users'); }
+export async function setBlocked(ctx, uid, blocked) { await ctx.sdk.updateDoc(R(ctx).user(uid), { disabled: !!blocked }); }
+// Frees a matric number claimed by the wrong person, so the real student can sign up.
+export async function releaseMatric(ctx, matric) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric))); }
+export async function listSurveys(ctx) { return list(ctx, 'surveys'); }
+export async function listReferrals(ctx) { return list(ctx, 'referrals'); }
+export async function listManualVolumes(ctx) { return list(ctx, 'manualVolumes'); }
+export async function saveManualVolume(ctx, id, data) {
+  const ref = id ? ctx.sdk.doc(ctx.db, 'manualVolumes', id) : ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'manualVolumes'));
+  await ctx.sdk.setDoc(ref, data, { merge: true });
+}
+export async function deleteManualVolume(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'manualVolumes', id)); }
+export async function savePaynetCounts(ctx, month, rows) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  for (const r of rows) b.set(ctx.sdk.doc(ctx.db, 'paynetCounts', `${month}_${r.merchantId}`), { month, merchantId: r.merchantId, merchantName: r.merchantName, count: r.count });
+  await b.commit();
+}
+export async function paynetCounts(ctx, month) { return list(ctx, 'paynetCounts', eq(ctx, 'month', month)); }
+
+// ------------------------------------------------------------- survey scoring (from the original demo)
+export const SURVEY_KNOWLEDGE = [
+  ['A seller asks for your banking OTP to issue a refund. What do you do?', ['Share it to receive the refund', 'Keep it private and contact the bank through an official channel', 'Not sure'], 1],
+  ['Before confirming a QR payment, what should you check?', ['Recipient name and amount', 'Only the sticker colour', 'Not sure'], 0],
+  ['What is a useful first step in budgeting?', ['Spend first and review later', 'List essential costs and set a realistic limit', 'Not sure'], 1],
+  ['What confirms a payment has reached a merchant?', ['A screenshot shown by the customer', 'The transaction in the merchant’s own banking app', 'Not sure'], 1],
+];
+export const SURVEY_DIGITAL = {
+  student: [
+    ['How comfortable are you using banking or e-wallet apps?', ['I need guided help', 'I can complete basic payments', 'I use them confidently']],
+    ['How often do you use cashless payments?', ['Rarely or never', 'Sometimes', 'Most days']],
+    ['Can you find and review your transaction history?', ['I need help', 'With some effort', 'Independently']],
+  ],
+  merchant: [
+    ['What is your business’s QR readiness?', ['Cash only / no QR', 'Personal QR / setup in progress', 'Business QR ready']],
+    ['Can your staff confirm payments independently?', ['Not yet', 'Some staff can', 'All relevant staff can']],
+    ['Can you review settlements and transaction records?', ['I need onboarding support', 'With some help', 'Independently']],
+  ],
+};
+export function scoreSurvey(role, answers) {
+  const knowledge = SURVEY_KNOWLEDGE.reduce((s, q, i) => s + (answers['k' + i] === q[2] ? 25 : 0), 0);
+  const digital = Math.round(([0, 1, 2].reduce((s, i) => s + (answers['d' + i] || 0), 0) / 6) * 100);
+  const score = Math.round(knowledge * 0.6 + digital * 0.4);
+  const grade = score >= 80 ? 'A' : score >= 60 ? 'B' : score >= 40 ? 'C' : 'D';
+  return { role, answers, knowledge, digital, score, grade };
+}
+export const LESSONS = [
+  { title: 'Spot a payment scam', q: 'A seller asks you to share your banking OTP to receive a refund. What should you do?',
+    options: ['Share the OTP so the refund goes through', 'Refuse, and contact your bank through its official app or hotline'], icon: 'shield-alert' },
+  { title: 'Budget your campus week', q: 'What is the best first step when setting a weekly budget?',
+    options: ['List essential costs and set a realistic limit', 'Spend first and check your balance later'], icon: 'piggy-bank' },
+  { title: 'Know your DuitNow QR', q: 'Before confirming a DuitNow QR payment, what should you check?',
+    options: ['Only the colour of the QR sticker', 'The recipient name and the payment amount'], icon: 'scan-line' },
+];

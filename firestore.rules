@@ -1,0 +1,462 @@
+rules_version = '2';
+
+// +Onz security rules.
+// Every points change is paired with an immutable ledger entry in the same batch,
+// and each ledger type can only be written by the role allowed to earn it.
+// Attendance-based earning and presence writes are retired; historical records stay readable.
+// The admin email below is a placeholder. The build fills it in from MPP_ADMIN_EMAILS for each environment.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Sign-in hand-off codes for the iPhone home-screen app: server only (functions/handoff.js).
+    match /handoffs/{id} { allow read, write: if false; }
+
+
+    // ---------- identity ----------
+    function bootstrapAdmins() { return ['mpp-admin@demo.invalid']; }
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function email() { return request.auth.token.email; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function docPath(p) { return /databases/$(database)/documents/$(p); }
+    function access() { return get(/databases/$(database)/documents/config/access).data; }
+    // Every admin must verify their email. Without this, anyone could register an unclaimed admin address
+    // with Email/Password sign-in and gain admin access.
+    function isMpp() {
+      return verified() && (email() in bootstrapAdmins() || email() in access().mppEmails);
+    }
+    function cfg() { return get(/databases/$(database)/documents/config/rules).data; }
+    // Features HEP switches on and off in Settings. Off unless set, so hiding a screen is backed up here.
+    function featureOn(k) { return 'features' in cfg() && cfg().features.get(k, false) == true; }
+    function userDoc(u) { return get(/databases/$(database)/documents/users/$(u)).data; }
+    function userAfter(u) { return getAfter(/databases/$(database)/documents/users/$(u)).data; }
+    // HEP can block an account: blocked users can't earn, redeem, check in or trade.
+    function notBlocked() { return userDoc(uid()).get('disabled', false) != true; }
+    function isStudent() { return verified() && userDoc(uid()).role == 'student' && notBlocked(); }
+    function isMerchantRole() { return verified() && userDoc(uid()).role == 'merchant' && notBlocked(); }
+    function isVerifiedMerchant() {
+      return isMerchantRole() && get(/databases/$(database)/documents/merchants/$(uid())).data.status == 'verified';
+    }
+    function studentEmailAllowed() {
+      return email().split('@')[1] in access().studentDomains || email() in access().testerEmails;
+    }
+
+    // ---------- time (Malaysia, UTC+8) ----------
+    function myt(t) { return t + duration.value(8, 'h'); }
+    function pad(n) { return n < 10 ? '0' + string(n) : string(n); }
+    function dayKey(t) { return string(myt(t).year()) + '-' + pad(myt(t).month()) + '-' + pad(myt(t).day()); }
+    function monthKey(t) { return string(myt(t).year()) + '-' + pad(myt(t).month()); }
+    function minuteOfDay(t) { return myt(t).hours() * 60 + myt(t).minutes(); }
+
+    // ---------- shorthands ----------
+    function D() { return request.resource.data; }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    // ---------- config ----------
+    match /config/{name} {
+      allow read: if signedIn() && ((name == 'rules' || name == 'budget') || isMpp());
+      allow write: if isMpp();
+    }
+
+    // ---------- users ----------
+    match /users/{u} {
+      function ptsChanged() { return changed().hasAny(['points', 'lastTx']); }
+      function ledgerAfter() {
+        return getAfter(/databases/$(database)/documents/users/$(u)/ledger/$(D().lastTx)).data;
+      }
+      function validPoints() {
+        return !ptsChanged() || (
+          D().points is int && D().points >= 0
+          && D().lastTx != resource.data.lastTx
+          && !exists(/databases/$(database)/documents/users/$(u)/ledger/$(D().lastTx))
+          && ledgerAfter().delta == D().points - resource.data.points
+        );
+      }
+      function validInviter() {
+        return !('inviterUid' in resource.data)
+          && D().inviterUid != u
+          && get(/databases/$(database)/documents/referralCodes/$(D().inviterCode)).data.uid == D().inviterUid
+          && existsAfter(/databases/$(database)/documents/referrals/$(u))
+          && existsAfter(/databases/$(database)/documents/friendships/$(u < D().inviterUid ? u + '_' + D().inviterUid : D().inviterUid + '_' + u));
+      }
+      // avatar: a small map of drawing options (see app/js/avatar.js)
+      function validAvatar() { return D().avatar is map && D().avatar.size() <= 16; }
+      // Terms of Use and Privacy Notice: accepted at sign-up, or once later by existing users (app/shared/js/terms.js).
+      function termsOk() {
+        return D().termsVersion is string && D().termsVersion.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && D().termsAcceptedAt == request.time;
+      }
+      function selfUpdate() {
+        return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
+                                  'inviterUid', 'inviterCode',
+                                  'showOnMap', 'mapAudience', 'username', 'termsVersion', 'termsAcceptedAt'])
+          && (!changed().hasAny(['termsVersion', 'termsAcceptedAt']) || termsOk())
+          && (!changed().hasAny(['showOnMap']) || D().showOnMap == false)
+          && (!changed().hasAny(['mapAudience']) || D().mapAudience == 'friends')
+          && (!changed().hasAny(['username']) || (!('username' in resource.data)
+            && D().username is string && D().username.matches('^[a-z0-9_]{3,24}$')
+            && getAfter(/databases/$(database)/documents/usernames/$(D().username)).data.uid == u))
+          && (!changed().hasAny(['inviterUid', 'inviterCode']) || validInviter())
+          && (!changed().hasAny(['avatar']) || validAvatar())
+          && (!changed().hasAny(['name']) || (D().name is string && D().name.size() > 1 && D().name.size() <= 100))
+          && (!changed().hasAny(['college']) || D().college is string);
+      }
+
+      allow read: if signedIn() && (uid() == u || isMpp());
+      allow create: if verified() && uid() == u
+        && D().keys().hasOnly(['role', 'name', 'email', 'matric', 'college', 'faculty', 'points', 'lastTx',
+                               'referralCode', 'goalCents', 'createdAt', 'termsVersion', 'termsAcceptedAt'])
+        && termsOk()
+        && D().points == 0 && D().lastTx == '' && D().email == email()
+        && D().createdAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
+        && ((D().role == 'merchant' && featureOn('merchantSignup') && D().get('matric', '') == '') || (D().role == 'student' && studentEmailAllowed()
+            && D().matric is string && D().matric.matches('^[A-Z0-9]{5,15}$')
+            && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
+      allow update: if signedIn() && validPoints() && (
+          (uid() == u && resource.data.get('disabled', false) != true && selfUpdate())
+          || (isMpp() && changed().hasOnly(['points', 'lastTx', 'disabled'])
+              && (!ptsChanged() || ledgerAfter().type in ['adjust', 'welfare']))
+        );
+
+      // Daily app use is independent of lessons, locations, attendance and points.
+      match /appDays/{day} {
+        allow read: if signedIn() && (uid() == u || isMpp());
+        allow create: if isStudent() && uid() == u
+          && day == dayKey(request.time) && D().day == day
+          && D().keys().hasOnly(['day', 'openedAt']) && D().openedAt == request.time;
+      }
+
+      // One verified learning day per MYT calendar date. Correct practice can
+      // refresh today's record without awarding points or writing attendance.
+      match /activityDays/{day} {
+        allow read: if signedIn() && (uid() == u || isMpp());
+        allow create, update: if isStudent() && uid() == u
+          && day == dayKey(request.time) && D().day == day
+          && D().keys().hasOnly(['day', 'lesson', 'answer', 'completedAt'])
+          && D().lesson in ['lesson0', 'lesson1', 'lesson2'] && D().answer is int
+          && D().answer == get(/databases/$(database)/documents/config/lessonKeys).data[D().lesson]
+          && D().completedAt == request.time;
+      }
+
+      // ---------- points ledger (immutable) ----------
+      match /ledger/{id} {
+        function L() { return request.resource.data; }
+        function redeemOk() {
+          let v = getAfter(/databases/$(database)/documents/vouchers/$(id)).data;
+          return !exists(/databases/$(database)/documents/vouchers/$(id))
+            && v.studentUid == u && L().delta == 0 - v.cost;
+        }
+        function donateOk() {
+          let w = getAfter(/databases/$(database)/documents/stats/welfare).data;
+          return L().delta < 0 && w.lastUid == u && w.lastId == id
+            && w.points == get(/databases/$(database)/documents/stats/welfare).data.points - L().delta;
+        }
+        function validEntry() {
+          return (uid() == u && isStudent() && (
+                 (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus
+                  && exists(/databases/$(database)/documents/surveys/$(u)))
+              || (L().type == 'lesson' && id in ['lesson0', 'lesson1', 'lesson2']
+                  && L().answer == get(/databases/$(database)/documents/config/lessonKeys).data[id]
+                  && L().delta == cfg().lessonBonus)
+              || (L().type == 'redeem' && redeemOk())
+              || (L().type == 'donate' && donateOk())
+            ))
+            || (L().type == 'adjust' && isMpp() && L().note is string && L().note.size() > 2)
+            || (L().type == 'welfare' && isMpp() && welfareOk());
+        }
+        function welfareOk() {
+          let w = getAfter(/databases/$(database)/documents/welfareRequests/$(L().requestId)).data;
+          let pool = getAfter(/databases/$(database)/documents/stats/welfare).data;
+          return id == 'welfare_' + L().requestId && w.studentUid == u
+            && get(/databases/$(database)/documents/welfareRequests/$(L().requestId)).data.status == 'pending'
+            && w.status == 'approved' && L().delta == w.amount
+            && pool.lastRequest == L().requestId && pool.points >= 0
+            && pool.points == get(/databases/$(database)/documents/stats/welfare).data.points - w.amount;
+        }
+        allow read: if signedIn() && (uid() == u || isMpp());
+        allow create: if signedIn() && L().by == uid() && L().createdAt == request.time
+          && L().delta is int && L().type is string
+          && userAfter(u).lastTx == id
+          && userAfter(u).points == userDoc(u).points + L().delta
+          && validEntry();
+      }
+    }
+
+    // ---------- one account per matric number ----------
+    match /matrics/{m} {
+      allow get: if signedIn();
+      allow list, delete: if isMpp();
+      allow create: if verified() && D().uid == uid() && D().keys().hasOnly(['uid'])
+        && userAfter(uid()).role == 'student' && userAfter(uid()).matric == m;
+    }
+
+    // ---------- referral codes ----------
+    match /referralCodes/{code} {
+      allow read: if signedIn();
+      allow create: if verified() && D().uid == uid() && code.matches('^[A-Z0-9-]{4,24}$')
+        && userAfter(uid()).referralCode == code;
+    }
+
+    match /referrals/{friend} {
+      allow read: if signedIn() && (resource.data.inviterUid == uid() || friend == uid() || isMpp());
+      allow create: if verified() && friend == uid() && D().qualified == false
+        && D().inviterUid == userAfter(uid()).inviterUid && D().createdAt == request.time
+        && D().keys().hasOnly(['inviterUid', 'friendName', 'createdAt', 'qualified']);
+      allow update: if false;
+    }
+
+    // ---------- merchants ----------
+    match /merchants/{m} {
+      // Optional map pin: both coordinates, inside a box around the UM campus (a little beyond the 100 m rule).
+      function geoOk() {
+        return ('lat' in D()) == ('lng' in D())
+          && (!('lat' in D()) || (D().lat is number && D().lng is number
+              && D().lat > 3.09 && D().lat < 3.15 && D().lng > 101.62 && D().lng < 101.69));
+      }
+      // Logo: a small image stored as a data URL (the app shrinks it to 256 px before upload).
+      function logoOk() {
+        return !('logo' in D()) || (D().logo is string && D().logo.size() < 200000
+          && D().logo.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'));
+      }
+      function profileKeys() {
+        return ['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd'];
+      }
+      allow read: if signedIn() && (resource.data.status == 'verified' || m == uid() || isMpp());
+      allow create: if isMerchantRole() && featureOn('merchantSignup') && m == uid() && D().ownerUid == uid() && D().status == 'pending'
+        && D().submittedAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
+        && D().keys().hasOnly(['ownerUid', 'status', 'submittedAt', 'name', 'type', 'segment', 'location',
+                               'zone', 'eventName', 'eventEnd', 'seats', 'occupied', 'ready', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+        && 'lat' in D() && 'logo' in D() && geoOk() && logoOk();
+      allow update: if signedIn() && (
+          (m == uid() && resource.data.status != 'verified' && featureOn('merchantSignup')
+             && changed().hasOnly(['name', 'type', 'segment', 'location', 'zone', 'eventName', 'eventEnd',
+                                   'status', 'submittedAt', 'seats', 'occupied', 'occupancyAt', 'ready', 'readyAt',
+                                   'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+             && geoOk() && logoOk() && D().status == 'pending' && D().name is string && D().name.size() <= 100 && (!changed().hasAny(['submittedAt']) || D().submittedAt == request.time))
+          || (m == uid() && resource.data.status == 'verified'
+             && changed().hasOnly(['seats', 'occupied', 'occupancyAt', 'ready', 'readyAt', 'lat', 'lng', 'pinAt', 'logo', 'logoAt'])
+             && geoOk() && logoOk()
+             && (!changed().hasAny(['occupied', 'seats']) || (D().occupied is int && D().seats is int
+                 && D().occupied >= 0 && D().occupied <= D().seats)))
+          || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt', 'offer'])
+             && D().status in ['pending', 'verified', 'rejected', 'suspended'])
+        );
+    }
+
+    match /merchantPrivate/{m} {
+      allow read: if signedIn() && (m == uid() || isMpp());
+      allow create, update: if isMerchantRole() && featureOn('merchantSignup') && m == uid()
+        && getAfter(/databases/$(database)/documents/merchants/$(m)).data.status != 'verified'
+        && D().keys().hasOnly(['accountName', 'phone', 'ambassadorId', 'qrImage', 'qrUpdatedAt'])
+        && (!('qrImage' in D()) || (D().qrImage is string && D().qrImage.size() < 700000
+            && D().qrImage.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')));
+    }
+
+    // ---------- offers and off-peak deals ----------
+    match /offers/{id} {
+      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
+      allow create: if isMerchantRole() && featureOn('merchantTools') && D().merchantId == uid() && D().status == 'pending'
+        && D().createdAt == request.time && D().title is string && D().title.size() > 2;
+      allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt'])
+        || (signedIn() && resource.data.merchantId == uid() && changed().hasOnly(['status']) && D().status == 'withdrawn');
+    }
+
+    match /deals/{id} {
+      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
+      allow create: if isMerchantRole() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'pending'
+        && D().enabled == true && D().bonus is int && D().bonus == 0
+        && D().limit is int && D().limit > 0 && D().minSpendCents is int
+        && D().startMin is int && D().endMin is int && D().startMin < D().endMin
+        && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+      allow update: if (signedIn() && resource.data.merchantId == uid() && changed().hasOnly(['enabled']))
+        || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
+    }
+
+    // Retired attendance counters remain readable for archives only.
+    match /dealDays/{k} { allow read: if signedIn(); allow write: if false; }
+    match /checkins/{pair} {
+      allow read: if signedIn() && (pair.matches(uid() + '_.*') || isMpp());
+      allow write: if false;
+    }
+    function friends(a, b) {
+      let id = a < b ? a + '_' + b : b + '_' + a;
+      return exists(/databases/$(database)/documents/friendships/$(id))
+        && get(/databases/$(database)/documents/friendships/$(id)).data.status == 'accepted';
+    }
+    match /usernames/{name} {
+      allow read: if isStudent();
+      allow create: if isStudent() && name.matches('^[a-z0-9_]{3,24}$')
+        && D().keys().hasOnly(['uid']) && D().uid == uid()
+        && !('username' in userDoc(uid()))
+        && userAfter(uid()).username == name;
+    }
+    match /friendships/{id} {
+      function referralRequest() {
+        return 'referralCode' in D() && 'fromName' in D()
+          && userAfter(uid()).inviterUid == D().to
+          && userAfter(uid()).inviterCode == D().referralCode
+          && get(/databases/$(database)/documents/referralCodes/$(D().referralCode)).data.uid == D().to
+          && D().fromName == userDoc(uid()).name.split(' ')[0]
+          && D().fromUsername == userDoc(uid()).get('username', '')
+          && D().toUsername == userDoc(D().to).get('username', '');
+      }
+      allow read: if isStudent() && (resource == null || resource.data.from == uid() || resource.data.to == uid());
+      allow create: if isStudent() && D().from == uid() && D().to != uid()
+        && userDoc(D().to).role == 'student'
+        && id == (D().from < D().to ? D().from + '_' + D().to : D().to + '_' + D().from)
+        && D().keys().hasOnly(['from', 'to', 'fromUsername', 'toUsername', 'fromName', 'referralCode', 'status', 'createdAt'])
+        && (referralRequest() || (!('referralCode' in D()) && !('fromName' in D())
+          && D().fromUsername == userDoc(uid()).username
+          && get(/databases/$(database)/documents/usernames/$(D().toUsername)).data.uid == D().to))
+        && D().status == 'pending' && D().createdAt == request.time;
+      allow update: if isStudent() && resource.data.to == uid() && resource.data.status == 'pending'
+        && changed().hasOnly(['status']) && D().status == 'accepted';
+      allow delete: if isStudent() && (resource.data.from == uid() || resource.data.to == uid());
+    }
+
+    // ---------- "Here now": opt-in, zone-level presence (no live GPS) ----------
+    // A student who switched on "Show me on the campus map" appears at a shop for 2 hours, and only when they
+    // check out there (the check-out is written in the same batch). Only accepted friends can see it.
+    match /presence/{u} {
+      function visibleTo() { return u == uid() || (friends(uid(), u)
+        && userDoc(u).get('showOnMap', false) == true
+        && (resource == null || resource.data.expiresAt > request.time)); }
+      allow get: if isStudent() && visibleTo();
+      allow create, update: if false;
+      allow delete: if signedIn() && (u == uid() || isMpp());
+    }
+    // A wave from one student to another who is at the same shop right now. One per sender (doc id = sender).
+    match /waves/{to}/inbox/{from} {
+      function pres(x) { return get(/databases/$(database)/documents/presence/$(x)).data; }
+      allow read, delete: if signedIn() && to == uid();
+      allow create, update: if false;
+    }
+    match /visits/{id} {
+      allow read: if signedIn() && (resource.data.uid == uid() || resource.data.merchantId == uid() || isMpp());
+      allow create: if false;
+      allow update: if isMpp() && changed().hasOnly(['flag', 'flagNote', 'flaggedBy']);
+    }
+    // Purchase codes from the first pilot version: kept readable for HEP records only.
+    match /txRequests/{id} {
+      allow read: if isMpp();
+    }
+
+    // ---------- campus stats (leaderboard and welfare pool) ----------
+    // College totals are published by server triggers. No student profiles or
+    // individual point balances need to be exposed to the leaderboard client.
+    match /stats/league {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /leagueMembers/{u} {
+      allow read, write: if false;
+    }
+    match /stats/campus {
+      allow read: if signedIn();
+      allow create: if isMpp();
+      allow update: if isMpp();
+
+    }
+    match /stats/welfare {
+      allow read: if signedIn();
+      allow create: if isMpp();
+      allow update: if isMpp() || (isStudent() && changed().hasOnly(['points', 'lastUid', 'lastId'])
+        && D().lastUid == uid()
+        && !exists(/databases/$(database)/documents/users/$(uid())/ledger/$(D().lastId))
+        && getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(D().lastId)).data.type == 'donate'
+        && D().points == resource.data.points
+             - getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(D().lastId)).data.delta);
+    }
+
+    // ---------- rewards and vouchers ----------
+    match /welfareRequests/{id} {
+      allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
+      // The ID is the student and today's date, so each student can send one request a day.
+      allow create: if isStudent() && id == uid() + '_' + dayKey(request.time)
+        && D().keys().hasOnly(['studentUid', 'name', 'college', 'amount', 'reason', 'status', 'createdAt'])
+        && D().studentUid == uid() && D().name == userDoc(uid()).name && D().college == userDoc(uid()).college
+        && D().amount is int && D().amount > 0 && D().amount <= 1000
+        && D().reason is string && D().reason.size() >= 10 && D().reason.size() <= 1000
+        && D().status == 'pending' && D().createdAt == request.time;
+      allow update: if isMpp() && resource.data.status == 'pending'
+        && changed().hasOnly(['status', 'response', 'reviewedBy', 'reviewedAt'])
+        && D().reviewedBy == email() && D().reviewedAt == request.time
+        && D().response is string && D().response.size() <= 500
+        && ((D().status == 'rejected' && D().response.size() >= 3)
+          || (D().status == 'approved' && transferOk()));
+      function transferOk() {
+        let ledgerId = 'welfare_' + id;
+        let l = getAfter(/databases/$(database)/documents/users/$(D().studentUid)/ledger/$(ledgerId)).data;
+        let pool = getAfter(/databases/$(database)/documents/stats/welfare).data;
+        return !exists(/databases/$(database)/documents/users/$(D().studentUid)/ledger/$(ledgerId))
+          && l.type == 'welfare' && l.requestId == id && l.delta == D().amount
+          && pool.lastRequest == id && pool.points >= 0
+          && pool.points == get(/databases/$(database)/documents/stats/welfare).data.points - D().amount;
+      }
+    }
+    match /rewards/{r} {
+      allow read: if signedIn();
+      allow write: if isMpp();
+      allow update: if isStudent() && changed().hasOnly(['issued', 'lastVoucher'])
+        && D().issued == resource.data.issued + 1 && D().issued <= resource.data.stock
+        && !exists(/databases/$(database)/documents/vouchers/$(D().lastVoucher))
+        && existsAfter(/databases/$(database)/documents/vouchers/$(D().lastVoucher));
+    }
+
+    match /vouchers/{v} {
+      function reward() { return get(/databases/$(database)/documents/rewards/$(D().rewardId)).data; }
+      allow read: if signedIn() && (resource.data.studentUid == uid() || resource.data.merchantId == uid() || isMpp());
+      allow create: if isStudent() && D().studentUid == uid() && D().status == 'issued'
+        && D().keys().hasOnly(['studentUid', 'studentName', 'rewardId', 'title', 'merchantId', 'cost', 'valueCents', 'status', 'code', 'validDays', 'createdAt'])
+        && D().studentName == userDoc(uid()).name
+        && D().code.matches('^[A-Z0-9]{8}$') && v.upper().matches(D().code + '.*')
+        && D().validDays == reward().get('validDays', 30)
+        && D().createdAt == request.time && reward().active == true
+        && D().cost == reward().cost && D().valueCents == reward().valueCents
+        && D().merchantId == reward().merchantId && D().title == reward().title
+        && (D().merchantId == '' || featureOn('merchantTools'))
+        && getAfter(/databases/$(database)/documents/rewards/$(D().rewardId)).data.lastVoucher == v
+        && existsAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(v));
+      allow update: if signedIn() && resource.data.status == 'issued'
+        && changed().hasOnly(['status', 'usedAt', 'usedBy']) && D().status == 'used'
+        && D().usedAt == request.time && D().usedBy == uid()
+        && request.time < resource.data.createdAt + duration.value(resource.data.get('validDays', 30), 'd')
+        && ((resource.data.merchantId == uid() && isVerifiedMerchant() && featureOn('merchantTools')) || isMpp());
+    }
+
+    // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
+    // anonymous; businesses' closing requests name the business so HEP can close it.
+    match /accountClosures/{id} {
+      allow read: if isMpp();
+      allow update: if isMpp() && changed().hasOnly(['seen', 'status', 'handledBy', 'handledAt'])
+        && D().seen == true && (!('handledBy' in changed()) || (D().handledBy == email() && D().handledAt == request.time));
+      allow create, delete: if false;
+    }
+
+    // ---------- surveys, missions ----------
+    match /surveys/{u} {
+      allow read: if signedIn() && (uid() == u || isMpp());
+      allow write: if verified() && uid() == u
+        && D().keys().hasOnly(['role', 'answers', 'knowledge', 'digital', 'score', 'grade', 'at'])
+        && D().knowledge is int && D().digital is int && D().at == request.time;
+    }
+
+    match /missionClaims/{id} {
+      allow read: if signedIn() && (resource.data.uid == uid() || isMpp());
+      allow create: if false;
+      allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
+    }
+
+    // ---------- HEP-only programme records ----------
+    match /campaigns/{id} {
+      allow read: if signedIn();
+      allow write: if isMpp();
+    }
+    match /manualVolumes/{id} {
+      allow read, write: if isMpp();
+    }
+    match /paynetCounts/{id} {
+      allow read, write: if isMpp();
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "projects": {
+    "staging": "umconnect-e455a",
+    "production": "umconnectproduction"
+  },
+  "targets": {
+    "umconnect-e455a": {
+      "hosting": {
+        "client": [
+          "umconnect-e455a"
+        ],
+        "admin": [
+          "umconnect-e455a-admin"
+        ]
+      }
+    },
+    "umconnectproduction": {
+      "hosting": {
+        "client": [
+          "umconnectproduction"
+        ],
+        "admin": [
+          "umconnectproduction-admin"
+        ]
+      }
+    }
+  }
+}
