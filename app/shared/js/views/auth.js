@@ -15,7 +15,7 @@ function frame(app, inner) {
     <aside class="art">
       <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"></a>
       <div><h2>${admin ? 'HEP admin dashboard' : 'Add on to campus life.'}</h2>
-        <p>${admin ? 'Review merchants, approve deals and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
+        <p>${admin ? 'Review merchants, manage rewards and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>

@@ -54,6 +54,7 @@ export function erasePlan(uid, profile = {}) {
       { collection: 'referrals', field: 'inviterUid', action: 'delete' },
       { collection: 'missionClaims', field: 'uid', action: 'delete' },
       { collection: 'vouchers', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME } },
+      { collection: 'liveDealClaims', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME } },
       { collection: 'welfareRequests', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, name: DELETED_NAME, reason: '' } },
       { collection: 'visits', field: 'uid', action: 'anonymise', patch: { uid: DELETED } },
     ],

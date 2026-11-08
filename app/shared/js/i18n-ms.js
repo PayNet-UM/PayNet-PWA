@@ -1765,7 +1765,7 @@ This account isn’t a HEP admin|Akaun ini bukan akaun pentadbir HEP
 Open the +Onz app for students and merchants|Buka aplikasi +Onz untuk pelajar dan peniaga
 Sign out and use another account|Log keluar dan gunakan akaun lain
 HEP admin dashboard|Papan pemuka pentadbir HEP
-Review merchants, approve deals and report on the +Onz programme.|Semak peniaga, luluskan tawaran dan sediakan laporan program +Onz.
+Review merchants, manage rewards and report on the +Onz programme.|Semak peniaga, urus ganjaran dan sediakan laporan program +Onz.
 Signed in.|Berjaya log masuk.
 This account|Akaun ini
 Offline|Luar talian
