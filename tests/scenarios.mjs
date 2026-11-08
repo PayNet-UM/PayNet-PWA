@@ -467,6 +467,20 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('dealsAndPay on too: deals are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { dealsAndPay: true } }); await merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw2'), dealDoc); });
   await ok('merchantSignup on: merchant accounts are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { merchantSignup: true } }); await D.createProfile(newMerchant, { role: 'merchant', name: 'New Shop' }); });
 
+  log('Terms of Use and Privacy Notice');
+  const tn = await makeCtx({ uid: 'terms1', email: 'terms.new@gmail.com' });
+  await denied('a profile can’t be created without accepting the terms', () => tn.sdk.setDoc(tn.sdk.doc(tn.db, 'users', 'terms1'), {
+    role: 'student', name: 'No Terms', email: 'terms.new@gmail.com', matric: 'T1234567', college: 'KK1', faculty: '', points: 0, lastTx: '', referralCode: '', createdAt: tn.sdk.serverTimestamp() }));
+  await ok('signing up records which terms were accepted, and when', async () => {
+    await D.createProfile(tn, { role: 'student', name: 'Terms New', matric: 'T7654321', college: 'KK1', faculty: '' });
+    const p = await D.getProfile(tn); eq(p.termsVersion, D.TERMS_VERSION); eq(!!p.termsAcceptedAt, true); eq(D.needsTerms(p), false);
+  });
+  await ok('an existing user without accepted terms is asked once', () => { eq(D.needsTerms({ role: 'student' }), true); eq(D.needsTerms({ termsVersion: '2000-01-01' }), true); });
+  await ok('accepting the terms later works', () => D.acceptTerms(tn));
+  await denied('the acceptance time can’t be back-dated', () => tn.sdk.updateDoc(tn.sdk.doc(tn.db, 'users', 'terms1'), { termsVersion: D.TERMS_VERSION, termsAcceptedAt: new Date(T - 86400000 * 30) }));
+  await denied('the terms version must be a real version date', () => tn.sdk.updateDoc(tn.sdk.doc(tn.db, 'users', 'terms1'), { termsVersion: 'anything', termsAcceptedAt: tn.sdk.serverTimestamp() }));
+  await denied('nobody can record acceptance for someone else', () => tn.sdk.updateDoc(tn.sdk.doc(tn.db, 'users', 'stuA'), { termsVersion: D.TERMS_VERSION, termsAcceptedAt: tn.sdk.serverTimestamp() }));
+
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };
 }

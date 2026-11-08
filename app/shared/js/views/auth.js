@@ -4,6 +4,7 @@ import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
 import { langToggleHTML, tr } from '../i18n.js';
+import { termsSheet, termsHTML, termsLangSwitch, bindTermsLang, termsText, termsLang } from '../terms.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
 const isAdminSite = (app) => app.site === 'admin';
 
@@ -365,12 +366,14 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
           ${mode === 'in' ? '<button class="btn ghost block" type="button" id="forgot">Forgot your password?</button>' : ''}
         </form></div></details>
     <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
+    ${admin ? '' : `<p class="faint" style="text-align:center">By signing in you agree to the <button class="link" type="button" id="terms-link">Terms of Use and Privacy Notice</button>.</p>`}
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
       <div class="row">${admin ? `<button class="btn small" data-demo="${MPP_EMAIL}">HEP admin</button>`
         : '<button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button>'}</div></div>` : ''}
     ${admin ? `<p class="faint" style="text-align:center">Student or merchant? <a href="${esc(siteUrls.client)}">Open the +Onz app</a></p>` : ''}`);
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
+  if ($('#terms-link')) $('#terms-link').onclick = () => termsSheet();
   if ($('#set-pw')) $('#set-pw').onclick = () => setPasswordSheet(app);
   if (!admin && !demo && !forApp && isStandalone()) resumeHandoff(app);
   $('#google').onclick = (e) => { if (demo) demoGoogleChooser(app); else busy(e.currentTarget, () => googleSignIn(app)); };
@@ -443,6 +446,32 @@ export function renderNotAdmin(app) {
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 
+// Existing users who haven't accepted the current terms see them once, full screen, before the app opens.
+export function renderTerms(app, done) {
+  const show = (lang) => {
+    const t = termsText(lang);
+    frame(app, `<div><h1 data-no-i18n>${esc(t.title)}</h1>
+        <p class="lede">We’ve added terms of use and a privacy notice to +Onz. Please read and accept them to keep using the app. You’ll only be asked once.</p></div>
+      ${termsLangSwitch(lang)}
+      <div class="terms-scroll terms-page">${termsHTML(lang)}</div>
+      <form id="tf" class="stack">
+        <label class="check"><input type="checkbox" name="ok" required> I have read and agree to the +Onz Terms of Use and Privacy Notice.</label>
+        <button class="btn primary block" type="submit">Accept and continue</button>
+        <button class="btn ghost block" type="button" id="out">Sign out</button>
+      </form>`);
+    bindTermsLang(document.body, show);
+    $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
+    $('#tf').onsubmit = (e) => {
+      e.preventDefault();
+      busy($('button[type=submit]', e.target), async () => {
+        try { await D.acceptTerms(app.ctx); app.profile = { ...app.profile, termsVersion: D.TERMS_VERSION }; app.ctx.profile = app.profile; await done(); }
+        catch (err) { toast(errText(err), true); }
+      });
+    };
+  };
+  show(termsLang());
+}
+
 export function renderOnboarding(app, done) {
   const email = app.user.email || '';
   const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
@@ -462,7 +491,11 @@ export function renderOnboarding(app, done) {
           <small>Your points count towards your college on the leaderboard.</small></label>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
       </div>
-      <label class="check"><input type="checkbox" required> I agree that +Onz stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).</label>
+      <div class="terms-box">
+        <p><b>Before you continue</b><br><span class="faint">+Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. HEP admins can see it; businesses only see your name on vouchers you redeem with them. Details below.</span></p>
+        <button class="btn small" type="button" id="ob-terms">Read the Terms of Use and Privacy Notice</button>
+        <label class="check"><input type="checkbox" name="terms" required> I have read and agree to the +Onz Terms of Use and Privacy Notice.</label>
+      </div>
       <button class="btn primary block" type="submit">Continue</button>
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
@@ -470,6 +503,7 @@ export function renderOnboarding(app, done) {
   const sync = () => { $('#student-fields').classList.toggle('hidden', f.role.value !== 'student'); f.matric.required = f.role.value === 'student'; };
   $$('input[name=role]', f).forEach((r) => { r.onchange = sync; }); sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
+  $('#ob-terms').onclick = () => termsSheet();
   f.onsubmit = (e) => {
     e.preventDefault();
     busy($('button[type=submit]', f), async () => {

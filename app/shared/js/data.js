@@ -27,6 +27,9 @@ export const FEATURES = [
 ];
 export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
+// Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
+// everyone is then asked to accept again.
+export const TERMS_VERSION = '2026-11-08';
 export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -102,7 +105,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '' }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -117,7 +120,7 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
     b.set(r.user(ctx.uid), { role, name: name.trim(), email: ctx.email, matric, college, faculty, points: 0, lastTx: '',
-      referralCode: code, createdAt: sdk.serverTimestamp() });
+      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
     try { await b.commit(); return; } catch (e) {
@@ -125,6 +128,11 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     }
   }
 }
+// Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
+export async function acceptTerms(ctx, version = TERMS_VERSION) {
+  await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { termsVersion: version, termsAcceptedAt: ctx.sdk.serverTimestamp() });
+}
+export const needsTerms = (profile) => !!profile && profile.termsVersion !== TERMS_VERSION;
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 

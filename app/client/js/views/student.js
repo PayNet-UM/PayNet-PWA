@@ -681,6 +681,7 @@ async function meRender(app) {
     <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
+      <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="out">${icon('log-out')} Sign out</button></section>`;
 }
 function pointsHistoryRow(entry) {
@@ -719,6 +720,7 @@ function meMount(root, app) {
   $('#install', root).onclick = () => app.installApp();
 
   $('#fx', root).onchange = (e) => { setFx(e.target.checked); if (e.target.checked) pointsFx(); };
+  $('#terms', root).onclick = () => import('../terms.js').then((m) => m.termsSheet());
   $('#out', root).onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 

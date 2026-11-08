@@ -1758,4 +1758,12 @@ Automatic|Automatik
 Practice is always available. Lesson points are earned once.|Latihan sentiasa tersedia. Mata pelajaran hanya diberikan sekali.
 Correct practice. No repeat points.|Jawapan latihan betul. Tiada mata tambahan diberikan.
 Couldn’t save today’s app check-in. We’ll retry when you return.|Daftar masuk aplikasi hari ini tidak dapat disimpan. Kami akan mencuba lagi apabila anda kembali.
+By signing in you agree to the|Dengan log masuk, anda bersetuju dengan
+Terms of Use and Privacy Notice|Terma Penggunaan dan Notis Privasi
+Before you continue|Sebelum anda teruskan
++Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. HEP admins can see it; businesses only see your name on vouchers you redeem with them. Details below.|+Onz menyimpan nama dan e-mel anda (pelajar juga memberikan nombor matrik, kolej dan fakulti) serta aktiviti anda dalam aplikasi (mata, pelajaran, baucar dan permohonan), untuk menjalankan program kampus ini. Pentadbir HEP boleh melihatnya; perniagaan hanya melihat nama anda pada baucar yang anda tebus di tempat mereka. Butiran di bawah.
+Read the Terms of Use and Privacy Notice|Baca Terma Penggunaan dan Notis Privasi
+I have read and agree to the +Onz Terms of Use and Privacy Notice.|Saya telah membaca dan bersetuju dengan Terma Penggunaan dan Notis Privasi +Onz.
+We’ve added terms of use and a privacy notice to +Onz. Please read and accept them to keep using the app. You’ll only be asked once.|Kami telah menambah terma penggunaan dan notis privasi kepada +Onz. Sila baca dan terima untuk terus menggunakan aplikasi. Anda hanya akan ditanya sekali.
+Accept and continue|Terima dan teruskan
 `;

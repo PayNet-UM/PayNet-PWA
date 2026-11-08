@@ -67,6 +67,8 @@ async function onUser(user) {
   if (profile?.role === 'merchant' && !D.featureOn(app.rules, 'merchantSignup') && !D.featureOn(app.rules, 'merchantTools')) return Auth.renderComingSoon(app);
   if (isMpp && !profile) return Auth.renderAdminElsewhere(app, () => Auth.renderOnboarding(app, onboarded));
   if (!profile) return Auth.renderOnboarding(app, onboarded);
+  // Terms of Use and Privacy Notice: shown once to anyone who hasn't accepted the current version.
+  if (D.needsTerms(profile)) return Auth.renderTerms(app, () => startRole(profile.role));
   startRole(profile.role);
 }
 async function onboarded() { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
@@ -142,10 +144,12 @@ function accountSheet() {
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
       ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
       <button class="btn block" id="install">Install the app on this device</button>
+      <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
     </div>`);
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
+  $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
 }
 app.accountSheet = accountSheet;
 
