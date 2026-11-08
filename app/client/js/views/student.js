@@ -11,6 +11,7 @@ import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
+import { closeRender, closeMount } from './close.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -685,7 +686,9 @@ async function meRender(app) {
     <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
-      <button class="btn block warn" id="out">${icon('log-out')} Sign out</button></section>`;
+      <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
+      <button class="btn block warn" id="out">${icon('log-out')} Sign out</button>
+      <a class="btn block ghost danger-link" href="#/delete-account">${icon('trash-2')} Delete my account</a></section>`;
 }
 function pointsHistoryRow(entry) {
   const glyph = { checkin: 'map-pin-check', purchase: 'wallet', survey: 'target', lesson: 'book-open',
@@ -724,6 +727,7 @@ function meMount(root, app) {
   $('#install', root).onclick = () => app.installApp();
 
   $('#fx', root).onchange = (e) => { setFx(e.target.checked); if (e.target.checked) pointsFx(); };
+  $('#terms', root).onclick = () => import('../terms.js').then((m) => m.termsSheet());
   $('#out', root).onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 
@@ -747,4 +751,5 @@ export const routes = {
   community: { title: 'Community', render: communityRender, mount: communityMount },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
+  'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };

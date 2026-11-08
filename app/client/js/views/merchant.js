@@ -8,6 +8,7 @@ import { pinPicker, hasPin, inGeoBox } from '../map.js';
 import { surveyHTML, surveyMount, merchantLogo } from './student.js';
 import { avatarSVG, defaultFor } from '../avatar.js';
 import { merchantHeading, merchantMetric, merchantEmpty, merchantSetup, merchantAction } from '../merchant-ui.js';
+import { closeRender, closeMount } from './close.js';
 
 export const defaultRoute = 'home';
 const toMs = D.toMs;
@@ -327,4 +328,5 @@ export const routes = {
   promote: { title: 'Promote live deals', render: promoteRender, mount: promoteMount, feature: 'merchantTools', wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools', wide: true },
+  'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },
 };

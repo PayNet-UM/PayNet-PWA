@@ -13,7 +13,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -42,9 +42,10 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx)]);
+    const [m, c, w, x] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
+    set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
   } catch { /* not initialised yet */ }
 }
 
@@ -417,6 +418,39 @@ function peopleMount(root, app) {
   $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(tr(`Release matric number ${m}?`))) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
 }
 
+// ------------------------------------------------------------- account closures
+// Students who deleted their account (anonymous) and businesses asking HEP to close theirs, with their reasons.
+async function closuresRender(app) {
+  const rows = await D.listClosures(app.ctx); app._cl = rows;
+  const counts = {}; rows.forEach((r) => (r.reasons || []).forEach((k) => { counts[k] = (counts[k] || 0) + 1; }));
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const open = rows.filter((r) => r.status === 'open');
+  const chips = (r) => `<div class="closure-reasons">${(r.reasons || []).map((k) => `<span class="badge">${esc(D.closeReasonLabel(k))}</span>`).join('')}</div>`;
+  const row = (r) => `<tr><td>${fmtDateTime(r.createdAt)}${r.seen ? '' : ' <span class="badge warn">New</span>'}</td>
+    <td>${r.kind === 'request' ? `<b>${esc(r.businessName || r.name || 'Business')}</b><br><span class="faint">${esc(r.name || '')} · ${esc(r.email || '')}</span>`
+    : `<b>Student account deleted</b><br><span class="faint">${esc(r.college || 'No college')}${r.faculty ? ' · ' + esc(r.faculty) : ''} · ${n(r.points || 0)} points lost</span>`}</td>
+    <td>${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
+    <td class="r">${r.kind !== 'request' ? '<span class="badge ok">Deleted</span>' : r.status === 'open'
+    ? `<button class="btn small" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
+  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, block the account under Merchants, then mark it closed.', 'trash-2')}
+    ${open.length ? `<div class="notice warn" style="margin-bottom:16px">${open.length} business closing ${open.length === 1 ? 'request is' : 'requests are'} waiting.</div>` : ''}
+    ${top.length ? `<section class="card pad-lg" style="margin-bottom:16px"><h2>Why people leave</h2><table class="data" style="margin-top:10px"><tbody>
+      ${top.map(([k, c]) => `<tr><td>${esc(D.closeReasonLabel(k))}</td><td class="r num">${c}</td></tr>`).join('')}</tbody></table></section>` : ''}
+    <div class="card"><div class="row between" style="padding:12px 16px"><h2 style="margin:0">All closures (${rows.length})</h2>${rows.length ? `<button class="btn small" id="clcsv">${icon('download')} Export</button>` : ''}</div>
+      <div class="table-wrap"><table class="data"><thead><tr><th>When</th><th>Account</th><th>Reasons</th><th></th></tr></thead><tbody>
+      ${rows.map(row).join('') || '<tr><td colspan="4" class="faint">No one has closed an account yet.</td></tr>'}</tbody></table></div></div>`;
+}
+function closuresMount(root, app) {
+  const unseen = app._cl.filter((r) => !r.seen).map((r) => r.id);
+  D.markClosuresSeen(app.ctx, unseen).then(() => refreshCounts(app)).catch(() => {});
+  $$('[data-done]', root).forEach((b) => {
+    b.onclick = () => busy(b, async () => { try { await D.markClosureDone(app.ctx, b.dataset.done); toast('Marked as closed.'); app.render(); } catch (err) { toast(errText(err), true); } });
+  });
+  if ($('#clcsv', root)) $('#clcsv', root).onclick = () => downloadCSV('Account-closures.csv', [['Date', 'Type', 'College', 'Business', 'Reasons', 'Comment', 'Status'],
+    ...app._cl.map((r) => [r.createdAt ? new Date(toMs(r.createdAt)).toISOString() : '', r.kind === 'request' ? 'Business request' : 'Student deleted', r.college || '',
+      r.businessName || '', (r.reasons || []).map(D.closeReasonLabel).join('; '), r.comment || '', r.kind === 'request' ? r.status : 'deleted'])]);
+}
+
 // ------------------------------------------------------------- settings
 async function settingsRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) await D.initProgramme(app.ctx);
@@ -476,5 +510,6 @@ export const routes = {
   campaigns: { title: 'Campaigns', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
+  closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
   settings: { title: 'Settings', render: settingsRender, mount: settingsMount },
 };

@@ -27,6 +27,9 @@ export const FEATURES = [
 ];
 export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
+// Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
+// everyone is then asked to accept again.
+export const TERMS_VERSION = '2026-11-08';
 export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -102,7 +105,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '' }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -117,7 +120,7 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
     b.set(r.user(ctx.uid), { role, name: name.trim(), email: ctx.email, matric, college, faculty, points: 0, lastTx: '',
-      referralCode: code, createdAt: sdk.serverTimestamp() });
+      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
     try { await b.commit(); return; } catch (e) {
@@ -125,6 +128,11 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     }
   }
 }
+// Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
+export async function acceptTerms(ctx, version = TERMS_VERSION) {
+  await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { termsVersion: version, termsAcceptedAt: ctx.sdk.serverTimestamp() });
+}
+export const needsTerms = (profile) => !!profile && profile.termsVersion !== TERMS_VERSION;
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 
@@ -322,6 +330,38 @@ export function watchMerchantVisits(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(R(ctx).visitCol(), eq(ctx, 'merchantId', ctx.uid)), (s) => cb(snapList(s).sort(byAtDesc)), err);
 }
 export async function monthVisits(ctx, month) { return list(ctx, 'visits', eq(ctx, 'month', month)); }
+// ------------------------------------------------------------- account closures ("Delete my account")
+// Reasons offered on the Delete my account page (the server checks the same codes: functions/account.js).
+export const CLOSE_REASONS = [
+  ['not-useful', 'I don’t find it useful', 'all'], ['not-using', 'I don’t use it often enough', 'all'],
+  ['rewards', 'Not enough rewards or offers', 'student'], ['few-students', 'Not enough students use it', 'merchant'],
+  ['privacy', 'Privacy or data concerns', 'all'], ['problems', 'Sign-in problems or bugs', 'all'],
+  ['too-many-alerts', 'Too many sounds or notifications', 'student'], ['leaving', 'I’m graduating or leaving UM', 'student'],
+  ['business-closing', 'My business is closing or moving', 'merchant'], ['other', 'Something else', 'all'],
+  ['prefer-not', 'I’d rather not say', 'all'],
+];
+export const closeReasonLabel = (code) => (CLOSE_REASONS.find(([k]) => k === code) || [code, code])[1];
+export async function closeMyAccount(user, { reasons, comment }) {
+  const idToken = await user.getIdToken(true);
+  const res = await fetch('/api/account/close', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+    body: JSON.stringify({ reasons, comment }) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) throw new Error(data.message || `The server didn’t answer (${res.status}). Try again, or email admin@addonz.my.`);
+  return data;
+}
+export async function listClosures(ctx) {
+  return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
+}
+export async function markClosuresSeen(ctx, ids) {
+  if (!ids.length) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  ids.forEach((id) => b.update(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true }));
+  await b.commit();
+}
+export async function markClosureDone(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true, status: 'done', handledBy: ctx.email, handledAt: ctx.sdk.serverTimestamp() });
+}
+
 export async function flagVisit(ctx, id, flag, note) {
   await ctx.sdk.updateDoc(R(ctx).visit(id), { flag, flagNote: note || '', flaggedBy: ctx.email });
 }

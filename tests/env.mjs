@@ -18,6 +18,24 @@ const rulesTpl = fs.readFileSync(new URL('../firestore.rules', import.meta.url),
 const configTpl = fs.readFileSync(new URL('../app/shared/js/firebase-config.js', import.meta.url), 'utf8');
 const firebaserc = JSON.parse(fs.readFileSync(new URL('../.firebaserc', import.meta.url), 'utf8'));
 
+console.log('Custom domains');
+test('no custom domain: sites use their web.app addresses', () => { const u = siteUrlsFor(firebaserc, 'umconnect-e455a', envFor('umconnect-e455a').customUrls); assert.match(u.client, /\.web\.app\/$/); assert.match(u.admin, /\.web\.app\/$/); });
+test('CLIENT_URL and ADMIN_URL replace the web.app addresses', () => {
+  const e = resolveEnv(raw({ FIREBASE_PROJECT_ID: 'umconnect-e455a', CLIENT_URL: 'https://AddOnz.my', ADMIN_URL: 'https://admin.addonz.my/' }));
+  assert.deepEqual(siteUrlsFor(firebaserc, 'umconnect-e455a', e.customUrls), { client: 'https://addonz.my/', admin: 'https://admin.addonz.my/' });
+});
+test('only one custom domain set: the other keeps web.app', () => {
+  const e = resolveEnv(raw({ FIREBASE_PROJECT_ID: 'umconnect-e455a', CLIENT_URL: 'https://addonz.my/' }));
+  const u = siteUrlsFor(firebaserc, 'umconnect-e455a', e.customUrls); assert.equal(u.client, 'https://addonz.my/'); assert.match(u.admin, /\.web\.app\/$/);
+});
+for (const bad of ['http://addonz.my/', 'addonz.my', 'https://addonz.my/app', 'https://addonz.my/";alert(1)//', 'https://-bad.my/'])
+  test(`refuses a bad site address: ${bad}`, () => assert.throws(() => resolveEnv(raw({ CLIENT_URL: bad })), /CLIENT_URL/));
+test('custom addresses are written into the built config', () => {
+  const e = resolveEnv(raw({ CLIENT_URL: 'https://addonz.my/', ADMIN_URL: 'https://admin.addonz.my/' }));
+  const out = renderConfig(configTpl, { ...e, siteUrls: siteUrlsFor(firebaserc, 'umconnect-e455a', e.customUrls) });
+  assert.match(out, /export const siteUrls = \{"client":"https:\/\/addonz\.my\/","admin":"https:\/\/admin\.addonz\.my\/"\};/);
+});
+
 console.log('Env parsing');
 test('parses values, quotes and comments', () => {
   assert.deepEqual(parseEnv('# note\nA=1\nB="two"\r\nexport C=\'three\'\n\nnot a line'), { A: '1', B: 'two', C: 'three' });

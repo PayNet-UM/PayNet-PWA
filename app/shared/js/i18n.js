@@ -26,6 +26,11 @@ const RM = '(RM[\\d.,]+)';
 
 // [regex, (match groups…) => Malay]; t() translates a fragment recursively.
 const PATTERNS = [
+  [/^You lose your ([\d,]+) points and any unused vouchers\.$/, (n) => `Anda kehilangan ${n} mata dan semua baucar yang belum digunakan.`],
+  [/^HEP will close your account after settling any vouchers students still hold and updating the PayNet list\. They’ll contact you at (.+) if they need anything\.$/, (email) => `HEP akan menutup akaun anda selepas menyelesaikan baucar yang masih dipegang pelajar dan mengemas kini senarai PayNet. Mereka akan menghubungi anda di ${email} jika perlu.`],
+  [/^All closures \((\d+)\)$/, (n) => `Semua penutupan (${n})`],
+  [/^(\d+) business closing requests? (?:is|are) waiting\.$/, (n) => `${n} permintaan penutupan perniagaan sedang menunggu.`],
+  [/^([\d,]+) points lost$/, (n) => `${n} mata hilang`],
   [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) for a welcome bonus: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk mendapat bonus alu-aluan: ${url}`],
   [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) to connect with me: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk berhubung dengan saya: ${url}`],
 

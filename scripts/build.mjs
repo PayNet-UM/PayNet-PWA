@@ -18,7 +18,7 @@ try {
   if (name !== 'demo') {
     env = loadEnv(name);
     const firebaserc = JSON.parse(fs.readFileSync(path.join(root, '.firebaserc'), 'utf8'));
-    env.siteUrls = siteUrlsFor(firebaserc, env.firebaseConfig.projectId);
+    env.siteUrls = siteUrlsFor(firebaserc, env.firebaseConfig.projectId, env.customUrls);
   }
 } catch (e) { console.error(e.message); process.exit(1); }
 

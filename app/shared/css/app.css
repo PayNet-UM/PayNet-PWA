@@ -957,3 +957,29 @@ button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; tex
 .kk-crowd.you { border-color: #248e49; }
 .kk-crowd .hn-face { border-width: 1.5px; }
 .kk-crowd .hn-stack .hn-face + .hn-face { margin-left: -8px; }
+
+/* ---------- Terms of Use and Privacy Notice ---------- */
+.terms { font-size: 15px; line-height: 1.55; color: var(--ink, #192f59); }
+.terms .lede { margin: 0 0 12px; }
+.terms section { margin-top: 16px; }
+.terms h3 { margin: 0 0 6px; font-size: 16px; }
+.terms p { margin: 6px 0; }
+.terms ul { margin: 6px 0; padding-left: 20px; display: grid; gap: 5px; }
+.terms-scroll { max-height: 60vh; overflow-y: auto; padding: 4px 14px 4px 2px; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+.terms-page { max-height: 48vh; border: 2px solid #d0dbed; border-radius: 14px; padding: 12px 16px; background: #fff; }
+.terms-box { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: #f4f7fc; border: 2px solid #d0dbed; }
+.terms-box p { margin: 0; }
+.terms-box .btn { justify-self: start; }
+.terms-lang { display: inline-flex; gap: 6px; margin-top: 8px; }
+.terms-lang button { border: 2px solid #d0dbed; background: #fff; color: var(--ink, #192f59); border-radius: 999px; padding: 6px 12px; font: 700 13px/1 Montserrat, system-ui, sans-serif; cursor: pointer; min-height: 34px; }
+.terms-lang button.on { background: var(--ink, #192f59); color: #fff; border-color: var(--ink, #192f59); }
+
+/* Delete my account / closing request */
+.btn.danger-link { color: var(--red); font-size: .95em; }
+.close-account h1 { margin-bottom: 12px; }
+.close-account .close-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.close-account .close-reasons { border: 0; margin: 0; }
+.close-account .close-reasons legend { padding: 0; }
+.close-account .close-reasons legend h2 { margin: 0; }
+.closure-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.closure-reasons .badge { white-space: normal; height: auto; min-height: 26px; }
