@@ -196,6 +196,25 @@ separate from learning completions and legacy attendance, and never increase the
 point balance or KK League score. Existing learning history is not recast as app
 opens. Completed lessons can still be practised without repeated points.
 
+## Custom domain (e.g. addonz.my)
+
+Students and merchants on `https://addonz.my/`, HEP on `https://admin.addonz.my/`. Once per Firebase project:
+
+1. **Firebase console > Hosting**: on the student/merchant site click **Add custom domain**, enter `addonz.my`
+   (tick "Redirect www.addonz.my" if you want `www` too). On the admin site (`<project>-admin`), add `admin.addonz.my`.
+2. **At your domain registrar's DNS settings**, add exactly the records Firebase shows (usually a TXT record to
+   prove ownership and an A record for `addonz.my`; for `admin` an A or CNAME record). Remove any old A/AAAA
+   records for the same names. Firebase then issues the HTTPS certificate: minutes to 24 hours.
+3. **Firebase > Authentication > Settings > Authorized domains**: add `addonz.my` and `admin.addonz.my`.
+4. **Google Cloud Console > APIs & Services > Credentials > OAuth 2.0 Client IDs > "Web client (auto created by
+   Google Service)"**: add `https://addonz.my` and `https://admin.addonz.my` to Authorized JavaScript origins, and
+   `https://addonz.my/__/auth/handler` and `https://admin.addonz.my/__/auth/handler` to Authorized redirect URIs.
+   (The app signs in on its own address, so Google must accept these.)
+5. **Google Maps key** (if used): add `https://addonz.my/*` and `https://admin.addonz.my/*` to its website restrictions.
+6. **Tell the build**: set `CLIENT_URL=https://addonz.my/` and `ADMIN_URL=https://admin.addonz.my/` in
+   `.env.local` / `.env.production` and in the GitHub Environment's variables, then deploy. Links between the two
+   sites, sign-in and the share/install links then use the new addresses. The `.web.app` addresses keep working.
+
 ## How the trust model works
 
 | Step | Who | Enforced in `firestore.rules` |

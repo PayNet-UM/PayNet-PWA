@@ -25,7 +25,7 @@ const dirty = read('git status --porcelain') !== '';
 
 const problems = deployProblems({ target, env, projects, branch, dirty });
 let siteUrls = null;
-try { siteUrls = siteUrlsFor(firebaserc, projectId); } catch (e) { problems.push(e.message); }
+try { siteUrls = siteUrlsFor(firebaserc, projectId, env.customUrls); } catch (e) { problems.push(e.message); }
 if (problems.length) fail(`\n  - ${problems.join('\n  - ')}`);
 
 if (target === 'production' && !ci && !dryRun) {
