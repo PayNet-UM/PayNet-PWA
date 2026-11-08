@@ -13,9 +13,9 @@ function frame(app, inner) {
   const admin = isAdminSite(app);
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
-      <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a>
+      <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"></a>
       <div><h2>${admin ? 'HEP admin dashboard' : 'Add on to campus life.'}</h2>
-        <p>${admin ? 'Review merchants, approve deals and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
+        <p>${admin ? 'Review merchants, manage rewards and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
@@ -214,14 +214,14 @@ export async function renderHandoffDone(app, user, hash, isAdmin = false) {
   const leave = () => { try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); sessionStorage.removeItem(HANDOFF_KEY + '-at'); } catch { /* */ } history.replaceState(null, '', location.pathname); location.reload(); };
   // Never hand over an admin session through a link.
   if (isAdmin) {
-    frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
       <div><h1>Not available for HEP accounts</h1><p class="lede">For security, HEP accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.</p>
       <button class="btn block" id="ho-here" style="margin-top:14px">Continue in Safari</button></div>`);
     $('#ho-here').onclick = leave;
     return;
   }
   // A link alone must never sign anyone in: someone else could have sent it. Ask first.
-  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div id="ho-ask"><h1>Sign in to the +Onz app?</h1>
       <p class="lede">You're signed in as <b>${esc(user.email || 'this account')}</b>. Continue only if you just tapped Continue with Google in the +Onz app on this phone, and it shows this code:</p>
       <p style="margin:14px 0;text-align:center"><span class="code-text">${esc(handoffCode(hash))}</span></p>
@@ -230,7 +230,7 @@ export async function renderHandoffDone(app, user, hash, isAdmin = false) {
       <button class="btn ghost block" id="ho-no" style="margin-top:8px">This wasn't me</button></div>`);
   $('#ho-no').onclick = leave;
   await new Promise((resolve) => { $('#ho-yes').onclick = resolve; });
-  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div id="ho-box"><h1>Finishing sign-in…</h1><p class="lede">One moment.</p></div>`);
   const box = $('#ho-box');
   try {
@@ -348,7 +348,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   const iosApp = !admin && !demo && isStandalone() && isIOS();
   const forApp = !admin && !demo && !!handoffHash();
   frame(app, `
-    <div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+    <div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div><h1>${admin ? 'Sign in to the HEP dashboard' : 'Sign in to +Onz'}</h1>
       <p class="lede">${admin ? 'For HEP staff only. Use the email HEP gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
@@ -399,13 +399,13 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
 }
 
 export function renderComingSoon(app) {
-  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div id="coming-soon"><h1>Merchant features are coming soon</h1><p class="lede">Your account is safe. We’ll open this up soon, so please check back later.</p>
     <button class="btn block" id="cs-out" style="margin-top:14px">Sign out</button></div>`);
   $('#cs-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 export function renderBlocked(app) {
-  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/icon-192.png" alt="+Onz" width="48" height="48"></a></div>
+  frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div><h1>This account is blocked</h1><p class="lede">Contact HEP if you think this is a mistake.</p>
     <button class="btn block" id="blk-out" style="margin-top:14px">Sign out</button></div>`);
   $('#blk-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);

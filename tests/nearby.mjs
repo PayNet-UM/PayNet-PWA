@@ -39,7 +39,8 @@ await test('render contains a map and nearby browsing, without attendance or poi
 });
 await test('legacy checkout, deal and café bookmarks resolve into the central directory', async () => {
   for (const [path, expected] of [['checkin', 'explore'], ['checkin/near', 'explore/near'], ['deals', 'explore/deals'],
-    ['cafes', 'explore/cafes'], ['explore/idea', 'explore/idea'], ['merchant/near', 'merchant/near']]) assert.equal(canonicalPath(path), expected);
+    ['cafes', 'explore/cafes'], ['explore/idea', 'explore/idea'], ['merchant/near', 'merchant/near'],
+    ['friends', 'community/friends'], ['community/welfare', 'community/welfare']]) assert.equal(canonicalPath(path), expected);
 });
 const cleanup = directoryMount({}, app, []);
 await flush();

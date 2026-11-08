@@ -24,7 +24,7 @@ export async function friendsRender(app) {
   app._friendDirectory = await D.listUsernames(app.ctx);
   return `<section class="card friends-hero" aria-labelledby="friends-title">
       <div class="friends-player">${avatarSVG(profile.avatar || defaultFor(app.ctx.uid), { size: 96, title: profile.name })}<button type="button" class="friends-add-shortcut" data-friends-jump="friend-search" aria-controls="friend-search" aria-label="Add friends"><span aria-hidden="true">+</span></button></div>
-      <div class="friends-hero-copy"><h1 id="friends-title">Your circle</h1>
+      <div class="friends-hero-copy"><span class="friends-kicker">Your circle</span><h1 id="friends-title">Community</h1>
         ${usernameTag(profile.username)}</div>
       <div class="friends-scoreboard" aria-label="Your connections">
         <button type="button" data-friends-jump="friends-section-accepted" aria-controls="friends-section-accepted" disabled><strong id="friends-total">—</strong><span>Friends</span></button>
@@ -32,7 +32,11 @@ export async function friendsRender(app) {
         <button type="button" data-friends-jump="friends-section-sent" aria-controls="friends-section-sent" disabled><strong id="friends-outgoing">—</strong><span>Sent</span></button>
       </div>
     </section>
-    <nav class="chips friends-tabs" aria-label="Campus map">${D.featureOn(app.rules, 'overview') ? `<a class="btn small" href="#/explore">${icon('map')} Overview</a>` : ''}<a class="btn small primary" href="#/friends" aria-current="page">${icon('users')} Friends</a></nav>
+    <nav class="community-shortcuts" aria-label="Community sections">
+      <button type="button" data-friends-jump="friend-search" aria-controls="friend-search">${icon('user-plus')} Add friends</button>
+      <button type="button" data-friends-jump="community-league" aria-controls="community-league">${icon('trophy')} KK League</button>
+      <button type="button" data-friends-jump="community-welfare" aria-controls="community-welfare">${icon('hand-heart')} Welfare</button>
+    </nav>
     ${profile.username ? ''
       : `<form id="friend-username" class="card stack friends-claim"><div class="row"><span class="tile-icon">${icon('user')}</span><div><h2>Choose your username</h2></div></div>
         <label class="field">Username<input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" title="3–24 letters, numbers or underscores. Permanent once saved." autocomplete="off" placeholder="e.g. aina_um"></label><button class="btn primary">Save username</button></form>`}

@@ -30,7 +30,7 @@ if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
 const pillars = await stu.locator('.kk-pillar').count();
 if (pillars !== 4) throw new Error('expected 4 +Onz directory cards, got ' + pillars);
-for (const route of ['explore', 'rewards', 'explore/deals', 'learn']) {
+for (const route of ['explore', 'community', 'explore/deals', 'learn']) {
   if (await stu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 1) throw new Error('missing directory: ' + route);
 }
 for (const route of ['bayar', 'explore/idea']) {
@@ -52,7 +52,8 @@ if (nearest !== 'Fresh Laundry') throw new Error('nearest should be Fresh Laundr
 // Location centres the map on the nearby shop; the first marker in DOM order
 // may be outside the map viewport. Exercise the visible shop at that location.
 await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
-if (await stu.locator('.tabbar a.on[data-tab="explore"]').count() !== 1) throw new Error('directory footer tab is not active');
+if (await stu.locator('.tabbar a.on[data-tab="home"]').count() !== 1) throw new Error('Home should stay active when browsing its directory');
+if (await stu.locator('.tabbar a[data-tab="explore"]').count()) throw new Error('Overview should only be accessed through the homepage');
 await stu.screenshot({ path: `${shots}/02-campus-shops.png` });
 ok(`central directory shows ${pins} logo pins; live location puts ${nearest} first`);
 
@@ -76,6 +77,21 @@ await noLocation.waitForSelector('#clist .checkout-shop');
 if (await noLocation.locator('#cmap .kk-me').count()) throw new Error('location shown without permission');
 await privateCtx.close();
 ok('nearby discovery shows location only with permission, sorts shops by distance and awards no points');
+
+await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
+await stu.waitForSelector('#friends-section-accepted');
+if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
+await stu.click('.community-shortcuts [data-friends-jump="community-league"]');
+await stu.waitForFunction(() => document.activeElement?.id === 'community-league');
+await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
+await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
+await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
+await stu.goto(BASE + '#/home'); await stu.waitForSelector('.kk-hero');
+await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-search');
+await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
+if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
+await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
+ok('Community combines friend management, KK League and welfare; legacy links and section shortcuts work');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
@@ -113,10 +129,41 @@ const fresh = async (pg) => pg.addInitScript(() => { if (sessionStorage.getItem(
 const mer = await ctx.newPage(); watch(mer, 'merchant'); await fresh(mer);
 await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#merchant-wallet .stat', { timeout: 30000 });
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
-ok('merchant home shows recorded voucher activity');
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('#manual');
-await mer.fill('#manual [name=code]', vcode); await mer.click('#manual button'); await mer.waitForSelector('#use');
-await mer.click('#use'); await mer.waitForSelector('#toast.show'); ok('merchant redeemed the voucher');
+ok('merchant home shows live-deal activity');
+// Reward vouchers are fulfilled only in the HEP site.
+await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-redeem-steps');
+if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
+const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
+await login(counter, adminEmail, ADMIN); await counter.goto(ADMIN + '#/rewards'); await counter.waitForSelector('#vfind');
+await counter.fill('#vfind [name=code]', vcode); await counter.click('#vfind button'); await counter.waitForSelector('#u');
+await counter.click('#u'); await counter.waitForSelector('#sheet[open]', { state: 'detached' }).catch(async () => { await counter.waitForFunction(() => !document.querySelector('#sheet')?.open); });
+ok('HEP redeemed the reward voucher; merchant has only the live-deal QR flow');
+// Make an approved all-day deal so this test is independent of the wall clock.
+const liveId = await mer.evaluate(async () => {
+  const a=window.__umc, D=await import(new URL('js/data.js',location.href).href);
+  await D.setOccupancy(a.ctx,40,10);
+  return D.createDeal(a.ctx,{title:'Campus QR special',benefit:'20% off any coffee',startMin:0,endMin:1440,threshold:60});
+});
+const pointsBeforeScan = await pointsOf(stu);
+await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas');
+const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
+await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
+// Feed the actual merchant QR image through the student's camera pipeline.
+await stu.evaluate((raw) => {
+  const holder=document.createElement('div'); new QRCode(holder,{text:raw,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
+  const qr=holder.querySelector('canvas'), frame=document.createElement('canvas');frame.width=640;frame.height=640;
+  const x=frame.getContext('2d'), draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);x.drawImage(qr,64,64);};draw();
+  navigator.mediaDevices.getUserMedia=async()=>{const stream=frame.captureStream(10),timer=setInterval(draw,100);for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{clearInterval(timer);stop();};}return stream;};
+}, dealQR);
+await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmation h2');
+if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
+await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
+if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
+await mer.waitForSelector('[data-apply-claim]'); await mer.click('[data-apply-claim]');
+await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
+await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
+await mer.click('#sheet [data-close]');
+ok('student scanned the merchant QR and the correct merchant applied that specific deal');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
 await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
@@ -128,6 +175,17 @@ if (!/Logo saved/.test(await mer.textContent('#toast'))) throw new Error('logo n
 ok('merchant auto-detected its location and uploaded a new logo');
 for (const r of ['promote', 'insights', 'poster', 'survey']) { await mer.goto(BASE + '#/' + r); await mer.waitForTimeout(800); await mer.screenshot({ path: `${shots}/m-${r}.png`, fullPage: true }); }
 ok('all merchant screens rendered');
+
+await mer.goto(BASE + '#/promote'); await mer.waitForSelector('#new-deal'); await mer.click('#new-deal');
+await mer.fill('#df [name=title]', 'Campus study break'); await mer.fill('#df [name=threshold]', '45');
+await mer.waitForFunction(() => document.querySelector('#deal-preview-title')?.textContent === 'Campus study break' && document.querySelector('#deal-preview-threshold')?.textContent === '45%');
+await mer.screenshot({ path: `${shots}/m-deal-builder.png`, fullPage: true });
+await mer.click('#sheet [data-close]');
+await mer.goto(BASE + '#/home'); await mer.setViewportSize({ width: 1360, height: 900 }); await mer.waitForSelector('.mer-actions');
+await mer.screenshot({ path: `${shots}/m-home-desktop.png`, fullPage: true });
+await mer.setViewportSize({ width: 390, height: 844 });
+if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
+ok('merchant deal preview follows its fields and the new shop hub fits mobile and desktop');
 
 // a brand-new merchant must give a logo and an exact location
 const nm = await ctx.newPage(); watch(nm, 'new merchant'); await fresh(nm);
@@ -203,6 +261,17 @@ await gctx.close();
 const off = await ctx.newPage(); watch(off, 'switches'); await fresh(off); await off.setViewportSize({ width: 1360, height: 900 });
 await login(off, adminEmail, ADMIN); await off.waitForSelector('#mpp-rail', { timeout: 30000 });
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
+await mer.goto(BASE + '#/home'); await mer.waitForSelector('.mer-home-grid.is-ready');
+await off.fill('#readiness-update [name=message]', 'Review the refreshed counter poster with your team.');
+await off.click('#readiness-update button');
+await mer.waitForSelector('.mer-setup');
+await mer.click('.mer-setup a[href="#/shop/ready"].btn'); await mer.waitForSelector('.mer-readiness-notice');
+for (const checkbox of await mer.$$('#ready-form input[type=checkbox]')) await checkbox.check();
+await mer.click('#ready-form button');
+await mer.waitForFunction(() => !document.querySelector('#ready-form input:not(:checked)'));
+await mer.goto(BASE + '#/home'); await mer.waitForSelector('.mer-home-grid.is-ready');
+if (await mer.locator('.mer-setup').count()) throw new Error('completed readiness stayed on Home');
+ok('HEP published a required update; readiness returned live on merchant Home and cleared after confirmation');
 if (await off.locator('#features input[type=checkbox]').count() !== 4) throw new Error('expected 4 feature switches');
 for (const c of await off.$$('#features input[type=checkbox]')) await c.uncheck();
 await off.click('#features button'); await off.waitForSelector('#toast.show');
@@ -211,7 +280,7 @@ const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); awai
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
 for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
-for (const route of ['explore', 'deals', 'cafes', 'checkin', 'bayar', 'merchant/mer1']) {
+for (const route of ['explore', 'deals', 'cafes', 'checkin', 'bayar', 'merchant/mer1', 'claim-deal/' + liveId]) {
   await offStu.goto(BASE + '#/' + route); await offStu.waitForTimeout(500);
   if (await offStu.locator('.kk-hero').count() !== 1) throw new Error('typed #/' + route + ' did not go home');
 }
@@ -231,7 +300,7 @@ if (/check in at shops|your check-ins/i.test(await offMer.locator('body').innerT
 ok('with switches off, sign-up has no merchant option');
 await off.check('#features input[name=overview]'); await off.click('#features button'); await off.waitForTimeout(600);
 await offStu.goto(BASE); await offStu.reload(); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
-if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not bring it back');
+if (await offStu.locator('.kk-pillars a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not restore its homepage card');
 await offStu.goto(BASE + '#/explore'); await offStu.waitForSelector('#cmap', { timeout: 20000 });
 if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live deals shown while its switch is off');
 await offStu.locator('#clist h3 a[href^="#/merchant/"]').first().click(); await offStu.waitForSelector('text=Visit this shop', { timeout: 20000 });

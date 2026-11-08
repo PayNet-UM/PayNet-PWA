@@ -2,6 +2,7 @@
 // so these tests check that the app's writes satisfy firestore.rules and that abuse is blocked.
 // Backends: the local rules evaluator (default) or the official emulator (tests/emulator.mjs).
 import * as D from '../app/shared/js/data.js';
+import * as L from '../app/shared/js/live-deals.js';
 
 export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
   let passed = 0, failed = 0;
@@ -111,6 +112,23 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('students see verified merchants with their logos', async () => { const l = await D.listVerifiedMerchants(stuA); eq(l.length, 2, 'merchant count'); eq(!!l[0].logo, true, 'logo'); });
   await denied('verified merchant cannot rename itself without review', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'merchants', 'mer1'), { name: 'Other' }));
   await ok('merchant completes staff readiness', () => D.setReadiness(merch));
+  await ok('completed readiness stays current until HEP publishes a required update', async () => {
+    eq(D.merchantReadinessCurrent(await D.getMerchant(merch, 'mer1'), await D.getRules(merch)), true);
+  });
+  await denied('merchant cannot publish a readiness update', () => D.publishMerchantReadiness(merch, 'Review the updated counter poster with your team.'));
+  await denied('student cannot publish a readiness update', () => D.publishMerchantReadiness(stuA, 'Review the updated counter poster with your team.'));
+  await ok('HEP publication makes earlier readiness require review without deleting the shop', async () => {
+    tick(1000);
+    await D.publishMerchantReadiness(mpp, 'Review the updated counter poster with your team.');
+    const currentRules = await D.getRules(merch), merchant = await D.getMerchant(merch, 'mer1');
+    eq(D.merchantReadinessCurrent(merchant, currentRules), false);
+    eq(merchant.status, 'verified'); eq(merchant.ready, true);
+    eq(currentRules.features.overview, true, 'feature choices remain intact');
+  });
+  await ok('confirming after publication completes the latest readiness update', async () => {
+    await D.setReadiness(merch);
+    eq(D.merchantReadinessCurrent(await D.getMerchant(merch, 'mer1'), await D.getRules(merch)), true);
+  });
   await ok('verified merchant updates its logo', () => D.setMerchantLogo(merch, 'data:image/png;base64,' + 'C'.repeat(500)));
   await ok('verified merchant moves its map pin', async () => {
     await D.setMerchantPin(merch, 3.1270, 101.6551);
@@ -201,11 +219,15 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     vid = await D.redeemReward(stuA, rw); eq(await pts(stuA), before - 200);
   });
   await denied('another merchant cannot see the voucher', () => D.findVoucher(merch2, 'UMV1:' + vid));
-  await ok('Kopi Kolej looks up the voucher by short code and marks it used', async () => {
-    const v = await D.findVoucher(merch, vid.slice(0, 8).toUpperCase()); eq(v.id, vid);
-    await D.useVoucher(merch, vid);
+  await denied('the matching merchant cannot look up a reward voucher', () => D.findVoucher(merch, 'UMV1:' + vid));
+  await denied('the matching merchant cannot read the voucher directly', () => merch.sdk.getDoc(merch.sdk.doc(merch.db,'vouchers',vid)));
+  await denied('the matching merchant cannot redeem the voucher directly', () => D.useVoucher(merch, vid));
+  await denied('students cannot fulfil their own vouchers', () => D.useVoucher(stuA, vid));
+  await ok('HEP looks up the reward voucher and fulfils it', async () => {
+    const v = await D.findVoucher(mpp, vid.slice(0, 8).toUpperCase()); eq(v.id, vid);
+    await D.useVoucher(mpp, vid);
   });
-  await denied('a used voucher cannot be used again', () => D.useVoucher(merch, vid));
+  await denied('HEP cannot fulfil a used voucher twice', () => D.useVoucher(mpp, vid));
   await ok('A donates 10 points to the welfare pool', async () => {
     const before = await pts(stuA); await D.donatePoints(stuA, 10); eq(await pts(stuA), before - 10);
     eq((await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'stats', 'welfare'))).data().points, 10);
@@ -288,16 +310,13 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
 
   log('Offers and quiet-hour bonuses');
   merch.merchantName = 'Kopi Kolej';
-  await ok('merchant proposes an offer; HEP approves it', async () => {
-    await D.createOffer(merch, { title: 'Double points Tuesdays', type: 'Extra points', endDate: '2026-12-31' });
-    const [o] = await D.pendingOffers(mpp); await D.reviewOffer(mpp, o, 'approved');
-    eq((await D.getMerchant(stuA, 'mer1')).offer, 'Double points Tuesdays');
-  });
+  await denied('merchant discounts cannot use the retired standalone offer flow', () => D.createOffer(merch, { title: 'Old offer' }));
   let deal;
-  await ok('merchant creates a quiet-hour bonus and sets seats; HEP approves', async () => {
-    await D.createDeal(merch, { title: 'Quiet afternoon', startMin: canSetTime ? 14 * 60 : 0, endMin: canSetTime ? 17 * 60 : 1440, threshold: 60, bonus: 40, limit: 1 });
+  await ok('verified merchant publishes a live deal immediately without HEP approval', async () => {
+    const id = await D.createDeal(merch, { title: 'Quiet afternoon', startMin: canSetTime ? 14 * 60 : 0, endMin: canSetTime ? 17 * 60 : 1440, threshold: 60, bonus: 40, limit: 1 });
     await D.setOccupancy(merch, 40, 39);
-    const [d] = await D.pendingDeals(mpp); await D.reviewDeal(mpp, d.id, 'approved'); deal = { ...d, status: 'approved' };
+    deal = (await D.myDeals(merch)).find((d) => d.id === id); eq(deal.status, 'published');
+    eq((await D.approvedDeals(stuA)).some((d) => d.id === id), true);
   });
   if (canSetTime) { T = Date.UTC(2026, 10, 10, 7, 0, 0); setTime(T); }
   const farah = gmailer; farah.profile = await D.getProfile(farah);
@@ -305,6 +324,97 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('live deal availability depends on time and occupancy, not attendance claims', async () => {
     await D.setOccupancy(merch, 40, 10);
     eq(D.dealStatus(deal, await D.getMerchant(stuB, 'mer1'), 999, T), 'Available');
+  });
+  const newDealMerchant = await makeCtx({ uid: 'new_deal_merchant', email: 'new-deals@shop.my' });
+  await D.createProfile(newDealMerchant, { role: 'merchant', name: 'New deal merchant' });
+  const validDealInput = { title: 'Campus discount', benefit: '20% off coffee', startMin: 0, endMin: 1440, threshold: 60 };
+  await denied('an unverified merchant cannot publish live deals', () => D.createDeal(newDealMerchant, validDealInput));
+  await denied('a student cannot publish merchant deals', () => D.createDeal(stuA, validDealInput));
+  await seedHistory([['deals/legacy_pending', { ...deal, id: 'legacy_pending', status: 'pending' }]]);
+  await denied('another merchant cannot publish a legacy pending deal', () => D.publishDeal(merch2, 'legacy_pending'));
+  await ok('merchant can publish its own earlier pending deal without admin approval', async () => {
+    await D.publishDeal(merch, 'legacy_pending');
+    eq((await D.approvedDeals(stuA)).some((d) => d.id === 'legacy_pending'), true);
+  });
+  log('Merchant QR → student claim → merchant discount');
+  let qrSession, liveClaim;
+  await ok('only the deal owner can issue its short-lived QR', async () => {
+    qrSession = await L.issueDealQR(merch, deal.id);
+    eq(L.parseDealQR(qrSession.code), qrSession.id);
+  });
+  await denied('students cannot issue merchant QR sessions', () => L.issueDealQR(stuA, deal.id));
+  await denied('another merchant cannot issue this deal QR', () => L.issueDealQR(merch2, deal.id));
+  await denied('students cannot list QR session tokens', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'liveDealQRs')));
+  await denied('a voucher QR cannot claim a live deal', () => L.claimDealQR(stuA, 'UMV1:' + vid, deal.id));
+  await denied('a QR from a different deal is refused', () => L.claimDealQR(stuA, qrSession.code, 'different-deal'));
+  await ok('a successful QR scan atomically credits 10 points and records its claim', async () => {
+    const before = await pts(stuA);
+    liveClaim = await L.claimDealQR(stuA, qrSession.code, deal.id);
+    const claim = await L.myDealClaim(stuA, deal.id);
+    eq(claim.id, liveClaim); eq(claim.status, 'claimed'); eq(claim.merchantId, merch.uid);
+    eq(claim.rewardPoints, 10); eq(await pts(stuA), before + 10);
+    const ledger = await stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'users', stuA.uid, 'ledger', 'liveDeal_' + liveClaim));
+    eq(ledger.data().delta, 10); eq(ledger.data().type, 'liveDeal');
+  });
+  await denied('the same student cannot claim the same deal twice in one day', () => L.claimDealQR(stuA, qrSession.code, deal.id));
+  await denied('another student cannot read the private claim', () => stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'liveDealClaims', liveClaim)));
+  await denied('a student cannot mark their own discount applied', () => L.applyDealClaim(stuA, liveClaim));
+  await denied('another merchant cannot apply this discount', () => L.applyDealClaim(merch2, liveClaim));
+  await ok('the correct merchant applies the confirmed discount once', async () => {
+    const before = await pts(stuA);
+    await L.applyDealClaim(merch, liveClaim); eq((await L.myDealClaim(stuA, deal.id)).status, 'applied'); eq(await pts(stuA), before);
+  });
+  await denied('an applied discount cannot be applied twice', () => L.applyDealClaim(merch, liveClaim));
+  await ok('concurrent scans create only one claim for a student and deal', async () => {
+    const before = await pts(stuB);
+    const results = await Promise.allSettled([L.claimDealQR(stuB, qrSession.code, deal.id), L.claimDealQR(stuB, qrSession.code, deal.id)]);
+    eq(results.filter((r) => r.status === 'fulfilled').length, 1); eq(await pts(stuB), before + 10);
+  });
+  await ok('HEP can audit recorded live-deal claims', async () => { eq((await L.listDealClaims(mpp)).some((c) => c.id === liveClaim), true); });
+  const rawScan = async (student, session, credit = 10, ledgerCredit = credit, includePoints = true) => {
+    const sdk = student.sdk, id = L.claimId(deal.id, student.uid, D.dayKey(T)), ledgerId = 'liveDeal_' + id;
+    const profile = await D.getProfile(student), batch = sdk.writeBatch(student.db);
+    batch.set(sdk.doc(student.db, 'liveDealClaims', id), { studentUid: student.uid, studentName: profile.name,
+      merchantId: merch.uid, dealId: deal.id, title: deal.title, benefit: deal.benefit || deal.title, rewardPoints: credit,
+      sessionId: session, day: D.dayKey(T), status: 'claimed', createdAt: sdk.serverTimestamp() });
+    if (includePoints) {
+      batch.set(sdk.doc(student.db, 'users', student.uid, 'ledger', ledgerId), { type: 'liveDeal', delta: ledgerCredit, claimId: id, dealId: deal.id, by: student.uid, createdAt: sdk.serverTimestamp() });
+      batch.update(sdk.doc(student.db, 'users', student.uid), { points: sdk.increment(ledgerCredit), lastTx: ledgerId });
+    }
+    await batch.commit();
+  };
+  await denied('a scan claim cannot be recorded without its points credit', () => rawScan(farah, qrSession.id, 10, 10, false));
+  await denied('a student cannot inflate the configured QR reward', () => rawScan(farah, qrSession.id, 100));
+  await denied('ledger credit must equal the claim reward exactly', () => rawScan(farah, qrSession.id, 10, 20));
+  await denied('points cannot be minted without a new QR claim', async () => {
+    const sdk = farah.sdk, id = L.claimId(deal.id, farah.uid, D.dayKey(T)), ledgerId = 'liveDeal_' + id, batch = sdk.writeBatch(farah.db);
+    batch.set(sdk.doc(farah.db, 'users', farah.uid, 'ledger', ledgerId), { type: 'liveDeal', delta: 10, claimId: id, dealId: deal.id, by: farah.uid, createdAt: sdk.serverTimestamp() });
+    batch.update(sdk.doc(farah.db, 'users', farah.uid), { points: sdk.increment(10), lastTx: ledgerId });
+    await batch.commit();
+  });
+  await denied('merchant cannot change the programme points rate', () => D.saveConfig(merch, 'rules', { liveDealPoints: 1000 }));
+  await ok('merchant pauses the deal while a QR is still open', () => D.toggleDeal(merch, deal.id, false));
+  await denied('a paused deal cannot be claimed with an existing QR', () => L.claimDealQR(stuB, qrSession.code, deal.id));
+  await D.toggleDeal(merch, deal.id, true);
+  await D.setOccupancy(merch, 40, 40);
+  await denied('an occupied café cannot claim a deal with an earlier QR', () => L.claimDealQR(stuB, qrSession.code, deal.id));
+  await D.setOccupancy(merch, 40, 10);
+  const expiredSession = 'f'.repeat(32);
+  await seedHistory([['liveDealQRs/' + expiredSession, { merchantId: merch.uid, dealId: deal.id, createdAt: merch.sdk.Timestamp.fromMillis(T - 120000), expiresAt: merch.sdk.Timestamp.fromMillis(T - 1) }]]);
+  await denied('expired QR tokens cannot be claimed', () => L.claimDealQR(stuB, 'ONZDEAL1:' + expiredSession, deal.id));
+  const directClaim = () => ({ studentUid: stuB.uid, studentName: stuB.profile.name, merchantId: merch.uid, dealId: deal.id, title: deal.title, benefit: deal.benefit || deal.title, sessionId: expiredSession, day: D.dayKey(T), status: 'claimed', createdAt: stuB.sdk.serverTimestamp() });
+  await denied('rules reject an expired QR even with a complete claim and points batch', () => rawScan(farah, expiredSession));
+  const expiredClaimId = 'archived_expired_discount';
+  await seedHistory([['liveDealClaims/' + expiredClaimId, { ...directClaim(), createdAt: merch.sdk.Timestamp.fromMillis(T - L.CLAIM_LIFETIME_MS - 1000), status: 'claimed' }]]);
+  await denied('a merchant cannot apply a claim after its 15-minute window', () => L.applyDealClaim(merch, expiredClaimId));
+  await ok('HEP can adjust future scan points while earlier credits remain unchanged', async () => {
+    await D.saveConfig(mpp, 'rules', { liveDealPoints: 20 });
+    try {
+      const before = await pts(farah), fresh = await L.issueDealQR(merch, deal.id);
+      await L.claimDealQR(farah, fresh.code, deal.id);
+      eq(await pts(farah), before + 20); eq((await L.myDealClaim(farah, deal.id)).rewardPoints, 20);
+      eq((await L.myDealClaim(stuA, deal.id)).rewardPoints, 10);
+    } finally { await D.saveConfig(mpp, 'rules', { liveDealPoints: 10 }); }
   });
   await denied('attendance mission claims are paused at the API', () => D.claimMission(stuA, {}, D.weekKey(T), 5));
   await denied('direct mission claims cannot restart attendance missions', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'missionClaims', 'new_claim'), { uid: stuA.uid, status: 'pending', week: D.weekKey(T), mission: 'five-days', createdAt: stuA.sdk.serverTimestamp() }));
@@ -453,17 +563,17 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('merchantSignup off: an existing merchant account cannot apply', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchants', 'swMer'), { ownerUid: 'swMer', status: 'pending', submittedAt: swMerchant.sdk.serverTimestamp(), name: 'Switch Shop', lat: 3.12, lng: 101.65, logo: 'data:image/png;base64,AA==' }));
   await denied('merchantSignup off: an existing merchant cannot upload a QR', () => swMerchant.sdk.setDoc(swMerchant.sdk.doc(swMerchant.db, 'merchantPrivate', 'swMer'), { accountName: 'Switch' }));
   await denied('merchantTools off: no new offers', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw1'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
-  const dealDoc = { merchantId: 'mer1', status: 'pending', enabled: true, bonus: 0, limit: 1, minSpendCents: 0, startMin: 0, endMin: 100, threshold: 50 };
+  const dealDoc = { title: 'Switch deal', merchantId: 'mer1', status: 'published', enabled: true, bonus: 0, limit: 1, minSpendCents: 0, startMin: 0, endMin: 100, threshold: 50 };
   await denied('merchantTools off: no new deals', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw1'), dealDoc));
   await denied('merchantTools off: a merchant cannot mark a voucher used', () => D.useVoucher(merch, shopVoucher));
-  await denied('merchantTools off: students cannot buy a shop voucher nobody could redeem', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-shop')); });
+  await ok('merchantTools off: reward vouchers still belong to HEP', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-shop')); });
   await ok('switches off: HEP can still mark a shop voucher used', () => D.useVoucher(mpp, shopVoucher));
   await ok('switches off: HEP counter vouchers still work', async () => { stuA.profile = await D.getProfile(stuA); await D.redeemReward(stuA, await rw('sw-hep')); });
   await ok('switches off: students can still sign up', () => makeCtx({ uid: 'swStu2', email: 'swstu2@gmail.com' }).then((c) => D.createProfile(c, { role: 'student', name: 'Second Student', matric: 'SW000002', college: 'KK1' })));
   await ok('HEP turns only merchantTools on', () => D.saveConfig(mpp, 'rules', { features: { merchantTools: true } }));
   await ok('other switches stay off when one is saved', async () => { const r = await D.getRules(mpp); eq(D.featureOn(r, 'merchantTools'), true); eq(D.featureOn(r, 'merchantSignup'), false); eq(D.featureOn(r, 'dealsAndPay'), false); });
   await denied('merchantTools on, dealsAndPay off: still no new deals', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw2'), dealDoc));
-  await ok('merchantTools on: offers are allowed again', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw3'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
+  await denied('merchantTools on: standalone offers stay retired', () => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'offers', 'sw3'), { merchantId: 'mer1', status: 'pending', createdAt: merch.sdk.serverTimestamp(), title: 'Offer' }));
   await ok('dealsAndPay on too: deals are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { dealsAndPay: true } }); await merch.sdk.setDoc(merch.sdk.doc(merch.db, 'deals', 'sw2'), dealDoc); });
   await ok('merchantSignup on: merchant accounts are allowed again', async () => { await D.saveConfig(mpp, 'rules', { features: { merchantSignup: true } }); await D.createProfile(newMerchant, { role: 'merchant', name: 'New Shop' }); });
 
