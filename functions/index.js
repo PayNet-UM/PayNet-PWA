@@ -4,9 +4,10 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
+import { closeAccount } from './account.js';
 
 initializeApp();
 const db = getFirestore();
@@ -49,11 +50,46 @@ const deps = {
   now: () => Date.now(),
 };
 
+// "Delete my account" (functions/account.js decides what goes; this carries it out with admin access).
+async function commitAll(ops) {
+  for (let i = 0; i < ops.length; i += 400) {
+    const b = db.batch(); ops.slice(i, i + 400).forEach((op) => op(b)); await b.commit();
+  }
+}
+async function erase(uid, plan) {
+  const ops = plan.docs.map((p) => (b) => b.delete(db.doc(p)));
+  for (const { collection, prefix } of plan.prefixes) {
+    const snap = await db.collection(collection).orderBy(FieldPath.documentId()).startAt(prefix).endAt(prefix + '\uf8ff').get();
+    snap.docs.forEach((d) => ops.push((b) => b.delete(d.ref)));
+  }
+  for (const q of plan.queries) {
+    const snap = await db.collection(q.collection).where(q.field, '==', uid).get();
+    snap.docs.forEach((d) => ops.push((b) => (q.action === 'delete' ? b.delete(d.ref) : b.update(d.ref, q.patch))));
+  }
+  await commitAll(ops);
+  for (const p of plan.trees) await db.recursiveDelete(db.doc(p));
+  await syncLeagueStudent(db, uid);
+}
+const accountDeps = {
+  verifyIdToken: (t) => auth.verifyIdToken(t),
+  getProfile: async (uid) => { const s = await db.doc(`users/${uid}`).get(); return s.exists ? s.data() : null; },
+  getMerchant: async (uid) => { const s = await db.doc(`merchants/${uid}`).get(); return s.exists ? s.data() : null; },
+  addClosure: async (id, data) => {
+    const row = { ...data, createdAt: Timestamp.fromMillis(data.createdAt) };
+    if (!id) return void await db.collection('accountClosures').add(row);
+    // The admin SDK reports a document that already exists as gRPC code 6.
+    try { await db.collection('accountClosures').doc(id).create(row); } catch (e) { throw e?.code === 6 ? Object.assign(e, { code: 'already-exists' }) : e; }
+  },
+  erase,
+  deleteAuthUser: async (uid) => { try { await auth.deleteUser(uid); } catch (e) { if (e?.code !== 'auth/user-not-found') throw e; } },
+  now: () => Date.now(),
+};
+
 // Runs as the account named in functions/.env.<project-id> (HANDOFF_SERVICE_ACCOUNT): it needs the
 // "Service Account Token Creator" role to make sign-in tokens. Without the file it runs as the default compute account.
 const runAs = process.env.HANDOFF_SERVICE_ACCOUNT ? { serviceAccount: process.env.HANDOFF_SERVICE_ACCOUNT } : {};
 
-export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 15, ...runAs }, async (req, res) => {
+export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 60, ...runAs }, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method-not-allowed' });
   const body = typeof req.body === 'object' && req.body ? req.body : {};
@@ -63,6 +99,10 @@ export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', max
       return res.json(await create(deps, { hash: body.hash, idToken }));
     }
     if (req.path.endsWith('/handoff/redeem')) return res.json(await redeem(deps, { secret: body.secret }));
+    if (req.path.endsWith('/account/close')) {
+      const idToken = (req.get('Authorization') || '').replace(/^Bearer /, '');
+      return res.json(await closeAccount(accountDeps, { idToken, reasons: body.reasons, comment: body.comment }));
+    }
     return res.status(404).json({ error: 'not-found' });
   } catch (e) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.code, message: e.message });

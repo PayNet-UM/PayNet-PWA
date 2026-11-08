@@ -81,10 +81,16 @@ service cloud.firestore {
       }
       // avatar: a small map of drawing options (see app/js/avatar.js)
       function validAvatar() { return D().avatar is map && D().avatar.size() <= 16; }
+      // Terms of Use and Privacy Notice: accepted at sign-up, or once later by existing users (app/shared/js/terms.js).
+      function termsOk() {
+        return D().termsVersion is string && D().termsVersion.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && D().termsAcceptedAt == request.time;
+      }
       function selfUpdate() {
         return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
                                   'inviterUid', 'inviterCode',
-                                  'showOnMap', 'mapAudience', 'username'])
+                                  'showOnMap', 'mapAudience', 'username', 'termsVersion', 'termsAcceptedAt'])
+          && (!changed().hasAny(['termsVersion', 'termsAcceptedAt']) || termsOk())
           && (!changed().hasAny(['showOnMap']) || D().showOnMap == false)
           && (!changed().hasAny(['mapAudience']) || D().mapAudience == 'friends')
           && (!changed().hasAny(['username']) || (!('username' in resource.data)
@@ -99,7 +105,8 @@ service cloud.firestore {
       allow read: if signedIn() && (uid() == u || isMpp());
       allow create: if verified() && uid() == u
         && D().keys().hasOnly(['role', 'name', 'email', 'matric', 'college', 'faculty', 'points', 'lastTx',
-                               'referralCode', 'goalCents', 'createdAt'])
+                               'referralCode', 'goalCents', 'createdAt', 'termsVersion', 'termsAcceptedAt'])
+        && termsOk()
         && D().points == 0 && D().lastTx == '' && D().email == email()
         && D().createdAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
         && ((D().role == 'merchant' && featureOn('merchantSignup') && D().get('matric', '') == '') || (D().role == 'student' && studentEmailAllowed()
@@ -415,6 +422,15 @@ service cloud.firestore {
         && D().usedAt == request.time && D().usedBy == uid()
         && request.time < resource.data.createdAt + duration.value(resource.data.get('validDays', 30), 'd')
         && ((resource.data.merchantId == uid() && isVerifiedMerchant() && featureOn('merchantTools')) || isMpp());
+    }
+
+    // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
+    // anonymous; businesses' closing requests name the business so HEP can close it.
+    match /accountClosures/{id} {
+      allow read: if isMpp();
+      allow update: if isMpp() && changed().hasOnly(['seen', 'status', 'handledBy', 'handledAt'])
+        && D().seen == true && (!('handledBy' in changed()) || (D().handledBy == email() && D().handledAt == request.time));
+      allow create, delete: if false;
     }
 
     // ---------- surveys, missions ----------

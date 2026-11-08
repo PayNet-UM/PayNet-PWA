@@ -1758,4 +1758,54 @@ Automatic|Automatik
 Practice is always available. Lesson points are earned once.|Latihan sentiasa tersedia. Mata pelajaran hanya diberikan sekali.
 Correct practice. No repeat points.|Jawapan latihan betul. Tiada mata tambahan diberikan.
 Couldn’t save today’s app check-in. We’ll retry when you return.|Daftar masuk aplikasi hari ini tidak dapat disimpan. Kami akan mencuba lagi apabila anda kembali.
+By signing in you agree to the|Dengan log masuk, anda bersetuju dengan
+Terms of Use and Privacy Notice|Terma Penggunaan dan Notis Privasi
+Before you continue|Sebelum anda teruskan
++Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. HEP admins can see it; businesses only see your name on vouchers you redeem with them. Details below.|+Onz menyimpan nama dan e-mel anda (pelajar juga memberikan nombor matrik, kolej dan fakulti) serta aktiviti anda dalam aplikasi (mata, pelajaran, baucar dan permohonan), untuk menjalankan program kampus ini. Pentadbir HEP boleh melihatnya; perniagaan hanya melihat nama anda pada baucar yang anda tebus di tempat mereka. Butiran di bawah.
+Read the Terms of Use and Privacy Notice|Baca Terma Penggunaan dan Notis Privasi
+I have read and agree to the +Onz Terms of Use and Privacy Notice.|Saya telah membaca dan bersetuju dengan Terma Penggunaan dan Notis Privasi +Onz.
+We’ve added terms of use and a privacy notice to +Onz. Please read and accept them to keep using the app. You’ll only be asked once.|Kami telah menambah terma penggunaan dan notis privasi kepada +Onz. Sila baca dan terima untuk terus menggunakan aplikasi. Anda hanya akan ditanya sekali.
+Accept and continue|Terima dan teruskan
+Delete my account|Padam akaun saya
+Close my account|Tutup akaun saya
+Close my business account|Tutup akaun perniagaan saya
+Back|Kembali
+This deletes your +Onz account straight away. It can’t be undone.|Ini memadam akaun +Onz anda serta-merta. Ia tidak boleh dibatalkan.
+Your profile, matric number, points history, survey answers, friends and username are deleted.|Profil, nombor matrik, sejarah mata, jawapan tinjauan, rakan dan nama pengguna anda dipadam.
+Vouchers you used and welfare requests stay in HEP’s records with your name removed.|Baucar yang telah digunakan dan permintaan kebajikan kekal dalam rekod HEP tanpa nama anda.
+HEP is told that an account was deleted and why, without your name.|HEP dimaklumkan bahawa sebuah akaun telah dipadam dan sebabnya, tanpa nama anda.
+Why are you leaving?|Kenapa anda berhenti?
+Choose all that apply. It helps the team improve +Onz.|Pilih semua yang berkaitan. Ia membantu pasukan menambah baik +Onz.
+I don’t find it useful|Saya rasa ia tidak berguna
+I don’t use it often enough|Saya jarang menggunakannya
+Not enough rewards or offers|Ganjaran atau tawaran tidak mencukupi
+Not enough students use it|Tidak ramai pelajar menggunakannya
+Privacy or data concerns|Kebimbangan privasi atau data
+Sign-in problems or bugs|Masalah log masuk atau pepijat
+Too many sounds or notifications|Terlalu banyak bunyi atau pemberitahuan
+I’m graduating or leaving UM|Saya akan bergraduat atau meninggalkan UM
+My business is closing or moving|Perniagaan saya akan ditutup atau berpindah
+Something else|Sebab lain
+I’d rather not say|Saya tidak mahu menyatakan
+Anything else you’d like to tell us? (optional)|Ada apa-apa lagi yang ingin anda beritahu kami? (pilihan)
+What could we do better?|Apa yang boleh kami perbaiki?
+I understand my account, points and unused vouchers will be deleted.|Saya faham akaun, mata dan baucar yang belum digunakan akan dipadam.
+Send closing request|Hantar permintaan penutupan
+Questions? Email|Ada soalan? E-mel
+Choose at least one reason, or “I’d rather not say”.|Pilih sekurang-kurangnya satu sebab, atau “Saya tidak mahu menyatakan”.
+Demo mode: accounts can’t be deleted here.|Mod demo: akaun tidak boleh dipadam di sini.
+Delete your account?|Padam akaun anda?
+Your account, points and unused vouchers will be deleted. This can’t be undone.|Akaun, mata dan baucar anda yang belum digunakan akan dipadam. Ia tidak boleh dibatalkan.
+You’ve already sent a closing request. HEP will contact you.|Anda telah menghantar permintaan penutupan. HEP akan menghubungi anda.
+Request sent. HEP will contact you to close your account.|Permintaan dihantar. HEP akan menghubungi anda untuk menutup akaun anda.
+Your account has been deleted. Goodbye from +Onz.|Akaun anda telah dipadam. Selamat tinggal daripada +Onz.
+Account closures|Penutupan akaun
+Why people leave|Sebab pengguna berhenti
+Student account deleted|Akaun pelajar dipadam
+Mark as closed|Tandakan sebagai ditutup
+Marked as closed.|Ditandakan sebagai ditutup.
+Deleted|Dipadam
+Closed|Ditutup
+Reasons|Sebab
+No one has closed an account yet.|Belum ada sesiapa yang menutup akaun.
 `;
