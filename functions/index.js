@@ -7,7 +7,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
-import { closeAccount } from './account.js';
+import { closeAccount, patchFor } from './account.js';
 
 initializeApp();
 const db = getFirestore();
@@ -64,7 +64,7 @@ async function erase(uid, plan) {
   }
   for (const q of plan.queries) {
     const snap = await db.collection(q.collection).where(q.field, '==', uid).get();
-    snap.docs.forEach((d) => ops.push((b) => (q.action === 'delete' ? b.delete(d.ref) : b.update(d.ref, q.patch))));
+    snap.docs.forEach((d) => ops.push((b) => (q.action === 'delete' ? b.delete(d.ref) : b.update(d.ref, patchFor(q, d.data())))));
   }
   await commitAll(ops);
   for (const p of plan.trees) await db.recursiveDelete(db.doc(p));

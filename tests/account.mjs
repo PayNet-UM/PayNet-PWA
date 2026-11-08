@@ -1,6 +1,6 @@
 // Tests for "Delete my account" (functions/account.js), with in-memory stand-ins for Firebase.
 import assert from 'node:assert/strict';
-import { closeAccount, erasePlan, cleanAnswers, REASONS, DELETED } from '../functions/account.js';
+import { closeAccount, erasePlan, cleanAnswers, patchFor, REASONS, DELETED } from '../functions/account.js';
 import { HttpError } from '../functions/handoff.js';
 import { CLOSE_REASONS } from '../app/shared/js/data.js';
 
@@ -54,6 +54,13 @@ await test('the erase plan covers every place a student’s data lives', async (
   assert.equal(q('welfareRequests', 'studentUid').patch.reason, '');
   assert.equal(q('visits', 'uid').patch.uid, DELETED);
   assert.ok(!plan.docs.some((p) => p.startsWith('leagueMembers/')), 'leaderboard entry is left for syncLeagueStudent to subtract');
+});
+await test('a deleted account’s unused vouchers are cancelled, and used ones are kept as they were', async () => {
+  const vouchers = erasePlan('aina', {}).queries.find((x) => x.collection === 'vouchers');
+  assert.deepEqual(patchFor(vouchers, { status: 'issued' }), { studentUid: DELETED, studentName: 'Deleted account', status: 'cancelled' });
+  assert.deepEqual(patchFor(vouchers, { status: 'used' }), { studentUid: DELETED, studentName: 'Deleted account' });
+  const claims = erasePlan('aina', {}).queries.find((x) => x.collection === 'liveDealClaims');
+  assert.deepEqual(patchFor(claims, { status: 'issued' }), claims.patch, 'only vouchers are cancelled');
 });
 await test('a student without a username or referral code still gets a clean plan', async () => {
   const plan = erasePlan('x', {});

@@ -326,7 +326,7 @@ function rewardsMount(root, app) {
   $('#vfind', root).onsubmit = async (e) => {
     e.preventDefault(); const v = await D.findVoucher(app.ctx, e.target.code.value, true).catch(() => null);
     if (!v) return toast('No voucher with that code.', true);
-    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : 'not used yet'}</p>${v.status === 'issued' && D.voucherExpired(v) ? '<p class="notice warn" style="margin-top:14px">This voucher has expired.</p>' : v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
+    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : v.status === 'cancelled' ? 'cancelled' : 'not used yet'}</p>${v.status === 'issued' && D.voucherExpired(v) ? '<p class="notice warn" style="margin-top:14px">This voucher has expired.</p>' : v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
     if ($('#u', el)) $('#u', el).onclick = (ev) => busy(ev.currentTarget, async () => { try { await D.useVoucher(app.ctx, v.id); closeSheet(); app.render(); } catch (err) { toast(errText(err), true); } });
   };
 }
