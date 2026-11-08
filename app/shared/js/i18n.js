@@ -186,6 +186,7 @@ const PATTERNS = [
   [/^issued (.+)$/, (x) => `dikeluarkan ${t(x)}`],
   [/^worth (RM[\d.,]+)$/, (x) => `bernilai ${x}`],
   [/^not used yet$/, () => 'belum digunakan'],
+  [/^cancelled$/, () => 'dibatalkan'],
   [/^Open my (student|merchant) app$/, (r) => `Buka aplikasi ${r === 'student' ? 'pelajar' : 'peniaga'} saya`],
   [/^Use “(.+)” \(\+(\d+) pts, spend (RM[\d.,]+)\+\)$/, (d, n, x) => `Guna “${d}” (+${n} mata, belanja ${x}+)`],
   [/^Purchases above (RM[\d.,]+) don’t earn points\.$/, (x) => `Pembelian melebihi ${x} tidak layak mendapat mata.`],

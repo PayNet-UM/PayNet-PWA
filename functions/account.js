@@ -53,13 +53,19 @@ export function erasePlan(uid, profile = {}) {
       { collection: 'friendships', field: 'to', action: 'delete' },
       { collection: 'referrals', field: 'inviterUid', action: 'delete' },
       { collection: 'missionClaims', field: 'uid', action: 'delete' },
-      { collection: 'vouchers', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME } },
+      // Unused vouchers are also cancelled, so they can't still be spent after the account is gone.
+      { collection: 'vouchers', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME },
+        patchIfIssued: { status: 'cancelled' } },
       { collection: 'liveDealClaims', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME } },
       { collection: 'welfareRequests', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, name: DELETED_NAME, reason: '' } },
       { collection: 'visits', field: 'uid', action: 'anonymise', patch: { uid: DELETED } },
     ],
   };
 }
+
+// The change to make to one kept record: unused vouchers get patchIfIssued as well, used ones stay as they were.
+export const patchFor = (query, data) =>
+  (query.patchIfIssued && data?.status === 'issued' ? { ...query.patch, ...query.patchIfIssued } : query.patch);
 
 // deps: { verifyIdToken(token) -> {uid, email}, getProfile(uid) -> data|null, getMerchant(uid) -> data|null,
 //   addClosure(id|null, data) -> throws {code:'already-exists'} on a repeated request, erase(uid, plan),
