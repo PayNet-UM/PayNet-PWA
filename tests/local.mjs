@@ -11,8 +11,10 @@ sdk.configureFake({
   log: process.env.VERBOSE ? console.log : null,
   onCommit: (c) => commits.push(c.access),
 });
-const makeCtx = async ({ uid, email, emailVerified = true }) => {
-  const auth = sdk._testAuth({ uid, email, emailVerified });
+// With signedInHoursAgo the session has a fixed sign-in time; without it, it always counts as just signed in.
+const makeCtx = async ({ uid, email, emailVerified = true, signedInHoursAgo = null }) => {
+  const authTime = signedInHoursAgo == null ? undefined : Math.floor(now / 1000) - Math.round(signedInHoursAgo * 3600);
+  const auth = sdk._testAuth({ uid, email, emailVerified, authTime });
   return { sdk, db: sdk._testDb(auth), uid, email, profile: null, now: () => now };
 };
 const adminEmail = (/function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8')) || [])[1];

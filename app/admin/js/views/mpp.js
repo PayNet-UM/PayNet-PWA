@@ -13,7 +13,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -142,7 +142,7 @@ function merchantsMount(root, app) {
           const f = $('#rv', el); const s = x.dataset.s;
           if (s === 'verified' && $$('[name=c]', f).some((c) => !c.checked)) return toast('Tick all three checks before verifying.', true);
           if (s !== 'verified' && !f.note.value.trim()) return toast('Add a note so the merchant knows what to fix.', true);
-          busy(x, async () => { try { await D.reviewMerchant(app.ctx, m.id, s, f.note.value.trim()); closeSheet(); toast(s === 'verified' ? `${m.name} verified.` : 'Status updated.'); app.render(); } catch (err) { toast(errText(err), true); } });
+          busy(x, async () => { try { await D.reviewMerchant(app.ctx, m.id, s, f.note.value.trim(), m.name); closeSheet(); toast(s === 'verified' ? `${m.name} verified.` : 'Status updated.'); app.render(); } catch (err) { toast(errText(err), true); } });
         };
       });
     };
@@ -451,6 +451,21 @@ function closuresMount(root, app) {
       r.businessName || '', (r.reasons || []).map(D.closeReasonLabel).join('; '), r.comment || '', r.kind === 'request' ? r.status : 'deleted'])]);
 }
 
+// ------------------------------------------------------------- activity log (who changed what; entries can't be edited)
+const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review']);
+async function activityRender(app) {
+  const [rows, users] = await Promise.all([D.listAdminLog(app.ctx), D.listUsers(app.ctx)]);
+  const names = new Map(users.map((u) => [u.id, u.name]));
+  // Student entries store the account ID; show today's name, or "Deleted account" once the student has gone.
+  const target = (r) => STUDENT_ACTIONS.has(r.action) ? (names.get(r.target) || 'Deleted account') : (r.target || '');
+  return `${hepHeading('Activity log', 'Who changed what on this dashboard, newest first. Entries can’t be edited or deleted.', 'shield-check')}
+    <div class="card"><div class="table-wrap"><table class="data"><thead><tr><th>When</th><th>Admin</th><th>Change</th><th>Applies to</th><th>Details</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr><td>${fmtDateTime(r.at)}</td><td data-no-i18n>${esc(r.by)}</td><td>${esc(D.ADMIN_ACTIONS[r.action] || r.action)}</td>
+      <td data-no-i18n>${esc(target(r))}</td><td data-no-i18n class="faint">${esc(r.summary || '')}</td></tr>`).join('')
+      || '<tr><td colspan="5" class="faint">No changes recorded yet.</td></tr>'}</tbody></table></div></div>
+    ${rows.length >= 200 ? '<p class="faint" style="margin-top:10px">Showing the newest 200 changes.</p>' : ''}`;
+}
+
 // ------------------------------------------------------------- settings
 async function settingsRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) await D.initProgramme(app.ctx);
@@ -511,5 +526,6 @@ export const routes = {
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
+  activity: { title: 'Activity log', render: activityRender },
   settings: { title: 'Settings', render: settingsRender, mount: settingsMount },
 };

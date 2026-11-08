@@ -15,6 +15,33 @@ const app = {
 };
 window.__umc = app; // handy for debugging in the console
 
+// ------------------------------------------------------------- session safety
+// Sign out after 30 minutes without activity (shared office computers), and once the sign-in is about 12 hours old,
+// because the rules refuse big changes from older sign-ins. Activity in any tab keeps the others signed in.
+const IDLE_MS = 30 * 60_000;
+const LAST_KEY = 'hep-last-active';
+const stored = { get() { try { return Number(localStorage.getItem(LAST_KEY)) || 0; } catch { return 0; } },
+  set(v) { try { localStorage.setItem(LAST_KEY, String(v)); } catch { /* private window: this tab still counts */ } } };
+let lastActive = Date.now(), lastStored = 0;
+function markActive() {
+  lastActive = Date.now();
+  if (lastActive - lastStored > 15_000) { lastStored = lastActive; stored.set(lastActive); }
+}
+async function endSession(message) {
+  const { sdk, auth } = app.backend;
+  await sdk.signOut(auth);
+  toast(message);
+}
+async function checkSession(now = Date.now()) {
+  if (!app.user || !app.backend) return;
+  if (now - Math.max(lastActive, stored.get()) >= IDLE_MS) return endSession('You were signed out after 30 minutes without activity.');
+  if (!(await D.signedInRecently(app.user, now))) return endSession('For your safety, please sign in again. HEP sign-ins last 12 hours.');
+}
+app.checkSession = checkSession;
+for (const type of ['pointerdown', 'keydown', 'scroll', 'touchstart']) window.addEventListener(type, markActive, { passive: true, capture: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkSession(); });
+setInterval(() => checkSession(), 60_000);
+
 export function go(path) { if (location.hash !== '#/' + path) location.hash = '#/' + path; else render(); }
 app.go = go;
 
@@ -47,6 +74,8 @@ async function onUser(user) {
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   if (!isMpp) return Auth.renderNotAdmin(app);
+  if (!(await D.signedInRecently(user))) return endSession('For your safety, please sign in again. HEP sign-ins last 12 hours.');
+  markActive(); lastStored = lastActive; stored.set(lastActive); // a fresh sign-in starts the 30 minutes again
   app.isMpp = true; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
   app.role = 'mpp';

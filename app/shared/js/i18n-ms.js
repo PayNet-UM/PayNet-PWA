@@ -1977,4 +1977,21 @@ Deleted|Dipadam
 Closed|Ditutup
 Reasons|Sebab
 No one has closed an account yet.|Belum ada sesiapa yang menutup akaun.
+Activity log|Log aktiviti
+Who changed what on this dashboard, newest first. Entries can’t be edited or deleted.|Siapa mengubah apa di papan pemuka ini, yang terbaru dahulu. Catatan tidak boleh diubah atau dipadam.
+Admin|Pentadbir
+Applies to|Berkaitan dengan
+No changes recorded yet.|Belum ada perubahan direkodkan.
+Showing the newest 200 changes.|Menunjukkan 200 perubahan terbaru.
+Deleted account|Akaun dipadam
+Feature switches|Suis ciri
+Readiness update|Kemas kini kesediaan
+Blocked a student|Menyekat pelajar
+Unblocked a student|Membuka sekatan pelajar
+Adjusted points|Melaraskan mata
+Released a matric number|Melepaskan nombor matrik
+Merchant review|Semakan peniaga
+Welfare request|Permohonan kebajikan
+You were signed out after 30 minutes without activity.|Anda telah dilog keluar selepas 30 minit tanpa aktiviti.
+For your safety, please sign in again. HEP sign-ins last 12 hours.|Demi keselamatan anda, sila log masuk semula. Log masuk HEP sah selama 12 jam.
 `;

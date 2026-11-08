@@ -97,6 +97,45 @@ export async function getRules(ctx) {
 export async function isMppUser(ctx) {
   try { await ctx.sdk.getDoc(R(ctx).config('access')); return true; } catch { return false; }
 }
+
+// ------------------------------------------------------------- HEP admin safety
+// Big HEP changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
+// out a few minutes early so they never meet a refused save.
+export const RECENT_SIGN_IN_MS = 12 * 3600 * 1000;
+export async function signedInRecently(user, now = Date.now()) {
+  try { return now - Date.parse((await user.getIdTokenResult()).authTime) < RECENT_SIGN_IN_MS - 5 * 60_000; }
+  catch { return true; } // if the token can't be read, the rules still decide
+}
+// Activity log (adminLog). Each entry is written in the same batch as the change it describes; the rules require it
+// for settings, rewards and blocks, and nobody can edit or delete an entry.
+export const ADMIN_ACTIONS = {
+  'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
+  budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request',
+};
+export function logAdmin(ctx, batch, action, target = '', summary = '') {
+  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
+  batch.set(ref, { at: ctx.sdk.serverTimestamp(), by: ctx.email, action, target: String(target).slice(0, 100), summary: String(summary).slice(0, 300) });
+  return ref.id;
+}
+export async function listAdminLog(ctx, max = 200) {
+  return (await list(ctx, 'adminLog')).sort((a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0)).slice(0, max);
+}
+const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, label]));
+function configLog(name, data) {
+  if (name === 'access') {
+    const c = (k) => (data[k] || []).length;
+    return ['access', 'Who can use the app', `${c('mppEmails')} HEP reviewers, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
+  }
+  if (name === 'budget') return ['budget', 'Activation fund', `RM${((data.allocationCents || 0) / 100).toFixed(2)}`];
+  if (name === 'rules' && data.features) {
+    const on = Object.entries(data.features).filter(([, v]) => v).map(([k]) => FEATURE_NAMES()[k] || k);
+    return ['features', 'Feature switches', on.length ? 'On: ' + on.join(', ') : 'All off'];
+  }
+  if (name === 'rules' && data.merchantReadinessUpdate) return ['merchant-readiness', 'Readiness update', String(data.merchantReadinessUpdate.message || '')];
+  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
+  return ['points-rules', 'Points rules', parts.join(', ')];
+}
 export async function getProfile(ctx, u = ctx.uid) { return one(ctx, R(ctx).user(u)); }
 
 function makeReferralCode(name) {
@@ -141,16 +180,17 @@ export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 
   const { sdk } = ctx; const r = R(ctx);
   const b = sdk.writeBatch(ctx.db);
   const existing = async (ref) => (await sdk.getDoc(ref)).exists();
+  const logId = logAdmin(ctx, b, 'programme-setup', 'Programme', 'Default settings, rewards and counters');
   const cur = await one(ctx, r.config('rules'));
-  if (!cur) b.set(r.config('rules'), DEFAULT_RULES);
-  else { const missing = Object.fromEntries(Object.entries(DEFAULT_RULES).filter(([k]) => !(k in cur))); if (Object.keys(missing).length) b.set(r.config('rules'), missing, { merge: true }); }
-  if (!(await existing(r.config('access')))) b.set(r.config('access'), { mppEmails: [], studentDomains, testerEmails: [] });
-  b.set(r.config('lessonKeys'), LESSON_KEYS);
-  if (!(await existing(r.config('budget')))) b.set(r.config('budget'), { allocationCents: 2000000 });
+  if (!cur) b.set(r.config('rules'), { ...DEFAULT_RULES, logId });
+  else { const missing = Object.fromEntries(Object.entries(DEFAULT_RULES).filter(([k]) => !(k in cur))); if (Object.keys(missing).length) b.set(r.config('rules'), { ...missing, logId }, { merge: true }); }
+  if (!(await existing(r.config('access')))) b.set(r.config('access'), { mppEmails: [], studentDomains, testerEmails: [], logId });
+  b.set(r.config('lessonKeys'), { ...LESSON_KEYS, logId });
+  if (!(await existing(r.config('budget')))) b.set(r.config('budget'), { allocationCents: 2000000, logId });
   if (!(await existing(r.stats('campus')))) b.set(r.stats('campus'), { checkins: 0, colleges: {}, lastVisit: '' });
   if (!(await existing(r.stats('welfare')))) b.set(r.stats('welfare'), { points: 0, lastUid: '', lastId: '' });
   for (const rw of DEFAULT_REWARDS) {
-    if (!(await existing(r.reward(rw.id)))) { const { id, ...rest } = rw; b.set(r.reward(id), { ...rest, issued: 0, lastVoucher: '' }); }
+    if (!(await existing(r.reward(rw.id)))) { const { id, ...rest } = rw; b.set(r.reward(id), { ...rest, issued: 0, lastVoucher: '', logId }); }
   }
   await b.commit();
 }
@@ -212,8 +252,11 @@ export async function publishMerchantReadiness(ctx, message) {
 export async function setOccupancy(ctx, seats, occupied) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { seats, occupied, occupancyAt: ctx.sdk.serverTimestamp() });
 }
-export async function reviewMerchant(ctx, id, status, note = '') {
-  await ctx.sdk.updateDoc(R(ctx).merchant(id), { status, reviewNote: note, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+export async function reviewMerchant(ctx, id, status, note = '', name = '') {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'merchant-review', name || id, status + (note ? ': ' + note : ''));
+  b.update(R(ctx).merchant(id), { status, reviewNote: note, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+  await b.commit();
 }
 export async function listMerchantsAll(ctx) { return list(ctx, 'merchants'); }
 
@@ -373,6 +416,8 @@ export function watchLedger(ctx, cb, err) {
 export async function hasLedger(ctx, id) { return !!(await one(ctx, R(ctx).ledger(ctx.uid, id))); }
 export async function adjustPoints(ctx, studentUid, delta, note) {
   const b = ctx.sdk.writeBatch(ctx.db); const id = R(ctx).newId('adjustments');
+  // Student entries name the account ID, not the name, so nothing personal is left behind if the account is deleted.
+  logAdmin(ctx, b, 'adjust-points', studentUid, `${delta > 0 ? '+' : ''}${delta} points: ${note}`);
   addPoints(ctx, b, studentUid, 'adj_' + id, { type: 'adjust', delta, note });
   await b.commit();
 }
@@ -460,7 +505,14 @@ export async function claimInviterBonus() { retiredAttendanceFlow(); }
 
 // ------------------------------------------------------------- rewards, vouchers, welfare
 export async function listRewards(ctx) { return list(ctx, 'rewards'); }
-export async function saveReward(ctx, id, data) { await ctx.sdk.setDoc(R(ctx).reward(id), data, { merge: true }); }
+export async function saveReward(ctx, id, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const bits = [data.cost != null && `${data.cost} points`, data.valueCents != null && `RM${(data.valueCents / 100).toFixed(2)}`,
+    data.stock != null && `stock ${data.stock}`, data.active != null && (data.active ? 'on' : 'off')].filter(Boolean);
+  const logId = logAdmin(ctx, b, 'reward', data.title || id, bits.join(', '));
+  b.set(R(ctx).reward(id), { ...data, logId }, { merge: true });
+  await b.commit();
+}
 export async function redeemReward(ctx, reward) {
   const { sdk } = ctx; const r = R(ctx); const vid = r.newId('vouchers');
   const b = sdk.writeBatch(ctx.db);
@@ -531,6 +583,7 @@ export async function reviewWelfareRequest(ctx, id, approve, response = '') {
   if (response.length > 500 || (!approve && response.length < 3)) throw new Error('Please add a short response of up to 500 characters.');
   if (approve && ((await getWelfareFund(ctx))?.points || 0) < request.amount) throw new Error('The welfare fund does not have enough points for this request.');
   const b = sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'welfare-review', request.studentUid, `${approve ? 'Approved' : 'Declined'} ${request.amount} points`);
   b.update(ref, { status: approve ? 'approved' : 'rejected', response, reviewedBy: ctx.email, reviewedAt: sdk.serverTimestamp() });
   if (approve) {
     addPoints(ctx, b, request.studentUid, 'welfare_' + id, { type: 'welfare', delta: request.amount, requestId: id });
@@ -621,11 +674,26 @@ export async function saveCampaign(ctx, id, data) {
 }
 export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
-export async function saveConfig(ctx, name, data) { await ctx.sdk.setDoc(R(ctx).config(name), data, { merge: true }); }
+export async function saveConfig(ctx, name, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, ...configLog(name, data));
+  b.set(R(ctx).config(name), { ...data, logId }, { merge: true });
+  await b.commit();
+}
 export async function listUsers(ctx) { return list(ctx, 'users'); }
-export async function setBlocked(ctx, uid, blocked) { await ctx.sdk.updateDoc(R(ctx).user(uid), { disabled: !!blocked }); }
+export async function setBlocked(ctx, uid, blocked) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, blocked ? 'block' : 'unblock', uid);
+  b.update(R(ctx).user(uid), { disabled: !!blocked, adminLogId });
+  await b.commit();
+}
 // Frees a matric number claimed by the wrong person, so the real student can sign up.
-export async function releaseMatric(ctx, matric) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric))); }
+export async function releaseMatric(ctx, matric) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'release-matric', normMatric(matric));
+  b.delete(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric)));
+  await b.commit();
+}
 export async function listSurveys(ctx) { return list(ctx, 'surveys'); }
 export async function listReferrals(ctx) { return list(ctx, 'referrals'); }
 export async function listManualVolumes(ctx) { return list(ctx, 'manualVolumes'); }
