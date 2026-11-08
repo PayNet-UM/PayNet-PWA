@@ -43,14 +43,15 @@ export function copySite(site, out) {
   fs.cpSync(own, out, { recursive: true });
 }
 
-/** Public addresses of both sites for one project, from the hosting targets in .firebaserc. */
-export function siteUrlsFor(firebaserc, projectId) {
+/** Public addresses of both sites for one project: a custom domain if set (CLIENT_URL / ADMIN_URL),
+ *  otherwise the hosting targets' web.app addresses from .firebaserc. */
+export function siteUrlsFor(firebaserc, projectId, customUrls = {}) {
   const targets = firebaserc.targets?.[projectId]?.hosting || {};
   const urls = {};
   for (const site of Object.keys(SITES)) {
     const id = targets[site]?.[0];
     if (!id) throw new Error(`.firebaserc has no hosting target "${site}" for project ${projectId}. See docs/DEPLOY.md.`);
-    urls[site] = `https://${id}.web.app/`;
+    urls[site] = customUrls[site] || `https://${id}.web.app/`;
   }
   return urls;
 }
