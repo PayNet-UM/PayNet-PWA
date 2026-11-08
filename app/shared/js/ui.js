@@ -159,14 +159,14 @@ export function renderQR(el, text, size = 260) {
 // ------------------------------------------------------------- camera QR scanning (jsQR, vendored, loaded on demand)
 let jsqrLoading = null;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
-export async function startScanner(videoEl, onCode, onStatus) {
+export async function startScanner(videoEl, onCode, onStatus, { manualFallback = true } = {}) {
   if (!window.jsQR) { jsqrLoading = jsqrLoading || loadScript('vendor/jsQR.js'); await jsqrLoading; }
-  if (!navigator.mediaDevices?.getUserMedia) { onStatus('This browser can’t open the camera here. Type the code instead.'); return () => {}; }
+  if (!navigator.mediaDevices?.getUserMedia) { onStatus(manualFallback ? 'This browser can’t open the camera here. Type the code instead.' : 'Open the app in a camera-enabled browser to scan the merchant’s QR.'); return () => {}; }
   let stream, raf, alive = true;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 720 } }, audio: false });
   } catch (e) {
-    onStatus(e.name === 'NotAllowedError' ? 'Camera permission is blocked. Allow it in your browser settings, or type the code instead.' : 'No camera available. Type the code instead.');
+    onStatus(e.name === 'NotAllowedError' ? (manualFallback ? 'Camera permission is blocked. Allow it in your browser settings, or type the code instead.' : 'Allow camera access in your browser settings, then try again.') : (manualFallback ? 'No camera available. Type the code instead.' : 'No camera available. Use a device with a camera to scan the deal QR.'));
     return () => {};
   }
   if (!alive) { stream.getTracks().forEach((t) => t.stop()); return () => {}; }

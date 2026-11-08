@@ -28,6 +28,8 @@ jobs:
       MPP_ADMIN_EMAILS: ${{ vars.MPP_ADMIN_EMAILS }}
       GOOGLE_MAPS_API_KEY: ${{ vars.GOOGLE_MAPS_API_KEY }}
       GOOGLE_MAPS_MAP_ID: ${{ vars.GOOGLE_MAPS_MAP_ID }}
+      CLIENT_URL: ${{ vars.CLIENT_URL }}
+      ADMIN_URL: ${{ vars.ADMIN_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

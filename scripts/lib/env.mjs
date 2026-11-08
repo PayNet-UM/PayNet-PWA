@@ -10,7 +10,10 @@ const CONFIG_KEYS = {
 };
 const REQUIRED = [...Object.values(CONFIG_KEYS), 'MPP_ADMIN_EMAILS'];
 // Optional: left empty, the app shows the free OpenStreetMap map instead of Google Maps.
-const OPTIONAL = ['GOOGLE_MAPS_API_KEY', 'GOOGLE_MAPS_MAP_ID'];
+const OPTIONAL = ['GOOGLE_MAPS_API_KEY', 'GOOGLE_MAPS_MAP_ID', 'CLIENT_URL', 'ADMIN_URL'];
+// Optional custom domains, e.g. CLIENT_URL=https://addonz.my/ and ADMIN_URL=https://admin.addonz.my/.
+// Without them the sites use their <hosting-site>.web.app addresses from .firebaserc.
+const SITE_URL = /^https:\/\/[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+\/$/;
 const RULES_ADMINS = /function bootstrapAdmins\(\) \{ return \[.*?\]; \}/g;
 const CONFIG_BLOCK = /export const firebaseConfig = \{[\s\S]*?\};/;
 const ADMINS_LINE = /export const mppBootstrapEmails = \[.*?\];/;
@@ -41,7 +44,14 @@ export function resolveEnv(raw, label = 'environment') {
   const firebaseConfig = Object.fromEntries(Object.entries(CONFIG_KEYS).map(([k, v]) => [k, raw[v]]));
   const googleMaps = { apiKey: isPlaceholder(raw.GOOGLE_MAPS_API_KEY) ? '' : raw.GOOGLE_MAPS_API_KEY, mapId: isPlaceholder(raw.GOOGLE_MAPS_MAP_ID) ? '' : raw.GOOGLE_MAPS_MAP_ID };
   for (const [k, v] of Object.entries(googleMaps)) if (v && !/^[A-Za-z0-9_-]+$/.test(v)) throw new Error(`Invalid ${label} configuration:\n  - GOOGLE_MAPS_${k === 'apiKey' ? 'API_KEY' : 'MAP_ID'} has invalid characters`);
-  return { firebaseConfig, adminEmails, googleMaps };
+  const customUrls = {};
+  for (const [site, key] of [['client', 'CLIENT_URL'], ['admin', 'ADMIN_URL']]) {
+    if (isPlaceholder(raw[key])) continue;
+    const v = String(raw[key]).trim().toLowerCase().replace(/\/?$/, '/');
+    if (!SITE_URL.test(v)) throw new Error(`Invalid ${label} configuration:\n  - ${key} must look like https://addonz.my/ (https, a domain, nothing after the slash)`);
+    customUrls[site] = v;
+  }
+  return { firebaseConfig, adminEmails, googleMaps, customUrls };
 }
 
 /** Loads one named environment. Set values in the process environment take priority over the file. */

@@ -17,8 +17,8 @@ const app = {
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['community', 'Community', 'handshake'], ['events', 'Campus Events', 'calendar'], ['explore', 'Overview', 'map'], ['home', 'Home', 'house', true], ['friends', 'Friends', 'users'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Redeem', 'scan-line', true], ['promote', 'Promote', 'megaphone'], ['insights', 'Insights', 'chart-column']],
+  student: [['community', 'Community', 'users'], ['events', 'Campus Events', 'calendar'], ['home', 'Home', 'house', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house', true], ['promote', 'Promote live deals', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
 // A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
@@ -89,6 +89,12 @@ function startRole(role) {
     app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
   }
   if (role === 'merchant') {
+    app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'config', 'rules'), (s) => {
+      const update = s.exists() ? s.data().merchantReadinessUpdate : null;
+      if (D.toMs(update?.publishedAt) === D.toMs(app.rules.merchantReadinessUpdate?.publishedAt) && update?.message === app.rules.merchantReadinessUpdate?.message) return;
+      app.rules = { ...app.rules, merchantReadinessUpdate: update || null };
+      app.emit && app.emit('merchant-readiness');
+    }, () => {}));
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'merchants', app.ctx.uid), (s) => {
       app.merchant = s.exists() ? { id: s.id, ...s.data() } : null; app.ctx.merchantName = app.merchant?.name || '';
       paintAvatar();
@@ -114,7 +120,7 @@ function shell(role, routes) {
   document.body.innerHTML = `
     <div class="shell">
       <header class="topbar">
-        <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-header.png" alt="+Onz" width="368" height="227"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
+        <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
         <span class="spacer"></span>
         ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}

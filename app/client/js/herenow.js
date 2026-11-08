@@ -15,11 +15,11 @@ function crowdHTML(app, g) {
 }
 
 export function hereNowSection() {
-  return `<section class="section directory-friends"><div class="head"><h2>${icon('users')} Friends</h2><a href="#/friends">Manage friends ${icon('chevron-right')}</a></div><p class="faint">Place sharing is paused. Your GPS location stays private.</p></section>`;
+  return `<section class="section directory-friends"><div class="head"><h2>${icon('users')} Friends</h2><a href="#/community/friends">Manage friends ${icon('chevron-right')}</a></div><p class="faint">Place sharing is paused. Your GPS location stays private.</p></section>`;
 }
 export function mountHereNow() { return { stop() {}, redraw() {} }; }
 export function mapSettingsSheet(app) {
-  const el = sheet(`<h2>Place sharing is paused</h2><p class="muted">Your GPS location stays private.</p><a class="btn primary block" href="#/friends" data-close>Manage friends</a>`);
+  const el = sheet(`<h2>Place sharing is paused</h2><p class="muted">Your GPS location stays private.</p><a class="btn primary block" href="#/community/friends" data-close>Manage friends</a>`);
 }
 
 // Waves for me: a short message while the app is open.

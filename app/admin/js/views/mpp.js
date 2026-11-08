@@ -1,5 +1,7 @@
 // HEP dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
+import * as L from '../live-deals.js';
+import { hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-ui.js';
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML, tr } from '../i18n.js';
@@ -16,31 +18,33 @@ const NAV = [
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
 let month = D.monthKey();
-const monthPicker = () => `<select id="month" style="width:auto;min-height:40px">${lastMonths().map((m) => `<option value="${m}" ${m === month ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>`;
+const monthPicker = () => `<select id="month" aria-label="Reporting month" style="width:auto;min-height:40px">${lastMonths().map((m) => `<option value="${m}" ${m === month ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>`;
 const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchange = () => { month = s.value; app.render(); }; };
 
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-header.png" alt="+Onz" width="368" height="227"><em class="onz-role">HEP</em></a>
-      <button class="btn small menu-toggle" id="menu">${icon('list-checks')} Menu</button></header>
-      <nav aria-label="HEP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
-      <div class="who">${langToggleHTML('on-dark')}<b style="color:#fff;display:block;margin-top:12px">${esc(app.user.email)}</b><div class="row" style="margin-top:10px">
-        ${app.profile ? `<a class="btn small" id="as-user" href="${esc(siteUrls.client)}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Open my ${esc(app.profile.role)} app</a>` : ''}
-        <button class="btn small" id="mpp-out" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">${icon('log-out')} Sign out</button></div></div></aside>
+    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">HEP</em></a>
+      <button class="btn small menu-toggle" id="menu" aria-expanded="false" aria-controls="hep-navigation">${icon('list-checks')} Menu</button></header>
+      <span class="hep-nav-title">Campus workspace</span>
+      <nav id="hep-navigation" aria-label="HEP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
+      <div class="who"><div class="hep-account"><span class="hep-account-icon" aria-hidden="true">${icon('shield-check')}</span><div class="hep-account-copy"><strong>HEP team</strong><small>${esc(app.user.email)}</small></div></div>${langToggleHTML('on-dark')}<div class="hep-account-actions">
+        ${app.profile ? `<a class="btn small" id="as-user" href="${esc(siteUrls.client)}">${icon('arrow-right')} Open my ${esc(app.profile.role)} app</a>` : ''}
+        <button class="btn small" id="mpp-out">${icon('log-out')} Sign out</button></div></div></aside>
       <main class="view" id="view"></main></div>`;
-    $('#menu').onclick = () => $('#mpp-rail').classList.toggle('open');
+    $('#menu').onclick = () => { const open = $('#mpp-rail').classList.toggle('open'); $('#menu').setAttribute('aria-expanded', String(open)); };
     $('#mpp-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
     if (app.addDemoRibbon) app.addDemoRibbon();
   }
   $('#mpp-rail').classList.remove('open');
-  $$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === route));
+  $('#menu').setAttribute('aria-expanded', 'false');
+  $$('[data-nav]').forEach((a) => { const active = a.dataset.nav === route; a.classList.toggle('on', active); if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   refreshCounts(app);
 }
 async function refreshCounts(app) {
   try {
-    const [m, o, d, c, w, x] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => [])]);
+    const [m, c, w, x] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
-    set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', o.length + d.length + c.length + w.length);
+    set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
   } catch { /* not initialised yet */ }
 }
@@ -48,42 +52,44 @@ async function refreshCounts(app) {
 // ------------------------------------------------------------- overview
 async function overviewRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
-  const [users, merchants, welfare, league, deals, waitingDeals] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx),
-    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'league')), D.approvedDeals(app.ctx), D.pendingDeals(app.ctx)]);
+  const [users, merchants, welfare, league, deals, requests] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx),
+    app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'league')), D.approvedDeals(app.ctx), D.pendingWelfareRequests(app.ctx)]);
   const liveDeals = await D.dealOverview(app.ctx, deals, merchants);
   const students = users.filter((u) => u.role === 'student');
   const verified = merchants.filter((m) => m.status === 'verified');
   const pending = merchants.filter((m) => m.status === 'pending');
+  const ready = verified.filter((m) => D.merchantReadinessCurrent(m, app.rules)).length;
+  const readiness = verified.length ? Math.round(ready / verified.length * 100) : 0;
   const today = Number(D.dayKey().slice(-2));
-  const shortcuts = [
-    ['merchants', 'store', 'Merchants', `${pending.length} waiting for review`],
-    ['approvals', 'list-checks', 'Approvals', 'Offers, deals and welfare'],
-    ['paynet', 'file-spreadsheet', 'PayNet list', 'Export Lampiran 1'],
-  ];
+  const ranked = Object.entries((league.exists() && league.data().colleges) || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })).slice(0, 6);
   return `<section class="kk-hero hep-overview-hero">
-      <div><h1>Programme overview</h1><p>PayNet merchant list is due on the 20th. ${today <= 20 && month === D.monthKey() ? `${20 - today} days left this month.` : ''}</p></div>
-      <label class="hep-period"><span class="sr">Reporting month</span>${monthPicker()}</label>
+      <div><span class="hep-eyebrow">Your campus, connected</span><h1>Programme overview</h1><p>Students, merchants and campus opportunities. One place to keep things moving.</p>
+        <div class="hep-hero-footer"><label class="hep-period"><span class="sr">Reporting month</span>${monthPicker()}</label><span class="hep-hero-note">${icon('calendar')}<span>PayNet list due on the 20th</span>${today <= 20 && month === D.monthKey() ? `<b>${20 - today} <span>days left this month</span></b>` : ''}</span></div>
+      </div>
+      <div class="hep-hero-progress"><div class="hep-orbit" style="--progress:${readiness}%" role="progressbar" aria-label="Merchant readiness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${readiness}"><span><strong>${verified.length ? readiness + '%' : '—'}</strong><small>Staff ready</small></span></div><span>${ready} / ${verified.length} <span>verified merchants ready</span></span></div>
     </section>
-    <h2 class="kk-pillars-title">Needs your attention</h2>
-    <nav class="kk-pillars hep-shortcuts" aria-label="HEP shortcuts">
-      ${shortcuts.map(([route, glyph, label, detail]) => `<a class="kk-pillar" href="#/${route}"><span class="tile-icon">${icon(glyph)}</span><h3>${label}</h3><p>${detail}</p></a>`).join('')}
+    <div class="stats hep-overview-stats">
+      ${hepMetric('Students enrolled', n(students.length), 'users', 'violet')}
+      ${hepMetric('Cashless-ready merchants', n(ready), 'shield-check', 'lime')}
+      ${hepMetric('Verified merchants', n(verified.length), 'store', 'sky', `${pending.length} <span>waiting for review</span>`)}
+      ${hepMetric('Welfare fund', n(welfare.exists() ? welfare.data().points : 0), 'hand-heart', 'peach', 'points available')}
+    </div>
+    <div class="hep-section-title"><h2>Needs your attention</h2></div>
+    <nav class="hep-shortcut-grid" aria-label="HEP shortcuts">
+      ${hepShortcut('merchants', 'Merchant reviews', `${pending.length} <span>waiting for review</span>`, 'store', 'violet')}
+      ${hepShortcut('approvals', 'Welfare requests', `${requests.length} <span>waiting for review</span>`, 'hand-heart', 'lime')}
+      ${hepShortcut('paynet', 'PayNet list', 'Export Lampiran 1', 'file-spreadsheet', 'peach')}
     </nav>
-    <h2 class="kk-pillars-title">Programme activity</h2>
-    <div class="stats">
-      <div class="stat"><div class="k">Students enrolled</div><div class="v num">${n(students.length)}</div></div>
-      <div class="stat"><div class="k">Cashless-ready merchants</div><div class="v num">${n(verified.filter((m) => m.ready).length)}</div></div>
-      <div class="stat"><div class="k">Verified merchants</div><div class="v num">${n(verified.length)}</div><div class="s">${pending.length} waiting for review</div></div>
-      <div class="stat"><div class="k">Welfare fund</div><div class="v num">${n(welfare.exists() ? welfare.data().points : 0)}</div><div class="s">points available</div></div></div>
-    <section class="section card pad-lg"><div class="row between"><h2>Live deals</h2><a class="btn small" href="#/approvals">Review deals (${waitingDeals.length})</a></div>
-      <p class="faint">${liveDeals.filter((row) => row.status === 'Available').length} live now · ${deals.length} approved</p>
-      <div class="list">${liveDeals.map(({ deal: d, merchant: m, used, status }) => `<article class="item deal-overview-row">
-        <div class="grow"><h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p>
-          <p>${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</p></div>
-        <span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span>
-      </article>`).join('') || '<p class="faint">No approved deals yet.</p>'}</div></section>
-    <div style="margin-top:16px">
-      <section class="card pad-lg"><h2>KK League</h2><p class="faint">Total points earned</p><table class="data" style="margin-top:8px"><tbody>${Object.entries((league.exists() && league.data().colleges) || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })).slice(0, 6)
-        .map(([k, v]) => `<tr><td>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</td><td class="r num">${n(v)} <small>pts</small></td></tr>`).join('') || `<tr><td class="faint">${league.exists() ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.'}</td></tr>`}</tbody></table></section></div>`;
+    <div class="hep-overview-grid">
+      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('badge-percent')} Live deals</h2><a href="#/recon">View activity ${icon('arrow-right')}</a></div>
+        <div class="hep-live-summary"><span>${liveDeals.filter((row) => row.status === 'Available').length} <span>live now</span></span><span>${deals.length} <span>published by merchants</span></span></div>
+        <div class="hep-live-grid">${liveDeals.map(({ deal: d, merchant: m, status }) => `<article class="hep-deal ${status === 'Available' ? 'is-live' : ''}">
+          <div class="hep-deal-top"><span class="hep-deal-icon" aria-hidden="true">${icon('badge-percent')}</span><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span></div>
+          <h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)}</p><div class="hep-deal-meta">${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT<span>· ${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</span></div>
+        </article>`).join('') || hepEmpty('No published deals yet.', 'badge-percent')}</div>
+      </section>
+      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('trophy')} KK League</h2></div><div class="hep-league-list">${ranked.map(([k, v]) => `<div class="hep-league-row"><span class="hep-league-rank" aria-hidden="true"></span><div class="hep-league-college"><strong>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</strong><div class="hep-league-bar" aria-hidden="true"><i style="--width:${Math.round(v / ranked[0][1] * 100)}%"></i></div></div><span class="num">${n(v)} <small>pts</small></span></div>`).join('') || hepEmpty(league.exists() ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.', 'trophy')}</div><p class="hep-league-note">Total points earned</p></section>
+    </div>`;
 }
 function setupHTML() {
   return `<div class="page-title"><h1>Set up the programme</h1><p>This creates the points rules, reward catalogue, leaderboard and welfare counters in your Firebase project. Run it once.</p></div>
@@ -104,11 +110,11 @@ async function merchantsRender(app) {
   const all = await D.listMerchantsAll(app.ctx); app._m = all;
   const counts = (s) => all.filter((m) => s === 'all' || m.status === s).length;
   const rows = all.filter((m) => mFilter === 'all' || m.status === mFilter).sort((a, b) => (toMs(b.submittedAt) || 0) - (toMs(a.submittedAt) || 0));
-  return `<div class="page-title"><h1>Merchants</h1><p>Verify that each DuitNow QR belongs to the business before it goes on PayNet’s list. Event stalls expire after their end date.</p></div>
+  return `${hepHeading('Merchants', 'Verify that each DuitNow QR belongs to the business before it goes on PayNet’s list. Event stalls expire after their end date.', 'store')}
     <div class="chips">${[['pending', 'To review'], ['verified', 'Verified'], ['rejected', 'Needs changes'], ['suspended', 'Suspended'], ['all', 'All']].map(([k, l]) => `<button data-f="${k}" class="${k === mFilter ? 'on' : ''}">${l} (${counts(k)})</button>`).join('')}</div>
     <div class="card" style="margin-top:10px"><div class="table-wrap"><table class="data"><thead><tr><th>Business</th><th>Category</th><th>Location</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>
       ${rows.map((m) => `<tr><td><b>${esc(m.name)}</b><br><span class="faint">${esc(m.type)}</span></td><td>${esc(m.segment)}${m.eventEnd ? `<br><span class="faint">ends ${esc(m.eventEnd)}</span>` : ''}</td><td>${esc(m.location)}</td><td>${fmtDate(m.submittedAt)}</td>
-        <td>${m.status === 'verified' ? '<span class="badge ok">Verified</span>' : m.status === 'pending' ? '<span class="badge warn">To review</span>' : `<span class="badge bad">${esc(m.status)}</span>`}${m.ready ? ` <span class="badge ok">Staff ready</span>` : ''}</td>
+        <td>${m.status === 'verified' ? '<span class="badge ok">Verified</span>' : m.status === 'pending' ? '<span class="badge warn">To review</span>' : `<span class="badge bad">${esc(m.status)}</span>`}${D.merchantReadinessCurrent(m, app.rules) ? ` <span class="badge ok">Staff ready</span>` : ''}</td>
         <td class="r"><button class="btn small ${m.status === 'pending' ? 'primary' : ''}" data-review="${esc(m.id)}">${m.status === 'pending' ? 'Review' : 'Open'}</button></td></tr>`).join('') || '<tr><td colspan="6" class="faint">Nothing here.</td></tr>'}
     </tbody></table></div></div>`;
 }
@@ -145,24 +151,19 @@ function merchantsMount(root, app) {
 
 // ------------------------------------------------------------- approvals
 async function approvalsRender(app) {
-  const [offers, deals, claims, requests, welfare] = await Promise.all([D.pendingOffers(app.ctx), D.pendingDeals(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.getWelfareFund(app.ctx)]);
-  app._ap = { offers, deals, claims, requests };
-  const empty = (t) => `<div class="empty" style="padding:16px">${t}</div>`;
-  return `<div class="page-title"><h1>Approvals</h1><p>Approve offers and off-peak deals before students can see them. Historical mission claims can be reviewed separately.</p></div>
-    <div class="cols two">
-      <section class="card pad-lg"><h2>Offers (${offers.length})</h2><div class="list" style="margin-top:6px">${offers.map((o) => `<div class="item"><div class="grow"><h3>${esc(o.title)}</h3><p>${esc(o.merchantName)} · ${esc(o.type)} · until ${esc(o.endDate)}</p></div>
-        <button class="btn small" data-offer="${esc(o.id)}" data-s="rejected">Reject</button><button class="btn small go" data-offer="${esc(o.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No offers waiting.')}</div></section>
-      <section class="card pad-lg"><h2>Live deals (${deals.length})</h2><div class="list" style="margin-top:6px">${deals.map((d) => `<div class="item"><div class="grow"><h3>${esc(d.title)}</h3><p>${esc(d.merchantName)} · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} · under ${d.threshold}% full</p></div>
-        <button class="btn small" data-deal="${esc(d.id)}" data-s="rejected">Reject</button><button class="btn small go" data-deal="${esc(d.id)}" data-s="approved">Approve</button></div>`).join('') || empty('No deals waiting.')}</div></section></div>
-    <section class="card pad-lg" style="margin-top:16px"><h2>Archived mission claims (${claims.length})</h2><p class="faint">Historical claims only. New attendance missions are paused.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
-      <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section>
-    <section class="card pad-lg hep-welfare-review" style="margin-top:16px"><div class="row between"><h2>Welfare requests <span>(${requests.length})</span></h2><span class="badge">${n(welfare?.points || 0)} <span>points available</span></span></div>
+  const [claims, requests, welfare] = await Promise.all([D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.getWelfareFund(app.ctx)]);
+  app._ap = { claims, requests };
+  const empty = (t) => hepEmpty(t);
+  return `${hepHeading('Approvals', 'Review welfare requests and archived mission claims. Merchants publish live deals directly.', 'list-checks')}
+    <div class="hep-review-grid"><section class="card pad-lg hep-welfare-review"><div class="row between"><h2>Welfare requests <span>(${requests.length})</span></h2><span class="badge">${n(welfare?.points || 0)} <span>points available</span></span></div>
       <div class="list">${requests.map((request) => `<article class="item hep-welfare-request"><span class="tile-icon">${icon('hand-heart')}</span><div class="grow"><h3>${esc(request.name)}</h3><p>${esc(request.college)} · ${fmtDate(request.createdAt)}</p><p class="hep-welfare-reason" data-no-i18n>${esc(request.reason)}</p></div>
-      <strong class="hep-welfare-amount">${n(request.amount)} <small>pts</small></strong><div class="row"><button class="btn small warn" data-welfare="${esc(request.id)}" data-ok="0">Decline</button><button class="btn small go" data-welfare="${esc(request.id)}" data-ok="1" ${(welfare?.points || 0) < request.amount ? 'disabled title="Not enough points in the fund"' : ''}>Approve</button></div></article>`).join('') || empty('No welfare requests waiting.')}</div></section>`;
+      <strong class="hep-welfare-amount">${n(request.amount)} <small>pts</small></strong><div class="row"><button class="btn small warn" data-welfare="${esc(request.id)}" data-ok="0">Decline</button><button class="btn small go" data-welfare="${esc(request.id)}" data-ok="1" ${(welfare?.points || 0) < request.amount ? 'disabled title="Not enough points in the fund"' : ''}>Approve</button></div></article>`).join('') || empty('No welfare requests waiting.')}</div></section>
+    <section class="card pad-lg"><h2>Archived mission claims (${claims.length})</h2><p class="faint">Historical claims only. New attendance missions are paused.</p><div class="list" style="margin-top:6px">${claims.map((c) => `<div class="item"><span class="avatar" style="width:32px;height:32px">${esc(initials(c.name))}</span><div class="grow"><h3>${esc(c.name)}: ${esc(c.title)}</h3><p>Week of ${esc(c.week)} · progress ${c.progress} · +${c.bonus} points</p></div>
+      <button class="btn small" data-claim="${esc(c.id)}" data-ok="0">Reject</button><button class="btn small go" data-claim="${esc(c.id)}" data-ok="1">Approve</button></div>`).join('') || empty('No claims waiting.')}</div></section></div>`;
 }
 function approvalsMount(root, app) {
-  $$('[data-offer]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewOffer(app.ctx, app._ap.offers.find((o) => o.id === b.dataset.offer), b.dataset.s); toast(b.dataset.s === 'approved' ? 'Offer is live.' : 'Offer rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
-  $$('[data-deal]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewDeal(app.ctx, b.dataset.deal, b.dataset.s); toast(b.dataset.s === 'approved' ? 'Deal approved.' : 'Deal rejected.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
+
+
   $$('[data-claim]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.reviewMissionClaim(app.ctx, app._ap.claims.find((c) => c.id === b.dataset.claim), b.dataset.ok === '1'); toast('Claim reviewed.'); app.render(); } catch (e) { toast(errText(e), true); } }); });
   $$('[data-welfare]', root).forEach((button) => { button.onclick = () => {
     const request = app._ap.requests.find((item) => item.id === button.dataset.welfare), approve = button.dataset.ok === '1';
@@ -187,7 +188,7 @@ async function paynetRender(app) {
   const priv = await Promise.all(listed.map((m) => D.getMerchantPrivate(app.ctx, m.id).catch(() => null)));
   app._pn = listed.map((m, i) => ({ ...m, priv: priv[i] || {} }));
   const manual = (await D.listManualVolumes(app.ctx)).filter((r) => r.month === month);
-  return `<div class="page-title row between"><div><h1>PayNet merchant list</h1><p>PayNet counts DuitNow QR transactions only for merchants on this list. Send updates by the 20th of each month.</p></div>${monthPicker()}</div>
+  return `${hepHeading('PayNet merchant list', 'PayNet counts DuitNow QR transactions only for merchants on this list. Send updates by the 20th of each month.', 'file-spreadsheet', monthPicker())}
     <section class="card pad-lg"><div class="row between"><h2>Lampiran 1: DuitNow QR merchants (${app._pn.length})</h2><div class="row"><button class="btn small" id="csv1">${icon('download')} CSV</button><button class="btn small primary" id="xlsx1">${icon('file-spreadsheet')} Excel with QR images</button></div></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>No.</th><th>Merchant name / name on QR</th><th>Account name</th><th>Location / type</th><th>Category</th><th>QR</th><th>Remark</th></tr></thead><tbody>
       ${app._pn.map((m, i) => `<tr><td>${i + 1}</td><td><b>${esc(m.name)}</b></td><td>${esc(m.priv.accountName || '')}</td><td>${esc(m.location)} / ${esc(m.type)}</td><td>${esc(m.segment)}</td>
@@ -247,11 +248,13 @@ function paynetMount(root, app) {
 
 // ------------------------------------------------------------- activity check: check-ins vs PayNet counts, unusual patterns
 async function reconRender(app) {
-  const [counts, merchants] = await Promise.all([D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx)]);
+  const [counts, merchants, allClaims] = await Promise.all([D.paynetCounts(app.ctx, month), D.listMerchantsAll(app.ctx), L.listDealClaims(app.ctx)]);
+  const claims = allClaims.filter((c) => c.day?.startsWith(month));
   app._rc = { merchants, counts };
-  return `<div class="page-title row between"><div><h1>Activity check</h1><p>Imported PayNet transaction counts.</p></div>${monthPicker()}</div>
+  return `${hepHeading('Activity check', 'Imported PayNet transaction counts.', 'scale', monthPicker())}
     <section class="card pad-lg"><div class="row between"><h2>PayNet transactions</h2><div class="row"><button class="btn small" id="imp">${icon('upload')} Import PayNet CSV</button><button class="btn small" id="exp">${icon('download')} Export</button></div></div>
-    <div class="table-wrap"><table class="data"><thead><tr><th>Merchant</th><th class="r">PayNet transactions</th></tr></thead><tbody>${merchants.filter((m) => m.status === 'verified').map((m) => { const row = counts.find((r) => r.merchantId === m.id); return `<tr><td>${esc(m.name)}</td><td class="r num">${row ? n(row.count) : '—'}</td></tr>`; }).join('')}</tbody></table></div></section>`;
+    <div class="table-wrap"><table class="data"><thead><tr><th>Merchant</th><th class="r">PayNet transactions</th></tr></thead><tbody>${merchants.filter((m) => m.status === 'verified').map((m) => { const row = counts.find((r) => r.merchantId === m.id); return `<tr><td>${esc(m.name)}</td><td class="r num">${row ? n(row.count) : '—'}</td></tr>`; }).join('')}</tbody></table></div></section>
+    <section class="card pad-lg section"><h2>Live-deal QR activity</h2><p class="faint">QR claims and applied discounts are separate from PayNet transaction counts.</p><div class="stats" style="margin-top:16px"><div class="stat"><div class="k">Deal claims</div><div class="v">${n(claims.length)}</div></div><div class="stat"><div class="k">Discounts applied</div><div class="v">${n(claims.filter((c) => c.status === 'applied').length)}</div></div></div><div class="table-wrap"><table class="data"><thead><tr><th>Student</th><th>Live deal</th><th>Merchant</th><th>Status</th></tr></thead><tbody>${claims.slice().sort((a,b) => toMs(b.createdAt)-toMs(a.createdAt)).slice(0,100).map((c) => `<tr><td>${esc(c.studentName)}</td><td>${esc(c.title)}</td><td>${esc(merchants.find((m) => m.id === c.merchantId)?.name || c.merchantId)}</td><td>${c.status === 'applied' ? 'Discount applied' : L.claimExpired(c) ? 'Expired' : 'Claim confirmed'}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function reconMount(root, app) {
   bindMonth(root, app);
@@ -277,19 +280,22 @@ async function rewardsRender(app) {
   const alloc = budget?.allocationCents || 0; const committed = vouchers.filter((v) => v.status === 'issued').reduce((s, v) => s + (v.valueCents || 0), 0);
   const spent = vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + (v.valueCents || 0), 0);
   const campBudget = camps.reduce((s, c) => s + (c.budgetCents || 0), 0);
-  const open = vouchers.filter((v) => v.status === 'issued' && !v.merchantId);
+  const open = vouchers.filter((v) => v.status === 'issued');
   const voucherCount = (status) => { const count = vouchers.filter((v) => v.status === status).length; return `${count} voucher${count === 1 ? '' : 's'}`; };
-  return `<div class="page-title"><h1>Rewards and budget</h1><p>Vouchers are paid from the activation fund. Track what’s promised (issued, not yet used) and what’s paid out.</p></div>
-    <div class="stats"><div class="stat"><div class="k">Activation fund</div><div class="v num">${rm(alloc)}</div><div class="s"><button class="btn small ghost" id="alloc" style="padding:0;min-height:0">${icon('pencil')} Edit</button></div></div>
-      <div class="stat"><div class="k">Promised</div><div class="v num">${rm(committed)}</div><div class="s">${voucherCount('issued')} not yet used</div></div>
-      <div class="stat"><div class="k">Paid out</div><div class="v num">${rm(spent)}</div><div class="s">${voucherCount('used')} used</div></div>
-      <div class="stat"><div class="k">Left to commit</div><div class="v num" style="color:${alloc - committed - spent - campBudget < 0 ? 'var(--red)' : 'inherit'}">${rm(alloc - committed - spent - campBudget)}</div><div class="s">after ${rm(campBudget)} set aside for campaigns</div></div></div>
+  return `${hepHeading('Rewards and budget', 'Vouchers are paid from the activation fund. Track what’s promised (issued, not yet used) and what’s paid out.', 'gift')}
+    <div class="stats">
+      ${hepMetric('Activation fund', rm(alloc), 'wallet', 'violet', `<button class="btn small ghost" id="alloc">${icon('pencil')} Edit</button>`)}
+      ${hepMetric('Promised', rm(committed), 'ticket', 'peach', `${voucherCount('issued')} not yet used`)}
+      ${hepMetric('Paid out', rm(spent), 'badge-check', 'sky', `${voucherCount('used')} used`)}
+      ${hepMetric('Left to commit', `<span${alloc - committed - spent - campBudget < 0 ? ' style="color:var(--red)"' : ''}>${rm(alloc - committed - spent - campBudget)}</span>`, 'gift', 'lime', `after ${rm(campBudget)} set aside for campaigns`)}
+    </div>
+    <div class="hep-budget-track"><div class="row between"><span>Activation fund allocation</span><span class="hep-budget-legend"><span>Promised</span><span>Paid out</span><span>Campaigns</span></span></div><div class="hep-budget-meter" role="img" aria-label="Activation fund allocation">${[committed, spent, campBudget].map((v) => `<i style="width:${Math.max(0, v) / Math.max(1, alloc, committed + spent + campBudget) * 100}%"></i>`).join('')}</div></div>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Reward catalogue</h2><button class="btn small primary" id="new-rw">${icon('plus')} New reward</button></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Reward</th><th>Redeem at</th><th class="r">Points</th><th class="r">Value</th><th class="r">Issued / stock</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>${esc(merchants.find((m) => m.id === r.merchantId)?.name || 'HEP counter')}</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
+      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>HEP/admin</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
         <td>${r.active ? '<span class="badge ok">On</span>' : '<span class="badge grey">Off</span>'}</td><td class="r"><button class="btn small" data-rw="${esc(r.id)}">Edit</button></td></tr>`).join('')}</tbody></table></div></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the HEP counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
-      <p class="faint">Cashback and credits not tied to a merchant. Mark them used when you hand over the value.</p>
+      <p class="faint">Only HEP/admin fulfils reward vouchers. Mark each voucher used after handing over its value.</p>
       <div class="list" style="margin-top:6px">${open.map((v) => `<div class="item"><div class="grow"><h3>${esc(v.title)} · ${esc(v.code)}</h3><p>${esc(v.studentName)} · issued ${fmtDate(v.createdAt)}</p></div><button class="btn small go" data-use="${esc(v.id)}">Mark used</button></div>`).join('') || '<p class="faint" style="padding:10px 0">None waiting.</p>'}</div></section>`;
 }
 function rewardsMount(root, app) {
@@ -299,10 +305,9 @@ function rewardsMount(root, app) {
     $('#af', el).onsubmit = (e) => { e.preventDefault(); busy($('button', el), async () => { await D.saveConfig(app.ctx, 'budget', { allocationCents: Math.round(+e.target.v.value * 100) }); closeSheet(); app.render(); }); };
   };
   const edit = (r) => {
-    const ms = app._rw.merchants.filter((m) => m.status === 'verified');
     const el = sheet(`<h2>${r ? 'Edit reward' : 'New reward'}</h2><form id="rf" class="stack" style="margin-top:12px">
-      <label class="field">Title<input name="title" required value="${esc(r?.title || '')}" placeholder="e.g. RM5 off at Kopi Kolej"></label>
-      <label class="field">Redeem at<select name="merchantId"><option value="">HEP counter (cashback or credit)</option>${ms.map((m) => `<option value="${m.id}" ${r?.merchantId === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+      <label class="field">Title<input name="title" required value="${esc(r?.title || '')}" placeholder="e.g. RM5 campus reward"></label>
+      <p class="notice">Redeem with HEP/admin</p><input type="hidden" name="merchantId" value="">
       <div class="grid-2"><label class="field">Points needed<input name="cost" type="number" min="1" step="1" required value="${r?.cost || 500}"></label><label class="field">Value (RM)<input name="value" type="number" min="0" step="0.5" required value="${(r?.valueCents || 500) / 100}"></label></div>
       <div class="grid-2"><label class="field">Stock<input name="stock" type="number" min="${r?.issued || 0}" step="1" required value="${r?.stock || 100}"></label><label class="field">Valid for (days)<input name="validDays" type="number" min="1" required value="${r?.validDays || 30}"></label></div>
       <label class="check"><input type="checkbox" name="active" ${!r || r.active ? 'checked' : ''}> Students can swap points for this</label><button class="btn primary">Save reward</button></form>`);
@@ -310,7 +315,7 @@ function rewardsMount(root, app) {
       e.preventDefault(); const f = e.target;
       const id = r ? r.id : f.title.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + Math.random().toString(36).slice(2, 6);
       busy($('button', el), async () => {
-        try { await D.saveReward(app.ctx, id, { title: f.title.value.trim(), merchantId: f.merchantId.value, cost: Math.floor(+f.cost.value), valueCents: Math.round(+f.value.value * 100), stock: Math.floor(+f.stock.value), validDays: Math.floor(+f.validDays.value), active: f.active.checked, ...(r ? {} : { issued: 0, lastVoucher: '', icon: f.merchantId.value ? 'coffee' : 'wallet' }) }); closeSheet(); app.render(); }
+        try { await D.saveReward(app.ctx, id, { title: f.title.value.trim(), merchantId: '', cost: Math.floor(+f.cost.value), valueCents: Math.round(+f.value.value * 100), stock: Math.floor(+f.stock.value), validDays: Math.floor(+f.validDays.value), active: f.active.checked, ...(r ? {} : { issued: 0, lastVoucher: '', icon: 'wallet' }) }); closeSheet(); app.render(); }
         catch (err) { toast(errText(err), true); }
       });
     };
@@ -321,7 +326,7 @@ function rewardsMount(root, app) {
   $('#vfind', root).onsubmit = async (e) => {
     e.preventDefault(); const v = await D.findVoucher(app.ctx, e.target.code.value, true).catch(() => null);
     if (!v) return toast('No voucher with that code.', true);
-    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : 'not used yet'}</p>${v.status === 'issued' && D.voucherExpired(v) ? '<p class="notice warn" style="margin-top:14px">This voucher has expired.</p>' : v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
+    const el = sheet(`<h2>${esc(v.title)}</h2><p class="muted">${esc(v.studentName)} · code ${esc(v.code)} · ${v.status === 'used' ? `used ${fmtDate(v.usedAt)}` : v.status === 'cancelled' ? 'cancelled' : 'not used yet'}</p>${v.status === 'issued' && D.voucherExpired(v) ? '<p class="notice warn" style="margin-top:14px">This voucher has expired.</p>' : v.status === 'issued' ? '<button class="btn go block" id="u" style="margin-top:14px">Mark used</button>' : ''}`);
     if ($('#u', el)) $('#u', el).onclick = (ev) => busy(ev.currentTarget, async () => { try { await D.useVoucher(app.ctx, v.id); closeSheet(); app.render(); } catch (err) { toast(errText(err), true); } });
   };
 }
@@ -329,10 +334,8 @@ function rewardsMount(root, app) {
 // ------------------------------------------------------------- campaigns
 async function campaignsRender(app) {
   const camps = (await D.listCampaigns(app.ctx)).sort((a, b) => String(b.start).localeCompare(String(a.start))); app._cp = camps;
-  return `<div class="page-title row between"><div><h1>Campaigns and events</h1><p>Shown to students on the Community page. Set aside budget for each so the fund balance stays honest.</p></div><button class="btn primary" id="new">${icon('plus')} New campaign</button></div>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Dates</th><th>Where</th><th class="r">Budget</th><th></th></tr></thead><tbody>
-    ${camps.map((c) => `<tr><td><b>${esc(c.name)}</b><br><span class="faint">${esc(c.description || '')}</span></td><td>${esc(c.start || '')} – ${esc(c.end || '')}</td><td>${esc(c.location || '')}</td><td class="r num">${rm(c.budgetCents)}</td>
-      <td class="r"><button class="btn small" data-c="${esc(c.id)}">Edit</button></td></tr>`).join('') || '<tr><td colspan="5" class="faint">No campaigns yet.</td></tr>'}</tbody></table></div></div>`;
+  return `${hepHeading('Campaigns and events', 'Shown to students on the Community page. Set aside budget for each so the fund balance stays honest.', 'calendar', `<button class="btn primary" id="new">${icon('plus')} New campaign</button>`)}
+    <div class="hep-campaign-grid">${camps.map((c) => `<article class="card hep-campaign"><div class="hep-campaign-top">${hepEmblem('calendar', true)}<button class="btn small" data-c="${esc(c.id)}">${icon('pencil')} Edit</button></div><h2>${esc(c.name)}</h2>${c.description ? `<p>${esc(c.description)}</p>` : ''}<div class="hep-campaign-details"><span>${icon('calendar')} ${esc(c.start || '—')} – ${esc(c.end || '—')}</span><span>${icon('map-pin')} ${esc(c.location || '—')}</span></div><div class="hep-campaign-bottom"><span>Campaign budget<strong class="num">${rm(c.budgetCents)}</strong></span><span aria-hidden="true">${icon('sparkles')}</span></div></article>`).join('') || hepEmpty('No campaigns yet.', 'calendar')}</div>`;
 }
 function campaignsMount(root, app) {
   const edit = (c) => {
@@ -354,7 +357,7 @@ async function kpisRender(app) {
   const [users, merchants, surveys, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.listSurveys(app.ctx), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
   app._sv = { surveys, users };
   const students = users.filter((u) => u.role === 'student');
-  const verified = merchants.filter((m) => m.status === 'verified'), ready = verified.filter((m) => m.ready);
+  const verified = merchants.filter((m) => m.status === 'verified'), ready = verified.filter((m) => D.merchantReadinessCurrent(m, app.rules));
   const sStu = surveys.filter((s) => s.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((s, x) => s + x.knowledge, 0) / sStu.length) : 0;
   const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((s) => s.grade === g).length, surveys.filter((s) => s.role === 'merchant' && s.grade === g).length]);
   const kpi = [
@@ -366,12 +369,13 @@ async function kpisRender(app) {
     ['Referral sign-ups', n(refs.length), 'Referral codes linked to student accounts'],
     ['Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), `${rm(vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + v.valueCents, 0))} paid out`],
   ];
-  return `<div class="page-title row between"><div><h1>KPIs and surveys</h1><p>The solution map’s KPIs, calculated live from app records.</p></div>${monthPicker()}</div>
-    <section class="card pad-lg"><table class="data kpi-table"><thead><tr><th>KPI</th><th class="r">Value</th><th>How it’s measured</th></tr></thead><tbody>${kpi.map(([k, v, h]) => `<tr><td>${k}</td><td class="r num" style="font-size:18px;font-weight:800">${v}</td><td class="faint">${h}</td></tr>`).join('')}</tbody></table>
+  return `${hepHeading('KPIs and surveys', 'The solution map’s KPIs, calculated live from app records.', 'chart-column', monthPicker())}
+    <div class="stats" style="margin-bottom:22px">${hepMetric('Students enrolled', n(students.length), 'users', 'violet')}${hepMetric('Merchant readiness', verified.length ? Math.round(ready.length / verified.length * 100) + '%' : '—', 'shield-check', 'lime')}${hepMetric('Referral sign-ups', n(refs.length), 'user-plus', 'peach')}${hepMetric('Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), 'gift', 'sky')}</div>
+    <section class="card pad-lg"><div class="table-wrap"><table class="data kpi-table"><thead><tr><th>KPI</th><th class="r">Value</th><th>How it’s measured</th></tr></thead><tbody>${kpi.map(([k, v, h]) => `<tr><td>${k}</td><td class="r num" style="font-size:18px;font-weight:800">${v}</td><td class="faint">${h}</td></tr>`).join('')}</tbody></table></div>
       <div class="row end" style="margin-top:10px"><button class="btn small" id="kcsv">${icon('download')} Export KPIs</button></div></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Money check results</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
-      <table class="data" style="margin-top:10px"><thead><tr><th>Grade</th><th class="r">Students</th><th class="r">Merchants</th><th>Suggested support</th></tr></thead><tbody>
-      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></section>`;
+      <div class="table-wrap"><table class="data" style="margin-top:10px"><thead><tr><th>Grade</th><th class="r">Students</th><th class="r">Merchants</th><th>Suggested support</th></tr></thead><tbody>
+      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function kpisMount(root, app) {
   bindMonth(root, app);
@@ -384,7 +388,7 @@ function kpisMount(root, app) {
 let peopleQ = '';
 async function peopleRender(app) {
   const users = (await D.listUsers(app.ctx)).filter((u) => u.role === 'student').sort((a, b) => (b.points || 0) - (a.points || 0)); app._pp = users;
-  return `<div class="page-title"><h1>Students</h1><p>${users.length} signed up. Adjust points to correct mistakes; every change is recorded with your note.</p></div>
+  return `${hepHeading('Students', `${users.length} signed up. Adjust points to correct mistakes; every change is recorded with your note.`, 'users')}
     <input type="search" id="pq" placeholder="Search name, email or matric" value="${esc(peopleQ)}"><div class="card" style="margin-top:12px"><div class="table-wrap"><table class="data"><thead><tr><th>Student</th><th>College</th><th class="r">Points</th><th>Joined</th><th></th></tr></thead><tbody id="pt"></tbody></table></div></div>
     <section class="card pad-lg" style="margin-top:16px"><h2>Matric number claimed by the wrong person?</h2><p class="muted">Check their student ID first, then release the number so the real student can sign up. Block the other account if needed.</p><form id="rel" class="row" style="margin-top:10px;gap:8px"><input name="m" required minlength="5" placeholder="Matric number" aria-label="Matric number to release"><button class="btn small">Release</button></form></section>`;
 }
@@ -428,7 +432,7 @@ async function closuresRender(app) {
     <td>${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
     <td class="r">${r.kind !== 'request' ? '<span class="badge ok">Deleted</span>' : r.status === 'open'
     ? `<button class="btn small" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
-  return `<div class="page-title"><h1>Account closures</h1><p>Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, block the account under Merchants, then mark it closed.</p></div>
+  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, block the account under Merchants, then mark it closed.', 'trash-2')}
     ${open.length ? `<div class="notice warn" style="margin-bottom:16px">${open.length} business closing ${open.length === 1 ? 'request is' : 'requests are'} waiting.</div>` : ''}
     ${top.length ? `<section class="card pad-lg" style="margin-bottom:16px"><h2>Why people leave</h2><table class="data" style="margin-top:10px"><tbody>
       ${top.map(([k, c]) => `<tr><td>${esc(D.closeReasonLabel(k))}</td><td class="r num">${c}</td></tr>`).join('')}</tbody></table></section>` : ''}
@@ -453,19 +457,24 @@ async function settingsRender(app) {
   const [rules, access] = await Promise.all([D.getRules(app.ctx), D.getConfig(app.ctx, 'access')]);
   const field = (k, label, help, min = 0, max = 100000) => `<label class="field">${label}<input name="${k}" type="number" min="${min}" max="${max}" step="1" required value="${rules[k]}"><small>${help}</small></label>`;
   const list = (k) => esc((access?.[k] || []).join('\n'));
-  return `<div class="page-title"><h1>Settings</h1><p>Changes apply to new activity only. Past points stay as they were.</p></div>
+  return `${hepHeading('Settings', 'Changes apply to new activity only. Past points stay as they were.', 'settings')}<div class="hep-settings">
     <form id="features" class="card pad-lg stack" style="margin-bottom:16px"><h2>Features</h2>
       <p class="muted">Choose what students and merchants can use. Changes apply when people next open or refresh the app, and nothing is deleted.</p>
-      ${D.FEATURES.map(([k, label, help]) => `<label class="check"><input type="checkbox" name="${k}" ${D.featureOn(rules, k) ? 'checked' : ''}> <span><b>${esc(label)}</b><br><span class="faint">${esc(help)}</span></span></label>`).join('')}
+      <div class="hep-feature-grid">${D.FEATURES.map(([k, label, help]) => `<label class="check"><input type="checkbox" name="${k}" ${D.featureOn(rules, k) ? 'checked' : ''}> <span><b>${esc(label)}</b><br><span class="faint">${esc(help)}</span></span></label>`).join('')}</div>
       <button class="btn primary">Save features</button></form>
+    <form id="readiness-update" class="card pad-lg stack" style="margin-bottom:16px"><h2>Merchant readiness updates</h2>
+      <p class="muted">Publish a required update to bring Shop readiness back to merchant Home until it is reviewed and confirmed.</p>
+      <label class="field">Update for merchants<textarea name="message" required minlength="10" maxlength="1000" rows="3" placeholder="What should merchants review or complete?">${esc(rules.merchantReadinessUpdate?.message || '')}</textarea></label>
+      ${rules.merchantReadinessUpdate?.publishedAt ? `<p class="faint">Last published ${fmtDate(rules.merchantReadinessUpdate.publishedAt)}</p>` : ''}
+      <button class="btn primary">${icon('megaphone')} Publish readiness update</button></form>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
-      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}</div>
+      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}${field('liveDealPoints', 'Points per live-deal scan', 'Awarded immediately, once per student and deal each day.', 1, 1000)}</div>
       <button class="btn primary">Save rules</button></form>
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
       <label class="field">Testers allowed as students<textarea name="testerEmails">${list('testerEmails')}</textarea><small>Individual emails outside those domains, for the pilot team</small></label>
       <label class="field">HEP reviewers<textarea name="mppEmails">${list('mppEmails')}</textarea><small>They get full access to this dashboard after signing in with a verified email</small></label>
-      <button class="btn primary">Save access</button></form></div>`;
+      <button class="btn primary">Save access</button></form></div></div>`;
 }
 function settingsMount(root, app) {
   overviewMount(root, app);
@@ -476,7 +485,14 @@ function settingsMount(root, app) {
   };
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), liveDealPoints: v('liveDealPoints') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
+  };
+  $('#readiness-update', root).onsubmit = (e) => {
+    e.preventDefault(); const form = e.target;
+    busy($('button', form), async () => {
+      try { await D.publishMerchantReadiness(app.ctx, form.message.value); app.rules = await D.getRules(app.ctx); toast('Readiness update published.'); app.render(); }
+      catch (err) { toast(err.code ? errText(err) : err.message, true); }
+    });
   };
   $('#access', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const lines = (k) => f[k].value.split(/[\s,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);

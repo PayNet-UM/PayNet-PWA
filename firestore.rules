@@ -151,6 +151,14 @@ service cloud.firestore {
           return L().delta < 0 && w.lastUid == u && w.lastId == id
             && w.points == get(/databases/$(database)/documents/stats/welfare).data.points - L().delta;
         }
+        function liveDealOk() {
+          let c = getAfter(/databases/$(database)/documents/liveDealClaims/$(L().claimId)).data;
+          return id == 'liveDeal_' + L().claimId
+            && !exists(/databases/$(database)/documents/liveDealClaims/$(L().claimId))
+            && c.studentUid == u && c.status == 'claimed' && c.createdAt == request.time
+            && L().dealId == c.dealId && L().delta == c.rewardPoints
+            && L().delta == cfg().get('liveDealPoints', 10);
+        }
         function validEntry() {
           return (uid() == u && isStudent() && (
                  (L().type == 'survey' && id == 'survey' && L().delta == cfg().surveyBonus
@@ -160,6 +168,7 @@ service cloud.firestore {
                   && L().delta == cfg().lessonBonus)
               || (L().type == 'redeem' && redeemOk())
               || (L().type == 'donate' && donateOk())
+              || (L().type == 'liveDeal' && liveDealOk())
             ))
             || (L().type == 'adjust' && isMpp() && L().note is string && L().note.size() > 2)
             || (L().type == 'welfare' && isMpp() && welfareOk());
@@ -254,21 +263,65 @@ service cloud.firestore {
 
     // ---------- offers and off-peak deals ----------
     match /offers/{id} {
-      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
-      allow create: if isMerchantRole() && featureOn('merchantTools') && D().merchantId == uid() && D().status == 'pending'
-        && D().createdAt == request.time && D().title is string && D().title.size() > 2;
-      allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt'])
-        || (signedIn() && resource.data.merchantId == uid() && changed().hasOnly(['status']) && D().status == 'withdrawn');
+      allow read: if isMpp();
+      allow write: if false;
+    }
+
+    function activeLiveDeal(id, merchant) {
+      let d = get(/databases/$(database)/documents/deals/$(id)).data;
+      let m = get(/databases/$(database)/documents/merchants/$(merchant)).data;
+      return featureOn('overview') && featureOn('merchantTools') && featureOn('dealsAndPay')
+        && d.merchantId == merchant && d.status in ['approved', 'published'] && d.enabled == true && m.status == 'verified'
+        && minuteOfDay(request.time) >= d.startMin && minuteOfDay(request.time) < d.endMin
+        && m.seats > 0 && m.occupied * 100 < d.threshold * m.seats;
+    }
+    match /liveDealQRs/{id} {
+      allow get: if signedIn() && (isStudent() || resource.data.merchantId == uid() || isMpp());
+      allow list: if isMpp();
+      allow create: if isVerifiedMerchant() && id.matches('^[a-f0-9]{32}$')
+        && D().keys().hasOnly(['merchantId', 'dealId', 'createdAt', 'expiresAt'])
+        && D().merchantId == uid() && D().dealId is string && activeLiveDeal(D().dealId, uid())
+        && D().createdAt == request.time && D().expiresAt is timestamp
+        && D().expiresAt > request.time && D().expiresAt <= request.time + duration.value(120, 's');
+      allow update, delete: if false;
+    }
+    match /liveDealClaims/{id} {
+      allow read: if signedIn() && (resource == null || resource.data.studentUid == uid() || resource.data.merchantId == uid() || isMpp());
+      function validSession() {
+        let q = get(/databases/$(database)/documents/liveDealQRs/$(D().sessionId)).data;
+        return q.dealId == D().dealId && q.merchantId == D().merchantId && q.expiresAt > request.time;
+      }
+      allow create: if isStudent()
+        && D().keys().hasOnly(['studentUid', 'studentName', 'merchantId', 'dealId', 'title', 'benefit', 'rewardPoints', 'sessionId', 'day', 'status', 'createdAt'])
+        && D().studentUid == uid() && D().studentName == userDoc(uid()).name && D().status == 'claimed'
+        && D().sessionId is string && D().dealId is string && D().merchantId is string
+        && D().day == dayKey(request.time) && id == D().dealId + '_' + uid() + '_' + dayKey(request.time)
+        && D().createdAt == request.time && validSession() && activeLiveDeal(D().dealId, D().merchantId)
+        && D().title == get(/databases/$(database)/documents/deals/$(D().dealId)).data.title
+        && D().benefit == get(/databases/$(database)/documents/deals/$(D().dealId)).data.get('benefit', D().title)
+        && D().rewardPoints is int && D().rewardPoints >= 1 && D().rewardPoints <= 1000
+        && D().rewardPoints == cfg().get('liveDealPoints', 10)
+        && userAfter(uid()).lastTx == 'liveDeal_' + id
+        && getAfter(/databases/$(database)/documents/users/$(uid())/ledger/$('liveDeal_' + id)).data.delta == D().rewardPoints;
+      allow update: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay')
+        && resource.data.merchantId == uid() && resource.data.status == 'claimed'
+        && request.time < resource.data.createdAt + duration.value(15, 'm')
+        && changed().hasOnly(['status', 'appliedAt', 'appliedBy'])
+        && D().status == 'applied' && D().appliedAt == request.time && D().appliedBy == uid();
+      allow delete: if false;
     }
 
     match /deals/{id} {
-      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.merchantId == uid() || isMpp());
-      allow create: if isMerchantRole() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'pending'
+      allow read: if signedIn() && (resource.data.status in ['approved', 'published'] || resource.data.merchantId == uid() || isMpp());
+      allow create: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'published'
         && D().enabled == true && D().bonus is int && D().bonus == 0
+        && D().title is string && D().title.size() >= 3 && D().title.size() <= 60
+        && (!('benefit' in D()) || (D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160))
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
-        && D().startMin is int && D().endMin is int && D().startMin < D().endMin
+        && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
-      allow update: if (signedIn() && resource.data.merchantId == uid() && changed().hasOnly(['enabled']))
+      allow update: if (isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && resource.data.merchantId == uid()
+          && (changed().hasOnly(['enabled']) || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 
@@ -405,7 +458,7 @@ service cloud.firestore {
 
     match /vouchers/{v} {
       function reward() { return get(/databases/$(database)/documents/rewards/$(D().rewardId)).data; }
-      allow read: if signedIn() && (resource.data.studentUid == uid() || resource.data.merchantId == uid() || isMpp());
+      allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
       allow create: if isStudent() && D().studentUid == uid() && D().status == 'issued'
         && D().keys().hasOnly(['studentUid', 'studentName', 'rewardId', 'title', 'merchantId', 'cost', 'valueCents', 'status', 'code', 'validDays', 'createdAt'])
         && D().studentName == userDoc(uid()).name
@@ -414,14 +467,13 @@ service cloud.firestore {
         && D().createdAt == request.time && reward().active == true
         && D().cost == reward().cost && D().valueCents == reward().valueCents
         && D().merchantId == reward().merchantId && D().title == reward().title
-        && (D().merchantId == '' || featureOn('merchantTools'))
         && getAfter(/databases/$(database)/documents/rewards/$(D().rewardId)).data.lastVoucher == v
         && existsAfter(/databases/$(database)/documents/users/$(uid())/ledger/$(v));
       allow update: if signedIn() && resource.data.status == 'issued'
         && changed().hasOnly(['status', 'usedAt', 'usedBy']) && D().status == 'used'
         && D().usedAt == request.time && D().usedBy == uid()
         && request.time < resource.data.createdAt + duration.value(resource.data.get('validDays', 30), 'd')
-        && ((resource.data.merchantId == uid() && isVerifiedMerchant() && featureOn('merchantTools')) || isMpp());
+        && isMpp();
     }
 
     // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
