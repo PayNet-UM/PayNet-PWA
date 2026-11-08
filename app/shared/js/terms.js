@@ -9,8 +9,8 @@ export { TERMS_VERSION };
 export const TERMS_EFFECTIVE = { en: '8 November 2026', ms: '8 November 2026' };
 // Who to contact about the programme and your data.
 export const TERMS_CONTACT = {
-  en: 'the +Onz team at Hal Ehwal Pelajar (HEP), Universiti Malaya',
-  ms: 'pasukan +Onz di Hal Ehwal Pelajar (HEP), Universiti Malaya',
+  en: 'the +Onz team at admin@addonz.my',
+  ms: 'pasukan +Onz di admin@addonz.my',
 };
 
 const T = {
@@ -21,6 +21,7 @@ const T = {
       ['About +Onz', [
         '+Onz is Universiti Malaya’s campus app for students and campus businesses, run by Hal Ehwal Pelajar (HEP) with the student team, as part of PayNet Digital Campus 5.0.',
         'By creating an account or continuing to use +Onz, you agree to these terms and to us handling your data as described here, in line with Malaysia’s Personal Data Protection Act 2010 (PDPA).',
+        '+Onz is for use in Malaysia only.',
       ]],
       ['Who can use +Onz', [
         ['Students of Universiti Malaya, signing in with their UM email or an email HEP allows. One account per matric number.',
@@ -52,7 +53,7 @@ const T = {
           'Friends you accept see your username and avatar, and your campus map status if you switched it on.',
           'Everyone sees college totals on the leaderboard, not individual students.',
           'PayNet receives the list of participating businesses and their DuitNow QR details (Lampiran 1), and programme totals. They don’t get students’ personal details.',
-          'Service providers that run the app for us: Google Firebase (sign-in, database and hosting) and map providers (Google Maps or OpenStreetMap) when you open the map. Their servers may be outside Malaysia.'],
+          'Service providers that run the app for us: Google Firebase (sign-in, database and hosting) and map providers (Google Maps or OpenStreetMap) when you open the map. Their servers may be outside Malaysia, but your data is used only to run +Onz in Malaysia.'],
       ]],
       ['How we protect it', [
         ['Sign-in is handled by Google or by Firebase email sign-in, and admin accounts must verify their email.',
@@ -62,13 +63,13 @@ const T = {
         'No system is perfectly secure. If you think someone else has used your account, tell HEP straight away.',
       ]],
       ['How long we keep it', [
-        'We keep your data while the +Onz programme runs, then delete it or make it anonymous within 12 months after the programme ends, unless Universiti Malaya’s rules require us to keep records longer. Some data is temporary: campus map status disappears after 2 hours, and iPhone sign-in codes after a few minutes.',
+        'We keep your data while the +Onz programme runs, then delete it or make it anonymous within 6 months after the programme ends, unless Universiti Malaya’s rules require us to keep records longer. Some data is temporary: campus map status disappears after 2 hours, and iPhone sign-in codes after a few minutes.',
       ]],
       ['Your choices and rights', [
         ['Correct your details: edit your profile in the app, or ask HEP.',
           'Switch off the campus map, remove friends, or change your avatar and username at any time.',
           'Ask HEP for a copy of your data, or to correct it.',
-          'Withdraw your consent and close your account by contacting HEP. Your points and unused vouchers will be lost.'],
+          'Withdraw your consent and delete your account at any time: go to Me, then “Delete my account”. Your account and personal details are deleted, or made anonymous in programme records, straight away, and HEP is told. Your points and unused vouchers are lost. Businesses send a closing request from the account menu, and HEP closes the account after settling any vouchers.'],
       ]],
       ['Points, rewards and vouchers', [
         ['Points have no cash value. They can’t be sold, swapped for money or moved to another person, except by donating to the welfare fund in the app.',
@@ -101,6 +102,7 @@ const T = {
       ['Tentang +Onz', [
         '+Onz ialah aplikasi kampus Universiti Malaya untuk pelajar dan perniagaan kampus, dikendalikan oleh Hal Ehwal Pelajar (HEP) bersama pasukan pelajar, sebagai sebahagian daripada PayNet Digital Campus 5.0.',
         'Dengan membuat akaun atau terus menggunakan +Onz, anda bersetuju dengan terma ini dan dengan cara kami mengendalikan data anda seperti yang diterangkan di sini, selaras dengan Akta Perlindungan Data Peribadi 2010 (PDPA).',
+        '+Onz untuk kegunaan di Malaysia sahaja.',
       ]],
       ['Siapa boleh menggunakan +Onz', [
         ['Pelajar Universiti Malaya, log masuk dengan e-mel UM atau e-mel yang dibenarkan HEP. Satu akaun bagi setiap nombor matrik.',
@@ -132,7 +134,7 @@ const T = {
           'Rakan yang anda terima melihat nama pengguna dan avatar anda, serta status peta kampus jika anda menghidupkannya.',
           'Semua orang melihat jumlah kolej pada papan pendahulu, bukan pelajar individu.',
           'PayNet menerima senarai perniagaan yang menyertai serta butiran QR DuitNow mereka (Lampiran 1), dan jumlah program. Mereka tidak mendapat butiran peribadi pelajar.',
-          'Penyedia perkhidmatan yang menjalankan aplikasi untuk kami: Google Firebase (log masuk, pangkalan data dan pengehosan) dan penyedia peta (Google Maps atau OpenStreetMap) apabila anda membuka peta. Pelayan mereka mungkin berada di luar Malaysia.'],
+          'Penyedia perkhidmatan yang menjalankan aplikasi untuk kami: Google Firebase (log masuk, pangkalan data dan pengehosan) dan penyedia peta (Google Maps atau OpenStreetMap) apabila anda membuka peta. Pelayan mereka mungkin berada di luar Malaysia, tetapi data anda hanya digunakan untuk menjalankan +Onz di Malaysia.'],
       ]],
       ['Cara kami melindunginya', [
         ['Log masuk dikendalikan oleh Google atau log masuk e-mel Firebase, dan akaun pentadbir mesti mengesahkan e-mel mereka.',
@@ -142,13 +144,13 @@ const T = {
         'Tiada sistem yang selamat sepenuhnya. Jika anda rasa orang lain telah menggunakan akaun anda, maklumkan kepada HEP dengan segera.',
       ]],
       ['Tempoh kami menyimpannya', [
-        'Kami menyimpan data anda sepanjang program +Onz berjalan, kemudian memadam atau menjadikannya tanpa nama dalam tempoh 12 bulan selepas program tamat, melainkan peraturan Universiti Malaya memerlukan rekod disimpan lebih lama. Sesetengah data adalah sementara: status peta kampus hilang selepas 2 jam, dan kod log masuk iPhone selepas beberapa minit.',
+        'Kami menyimpan data anda sepanjang program +Onz berjalan, kemudian memadam atau menjadikannya tanpa nama dalam tempoh 6 bulan selepas program tamat, melainkan peraturan Universiti Malaya memerlukan rekod disimpan lebih lama. Sesetengah data adalah sementara: status peta kampus hilang selepas 2 jam, dan kod log masuk iPhone selepas beberapa minit.',
       ]],
       ['Pilihan dan hak anda', [
         ['Betulkan butiran anda: sunting profil dalam aplikasi, atau minta HEP.',
           'Matikan peta kampus, buang rakan, atau tukar avatar dan nama pengguna pada bila-bila masa.',
           'Minta salinan data anda daripada HEP, atau minta ia dibetulkan.',
-          'Tarik balik persetujuan dan tutup akaun anda dengan menghubungi HEP. Mata dan baucar yang belum digunakan akan hilang.'],
+          'Tarik balik persetujuan dan padam akaun anda pada bila-bila masa: pergi ke Saya, kemudian “Padam akaun saya”. Akaun dan butiran peribadi anda dipadam, atau dijadikan tanpa nama dalam rekod program, serta-merta, dan HEP dimaklumkan. Mata dan baucar yang belum digunakan akan hilang. Perniagaan menghantar permintaan penutupan dari menu akaun, dan HEP menutup akaun selepas menyelesaikan baucar yang ada.'],
       ]],
       ['Mata, ganjaran dan baucar', [
         ['Mata tidak mempunyai nilai tunai. Ia tidak boleh dijual, ditukar dengan wang atau dipindahkan kepada orang lain, kecuali dengan menderma kepada tabung kebajikan dalam aplikasi.',

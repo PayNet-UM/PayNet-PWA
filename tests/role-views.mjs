@@ -24,15 +24,15 @@ await D.saveConfig(hep, 'rules', { features: Object.fromEntries(D.FEATURES.map((
 const featureRules = await D.getRules(hep);
 await D.createProfile(student, { role: 'student', name: 'Test Student', matric: 'TEST12345', college: 'KK3', faculty: 'Faculty of Science' });
 await D.createProfile(merchant, { role: 'merchant', name: 'Test Merchant' });
-const makeApp = async (ctx) => ({ ctx, backend: { sdk, db: ctx.db, mode: 'demo' }, profile: await D.getProfile(ctx),
+const makeApp = async (ctx) => ({ ctx, user: { uid: ctx.uid, email: ctx.email }, role: ctx === merchant ? 'merchant' : ctx === student ? 'student' : 'mpp', backend: { sdk, db: ctx.db, mode: 'demo' }, profile: await D.getProfile(ctx),
   rules: featureRules, ledger: [],
   get visits() { throw new Error('An active view still depends on attendance records'); },
   merchant: { id: 'merchant', name: 'Test Shop', status: 'verified', ready: true, lat: 3.12, lng: 101.65 } });
 let passed = 0;
 for (const [role, mod, app, routes] of [
-  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'explore']],
-  ['Merchant', M, await makeApp(merchant), ['home', 'insights', 'promote']],
-  ['HEP', H, await makeApp(hep), ['overview', 'approvals', 'recon', 'kpis', 'settings']],
+  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'explore', 'delete-account']],
+  ['Merchant', M, await makeApp(merchant), ['home', 'insights', 'promote', 'delete-account']],
+  ['HEP', H, await makeApp(hep), ['overview', 'approvals', 'recon', 'kpis', 'closures', 'settings']],
 ]) {
   for (const route of routes) {
     const html = await mod.routes[route].render(app, []);

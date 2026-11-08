@@ -424,6 +424,15 @@ service cloud.firestore {
         && ((resource.data.merchantId == uid() && isVerifiedMerchant() && featureOn('merchantTools')) || isMpp());
     }
 
+    // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
+    // anonymous; businesses' closing requests name the business so HEP can close it.
+    match /accountClosures/{id} {
+      allow read: if isMpp();
+      allow update: if isMpp() && changed().hasOnly(['seen', 'status', 'handledBy', 'handledAt'])
+        && D().seen == true && (!('handledBy' in changed()) || (D().handledBy == email() && D().handledAt == request.time));
+      allow create, delete: if false;
+    }
+
     // ---------- surveys, missions ----------
     match /surveys/{u} {
       allow read: if signedIn() && (uid() == u || isMpp());

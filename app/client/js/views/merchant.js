@@ -5,6 +5,7 @@ import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, busy, errTe
 import { pinPicker, hasPin, inGeoBox } from '../map.js';
 import { surveyHTML, surveyMount, merchantLogo } from './student.js';
 import { avatarSVG, defaultFor } from '../avatar.js';
+import { closeRender, closeMount } from './close.js';
 
 export const defaultRoute = 'home';
 const toMs = D.toMs;
@@ -354,4 +355,5 @@ export const routes = {
   promote: { title: 'Promote', render: promoteRender, mount: promoteMount, feature: 'merchantTools' },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools' },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools' },
+  'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },
 };

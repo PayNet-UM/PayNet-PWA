@@ -318,6 +318,38 @@ export function watchMerchantVisits(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(R(ctx).visitCol(), eq(ctx, 'merchantId', ctx.uid)), (s) => cb(snapList(s).sort(byAtDesc)), err);
 }
 export async function monthVisits(ctx, month) { return list(ctx, 'visits', eq(ctx, 'month', month)); }
+// ------------------------------------------------------------- account closures ("Delete my account")
+// Reasons offered on the Delete my account page (the server checks the same codes: functions/account.js).
+export const CLOSE_REASONS = [
+  ['not-useful', 'I don’t find it useful', 'all'], ['not-using', 'I don’t use it often enough', 'all'],
+  ['rewards', 'Not enough rewards or offers', 'student'], ['few-students', 'Not enough students use it', 'merchant'],
+  ['privacy', 'Privacy or data concerns', 'all'], ['problems', 'Sign-in problems or bugs', 'all'],
+  ['too-many-alerts', 'Too many sounds or notifications', 'student'], ['leaving', 'I’m graduating or leaving UM', 'student'],
+  ['business-closing', 'My business is closing or moving', 'merchant'], ['other', 'Something else', 'all'],
+  ['prefer-not', 'I’d rather not say', 'all'],
+];
+export const closeReasonLabel = (code) => (CLOSE_REASONS.find(([k]) => k === code) || [code, code])[1];
+export async function closeMyAccount(user, { reasons, comment }) {
+  const idToken = await user.getIdToken(true);
+  const res = await fetch('/api/account/close', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+    body: JSON.stringify({ reasons, comment }) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) throw new Error(data.message || `The server didn’t answer (${res.status}). Try again, or email admin@addonz.my.`);
+  return data;
+}
+export async function listClosures(ctx) {
+  return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
+}
+export async function markClosuresSeen(ctx, ids) {
+  if (!ids.length) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  ids.forEach((id) => b.update(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true }));
+  await b.commit();
+}
+export async function markClosureDone(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'accountClosures', id), { seen: true, status: 'done', handledBy: ctx.email, handledAt: ctx.sdk.serverTimestamp() });
+}
+
 export async function flagVisit(ctx, id, flag, note) {
   await ctx.sdk.updateDoc(R(ctx).visit(id), { flag, flagNote: note || '', flaggedBy: ctx.email });
 }

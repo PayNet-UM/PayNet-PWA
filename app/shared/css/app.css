@@ -973,3 +973,13 @@ button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; tex
 .terms-lang { display: inline-flex; gap: 6px; margin-top: 8px; }
 .terms-lang button { border: 2px solid #d0dbed; background: #fff; color: var(--ink, #192f59); border-radius: 999px; padding: 6px 12px; font: 700 13px/1 Montserrat, system-ui, sans-serif; cursor: pointer; min-height: 34px; }
 .terms-lang button.on { background: var(--ink, #192f59); color: #fff; border-color: var(--ink, #192f59); }
+
+/* Delete my account / closing request */
+.btn.danger-link { color: var(--red); font-size: .95em; }
+.close-account h1 { margin-bottom: 12px; }
+.close-account .close-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.close-account .close-reasons { border: 0; margin: 0; }
+.close-account .close-reasons legend { padding: 0; }
+.close-account .close-reasons legend h2 { margin: 0; }
+.closure-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.closure-reasons .badge { white-space: normal; height: auto; min-height: 26px; }

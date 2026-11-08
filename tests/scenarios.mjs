@@ -481,6 +481,19 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('the terms version must be a real version date', () => tn.sdk.updateDoc(tn.sdk.doc(tn.db, 'users', 'terms1'), { termsVersion: 'anything', termsAcceptedAt: tn.sdk.serverTimestamp() }));
   await denied('nobody can record acceptance for someone else', () => tn.sdk.updateDoc(tn.sdk.doc(tn.db, 'users', 'stuA'), { termsVersion: D.TERMS_VERSION, termsAcceptedAt: tn.sdk.serverTimestamp() }));
 
+  log('Delete my account (HEP notes)');
+  await seedHistory([['accountClosures/c1', { kind: 'deleted', role: 'student', college: 'KK1', faculty: '', points: 40, reasons: ['privacy'], comment: '', createdAt: T, seen: false }],
+    ['accountClosures/request_mer1', { kind: 'request', role: 'merchant', uid: 'mer1', name: 'Owner', email: 'owner@kopikolej.my', businessName: 'Kopi Kolej', reasons: ['business-closing'], comment: '', status: 'open', createdAt: T, seen: false }]]);
+  await denied('a student can’t read account closure notes', () => D.listClosures(stuA));
+  await denied('a business can’t read its own closing request back from the app', () => merch.sdk.getDoc(merch.sdk.doc(merch.db, 'accountClosures', 'request_mer1')));
+  await denied('nobody can write a closure note from the app (only the server can)', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'accountClosures', 'fake'), { kind: 'deleted', reasons: ['other'], seen: false }));
+  await denied('even HEP can’t make up a closure note', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'fake2'), { kind: 'deleted', reasons: ['other'], seen: false }));
+  await ok('HEP sees closures and their reasons', async () => { const rows = await D.listClosures(mpp); eq(rows.length, 2, 'closures'); eq(D.closeReasonLabel('privacy'), 'Privacy or data concerns'); });
+  await ok('HEP marks closures as seen', () => D.markClosuresSeen(mpp, ['c1', 'request_mer1']));
+  await ok('HEP marks a business closing request as done', async () => { await D.markClosureDone(mpp, 'request_mer1'); eq((await D.listClosures(mpp)).find((r) => r.id === 'request_mer1').status, 'done', 'status'); });
+  await denied('HEP can’t change the reasons someone gave', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1'), { reasons: ['rewards'] }));
+  await denied('HEP can’t delete a closure note', () => mpp.sdk.deleteDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1')));
+
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };
 }

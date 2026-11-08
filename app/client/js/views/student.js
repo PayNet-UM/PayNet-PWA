@@ -9,6 +9,7 @@ import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
+import { closeRender, closeMount } from './close.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -682,7 +683,8 @@ async function meRender(app) {
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
-      <button class="btn block warn" id="out">${icon('log-out')} Sign out</button></section>`;
+      <button class="btn block warn" id="out">${icon('log-out')} Sign out</button>
+      <a class="btn block ghost danger-link" href="#/delete-account">${icon('trash-2')} Delete my account</a></section>`;
 }
 function pointsHistoryRow(entry) {
   const glyph = { checkin: 'map-pin-check', purchase: 'wallet', survey: 'target', lesson: 'book-open',
@@ -744,4 +746,5 @@ export const routes = {
   community: { title: 'Community', render: communityRender, mount: communityMount },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
+  'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };

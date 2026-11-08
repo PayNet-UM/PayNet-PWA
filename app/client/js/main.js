@@ -146,6 +146,7 @@ function accountSheet() {
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
+      ${app.role === 'student' || app.role === 'merchant' ? `<a class="btn block ghost danger-link" href="#/delete-account" data-close>${icon('trash-2')} ${app.role === 'merchant' ? 'Close my account' : 'Delete my account'}</a>` : ''}
     </div>`);
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
