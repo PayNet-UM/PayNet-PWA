@@ -52,10 +52,37 @@ service cloud.firestore {
     function D() { return request.resource.data; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
+    // ---------- HEP admin safety ----------
+    // Big HEP changes need a sign-in from the last 12 hours, so an old or stolen session can't make them.
+    function recentSignIn() {
+      return request.auth.token.auth_time is int
+        && request.time.toMillis() < request.auth.token.auth_time * 1000 + 43200000;
+    }
+    function adminChange() { return isMpp() && recentSignIn(); }
+    // A logged change names its activity-log entry, which must be written by this admin in the same batch.
+    function loggedBy(logId) {
+      return logId is string
+        && !exists(/databases/$(database)/documents/adminLog/$(logId))
+        && getAfter(/databases/$(database)/documents/adminLog/$(logId)).data.at == request.time
+        && getAfter(/databases/$(database)/documents/adminLog/$(logId)).data.by == email();
+    }
+    // Activity log: readable by HEP admins, and nobody can edit or delete an entry.
+    match /adminLog/{id} {
+      allow read: if isMpp();
+      allow create: if adminChange()
+        && D().keys().hasOnly(['at', 'by', 'action', 'target', 'summary'])
+        && D().at == request.time && D().by == email()
+        && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
+                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review']
+        && D().target is string && D().target.size() <= 100
+        && D().summary is string && D().summary.size() <= 300;
+      allow update, delete: if false;
+    }
+
     // ---------- config ----------
     match /config/{name} {
       allow read: if signedIn() && ((name == 'rules' || name == 'budget') || isMpp());
-      allow write: if isMpp();
+      allow write: if adminChange() && loggedBy(D().get('logId', null));
     }
 
     // ---------- users ----------
@@ -114,8 +141,9 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
           (uid() == u && resource.data.get('disabled', false) != true && selfUpdate())
-          || (isMpp() && changed().hasOnly(['points', 'lastTx', 'disabled'])
-              && (!ptsChanged() || ledgerAfter().type in ['adjust', 'welfare']))
+          || (adminChange() && changed().hasOnly(['points', 'lastTx', 'disabled', 'adminLogId'])
+              && (!ptsChanged() || ledgerAfter().type in ['adjust', 'welfare'])
+              && (!changed().hasAny(['disabled']) || loggedBy(D().get('adminLogId', null))))
         );
 
       // Daily app use is independent of lessons, locations, attendance and points.
@@ -194,7 +222,8 @@ service cloud.firestore {
     // ---------- one account per matric number ----------
     match /matrics/{m} {
       allow get: if signedIn();
-      allow list, delete: if isMpp();
+      allow list: if isMpp();
+      allow delete: if adminChange();
       allow create: if verified() && D().uid == uid() && D().keys().hasOnly(['uid'])
         && userAfter(uid()).role == 'student' && userAfter(uid()).matric == m;
     }
@@ -247,7 +276,7 @@ service cloud.firestore {
              && geoOk() && logoOk()
              && (!changed().hasAny(['occupied', 'seats']) || (D().occupied is int && D().seats is int
                  && D().occupied >= 0 && D().occupied <= D().seats)))
-          || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt', 'offer'])
+          || (adminChange() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt', 'offer'])
              && D().status in ['pending', 'verified', 'rejected', 'suspended'])
         );
     }
@@ -431,7 +460,7 @@ service cloud.firestore {
         && D().amount is int && D().amount > 0 && D().amount <= 1000
         && D().reason is string && D().reason.size() >= 10 && D().reason.size() <= 1000
         && D().status == 'pending' && D().createdAt == request.time;
-      allow update: if isMpp() && resource.data.status == 'pending'
+      allow update: if adminChange() && resource.data.status == 'pending'
         && changed().hasOnly(['status', 'response', 'reviewedBy', 'reviewedAt'])
         && D().reviewedBy == email() && D().reviewedAt == request.time
         && D().response is string && D().response.size() <= 500
@@ -449,7 +478,7 @@ service cloud.firestore {
     }
     match /rewards/{r} {
       allow read: if signedIn();
-      allow write: if isMpp();
+      allow create, update: if adminChange() && loggedBy(D().get('logId', null));
       allow update: if isStudent() && changed().hasOnly(['issued', 'lastVoucher'])
         && D().issued == resource.data.issued + 1 && D().issued <= resource.data.stock
         && !exists(/databases/$(database)/documents/vouchers/$(D().lastVoucher))

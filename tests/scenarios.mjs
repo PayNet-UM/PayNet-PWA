@@ -500,6 +500,41 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('HEP releases the matric number', () => D.releaseMatric(mpp, 'U7777777'));
   const realOwner = await makeCtx({ uid: 'real1', email: 'real@siswa.um.edu.my' });
   await ok('the real student can then sign up', () => D.createProfile(realOwner, { role: 'student', name: 'Real Owner', matric: 'U7777777', college: 'KK1' }));
+
+  log('HEP admin safety: activity log and recent sign-in');
+  const { sdk: s } = mpp;
+  await ok('big HEP changes are recorded in the activity log, by the admin who made them', async () => {
+    const entries = await D.listAdminLog(mpp), actions = new Set(entries.map((e) => e.action));
+    for (const a of ['programme-setup', 'features', 'block', 'unblock', 'release-matric', 'adjust-points', 'reward', 'merchant-review']) eq(actions.has(a), true, a);
+    eq(entries.every((e) => e.by === adminEmail), true, 'by');
+    eq(entries.find((e) => e.action === 'block').target, 'stuB', 'student entries name the account ID, not the name');
+  });
+  await denied('a settings change without its activity-log entry is refused', () => s.setDoc(s.doc(mpp.db, 'config', 'rules'), { surveyBonus: 999 }, { merge: true }));
+  await denied('a reward change without its activity-log entry is refused', () => s.setDoc(s.doc(mpp.db, 'rewards', 'sec-test'), { cost: 0 }, { merge: true }));
+  await denied('blocking a student without an activity-log entry is refused', () => s.updateDoc(s.doc(mpp.db, 'users', 'stuB'), { disabled: true }));
+  await denied('an admin cannot log a change in someone else’s name', async () => {
+    const b = s.writeBatch(mpp.db), ref = s.doc(s.collection(mpp.db, 'adminLog'));
+    b.set(ref, { at: s.serverTimestamp(), by: 'someone.else@gmail.com', action: 'features', target: 'x', summary: '' });
+    b.set(s.doc(mpp.db, 'config', 'rules'), { surveyBonus: 999, logId: ref.id }, { merge: true }); await b.commit();
+  });
+  await denied('an admin cannot write a log entry under another admin’s name', () => s.setDoc(s.doc(mpp.db, 'adminLog', 'forged'),
+    { at: s.serverTimestamp(), by: 'someone.else@gmail.com', action: 'features', target: 'x', summary: '' }));
+  const firstLog = (await D.listAdminLog(mpp))[0];
+  await denied('an activity-log entry cannot be edited', () => s.updateDoc(s.doc(mpp.db, 'adminLog', firstLog.id), { summary: 'changed' }));
+  await denied('an activity-log entry cannot be deleted', () => s.deleteDoc(s.doc(mpp.db, 'adminLog', firstLog.id)));
+  await denied('a student cannot read the activity log', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'adminLog')));
+  await denied('a student cannot write to the activity log', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'adminLog', 'fake'),
+    { at: stuA.sdk.serverTimestamp(), by: stuA.email, action: 'features', target: 'x', summary: '' }));
+  const staleMpp = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 13 });
+  await denied('an admin who signed in 13 hours ago cannot change feature switches', () => D.saveConfig(staleMpp, 'rules', { features: { overview: true } }));
+  await denied('an admin who signed in 13 hours ago cannot change who can use the app', () => D.saveConfig(staleMpp, 'access', { mppEmails: ['new.admin@gmail.com'] }));
+  await denied('an admin who signed in 13 hours ago cannot block a student', () => D.setBlocked(staleMpp, 'stuB', true));
+  await denied('an admin who signed in 13 hours ago cannot adjust points', () => D.adjustPoints(staleMpp, 'stuB', 100, 'Old session'));
+  await denied('an admin who signed in 13 hours ago cannot release a matric number', () => D.releaseMatric(staleMpp, 'U7777777'));
+  await denied('an admin who signed in 13 hours ago cannot change a reward', () => D.saveReward(staleMpp, 'sec-test', { cost: 0 }));
+  await ok('an admin who signed in 13 hours ago can still read the dashboard', () => D.listAdminLog(staleMpp));
+  const recentMpp = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 11 });
+  await ok('an admin who signed in 11 hours ago can still make changes', () => D.saveConfig(recentMpp, 'budget', { allocationCents: 2000000 }));
   log('Here now (campus map presence)');
   const hn1 = await makeCtx({ uid: 'hn1', email: 'hana.here@gmail.com' });
   const hn2 = await makeCtx({ uid: 'hn2', email: 'imran.here@gmail.com' });

@@ -276,6 +276,11 @@ if (await off.locator('#features input[type=checkbox]').count() !== 4) throw new
 for (const c of await off.$$('#features input[type=checkbox]')) await c.uncheck();
 await off.click('#features button'); await off.waitForSelector('#toast.show');
 ok('HEP turned every feature off in Settings');
+await off.goto(ADMIN + '#/activity'); await off.waitForSelector('#view table.data');
+const activity = await off.locator('#view table.data').innerText();
+for (const text of ['Feature switches', 'All off', 'Readiness update', adminEmail]) if (!activity.includes(text)) throw new Error('activity log is missing: ' + text);
+ok('the Activity log lists those changes and the admin who made them');
+await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
@@ -309,6 +314,10 @@ ok('HEP turned Overview back on, and the directory returned without Live deals')
 // Leaving a map straight after it opens must not leave work running against the removed map.
 await offStu.evaluate(async () => { const { createMap } = await import(new URL('js/map.js', location.href).href); const el = document.createElement('div'); el.style.cssText = 'width:200px;height:200px'; document.body.append(el); const m = await createMap(el); m.remove(); el.remove(); await new Promise((r) => setTimeout(r, 300)); });
 ok('a map closed straight after opening leaves nothing running');
+// The idle check, run as if 31 minutes had passed with no clicks or typing.
+await off.evaluate(() => window.__umc.checkSession(Date.now() + 31 * 60_000));
+await off.waitForSelector('#google', { timeout: 20000 });
+ok('the HEP dashboard signs out after 30 minutes without activity');
 
 console.log(errors.length ? '\nErrors:\n' + errors.join('\n') : '\nNo page errors.');
 await b.close();

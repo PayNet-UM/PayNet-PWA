@@ -32,7 +32,7 @@ let passed = 0;
 for (const [role, mod, app, routes] of [
   ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'explore', 'delete-account']],
   ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account']],
-  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'settings']],
+  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings']],
 ]) {
   for (const route of routes) {
     const html = await mod.routes[route].render(app, []);

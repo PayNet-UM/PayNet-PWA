@@ -128,7 +128,8 @@ class FakeAuth {
 }
 function makeUser(rec) {
   return { uid: rec.uid, email: rec.email, emailVerified: rec.emailVerified !== false, displayName: rec.displayName || null,
-    isAnonymous: false, async getIdToken() { return 'demo-token'; } };
+    isAnonymous: false, async getIdToken() { return 'demo-token'; },
+    async getIdTokenResult() { return { authTime: new Date(env.now()).toUTCString() }; } };
 }
 let authSingleton = null;
 export function getAuth() { if (!authSingleton) authSingleton = new FakeAuth(); return authSingleton; }
@@ -268,7 +269,8 @@ function applyUpdate(prev, data, time) {
 // ---------------------------------------------------------------- rules gate
 function authOf(db) {
   const u = db.auth.currentUser;
-  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified } : null;
+  // auth_time: when this session signed in, in whole seconds like real Firebase tokens (Demo sessions count as fresh).
+  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified, authTime: u.authTime ?? Math.floor(env.now() / 1000) } : null;
 }
 function denied(method, path, res) {
   const why = res && res.errors && res.errors.length ? ' (' + res.errors.slice(-2).join('; ') + ')' : '';

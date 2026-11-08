@@ -381,7 +381,8 @@ export class RulesEngine {
   _env(bound, scopes, ctx) {
     const { req } = ctx;
     const request = {
-      auth: req.auth ? { uid: req.auth.uid, token: { email: req.auth.email ?? null, email_verified: !!req.auth.emailVerified } } : null,
+      auth: req.auth ? { uid: req.auth.uid, token: { email: req.auth.email ?? null, email_verified: !!req.auth.emailVerified,
+        auth_time: req.auth.authTime ?? null } } : null,
       time: req.time,
       method: req.method,
       path: new PathV('/databases/(default)/documents/' + req.path),

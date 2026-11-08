@@ -130,6 +130,11 @@ firebase.json        Hosting (client and admin sites), Firestore and emulator se
 - **Admin emails are publicly readable.** They appear in the site's JavaScript and at `/firestore.rules`, so use a shared team mailbox rather than a personal address.
 - **Keep staging free of real personal data.** It has weaker controls and more people with access.
 
+### HEP admin safety
+- **Sign-out after 30 idle minutes.** The HEP dashboard signs out after 30 minutes with no clicks, typing or scrolling in any of its tabs, so a shared office computer isn't left open.
+- **Big changes need a recent sign-in.** `firestore.rules` refuses changes to who can use the app, feature switches, points rules, the activation fund, rewards, blocks, point adjustments, matric releases, merchant reviews and welfare reviews unless the admin signed in within the last 12 hours. The dashboard signs the admin out just before that, so they simply sign in again.
+- **Activity log.** Every big change writes an entry to `adminLog` in the same save, saying who, what and when. HEP can read it under **Activity log**, and nobody can edit or delete entries. The rules refuse settings, reward and block changes that don't come with their entry. Student entries store the account ID, not the name, so nothing personal stays behind when a student deletes their account.
+
 ## Go-live checklist
 
 Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
