@@ -5,8 +5,8 @@
 | Role | What they do |
 |---|---|
 | **Student** | Joins campus events and FESKUM, earns points from lessons and surveys, redeems rewards, and follows friends and the KK League |
-| **Merchant** | Registers a shop with its logo and map pin, redeems student vouchers, and runs offers and live deals. These can be switched off, as explained in [Turning features on and off](#turning-features-on-and-off) |
-| **HEP (admin)** | Verifies merchants, approves offers and deals, manages rewards, rules and feature switches, and prepares PayNet's monthly merchant list |
+| **Merchant** | Registers a shop with its logo and map pin, shows live-deal QR codes, confirms student claims and applies live-deal discounts. These can be switched off, as explained in [Turning features on and off](#turning-features-on-and-off) |
+| **HEP (admin)** | Verifies merchants, monitors published live deals, manages rewards, rules and feature switches, and prepares PayNet's monthly merchant list |
 
 The app doesn't record payments and never moves money. Students pay with DuitNow QR in their own bank or e-wallet app.
 
@@ -63,9 +63,9 @@ HEP chooses what's live under **Settings > Features** on the [HEP admin dashboar
 | Switch | Covers | Blocked by the rules too? |
 |---|---|---|
 | **Merchant sign-up** | Registering a business and applying to join | Yes |
-| **Merchant tools** | Voucher Redeem, Promote, Insights, the readiness check and shop vouchers | Yes |
+| **Merchant tools** | Live-deal QR, promotions, insights and staff readiness | Yes |
 | **Overview** | The shops directory, map, shop pages and Student Ventures | No, these are hidden on screen only, because verified shop details are public to signed-in users anyway |
-| **Live deals and Pay Cashless** | Live deals and the DuitNow QR guide | New deals, yes. Reading approved deals and the guide, no |
+| **Live deals and Pay Cashless** | Live deals and the DuitNow QR guide | New deals, QR sessions and claims, yes |
 
 Events, FESKUM, Friends, lessons, surveys, avatars, the welfare fund and HEP counter vouchers are always on. A merchant account sees "Coming soon" while both merchant switches are off.
 
@@ -160,3 +160,11 @@ Do these once for production. [docs/DEPLOY.md](docs/DEPLOY.md) has the details.
 | A deploy fails with `We failed to modify the IAM policy` or `Eventarc Service Agent` | It's the one-time setup for database-triggered functions. See "Database-triggered functions" in [docs/DEPLOY.md](docs/DEPLOY.md). |
 | You're stuck in Demo mode on a live site | Open the site with `?mode=live` added to the URL. |
 | Old GitHub Pages links stop working | The repo moved to the `PayNet-UM` organization, and the old demo moved to `legacy/`. The app itself is on Firebase, so use the links above. |
+
+### Vouchers and live-deal claims
+
+Reward vouchers are fulfilled only by HEP/admin, including vouchers issued before this workflow changed. Merchants cannot read or redeem them.
+
+For a live deal, the merchant shows its QR; the student scans it in the app, receives a confirmation and points immediately, and staff mark the discount applied without awarding additional points. QR sessions last 90 seconds, claims last 15 minutes, and a student can claim each deal once per Malaysia calendar day. Verified merchants publish live deals immediately without per-deal HEP approval. Current opening time, shop verification and occupancy are checked again when scanning. A successful scan atomically records the claim and credits 10 points immediately, once per student/deal/Malaysia day. HEP can adjust the rate for future scans in Points rules. Scans do not record payment or location attendance.
+
+Demo records are shared within one browser profile. Separate phones need the shared Firebase backend and the updated Firestore rules.

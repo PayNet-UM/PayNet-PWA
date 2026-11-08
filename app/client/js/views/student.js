@@ -1,6 +1,8 @@
 // Student app: +Onz hub, Overview directory, rewards, events, community,
 // cashless guide (Bayar Kita), learning, avatar and profile.
 import * as D from '../data.js';
+import { directoryArt } from '../directory-art.js';
+import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
 import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
@@ -35,14 +37,10 @@ const isIdea = (m) => m.segment === IDEA_SEGMENT;
 // ------------------------------------------------------------- home: the +Onz hub
 const PILLARS = [
   ['explore', 'Overview', 'shops', 'Find stalls that take QR.'],
-  ['rewards', 'Rewards', 'rewards', 'Earn. Save. Redeem.'],
+  ['community', 'Community', 'community', 'Friends, league & welfare.'],
   ['explore/deals', 'Live deals', 'deals', 'Find offers around campus.'],
   ['learn', 'Learn & Earn', 'lessons', 'Learn more. Earn more.'],
 ];
-// Use the supplied artwork directly, framed as sprites by CSS (no redraws).
-const directoryArt = key => key === 'deals'
-  ? `<span class="onz-deals-art" aria-hidden="true">${icon('badge-percent')}<i>${icon('zap')}</i></span>`
-  : `<span class="onz-directory-art onz-art-${key}" aria-hidden="true"></span>`;
 async function homeRender(app) {
   const p = app.profile; const lvl = levelOf(earnedTotal(app.ledger));
   const appStreak = D.dailyStreak(app.appDays);
@@ -64,7 +62,11 @@ async function homeRender(app) {
   ${eventCarousel()}
   </div>
   <h2 class="kk-pillars-title">Explore</h2>
-  <nav class="kk-pillars" aria-label="+Onz directories">${PILLARS.filter(([h]) => (h !== 'explore' && h !== 'explore/deals') || (D.featureOn(app.rules, 'overview') && (h !== 'explore/deals' || D.featureOn(app.rules, 'dealsAndPay')))).map(([h, t, art, d]) => `<a href="#/${h}" class="kk-pillar"><span class="onz-art-frame">${directoryArt(art)}</span><h3>${t}</h3><p>${d}</p></a>`).join('')}</nav>
+  <nav class="kk-pillars" aria-label="+Onz directories">${PILLARS.map(([h, t, art, d]) => {
+    const enabled = (h !== 'explore' && h !== 'explore/deals') || (D.featureOn(app.rules, 'overview') && (h !== 'explore/deals' || D.featureOn(app.rules, 'dealsAndPay')));
+    const content = `<span class="onz-art-frame">${directoryArt(art)}</span><h3>${t}</h3><p>${d}</p>`;
+    return enabled ? `<a href="#/${h}" class="kk-pillar">${content}</a>` : `<div class="kk-pillar is-unavailable" aria-disabled="true">${content}<span class="badge">Coming soon</span></div>`;
+  }).join('')}</nav>
   <section class="section card row flow-paused"><span class="tile-icon">${icon('trophy')}</span><h2>Weekly missions</h2><span class="badge">Coming soon</span></section>
 `;
 }
@@ -100,7 +102,7 @@ function homeMount(root, app) {
 const emptyMerchants = () => `<div class="card empty">${icon('store')}<p>Verified shops will appear here.</p></div>`;
 function merchantCard(m, { nav = false, dist = null } = {}) {
   const card = `<a class="mcard" href="#/merchant/${esc(m.id)}">${merchantLogo(m)}<div style="min-width:0"><h3>${esc(m.name)}</h3>
-    <p>${esc(m.type)} · ${esc(m.location)}</p>${dist != null ? `<p class="dist">${icon('map-pin')}${fmtDistance(dist)}</p>` : ''}${m.offer ? `<div class="offer">${icon('badge-percent')}${esc(m.offer)}</div>` : ''}
+    <p>${esc(m.type)} · ${esc(m.location)}</p>${dist != null ? `<p class="dist">${icon('map-pin')}${fmtDistance(dist)}</p>` : ''}
     ${isIdea(m) ? `<div class="offer idea">${icon('lightbulb')}Student venture</div>` : ''}</div></a>`;
   if (!nav || !hasPin(m)) return card;
   return `<div class="mcard-wrap">${card}<a class="mnav" href="${directionsUrl(m)}" target="_blank" rel="noopener" aria-label="Navigate to ${esc(m.name)}" title="Navigate">${icon('navigation')}</a></div>`;
@@ -132,7 +134,6 @@ async function merchantRender(app, [id]) {
     <div class="card pad-lg" style="margin-top:8px"><div class="row" style="gap:14px">${merchantLogo(m, 'logo big')}
       <div><h1 style="font-size:26px">${esc(m.name)}</h1><p class="muted">${esc(m.type)} · ${esc(m.location)}</p></div></div>
       <div class="row" style="margin-top:14px">${isIdea(m) ? `<span class="badge warn">${icon('lightbulb')}Student venture</span>` : ''}${m.ready ? `<span class="badge ok">${icon('badge-check')}Cashless ready</span>` : ''}<span class="badge">${icon('shield-check')}HEP verified</span></div>
-      ${m.offer ? `<div class="notice" style="margin-top:14px">${icon('badge-percent')}<span>${esc(m.offer)}</span></div>` : ''}
     </div>
     ${hasPin(m) ? `<section class="section"><div class="head"><h2>Getting there</h2><a href="${wazeUrl(m)}" target="_blank" rel="noopener">Open in Waze</a></div>
       <div class="card map-card"><div id="shop-map" class="mmap small" aria-label="Map showing ${esc(m.name)}"></div>
@@ -141,7 +142,7 @@ async function merchantRender(app, [id]) {
       <div class="step"><span class="n">1</span><div><h3>Walk over</h3><p>Use the map to find ${esc(m.name)}.</p></div></div>
       ${D.featureOn(app.rules, 'dealsAndPay') ? `<div class="step"><span class="n">2</span><div><h3>Pay cashless if you buy</h3><p>${esc(m.name)} accepts DuitNow QR. Check the name and amount in your banking app before you pay.</p></div></div>` : ''}
     </div></section>
-    ${deals.length ? `<section class="section"><div class="head"><h2>Live deals</h2></div><div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p></div>${icon('zap')}</div>`).join('')}</div></section>` : ''}
+    ${deals.length ? `<section class="section"><div class="head"><h2>Live deals</h2></div><div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p></div><a class="btn primary small" href="#/claim-deal/${esc(d.id)}">${icon('qr-code')} Scan to claim</a></div>`).join('')}</div></section>` : ''}
     <div style="position:sticky;bottom:calc(var(--nav-h) + 12px);margin-top:20px"><a class="btn primary block" href="#/explore/${esc(m.id)}">${icon('map')} View nearby shops</a></div>`;
 }
 function merchantMount(root, app, [id]) {
@@ -230,9 +231,9 @@ function directoryMount(root, app, [mode] = []) {
       const live = dealStatus === 'Available';
       return `<article class="card checkout-deal nearby-deal ${live ? 'is-live' : ''}"><div class="checkout-deal-top"><div>
         <span class="checkout-deal-status">${icon(live ? 'zap' : 'clock')} ${esc(live ? 'Live now' : dealStatus)}</span>
-        <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p></div>
+        <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><span class="badge ok">${icon('sparkles')} +${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span></div>
         <span class="nearby-deal-icon" aria-hidden="true">${icon('coffee')}</span></div>
-        <div class="nearby-deal-links"><a href="#/merchant/${esc(merchant.id)}">View shop ${icon('chevron-right')}</a>${hasPin(merchant) ? `<a class="btn small checkout-deal-directions" href="${directionsUrl(merchant)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : ''}</div></article>`;
+        <div class="nearby-deal-links"><a href="#/merchant/${esc(merchant.id)}">View shop ${icon('chevron-right')}</a>${live ? `<a class="btn primary small" href="#/claim-deal/${esc(deal.id)}">${icon('qr-code')} Scan to claim</a>` : ''}${hasPin(merchant) ? `<a class="btn small checkout-deal-directions" href="${directionsUrl(merchant)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : ''}</div></article>`;
     }).join('') || `<div class="card checkout-deals-empty">${icon('zap')}<p>${esc(dealMessage)}</p></div>`;
     if (html !== renderedDeals) { $('#checkout-deals', root).innerHTML = html; renderedDeals = html; }
   }
@@ -254,7 +255,6 @@ function directoryMount(root, app, [mode] = []) {
     $('#clist', root).innerHTML = rows.map((m) => { const [glyph, tone] = directoryCategory(m.type); return `<article class="card checkout-shop ${m.id === focusId ? 'focus' : ''}" data-tone="${tone}">
       <span class="overview-shop-logo">${merchantLogo(m)}<span class="overview-verified" title="HEP verified">${icon('badge-check')}</span></span><div class="checkout-shop-copy"><h3><a href="#/merchant/${esc(m.id)}">${esc(m.name)}</a></h3>
         <span class="overview-shop-category">${icon(glyph)}<span>${esc(m.type)}</span></span><p>${icon('map-pin')}<span>${esc(m.location)}</span></p>
-        ${m.offer ? `<p class="overview-shop-offer">${icon('tag')}<span>${esc(m.offer)}</span></p>` : ''}
         ${pos && hasPin(m) ? `<span class="nearby-distance">${icon('navigation')} ${esc(fmtDistance(distanceM(pos, m)))}</span>` : ''}</div>
       <div class="checkout-shop-action">${hasPin(m) ? `<a class="btn small" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : `<a class="btn small" href="#/merchant/${esc(m.id)}">View shop ${icon('chevron-right')}</a>`}</div></article>`; }).join('')
       || `<div class="card empty">${icon('search')}<p>No merchants match. Try another word or filter.</p></div>`;
@@ -332,11 +332,8 @@ function appStreakSection(app) {
 // ------------------------------------------------------------- rewards, vouchers and learning streaks
 async function rewardsRender(app) {
   const rewards = await D.listRewards(app.ctx);
-  const shops = rewards.some((r) => r.active && r.merchantId) ? await D.listVerifiedMerchants(app.ctx).catch(() => []) : [];
   // Where a voucher can be used, shown before the student spends points.
-  const whereTo = (r) => (r.merchantId
-    ? `<span>Use at</span> <b>${shops.find((m) => m.id === r.merchantId) ? esc(shops.find((m) => m.id === r.merchantId).name) : 'a selected shop'}</b>`
-    : 'Collect at the HEP counter');
+  const whereTo = () => 'Redeem with HEP/admin';
   const p = app.profile;
   const achievements = badges(app);
   return `<div class="rewards-page"><div class="rewards-hero"><div class="rewards-hero-copy"><h1>Rewards</h1>
@@ -345,7 +342,7 @@ async function rewardsRender(app) {
     <div class="rewards-hero-art" aria-hidden="true"><span class="rewards-orbit orbit-one">${icon('star')}</span><span class="rewards-gift">${icon('gift')}</span><span class="rewards-orbit orbit-two">${icon('sparkles')}</span></div></div>
     ${appStreakSection(app)}
     <section class="rewards-shelf" id="reward-shelf" tabindex="-1"><div class="rewards-section-heading"><h2>${icon('gift')} Swap points</h2></div>
-      <div class="reward-grid">${rewards.filter((r) => r.active && (!r.merchantId || D.featureOn(app.rules, 'merchantTools'))).map((r, index) => {
+      <div class="reward-grid">${rewards.filter((r) => r.active).map((r, index) => {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
         return `<article class="card reward-prize prize-colour-${index % 3} ${left <= 0 ? 'sold-out' : ''}"><div class="reward-prize-art"><span class="reward-prize-icon" aria-hidden="true">${icon(r.icon || 'gift')}</span><span class="reward-stock">${left > 0 ? `${left} left` : 'All claimed'}</span></div>
           <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
@@ -398,7 +395,7 @@ function rewardsMount(root, app, [section] = []) {
 function showVoucher(app, vid, list) {
   const v = list ? list.find((x) => x.id === vid) : null;
   const el = sheet(`<div class="qr-stage"><h2>${esc(v ? v.title : 'Your voucher')}</h2>
-    <p class="muted">${v && v.status === 'used' ? 'This voucher has been used.' : v && !v.merchantId ? 'Show this to HEP at the welfare counter to collect.' : 'Show this to the cashier. They scan it to apply the discount.'}</p>
+    <p class="muted">${v && v.status === 'used' ? 'This voucher has been used.' : 'Show this voucher to HEP/admin for redemption.'}</p>
     <div class="qr-frame ${v && v.status === 'used' ? 'dead' : ''}"><div id="vqr"></div></div><p>Code <span class="code-text">${esc(vid.slice(0, 8).toUpperCase())}</span></p></div>`);
   renderQR($('#vqr', el), 'UMV1:' + vid, 240);
 }
@@ -498,15 +495,16 @@ export function surveyMount(root, app, role, back) {
 
 // ------------------------------------------------------------- Komuniti Kita: colleges, welfare, ventures
 async function communityRender(app) {
+  const friends = await friendsRender(app);
   const overviewOn = D.featureOn(app.rules, 'overview');
   const merchants = overviewOn ? await D.listVerifiedMerchants(app.ctx) : [];
   const ventures = merchants.filter(isIdea);
   const college = D.COLLEGES.find(([k]) => k === app.profile.college)?.[1] || 'Your college';
-  return `<div class="community-page"><header class="community-hero"><div class="community-hero-copy"><h1>Community</h1><p>Your college vs the rest.</p>
-      <span class="community-college">${icon('graduation-cap')}<span>${esc(college)}</span></span></div><div class="community-trophy" aria-hidden="true">${icon('trophy')}<span>${icon('star')}</span></div>
-      <div class="community-scoreboard"><div><span>Your rank</span><strong id="community-rank">—</strong></div><div><span>KK points</span><strong id="community-points">—</strong></div>${overviewOn ? `<a href="#/explore">${icon('map')} Overview ${icon('chevron-right')}</a>` : ''}</div></header>
-    <div class="community-main-grid"><section class="card community-league" aria-labelledby="league-title"><div class="community-section-heading"><h2 id="league-title">${icon('trophy')} KK League</h2><span>Total points earned</span></div><p class="community-league-hint">All students’ earned points count. Redeeming or donating won’t lower your KK’s score.</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
-    <div class="community-welfare-pair"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
+  return `<div class="community-page"><section class="community-circle" id="community-circle" aria-label="Your circle" tabindex="-1">${friends}</section>
+    <div class="community-main-grid"><section class="card community-league" id="community-league" tabindex="-1" aria-labelledby="league-title"><div class="community-section-heading"><h2 id="league-title">${icon('trophy')} KK League</h2><span>Total points earned</span></div>
+      <div class="community-league-summary"><span class="community-college">${icon('graduation-cap')}<span>${esc(college)}</span></span><div class="community-scoreboard"><div><span>Your rank</span><strong id="community-rank">—</strong></div><div><span>KK points</span><strong id="community-points">—</strong></div></div></div>
+      <p class="community-league-hint">All students’ earned points count. Redeeming or donating won’t lower your KK’s score.</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
+    <div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
       <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
       <button class="btn go" id="donate">${icon('hand-heart')} Give points ${icon('chevron-right')}</button></section>
@@ -518,7 +516,14 @@ async function communityRender(app) {
       <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask HEP about joining as a student entrepreneur.</p></div>`}</div></section>` : ''}
     <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('user-plus')}</span><div><h3>Invite friends</h3><p>Connect with friends using your referral code.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
 }
-function communityMount(root, app) {
+function communityMount(root, app, [section] = []) {
+  const stopFriends = friendsMount(root, app);
+  const target = { friends: '#community-circle', add: '#friend-search', league: '#community-league', welfare: '#community-welfare' }[section];
+  if (target) {
+    const el = $(target, root);
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: 'start' });
+  }
   const u1 = D.watchStats(app.ctx, 'league', (s) => {
     const el = $('#lb', root); if (!el) return;
     const rows = Object.entries(s?.colleges || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })); const max = Math.max(1, ...rows.map((r) => r[1]));
@@ -565,7 +570,7 @@ function communityMount(root, app) {
     el.innerHTML = requests.map((request) => `<details class="welfare-request-entry"><summary><strong>${n(request.amount)} <small>pts</small></strong><span class="welfare-status ${esc(request.status)}">${request.status === 'approved' ? 'Points received' : request.status === 'rejected' ? 'Declined' : 'Pending HEP'}</span>${icon('chevron-right')}</summary>
       <div><p class="faint">${fmtDate(request.createdAt)}</p><p data-no-i18n>${esc(request.reason)}</p>${request.response ? `<p class="welfare-response"><b>HEP:</b> <span data-no-i18n>${esc(request.response)}</span></p>` : ''}</div></details>`).join('') || '<p class="faint welfare-no-requests">No requests yet.</p>';
   }, () => { const el = $('#welfare-requests', root); if (el) el.innerHTML = '<p class="faint">Couldn’t load requests.</p>'; });
-  return () => { u1(); u2(); u3(); };
+  return () => { stopFriends(); u1(); u2(); u3(); };
 }
 
 // ------------------------------------------------------------- avatar editor
@@ -587,7 +592,7 @@ function avatarMount(root, app) {
   const thumbs = (k, list, label) => `<div class="av-label">${label}<div class="av-opts" data-group="${k}">${list.map(([id, name, lock]) => {
     const locked = k === 'hat' && !AV.hatUnlocked(id, lvl, LEVEL_NAMES);
     const nameAttribute = k === 'bg'
-      ? `aria-label="${esc(name)}"`
+      ? `aria-label="${esc(name)}" title="${esc(name)}"`
       : `title="${esc(name)}${locked ? ` (reach ${esc(lock)})` : ''}"`;
     return `<button type="button" data-k="${k}" data-v="${id}" aria-pressed="${a[k] === id}" ${nameAttribute} ${locked ? 'data-locked="1"' : ''}>
       <span class="av-thumb"></span>${locked ? `<span class="av-lock">${icon('lock')}</span>` : ''}${k === 'bg' ? '' : `<span class="av-name">${esc(name)}</span>`}${locked ? `<small class="av-unlock">${esc(lock)}</small>` : ''}</button>`;
@@ -602,7 +607,7 @@ function avatarMount(root, app) {
     ${thumbs('face', AV.FACES, 'Face')}<div class="chips av-toggles"><button type="button" data-t="glasses" class="${a.glasses ? 'on' : ''}">${icon('glasses')} Glasses</button><button type="button" data-t="freckles" class="${a.freckles ? 'on' : ''}">${icon('sparkles')} Freckles</button></div>
     </div><div class="av-category" id="av-gear" hidden>
     ${thumbs('outfit', AV.OUTFITS, 'Outfit')}${swatches('outfitColor', AV.OUTFIT_COLORS, 'Outfit colour')}
-    ${thumbs('hat', AV.HATS, 'Hat')}${thumbs('bag', AV.BAGS, 'Bag')}${swatches('accent', AV.ACCENT_COLORS, 'Hat and bag colour')}</div><div class="av-category" id="av-scene" hidden>${thumbs('bg', AV.BG_COLORS.map((_, i) => [i, `Background ${i + 1}`]), 'Background')}</div>
+    ${thumbs('hat', AV.HATS, 'Hat')}${thumbs('bag', AV.BAGS, 'Bag')}${swatches('accent', AV.ACCENT_COLORS, 'Hat and bag colour')}</div><div class="av-category" id="av-scene" hidden>${thumbs('bg', AV.CAMPUS_BACKGROUNDS, 'Background')}</div>
     <button class="btn primary block" id="av-save" style="margin-top:8px">${icon('check')} Save avatar</button>`;
   const categories = $$('.av-categories button', root);
   categories.forEach((button) => {
@@ -677,7 +682,6 @@ async function meRender(app) {
           ${history.slice(3).map(pointsHistoryRow).join('')}</details>` : ''}
       </div>
     </section>
-    <section class="section"><a class="card row" href="#/friends"><span class="tile-icon">${icon('users')}</span><h3>Friends</h3>${icon('chevron-right')}</a></section>
     <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
@@ -695,6 +699,7 @@ function pointsHistoryRow(entry) {
 }
 function ledgerLabel(l) {
   if (l.type === 'checkin') return 'Archived attendance credit';
+  if (l.type === 'liveDeal') return 'Live-deal scan reward';
   return { purchase: 'Cashless purchase', survey: 'Money check completed', lesson: 'Lesson completed', friend: 'Referral welcome bonus', inviter: 'Friend joined with your code',
     offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by HEP' }[l.type] || l.type;
 }
@@ -711,7 +716,7 @@ function meMount(root, app) {
     const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Use my code ${app.profile.referralCode} to connect with me: ${location.origin}${location.pathname}`);
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it to a friend.'); } } catch { /* cancelled */ }
   };
-  if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your friend connection is in Friends.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
+  if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your friend connection is in Community.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), college: f.college.value, faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
@@ -729,10 +734,10 @@ const live = (fn) => (root, app, params) => {
   return () => { off(); clearTimeout(t); c1 && c1(); };
 };
 export const routes = {
-  friends: { title: 'Friends', render: friendsRender, mount: friendsMount },
+  'claim-deal': { title: 'Claim a live deal', render: studentDealClaimRender, mount: studentDealClaimMount, tab: 'home', feature: ['overview', 'merchantTools', 'dealsAndPay'] },
   home: { title: 'Home', render: homeRender, mount: live(homeMount) },
-  explore: { title: 'Overview', render: directoryRender, mount: directoryMount, feature: 'overview' },
-  merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'explore', feature: 'overview' },
+  explore: { title: 'Overview', render: directoryRender, mount: directoryMount, tab: 'home', feature: 'overview' },
+  merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'home', feature: 'overview' },
   rewards: { title: 'Rewards', render: rewardsRender, mount: live(rewardsMount) },
   feskum: { title: 'FESKUM 2026', render: feskumRender, mount: feskumMount, tab: 'events', wide: true },
   events: { title: 'Campus Events', render: eventsRender, mount: mountEventCarousel, tab: 'events' },

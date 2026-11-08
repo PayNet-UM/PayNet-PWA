@@ -171,10 +171,10 @@ connecting friends, without a first-visit requirement or an active points promis
 Friend requests, acceptance, removal and usernames continue to work. Attendance-based
 place sharing and waves are paused; Overview never publishes a GPS position.
 
-Merchant activity and Insights use actual voucher records. HEP uses registered
+Merchant activity and Insights use live-deal QR claims and applied discounts. HEP uses registered
 accounts, readiness, welfare, KK earned totals, voucher redemptions and imported
 PayNet counts. It does not derive footfall or conversions from map browsing.
-Live deals use time and occupancy only, with no attendance claim limit or bonus.
+Live deals publish immediately from verified merchants, require a merchant-issued QR and use time and occupancy availability checks. Successful scans award the configured points immediately; no attendance flow is used.
 Survey/lesson rewards, vouchers, welfare requests and HEP corrections remain active.
 Deploy the rules and both sites together. There is no attendance enable switch.
 
@@ -213,7 +213,7 @@ opens. Completed lessons can still be practised without repeated points.
 
 - `npm test` runs the rules locally using the rules evaluator in `app/shared/js/fake/rules-engine.js`, and checks that each site gets the right files.
 - `npm run test:emulator` runs **the same scenarios on Google's official Firestore emulator**. It needs Java 21+ and an internet connection the first time. **Run this before the pilot**, because the local evaluator is a close copy of the rules language, not Google's own engine.
-- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student browses nearby shops with location permission (and can browse without it), customises an avatar and redeems a voucher at the merchant; a new merchant must give a logo and pin; a student is turned away from the dashboard site; every HEP screen is opened on it; and a pass with a fake Google Maps key checks the Google Maps path.
+- `npm run dev:demo` in one terminal and `npm run test:e2e` in another drives the real UI. A student browses nearby shops with location permission (and can browse without it), customises an avatar and collects a voucher through HEP and scans a merchant live-deal QR; a new merchant must give a logo and pin; a student is turned away from the dashboard site; every HEP screen is opened on it; and a pass with a fake Google Maps key checks the Google Maps path.
   It refuses to run against a live config.
 
 ## Pooled welfare-point requests
@@ -289,3 +289,11 @@ so existing demos need no reset. Live scores update shortly after earning points
   - Points don't auto-expire.
 - **Usage and cost:** Blaze includes a free daily allowance, then charges for what you use above it. Set a budget alert, and watch Usage in the console before going campus-wide. Alerts warn you but don't stop spending.
 - **The app doesn't record payments and never moves money.** PayNet's monthly DuitNow QR counts remain the source of truth for transactions; import them on Activity check for reporting.
+
+### Live-deal QR flow and HEP voucher fulfilment
+
+Deploy the updated Firestore rules alongside the client and admin sites. Voucher reads are limited to the student owner and HEP; only HEP can mark a voucher used. Legacy merchant associations remain historical metadata. Standalone merchant offers are retired; verified merchants publish live deals directly for discounts.
+
+`liveDealQRs` records are immutable merchant-created sessions with unpredictable 128-bit IDs. Student listing is denied. Sessions expire after 90 seconds; rules cap them at 120 seconds to allow clock/network variance. `liveDealClaims` uses a fixed deal/student/Malaysia-day ID so repeated and concurrent scans cannot create duplicate daily claims. Rules verify the session, published deal, merchant ownership, current time, capacity and student identity; only the matching verified merchant can mark a claim applied within 15 minutes. Claim records are private to the student, merchant and HEP. Every successful scan writes the claim, an immutable `liveDeal` ledger credit and the student balance increment in one atomic batch. The rate is `config/rules.liveDealPoints` (default 10, controlled by HEP), captured on the claim. Missing, inflated or repeated credits are refused. Applying the discount later awards no additional points. Payment and GPS-presence records are not written.
+
+HEP can review claim and applied-discount counts on Activity check separately from imported PayNet transactions. Demo state is browser-local; cross-device scanning requires the shared Firebase backend.

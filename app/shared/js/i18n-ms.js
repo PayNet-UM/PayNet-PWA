@@ -1,5 +1,20 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Campus management|Pengurusan kampus
+Campus workspace|Ruang kerja kampus
+HEP team|Pasukan HEP
+Your campus, connected|Kampus anda, saling terhubung
+Students, merchants and campus opportunities. One place to keep things moving.|Pelajar, peniaga dan peluang kampus. Semuanya di satu tempat untuk menggerakkan aktiviti kampus.
+PayNet list due on the 20th|Senarai PayNet perlu dihantar pada 20 hari bulan
+days left this month|hari lagi bulan ini
+verified merchants ready|peniaga yang disahkan telah bersedia
+waiting for review|menunggu semakan
+Merchant reviews|Semakan peniaga
+View activity|Lihat aktiviti
+live now|aktif sekarang
+published by merchants|diterbitkan oleh peniaga
+Activation fund allocation|Peruntukan dana pengaktifan
+Campaign budget|Bajet kempen
 Home|Utama
 Explore|Teroka
 Pay|Bayar
@@ -8,6 +23,149 @@ My shop|Kedai saya
 Shop|Kedai
 Scan|Imbas
 Promote|Promosi
+Promote live deals|Promosikan tawaran aktif
+Publish deal|Terbitkan tawaran
+Live deal published.|Tawaran aktif telah diterbitkan.
+Published by merchant|Diterbitkan oleh peniaga
+Published by merchants|Diterbitkan oleh peniaga
+Ready to publish|Sedia untuk diterbitkan
+Archived|Diarkibkan
+Publish instantly — no approval needed|Terbitkan terus tanpa memerlukan kelulusan
+Set the discount, hours and availability. Publish instantly.|Tetapkan diskaun, waktu dan kekosongan. Terbitkan terus.
+Publish a live deal to start showing its QR.|Terbitkan tawaran aktif untuk mula memaparkan QRnya.
+Scan once per deal each day to earn points immediately.|Imbas sekali bagi setiap tawaran setiap hari untuk mendapat mata serta-merta.
+points on a successful scan|mata bagi imbasan yang berjaya
+points earned|mata diperoleh
+points for each student’s first successful deal scan of the day.|mata bagi imbasan pertama yang berjaya oleh setiap pelajar untuk tawaran tersebut pada hari itu.
+Live-deal scan reward|Ganjaran imbasan tawaran aktif
+Points per live-deal scan|Mata bagi setiap imbasan tawaran aktif
+Awarded immediately, once per student and deal each day.|Diberikan serta-merta, sekali bagi setiap pelajar dan tawaran setiap hari.
+The live-deal points setting is unavailable. Please try again later.|Tetapan mata tawaran aktif tidak tersedia. Sila cuba lagi kemudian.
+Review welfare requests and archived mission claims. Merchants publish live deals directly.|Semak permohonan kebajikan dan tuntutan misi yang diarkibkan. Peniaga menerbitkan tawaran aktif secara langsung.
+No published deals yet.|Belum ada tawaran yang diterbitkan.
+Deal QR|QR tawaran
+Live-deal QR, promotions, insights and the staff readiness check.|QR tawaran aktif, promosi, analisis dan senarai semak kesediaan staf.
+Show a QR for students to claim|Paparkan QR untuk dituntut oleh pelajar
+Live-deal activity|Aktiviti tawaran aktif
+Deal claims|Tuntutan tawaran
+Discounts applied|Diskaun diberikan
+Awaiting discount|Menunggu diskaun
+Live-deal scans and discounts at your shop.|Imbasan tawaran aktif dan diskaun di kedai anda.
+Recent deal claims|Tuntutan tawaran terkini
+No deal claims yet.|Belum ada tuntutan tawaran.
+Student QR scans will appear here.|Imbasan QR pelajar akan dipaparkan di sini.
+Staff know how to show a live-deal QR and apply the discount|Staf tahu cara memaparkan QR tawaran aktif dan memberikan diskaun
+Discount details|Butiran diskaun
+e.g. 20% off any coffee|cth. Diskaun 20% untuk mana-mana kopi
+HEP must verify your shop before you can show a deal QR.|HEP mesti mengesahkan kedai anda sebelum anda boleh memaparkan QR tawaran.
+Show your QR. Students scan. Apply the discount.|Paparkan QR anda. Pelajar mengimbas. Berikan diskaun.
+Show deal QR|Paparkan QR tawaran
+Student scans|Pelajar mengimbas
+Apply discount|Berikan diskaun
+Reward vouchers are redeemed by HEP/admin. Merchant discounts use live deals.|Baucar ganjaran ditebus melalui HEP/pentadbir. Diskaun peniaga menggunakan tawaran aktif.
+Choose a live deal|Pilih tawaran aktif
+Create a live deal and send it to HEP for approval.|Cipta tawaran aktif dan hantar kepada HEP untuk kelulusan.
+Students scan this QR|Pelajar mengimbas QR ini
+QR codes expire automatically. Show a fresh QR when needed.|Kod QR tamat tempoh secara automatik. Paparkan QR baharu apabila diperlukan.
+Refresh QR|Jana QR baharu
+Student claims|Tuntutan pelajar
+Claim confirmed|Tuntutan disahkan
+Discount marked as applied.|Diskaun telah ditandakan sebagai diberikan.
+Waiting for students to scan…|Menunggu pelajar mengimbas…
+QR expired. Show a fresh QR.|QR tamat tempoh. Paparkan QR baharu.
+Scan a live deal|Imbas tawaran aktif
+Deal unavailable|Tawaran tidak tersedia
+Claim a live deal|Tuntut tawaran aktif
+Scan the QR shown by the merchant.|Imbas QR yang dipaparkan oleh peniaga.
+Ready to claim?|Sedia untuk menuntut?
+Ask staff to show this deal’s QR.|Minta staf memaparkan QR tawaran ini.
+Scan to claim|Imbas untuk menuntut
+Once per deal each day. No points are awarded.|Sekali bagi setiap tawaran setiap hari. Tiada mata diberikan.
+Discount applied|Diskaun diberikan
+Claim expired|Tuntutan tamat tempoh
+The merchant has marked your discount as applied.|Peniaga telah menandakan diskaun anda sebagai diberikan.
+The 15-minute claim window has ended.|Tempoh tuntutan selama 15 minit telah tamat.
+Show this confirmation to staff. They will apply your discount.|Tunjukkan pengesahan ini kepada staf. Mereka akan memberikan diskaun anda.
+Valid for 15 minutes after scanning|Sah selama 15 minit selepas mengimbas
+This confirms a deal claim, not a payment.|Ini mengesahkan tuntutan tawaran, bukan pembayaran.
+Back to live deals|Kembali ke tawaran aktif
+Redeem with HEP/admin|Tebus melalui HEP/pentadbir
+e.g. RM5 campus reward|cth. Ganjaran kampus RM5
+Show this voucher to HEP/admin for redemption.|Tunjukkan baucar ini kepada HEP/pentadbir untuk penebusan.
+Only HEP/admin fulfils reward vouchers. Mark each voucher used after handing over its value.|Hanya HEP/pentadbir mengurus penebusan baucar ganjaran. Tandakan setiap baucar sebagai digunakan selepas menyerahkan nilainya.
+Live-deal QR activity|Aktiviti QR tawaran aktif
+QR claims and applied discounts are separate from PayNet transaction counts.|Tuntutan QR dan diskaun yang diberikan direkodkan secara berasingan daripada jumlah transaksi PayNet.
+Scan the merchant’s live-deal QR. This is not a live-deal code.|Imbas QR tawaran aktif peniaga. Ini bukan kod tawaran aktif.
+Live deals are currently unavailable.|Tawaran aktif tidak tersedia buat masa ini.
+This live deal is unavailable.|Tawaran aktif ini tidak tersedia.
+This live deal is not available right now.|Tawaran aktif ini tidak tersedia pada masa ini.
+Only this deal’s merchant can show its QR.|Hanya peniaga yang menawarkan tawaran ini boleh memaparkan QRnya.
+This QR has expired. Ask the merchant for a fresh QR.|QR ini telah tamat tempoh. Minta QR baharu daripada peniaga.
+That QR belongs to a different live deal.|QR itu adalah untuk tawaran aktif yang lain.
+Only students can claim a live deal.|Hanya pelajar boleh menuntut tawaran aktif.
+You’ve already claimed this deal today.|Anda telah menuntut tawaran ini hari ini.
+Only HEP/admin can look up reward vouchers.|Hanya HEP/pentadbir boleh menyemak baucar ganjaran.
+Merchant discounts are now managed through live deals.|Diskaun peniaga kini diurus melalui tawaran aktif.
+Open the app in a camera-enabled browser to scan the merchant’s QR.|Buka aplikasi dalam pelayar yang menyokong kamera untuk mengimbas QR peniaga.
+Allow camera access in your browser settings, then try again.|Benarkan akses kamera dalam tetapan pelayar anda, kemudian cuba lagi.
+No camera available. Use a device with a camera to scan the deal QR.|Tiada kamera tersedia. Gunakan peranti yang mempunyai kamera untuk mengimbas QR tawaran.
+Merchant tools|Alat peniaga
+Your merchant hub|Hab peniaga anda
+Shop readiness|Kesediaan kedai
+New update|Kemas kini baharu
+Action needed|Tindakan diperlukan
+Review update|Semak kemas kini
+New readiness update|Kemas kini kesediaan baharu
+Merchant readiness updates|Kemas kini kesediaan peniaga
+Publish a required update to bring Shop readiness back to merchant Home until it is reviewed and confirmed.|Terbitkan kemas kini wajib untuk memaparkan semula Kesediaan kedai di halaman Utama peniaga sehingga kemas kini itu disemak dan disahkan.
+Update for merchants|Kemas kini untuk peniaga
+What should merchants review or complete?|Apakah yang perlu disemak atau dilengkapkan oleh peniaga?
+Publish readiness update|Terbitkan kemas kini kesediaan
+Readiness update published.|Kemas kini kesediaan telah diterbitkan.
+A new readiness update is available. Review it before confirming.|Kemas kini kesediaan baharu tersedia. Sila semak sebelum mengesahkan.
+Use 10–1,000 characters for the readiness update.|Gunakan 10–1,000 aksara untuk kemas kini kesediaan.
+Shop profile|Profil kedai
+Map pin|Pin peta
+HEP verified|Disahkan HEP
+All set|Semuanya sedia
+Ready for campus|Sedia untuk warga kampus
+Build your shop|Lengkapkan kedai anda
+Manage shop|Urus kedai
+Continue setup|Teruskan persediaan
+Complete|Selesai
+To do|Belum selesai
+Quick actions|Tindakan pantas
+Let's go|Jom mula
+At the counter|Di kaunter
+Scan. Review. Give the discount.|Imbas. Semak. Berikan diskaun.
+Redemption steps|Langkah penebusan
+Ready to scan?|Sedia untuk mengimbas?
+Open the student’s voucher QR.|Buka kod QR baucar pelajar.
+Use a code instead|Gunakan kod sebagai alternatif
+No camera? Enter the voucher code.|Tiada kamera? Masukkan kod baucar.
+Review the voucher, give the discount, then mark it used.|Semak baucar, berikan diskaun, kemudian tandakan sebagai telah digunakan.
+Your campus storefront, all in one place.|Semua butiran kedai kampus anda di satu tempat.
+Make it yours|Serlahkan identiti kedai
+Your next campus favourite|Tarikan kampus yang seterusnya
+Give students a reason to stop by.|Tarik minat pelajar untuk singgah.
+Set your seats|Tetapkan bilangan tempat duduk
+seats taken|tempat duduk diduduki
+Keep your availability up to date.|Pastikan maklumat kekosongan sentiasa terkini.
+Make some noise|Serlahkan tawaran anda
+Fill the quiet hours.|Rancakkan waktu lengang.
+Set a time and seat limit. Send your deal to HEP.|Tetapkan masa dan had pengisian tempat duduk. Hantar tawaran kepada HEP.
+HEP approval before going live|Kelulusan HEP diperlukan sebelum tawaran disiarkan
+HEP approved|Diluluskan HEP
+Your next deal starts with the New deal button.|Mulakan tawaran anda dengan butang Tawaran baharu.
+Create a discount or free-item offer.|Cipta tawaran diskaun atau barangan percuma.
+Give them a little extra|Berikan sedikit keistimewaan
+Student preview|Pratonton untuk pelajar
+Occupancy threshold|Ambang pengisian
+Your next live deal|Tawaran aktif anda yang seterusnya
+Your shop’s voucher activity, at a glance.|Lihat aktiviti baucar kedai anda dengan pantas.
+See your impact|Lihat impak anda
+Redeemed vouchers will appear here.|Baucar yang telah ditebus akan dipaparkan di sini.
+Build your confidence|Tingkatkan keyakinan anda
 Insights|Analisis
 Overview|Gambaran keseluruhan
 Merchants|Peniaga
@@ -138,6 +296,13 @@ Matric number|Nombor matrik
 One account per matric number. You can’t change it later, so check it.|Satu akaun bagi setiap nombor matrik. Ia tidak boleh diubah kemudian, jadi semak dengan teliti.
 Letters and numbers only|Huruf dan nombor sahaja
 Residential college|Kolej kediaman
+Campus green|Laman kampus
+Library|Perpustakaan
+Campus café|Kafe kampus
+Lecture hall|Dewan kuliah
+Sports court|Gelanggang sukan
+Campus lake|Tasik kampus
+Campus at night|Kampus pada waktu malam
 Residential colleges|Kolej kediaman
 College|Kolej
 Faculty|Fakulti
@@ -1094,6 +1259,10 @@ Campus Events|Aktiviti Kita
 Rewards|Ganjaran Kita
 Pay Cashless|Bayar Kita
 Community|Komuniti
+Friends, league & welfare.|Rakan, liga & kebajikan.
+Community sections|Bahagian komuniti
+Welfare|Kebajikan
+Code added. Your friend connection is in Community.|Kod ditambah. Hubungan rakan anda boleh dilihat dalam Komuniti.
 Student Ventures|Idea Kita
 Shops|Niaga
 You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari.|Anda berada dalam pelayar terbina dalam aplikasi lain. Log masuk Google hanya berfungsi dalam Chrome atau Safari.

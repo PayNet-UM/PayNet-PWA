@@ -21,13 +21,13 @@ export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone',
 // Features HEP can switch on and off in Settings. Off unless HEP turns them on.
 export const FEATURES = [
   ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
-  ['merchantTools', 'Merchant tools', 'Voucher Redeem, Promote, Insights, the readiness check and shop vouchers.'],
+  ['merchantTools', 'Merchant tools', 'Live-deal QR, promotions, insights and the staff readiness check.'],
   ['overview', 'Overview', 'The shops directory, map, shop pages and Student Ventures.'],
   ['dealsAndPay', 'Live deals and Pay Cashless', 'Live deals and the DuitNow QR guide.'],
 ];
 export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, false]));
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
-export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50 };
+export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
   { id: 'cafe-rm5', title: 'RM5 café voucher', merchantId: '', cost: 500, valueCents: 500, stock: 100, validDays: 30, active: true, icon: 'coffee' },
@@ -188,6 +188,18 @@ export async function setMerchantLogo(ctx, logo) {
 }
 export async function setReadiness(ctx) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });
+}
+// Completion stays valid until HEP publishes a new required readiness update.
+export function merchantReadinessCurrent(merchant, rules) {
+  if (!merchant?.ready) return false;
+  const published = toMs(rules?.merchantReadinessUpdate?.publishedAt);
+  return !published || (toMs(merchant.readyAt) || 0) >= published;
+}
+export async function publishMerchantReadiness(ctx, message) {
+  const text = String(message || '').trim();
+  if (text.length < 10 || text.length > 1000) throw new Error('Use 10–1,000 characters for the readiness update.');
+  // The existing config rules allow only HEP to publish.
+  await saveConfig(ctx, 'rules', { merchantReadinessUpdate: { message: text, publishedAt: ctx.sdk.serverTimestamp() } });
 }
 export async function setOccupancy(ctx, seats, occupied) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { seats, occupied, occupancyAt: ctx.sdk.serverTimestamp() });
@@ -427,11 +439,11 @@ export function watchMyVouchers(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s)), err);
 }
 export async function findVoucher(ctx, raw, asMpp = false) {
+  if (!(await isMppUser(ctx))) { const e = new Error('Only HEP/admin can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
   const s = String(raw).trim();
   const id = s.startsWith('UMV1:') ? s.slice(5) : null;
   if (id) return one(ctx, R(ctx).voucher(id));
   const cons = [eq(ctx, 'code', s.toUpperCase())];
-  if (!asMpp) cons.unshift(eq(ctx, 'merchantId', ctx.uid));
   const rows = await list(ctx, 'vouchers', ...cons);
   return rows[0] || null;
 }
@@ -489,8 +501,7 @@ export async function reviewWelfareRequest(ctx, id, approve, response = '') {
 
 // ------------------------------------------------------------- offers and deals
 export async function createOffer(ctx, { title, type, endDate }) {
-  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'offers')), { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
-    title: title.trim(), type, endDate, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
+  const error = new Error('Merchant discounts are now managed through live deals.'); error.code = 'permission-denied'; throw error;
 }
 export async function myOffers(ctx) { return list(ctx, 'offers', eq(ctx, 'merchantId', ctx.uid)); }
 export async function approvedOffers(ctx) { return list(ctx, 'offers', eq(ctx, 'status', 'approved')); }
@@ -502,12 +513,15 @@ export async function reviewOffer(ctx, offer, status) {
   await b.commit();
 }
 export async function createDeal(ctx, d) {
-  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'deals')), { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
-    title: d.title.trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold, bonus: 0,
-    minSpendCents: 0, limit: 1, status: 'pending', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
+  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'deals'));
+  await ctx.sdk.setDoc(ref, { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
+    title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold, bonus: 0,
+    minSpendCents: 0, limit: 1, status: 'published', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
+  return ref.id;
 }
 export async function myDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid)); }
-export async function approvedDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'approved')); }
+export async function approvedDeals(ctx) { return list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published'])); }
+export async function publishDeal(ctx, id) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { status: 'published' }); }
 export async function pendingDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'pending')); }
 export async function toggleDeal(ctx, id, enabled) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { enabled }); }
 export async function reviewDeal(ctx, id, status) {
@@ -519,8 +533,8 @@ export async function dealUsesToday(ctx, dealId) {
 }
 // Mirrors the rules' availability checks so students only see claimable deals.
 export function dealStatus(deal, merchant, usesToday, nowMs = Date.now()) {
-  if (deal.status === 'rejected') return 'Not approved';
-  if (deal.status !== 'approved') return 'Awaiting HEP';
+  if (deal.status === 'rejected') return 'Archived';
+  if (!['approved', 'published'].includes(deal.status)) return 'Ready to publish';
   if (!deal.enabled) return 'Paused';
   if (merchant?.status && merchant.status !== 'verified') return 'Shop unavailable';
   const m = minuteOfDay(nowMs);

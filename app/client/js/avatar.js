@@ -1,11 +1,13 @@
 // Kampus Kita+ avatars: an original chibi character drawn as layered SVG, so it stays crisp at any size
 // and is stored as a small settings map on the student's profile (users/{uid}.avatar).
+import { CAMPUS_BACKGROUNDS, CAMPUS_COLORS, campusBackdrop } from './avatar-backgrounds.js';
+export { CAMPUS_BACKGROUNDS };
 
 export const SKIN = ['#FFE3CC', '#F7CDA8', '#EDB98A', '#DDA06F', '#C68650', '#A86B3F', '#82502E', '#5C3720'];
 export const HAIR_COLORS = ['#1E1A1D', '#3B2620', '#6B4128', '#9A5B32', '#C98B4A', '#E8C17A', '#B8B8C0', '#E37BA8', '#8E6CEF', '#3F7FD9', '#2BA38C'];
 export const OUTFIT_COLORS = ['#00A547', '#258DCE', '#F4A019', '#E85A5A', '#8E6CEF', '#FFCA28', '#2E3A4F', '#F2EFE6'];
 export const ACCENT_COLORS = ['#E2463B', '#F4A019', '#00A547', '#258DCE', '#8E6CEF', '#F48FB1', '#4A3B33', '#FFFFFF'];
-export const BG_COLORS = ['#E6F7EE', '#E3F1FB', '#FFF1D6', '#FBE4EC', '#EEE8FD', '#F1EDE4', '#DDF4F7', '#2E3A4F'];
+export const BG_COLORS = CAMPUS_COLORS;
 
 export const HAIRS = [['short', 'Short'], ['bob', 'Bob'], ['long', 'Long'], ['bun', 'Bun'], ['curly', 'Curly'], ['spiky', 'Spiky'], ['tudung', 'Tudung'], ['bawal', 'Bawal'], ['shawl', 'Shawl']];
 export const isTudung = (hair) => ['tudung', 'bawal', 'shawl'].includes(hair);
@@ -197,7 +199,7 @@ export function avatarSVG(raw, { variant = 'full', size = 160, bg = true, title 
   const tud = isTudung(a.hair);
   const hatSvg = tud && !['crown', 'grad'].includes(a.hat) ? '' : hat(a);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${h}" role="img" aria-label="${attr(title || 'Avatar')}" class="kk-avatar">
-    ${bg ? `<rect x="-20" y="-20" width="240" height="300" fill="${BG_COLORS[a.bg]}"/>` : ''}
+    ${bg ? campusBackdrop(a.bg, variant === 'head') : ''}
     ${bagBack(a)}${hairBack(a, hc)}
     ${body(a)}
     <rect x="90" y="120" width="20" height="16" rx="6" fill="${skinD}"/>

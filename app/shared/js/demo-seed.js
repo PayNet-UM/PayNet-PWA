@@ -128,7 +128,18 @@ function seedDemoFriends(sdk) {
 
 export async function ensureDemoData(backend, progress = () => {}) {
   const { sdk, auth, db } = backend;
-  if (sdk._rawDocs().has('stats/campus')) { retireDemoAttendance(sdk); seedDemoFriends(sdk); return; }
+  if (sdk._rawDocs().has('stats/campus')) {
+    // Saved campuses from before feature switches need the same defaults as a
+    // fresh demo. Preserve explicit HEP choices, including switches set to off.
+    const rules = sdk._rawDocs().get('config/rules');
+    if (rules && D.FEATURES.some(([key]) => typeof rules.features?.[key] !== 'boolean')) {
+      sdk._rawUpdate((docs) => docs.set('config/rules', { ...rules, features: {
+        ...rules.features,
+        ...Object.fromEntries(D.FEATURES.map(([key]) => [key, typeof rules.features?.[key] === 'boolean' ? rules.features[key] : true])),
+      } }));
+    }
+    retireDemoAttendance(sdk); seedDemoFriends(sdk); return;
+  }
   progress('Setting up the demo campus…');
   const as = async (email) => {
     try { await sdk.signInWithEmailAndPassword(auth, email, DEMO_PASSWORD); }
@@ -154,13 +165,10 @@ export async function ensureDemoData(backend, progress = () => {}) {
     for (const [email, , name, , , , , , seats, occupied] of MERCHANTS.slice(0, 2)) {
       const m = await as(email); m.merchantName = name;
       await D.setOccupancy(m, seats, occupied);
-      await D.createOffer(m, { title: email.startsWith('kopi') ? 'Campus coffee specials' : 'Free iced tea with any rice bowl', type: 'Discount', endDate: D.dayKey(Date.now() + 30 * 86400000) });
       await D.createDeal(m, { title: email.startsWith('kopi') ? 'Afternoon study break' : 'Late lunch specials', startMin: email.startsWith('kopi') ? 14 * 60 : 14 * 60 + 30, endMin: email.startsWith('kopi') ? 17 * 60 : 16 * 60 + 30, threshold: 60, bonus: email.startsWith('kopi') ? 40 : 30, limit: 12 });
     }
     mpp = await as(MPP_EMAIL);
-    for (const o of await D.pendingOffers(mpp)) await D.reviewOffer(mpp, o, 'approved');
-    for (const d of await D.pendingDeals(mpp)) await D.reviewDeal(mpp, d.id, 'approved');
-    await D.saveReward(mpp, 'kopi-rm3', { title: 'RM3 off at Kopi Kolej', merchantId: ids['kopikolej@demo.my'], cost: 300, valueCents: 300, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+    await D.saveReward(mpp, 'kopi-rm3', { title: 'RM3 HEP reward', merchantId: '', cost: 300, valueCents: 300, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
 
     const aina = await as('aina@siswa.um.edu.my');
     await D.createProfile(aina, { role: 'student', name: 'Aina Nadhirah', matric: '23001234', college: 'KK3', faculty: 'Faculty of Science' });
