@@ -47,6 +47,8 @@
 .mpp select { max-width:100%; }
 .mpp .chips { margin-bottom:16px;gap:8px; }
 .mpp .chips button { padding:9px 15px;border-color:#ded9ef;background:#fff;font-size:12px; }
+/* The selected filter must stand out (the white background above was hiding it). */
+.mpp .chips button.on { background:var(--onz-blue, #192f59);border-color:var(--onz-blue, #192f59);color:#fff; }
 .mpp table.data { font-size:12px;line-height:1.5; }
 .mpp table.data th { background:#f2effa;color:#676182;font-size:10px;letter-spacing:.04em;padding:14px 15px; }
 .mpp table.data td { padding:17px 15px;border-color:#ece9f7; }
@@ -195,3 +197,15 @@
   .hep-settings form > .btn { width:100%; }.mpp .card > .row.between > .row { flex-wrap:wrap; }.mpp table.data th { padding:12px; }.mpp table.data td { padding:15px 12px; }
 }
 @media (prefers-reduced-motion:reduce) { .hep-shortcut,.mpp .rail nav a { transition:none; } }
+
+/* Feedback from students (views/mpp.js feedback page) */
+.hep-fb-list { display: grid; gap: 12px; margin-top: 14px; }
+.hep-fb .badge .ic { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
+.hep-fb.is-new { border-left: 4px solid var(--blue); }
+.hep-fb-msg, .hep-fb-quote { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); margin: 10px 0 6px; }
+.hep-fb-quote { padding: 10px 12px; border-radius: 10px; background: var(--paper); font-size: 14px; max-height: 180px; overflow-y: auto; }
+.hep-fb-status { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.hep-fb-status.is-new { color: var(--blue); }
+.hep-fb-status.is-replied { color: var(--green); }
+.hep-fb-reply { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--mint-wash); border-left: 3px solid var(--green); }
+.hep-fb-reply p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }

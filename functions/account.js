@@ -53,6 +53,8 @@ export function erasePlan(uid, profile = {}) {
       { collection: 'friendships', field: 'to', action: 'delete' },
       { collection: 'referrals', field: 'inviterUid', action: 'delete' },
       { collection: 'missionClaims', field: 'uid', action: 'delete' },
+      // Feedback messages are personal (questions, comments), so they go with the account.
+      { collection: 'feedback', field: 'studentUid', action: 'delete' },
       // Unused vouchers are also cancelled, so they can't still be spent after the account is gone.
       { collection: 'vouchers', field: 'studentUid', action: 'anonymise', patch: { studentUid: DELETED, studentName: DELETED_NAME },
         patchIfIssued: { status: 'cancelled' } },

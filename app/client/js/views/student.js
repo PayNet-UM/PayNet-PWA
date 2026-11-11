@@ -12,6 +12,7 @@ import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDi
 import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
 import { closeRender, closeMount } from './close.js';
+import { feedbackRender, feedbackMount } from '../feedback.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -52,7 +53,7 @@ async function homeRender(app) {
     <div class="kk-hero-text">
       <h1 class="who">Hi ${esc(firstName(p))}</h1>
       ${usernameTag(p.username)}
-      <div class="balance"><span class="welcome-coin" aria-hidden="true">${icon('onz-coin')}</span><div><strong data-bind="points">${n(p.points)}</strong><span>points</span></div></div>
+      <div class="balance"><span class="welcome-coin" aria-hidden="true">${icon('sparkles')}</span><div><strong data-bind="points">${n(p.points)}</strong><span>points</span></div></div>
       <div class="welcome-badges"><button type="button" class="welcome-tier" id="level-guide" aria-haspopup="dialog" aria-label="${esc(lvl.name)} — ways to earn points">${icon('medal')}${esc(lvl.name)}${icon('chevron-right')}</button><a class="streak welcome-streak" href="#/rewards/streak" aria-label="View your daily app streak">${icon('flame')} ${appStreak.current ? `${appStreak.current}-day streak` : 'Start a streak'}${icon('chevron-right')}</a></div>
     </div>
     <div class="welcome-progress">
@@ -232,7 +233,7 @@ function directoryMount(root, app, [mode] = []) {
       const live = dealStatus === 'Available';
       return `<article class="card checkout-deal nearby-deal ${live ? 'is-live' : ''}"><div class="checkout-deal-top"><div>
         <span class="checkout-deal-status">${icon(live ? 'zap' : 'clock')} ${esc(live ? 'Live now' : dealStatus)}</span>
-        <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><span class="badge ok">${icon('onz-coin')} +${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span></div>
+        <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><span class="badge ok">${icon('sparkles')} +${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span></div>
         <span class="nearby-deal-icon" aria-hidden="true">${icon('coffee')}</span></div>
         <div class="nearby-deal-links"><a href="#/merchant/${esc(merchant.id)}">View shop ${icon('chevron-right')}</a>${live ? `<a class="btn primary small" href="#/claim-deal/${esc(deal.id)}">${icon('qr-code')} Scan to claim</a>` : ''}${hasPin(merchant) ? `<a class="btn small checkout-deal-directions" href="${directionsUrl(merchant)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : ''}</div></article>`;
     }).join('') || `<div class="card checkout-deals-empty">${icon('zap')}<p>${esc(dealMessage)}</p></div>`;
@@ -338,7 +339,7 @@ async function rewardsRender(app) {
   const p = app.profile;
   const achievements = badges(app);
   return `<div class="rewards-page"><div class="rewards-hero"><div class="rewards-hero-copy"><h1>Rewards</h1>
-    <p>Available points</p><div class="rewards-balance">${icon('onz-coin')}<strong data-bind="points">${n(p.points)}</strong><span>pts</span></div>
+    <p>Available points</p><div class="rewards-balance">${icon('sparkles')}<strong data-bind="points">${n(p.points)}</strong><span>pts</span></div>
     <button class="btn go" type="button" id="browse-rewards">Swap points ${icon('chevron-right')}</button></div>
     <div class="rewards-hero-art" aria-hidden="true"><span class="rewards-orbit orbit-one">${icon('star')}</span><span class="rewards-gift">${icon('gift')}</span><span class="rewards-orbit orbit-two">${icon('sparkles')}</span></div></div>
     ${appStreakSection(app)}
@@ -347,7 +348,7 @@ async function rewardsRender(app) {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
         return `<article class="card reward-prize prize-colour-${index % 3} ${left <= 0 ? 'sold-out' : ''}"><div class="reward-prize-art"><span class="reward-prize-icon" aria-hidden="true">${icon(r.icon || 'gift')}</span><span class="reward-stock">${left > 0 ? `${left} left` : 'All claimed'}</span></div>
           <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
-          <div class="reward-prize-footer"><span class="reward-price">${icon('onz-coin')}<strong>${n(r.cost)}</strong><span>pts</span></span>
+          <div class="reward-prize-footer"><span class="reward-price">${icon('sparkles')}<strong>${n(r.cost)}</strong><span>pts</span></span>
           <button class="btn small ${can ? 'primary' : ''}" data-redeem="${esc(r.id)}" ${can ? '' : 'disabled'}>${left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`}</button></div></div></article>`;
       }).join('') || `<div class="card empty">${icon('gift')}<p>HEP hasn’t added rewards yet.</p></div>`}</div></section>
     <section class="section rewards-wallet"><div class="rewards-section-heading"><h2>${icon('ticket')} My vouchers</h2></div><div id="vouchers" class="stack"><div class="skeleton" style="height:80px"></div></div></section>
@@ -507,7 +508,7 @@ async function communityRender(app) {
       <p class="community-league-hint">All students’ earned points count. Redeeming or donating won’t lower your KK’s score.</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
     <div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
-      <div class="community-welfare-total">${icon('onz-coin')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
+      <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
       <button class="btn go" id="donate">${icon('hand-heart')} Give points ${icon('chevron-right')}</button></section>
     <section class="card community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask HEP for pooled welfare points.</p>
       <button class="btn primary" type="button" id="request-welfare">${icon('plus')} Request points ${icon('chevron-right')}</button>
@@ -673,12 +674,13 @@ async function meRender(app) {
     <section class="section"><div class="head"><h2>Profile</h2></div><form id="prof" class="card stack">
       <label class="field">Name<input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}"></label>
       <label class="field">Matric number<input value="${esc(p.matric || '')}" readonly aria-readonly="true"></label>
-      <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === p.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+      <label class="field">Residential college<input value="${esc(D.collegeName(p.college))}" readonly aria-readonly="true" aria-describedby="college-locked">
+        <small id="college-locked">${icon('lock')} Your college is set when you sign up, so KK League points stay fair.</small></label>
       <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === p.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
       <button class="btn primary">Save profile</button></form></section>
     <section class="section"><div class="head"><h2>Points history</h2></div>
       <div class="card points-history">
-        ${history.slice(0, 3).map(pointsHistoryRow).join('') || `<div class="empty">${icon('onz-coin')}<p>Points you earn and spend appear here.</p></div>`}
+        ${history.slice(0, 3).map(pointsHistoryRow).join('') || `<div class="empty">${icon('sparkles')}<p>Points you earn and spend appear here.</p></div>`}
         ${history.length > 3 ? `<details class="points-history-more"><summary>Older activity</summary>
           ${history.slice(3).map(pointsHistoryRow).join('')}</details>` : ''}
       </div>
@@ -722,7 +724,7 @@ function meMount(root, app) {
   if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your friend connection is in Community.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), college: f.college.value, faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#install', root).onclick = () => app.installApp();
 
@@ -751,5 +753,6 @@ export const routes = {
   community: { title: 'Community', render: communityRender, mount: communityMount },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
+  feedback: { title: 'Questions and feedback', render: feedbackRender, mount: feedbackMount, tab: 'me' },
   'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };

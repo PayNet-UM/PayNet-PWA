@@ -59,6 +59,8 @@ service cloud.firestore {
         && request.time.toMillis() < request.auth.token.auth_time * 1000 + 43200000;
     }
     function adminChange() { return isMpp() && recentSignIn(); }
+    // Residential colleges KK1 to KK13, or off campus (the list in data.js COLLEGES).
+    function validCollege(c) { return c is string && c.matches('^(KK([1-9]|1[0-3])|OFF)$'); }
     // A logged change names its activity-log entry, which must be written by this admin in the same batch.
     function loggedBy(logId) {
       return logId is string
@@ -73,7 +75,7 @@ service cloud.firestore {
         && D().keys().hasOnly(['at', 'by', 'action', 'target', 'summary'])
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
-                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review']
+                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -114,7 +116,8 @@ service cloud.firestore {
           && D().termsAcceptedAt == request.time;
       }
       function selfUpdate() {
-        return changed().hasOnly(['name', 'college', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
+        // No 'college': it's chosen once at sign-up. Only HEP can correct it (below), so nobody can move KK League points.
+        return changed().hasOnly(['name', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
                                   'inviterUid', 'inviterCode',
                                   'showOnMap', 'mapAudience', 'username', 'termsVersion', 'termsAcceptedAt'])
           && (!changed().hasAny(['termsVersion', 'termsAcceptedAt']) || termsOk())
@@ -137,13 +140,16 @@ service cloud.firestore {
         && D().points == 0 && D().lastTx == '' && D().email == email()
         && D().createdAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
         && ((D().role == 'merchant' && featureOn('merchantSignup') && D().get('matric', '') == '') || (D().role == 'student' && studentEmailAllowed()
+            && validCollege(D().get('college', ''))
             && D().matric is string && D().matric.matches('^[A-Z0-9]{5,15}$')
             && getAfter(/databases/$(database)/documents/matrics/$(D().matric)).data.uid == u));
       allow update: if signedIn() && validPoints() && (
           (uid() == u && resource.data.get('disabled', false) != true && selfUpdate())
-          || (adminChange() && changed().hasOnly(['points', 'lastTx', 'disabled', 'adminLogId'])
+          || (adminChange() && changed().hasOnly(['points', 'lastTx', 'disabled', 'college', 'adminLogId'])
               && (!ptsChanged() || ledgerAfter().type in ['adjust', 'welfare'])
-              && (!changed().hasAny(['disabled']) || loggedBy(D().get('adminLogId', null))))
+              && (!changed().hasAny(['disabled']) || loggedBy(D().get('adminLogId', null)))
+              && (!changed().hasAny(['college']) || (resource.data.role == 'student' && validCollege(D().college)
+                  && loggedBy(D().get('adminLogId', null)))))
         );
 
       // Daily app use is independent of lessons, locations, attendance and points.
@@ -451,6 +457,25 @@ service cloud.firestore {
     }
 
     // ---------- rewards and vouchers ----------
+    // Feedback: students ask anything or comment on the app. The ID is the student, the day and 1 to 3, so each
+    // student can send up to 3 a day and can't overwrite one. Only the student and HEP can read them.
+    // HEP can reply (the student sees it in the app) or mark a message done.
+    match /feedback/{id} {
+      allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
+      allow create: if isStudent()
+        && id in [uid() + '_' + dayKey(request.time) + '_1', uid() + '_' + dayKey(request.time) + '_2', uid() + '_' + dayKey(request.time) + '_3']
+        && D().keys().hasOnly(['studentUid', 'name', 'email', 'college', 'topic', 'message', 'status', 'createdAt'])
+        && D().studentUid == uid() && D().name == userDoc(uid()).name && D().email == email()
+        && D().college == userDoc(uid()).get('college', '')
+        && D().topic in ['question', 'idea', 'problem', 'other']
+        && D().message is string && D().message.size() >= 5 && D().message.size() <= 1000
+        && D().status == 'new' && D().createdAt == request.time;
+      allow update: if isMpp() && changed().hasOnly(['status', 'reply', 'repliedBy', 'repliedAt'])
+        && D().status in ['replied', 'done'] && D().repliedBy == email() && D().repliedAt == request.time
+        && (D().status != 'replied' || (D().reply is string && D().reply.size() >= 2 && D().reply.size() <= 1000));
+      allow delete: if false;
+    }
+
     match /welfareRequests/{id} {
       allow read: if signedIn() && (resource.data.studentUid == uid() || isMpp());
       // The ID is the student and today's date, so each student can send one request a day.

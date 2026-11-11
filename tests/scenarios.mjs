@@ -492,6 +492,70 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot unblock themselves', () => D.updateProfile(stuB, { disabled: false }));
   await denied('a student cannot block someone else', () => D.setBlocked(stuA, 'stuB', false));
   await ok('HEP unblocks a student', () => D.setBlocked(mpp, 'stuB', false));
+
+  log('College is chosen once');
+  await denied('a student cannot change their own college', () => D.updateProfile(stuB, { college: 'KK1' }));
+  await denied('a student cannot change another student’s college', () => D.setCollege(stuA, 'stuB', 'KK1', 'Trying to move a friend'));
+  await denied('HEP cannot change a college without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { college: 'KK1' }));
+  await denied('HEP cannot set a college that doesn’t exist', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-college', 'stuB', 'KK5 → KK99: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { college: 'KK99', adminLogId });
+    await b.commit();
+  });
+  await denied('HEP cannot give a merchant a college', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-college', 'mer1', '— → KK1: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'mer1'), { college: 'KK1', adminLogId });
+    await b.commit();
+  });
+  await ok('HEP corrects a wrong college, with a logged reason', async () => {
+    await D.setCollege(mpp, 'stuB', 'KK1', 'Picked the wrong college at sign-up');
+    eq((await D.getProfile(stuB)).college, 'KK1', 'college');
+    const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-college' && r.target === 'stuB');
+    if (!entry || !/KK5 → KK1/.test(entry.summary)) throw new Error('no activity-log entry for the change');
+  });
+  await ok('the student can still edit their name and faculty', () => D.updateProfile(stuB, { name: 'Badrul Hisham', faculty: 'Faculty of Engineering' }));
+  await ok('HEP puts the college back', () => D.setCollege(mpp, 'stuB', 'KK5', 'Test finished'));
+  log('Questions and feedback');
+  stuA.profile = await D.getProfile(stuA); stuB.profile = await D.getProfile(stuB);
+  let firstFeedback = '';
+  await ok('a student sends a question', async () => {
+    firstFeedback = await D.sendFeedback(stuA, 'question', 'How do I earn more points for my KK?');
+    const mine = await D.myFeedback(stuA);
+    eq(mine.length, 1, 'messages'); eq(mine[0].status, 'new', 'status'); eq(mine[0].name, 'Aina Nadhirah', 'name'); eq(mine[0].email, 'aina@siswa.um.edu.my', 'email');
+  });
+  await ok('they can send up to 3 a day, then the app says to wait', async () => {
+    await D.sendFeedback(stuA, 'idea', 'A dark mode would be nice.'); await D.sendFeedback(stuA, 'problem', 'The map was slow to load today.');
+    try { await D.sendFeedback(stuA, 'other', 'A fourth message today.'); } catch (e) { if (/3 messages today/.test(e.message)) return; throw e; }
+    throw new Error('a fourth message was accepted');
+  });
+  await denied('the rules also refuse a 4th message in a day', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback.replace(/_1$/, '_4')),
+    { studentUid: 'stuA', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK3', topic: 'other', message: 'Sneaking past the limit.', status: 'new', createdAt: stuA.sdk.serverTimestamp() }));
+  await denied('a student cannot overwrite a message they already sent', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback),
+    { studentUid: 'stuA', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK3', topic: 'other', message: 'Changed my mind.', status: 'new', createdAt: stuA.sdk.serverTimestamp() }));
+  await denied('a student cannot send feedback in someone else’s name', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'feedback', firstFeedback.replace('stuA_', 'stuB_')),
+    { studentUid: 'stuB', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK5', topic: 'other', message: 'Pretending to be Aina.', status: 'new', createdAt: stuB.sdk.serverTimestamp() }));
+  await denied('a student cannot read another student’s feedback', () => stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'feedback', firstFeedback)));
+  await denied('a student cannot mark their own message as answered', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback), { status: 'replied', reply: 'Yes!', repliedBy: 'aina@siswa.um.edu.my', repliedAt: stuA.sdk.serverTimestamp() }));
+  await denied('a merchant cannot use the student feedback form', () => D.sendFeedback({ ...merch, profile: { name: 'Hafiz Rahman' } }, 'question', 'Can merchants send feedback?'));
+  await ok('HEP sees every message and replies; the student sees the reply', async () => {
+    const all = await D.listFeedback(mpp);
+    eq(all.filter((f) => f.studentUid === 'stuA').length, 3, 'messages HEP can see');
+    await D.replyFeedback(mpp, firstFeedback, 'Every point you earn counts for KK3. Try Learn & Earn!');
+    const mine = (await D.myFeedback(stuA)).find((f) => f.id === firstFeedback);
+    eq(mine.status, 'replied', 'status'); eq(mine.reply, 'Every point you earn counts for KK3. Try Learn & Earn!', 'reply');
+  });
+  await ok('HEP marks a message as done without replying', async () => {
+    const idea = (await D.myFeedback(stuA)).find((f) => f.topic === 'idea');
+    await D.markFeedbackDone(mpp, idea.id);
+    eq((await D.myFeedback(stuA)).find((f) => f.id === idea.id).status, 'done', 'status');
+  });
+  await denied('HEP cannot change what the student wrote', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'feedback', firstFeedback), { message: 'Edited by an admin.' }));
+
+  const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
+  await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));
+  await ok('signing up with Off campus is allowed', () => D.createProfile(fakeCollege, { role: 'student', name: 'Off Campus', matric: 'OFFCAMP01', college: 'OFF' }));
   await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { faculty: 'Science' }));
 
   const squatter = await makeCtx({ uid: 'squat1', email: 'squat@gmail.com' });

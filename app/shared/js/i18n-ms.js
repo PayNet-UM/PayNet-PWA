@@ -2039,4 +2039,52 @@ Take the tour|Ikuti lawatan
 Getting started|Langkah permulaan
 Your profile|Profil anda
 Quick tour|Lawatan ringkas
+You can’t change your college later.|Anda tidak boleh menukar kolej anda kemudian.
+Your points count towards it in the KK League, so check you’ve picked the right one.|Mata anda dikira untuk kolej ini dalam Liga KK, jadi pastikan anda memilih kolej yang betul.
+Choose your college|Pilih kolej anda
+Your college is set when you sign up, so KK League points stay fair.|Kolej anda ditetapkan semasa mendaftar supaya mata Liga KK kekal adil.
+Change college|Tukar kolej
+New college|Kolej baharu
+Reason (saved in the Activity log)|Sebab (disimpan dalam Log aktiviti)
+e.g. Picked the wrong college at sign-up|cth. Tersalah pilih kolej semasa mendaftar
+That’s already their college.|Itu memang kolej pelajar ini.
+College changed.|Kolej telah ditukar.
+Changed a student’s college|Menukar kolej pelajar
+Choose a college from the list.|Pilih kolej daripada senarai.
+Only students have a college.|Hanya pelajar mempunyai kolej.
+Questions and feedback|Soalan dan maklum balas
+Ask us anything, or tell us what you think of +Onz. The +Onz team reads every message.|Tanya apa sahaja, atau beritahu kami pendapat anda tentang +Onz. Pasukan +Onz membaca setiap mesej.
+What’s it about?|Tentang apa?
+A question|Soalan
+An idea or suggestion|Idea atau cadangan
+Something isn’t working|Ada yang tidak berfungsi
+Anything else|Lain-lain
+Your message|Mesej anda
+Type your question or comment|Taip soalan atau komen anda
+Send|Hantar
+My messages|Mesej saya
+Replied|Dibalas
+Read by the team|Dibaca oleh pasukan
++Onz team|Pasukan +Onz
+No messages yet. Your questions and our replies will show here.|Belum ada mesej. Soalan anda dan balasan kami akan dipaparkan di sini.
+Couldn’t load your messages.|Tidak dapat memuatkan mesej anda.
+Write a little more so we can help.|Tulis sedikit lagi supaya kami boleh membantu.
+Thanks! Your message has been sent to the +Onz team.|Terima kasih! Mesej anda telah dihantar kepada pasukan +Onz.
+Choose what your message is about.|Pilih topik mesej anda.
+Keep your message under 1,000 characters.|Pastikan mesej anda kurang daripada 1,000 aksara.
+Tap here for settings, to ask us anything or send feedback, to install +Onz on your phone, or to sign out. You can replay this tour from here too.|Ketik di sini untuk tetapan, bertanya apa sahaja atau menghantar maklum balas, memasang +Onz pada telefon anda atau log keluar. Anda juga boleh mengulang lawatan ini dari sini.
+Feedback|Maklum balas
+Questions and comments from students. Your replies show in their app; they aren’t emailed.|Soalan dan komen daripada pelajar. Balasan anda dipaparkan dalam aplikasi mereka dan tidak dihantar melalui e-mel.
+New|Baharu
+Reply|Balas
+Edit reply|Sunting balasan
+Mark as done|Tandakan selesai
+Your reply|Balasan anda
+No new feedback. You’re all caught up.|Tiada maklum balas baharu. Semuanya sudah diuruskan.
+Nothing here yet.|Belum ada apa-apa di sini.
+The student sees this under their message in the +Onz app.|Pelajar akan melihat balasan ini di bawah mesej mereka dalam aplikasi +Onz.
+Send reply|Hantar balasan
+Reply sent.|Balasan dihantar.
+Marked as done.|Ditandakan selesai.
+Write a reply first.|Tulis balasan dahulu.
 `;

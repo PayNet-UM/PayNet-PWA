@@ -9,6 +9,7 @@ import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
 import * as Guide from './guide.js';
+import { unseenReplies } from './feedback.js';
 initI18n();
 
 const app = {
@@ -50,7 +51,7 @@ async function boot() {
 
 async function onUser(user) {
   stopWatchers(); closeSheet();
-  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
+  app.user = user; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -104,7 +105,11 @@ function startRole(role) {
     }, () => {}));
   }
   render().then(() => Guide.maybeStart(app));
+  // One quick look for replies to the student's feedback they haven't seen yet (shown as a dot on their avatar).
+  if (role === 'student') D.myFeedback(app.ctx).then((items) => { app.feedbackNew = unseenReplies(app.ctx.uid, items); paintFeedbackDot(); }).catch(() => {});
 }
+function paintFeedbackDot() { const el = $('#avatar'); if (el) el.classList.toggle('has-dot', !!app.feedbackNew); }
+app.paintFeedbackDot = paintFeedbackDot;
 
 // tiny event hub so views can refresh parts of the page when live data changes
 const listeners = new Set();
@@ -124,7 +129,7 @@ function shell(role, routes) {
       <header class="topbar">
         <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
         <span class="spacer"></span>
-        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('onz-coin')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
+        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}
         <button class="avatar" id="avatar" aria-label="Account menu">${esc(initials(p.name))}</button>
       </header>
@@ -135,6 +140,7 @@ function shell(role, routes) {
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
   paintAvatar();
+  paintFeedbackDot(); // the reply check may finish before the top bar exists
 }
 // Students see their avatar in the top bar; merchants see their logo.
 function paintAvatar() {
@@ -150,6 +156,7 @@ function accountSheet() {
   const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
+      ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
       ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
       <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
       <button class="btn block" id="install">Install the app on this device</button>

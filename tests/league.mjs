@@ -76,8 +76,12 @@ await check('demo redemption and welfare donations preserve cumulative earned po
   assert.deepEqual(await league(), { KK3: 1250 });
   assert.equal((await D.getProfile(a)).points, 1000 - reward.cost - 20);
 });
-await check('demo transfers existing earnings on a college change', async () => {
-  await D.updateProfile(b, { college: 'KK5' });
+await check('students cannot move their earnings to another college themselves', async () => {
+  await assert.rejects(D.updateProfile(b, { college: 'KK5' }), { code: 'permission-denied' });
+  assert.deepEqual(await league(), { KK3: 1250 });
+});
+await check('demo transfers existing earnings when HEP corrects a college', async () => {
+  await D.setCollege(admin, 'b', 'KK5', 'Picked the wrong college at sign-up');
   assert.deepEqual(await league(), { KK3: 1000, KK5: 250 });
 });
 await check('welfare support credits a wallet but does not inflate earned KK points', async () => {

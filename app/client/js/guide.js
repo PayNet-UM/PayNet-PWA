@@ -27,13 +27,13 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
         : 'Your business is about to join the campus map. Take a one-minute tour to see how it works.')
       : 'Here’s where everything is. It takes about a minute.',
     chips: student
-      ? [['onz-coin', 'Collect points'], ['gift', 'Swap for rewards'], ['compass', 'Discover campus']]
+      ? [['sparkles', 'Collect points'], ['gift', 'Swap for rewards'], ['compass', 'Discover campus']]
       : [['store', 'Set up your shop'], ['map-pin', 'Get on the map'], ['users', 'Reach students']],
   };
   const tab = (key, ic, title, body) => ({ target: `.tabbar [data-tab="${key}"]`, icon: ic, title, body });
   const tour = student ? [
     tab('home', 'house', 'Home', 'Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.'),
-    { target: '.topbar .pts-chip', icon: 'onz-coin', title: 'Your points', body: 'Every point you earn shows up here. Tap it to see what you can swap them for.' },
+    { target: '.topbar .pts-chip', icon: 'sparkles', title: 'Your points', body: 'Every point you earn shows up here. Tap it to see what you can swap them for.' },
     tab('community', 'users', 'Community', 'Climb the KK League with your college, invite friends, and support the student welfare fund.'),
     tab('events', 'calendar', 'Campus Events', 'See what’s happening around UM, like FESKUM 2026.'),
     tab('rewards', 'gift', 'Rewards', 'Swap your points for vouchers, and see your badges and streak.'),
@@ -47,7 +47,9 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
   ];
   const shared = [
     { target: '.topbar .lang-toggle', icon: 'settings', title: 'English or Bahasa Malaysia', body: 'Switch language any time. Everything changes straight away.' },
-    { target: '#avatar', icon: 'user', title: 'Your account menu', body: 'Tap here for settings, to install +Onz on your phone, or to sign out. You can replay this tour from here too.' },
+    { target: '#avatar', icon: 'user', title: 'Your account menu', body: student
+      ? 'Tap here for settings, to ask us anything or send feedback, to install +Onz on your phone, or to sign out. You can replay this tour from here too.'
+      : 'Tap here for settings, to install +Onz on your phone, or to sign out. You can replay this tour from here too.' },
   ];
   const finish = { kind: 'finish', icon: 'circle-check', title: first ? 'You’re all set!' : 'That’s the tour', tasks: tasksFor(app) };
   return [welcome, ...[...tour, ...shared].filter((s) => has(s.target)), finish];

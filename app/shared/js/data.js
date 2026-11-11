@@ -111,7 +111,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -569,6 +569,39 @@ export async function submitWelfareRequest(ctx, amount, reason) {
     amount, reason, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
 }
+// ------------------------------------------------------------- feedback: students ask anything or comment on the app
+export const FEEDBACK_TOPICS = [['question', 'A question'], ['idea', 'An idea or suggestion'], ['problem', 'Something isn’t working'], ['other', 'Anything else']];
+export const FEEDBACK_PER_DAY = 3;
+export const feedbackTopic = (k) => FEEDBACK_TOPICS.find(([t]) => t === k)?.[1] || 'Anything else';
+const byNewest = (a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0);
+export async function sendFeedback(ctx, topic, message) {
+  message = String(message || '').trim();
+  if (!FEEDBACK_TOPICS.some(([t]) => t === topic)) throw new Error('Choose what your message is about.');
+  if (message.length < 5) throw new Error('Write a little more so we can help.');
+  if (message.length > 1000) throw new Error('Keep your message under 1,000 characters.');
+  const day = dayKey(clock(ctx));
+  const used = new Set((await list(ctx, 'feedback', eq(ctx, 'studentUid', ctx.uid))).map((f) => f.id));
+  const slot = Array.from({ length: FEEDBACK_PER_DAY }, (_, i) => `${ctx.uid}_${day}_${i + 1}`).find((id) => !used.has(id));
+  if (!slot) throw new Error(`You’ve sent ${FEEDBACK_PER_DAY} messages today. Send more tomorrow.`);
+  const p = ctx.profile || await getProfile(ctx);
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'feedback', slot), { studentUid: ctx.uid, name: p.name, email: ctx.email, college: p.college || '',
+    topic, message, status: 'new', createdAt: ctx.sdk.serverTimestamp() });
+  return slot;
+}
+export async function myFeedback(ctx) { return (await list(ctx, 'feedback', eq(ctx, 'studentUid', ctx.uid))).sort(byNewest); }
+export function watchMyFeedback(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'feedback'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s).sort(byNewest)), err);
+}
+export async function listFeedback(ctx) { return (await list(ctx, 'feedback')).sort(byNewest); }
+export async function replyFeedback(ctx, id, reply) {
+  reply = String(reply || '').trim();
+  if (reply.length < 2) throw new Error('Write a reply first.');
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'replied', reply: reply.slice(0, 1000), repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
+}
+export async function markFeedbackDone(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'done', repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
+}
+
 export function watchMyWelfareRequests(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'welfareRequests'), eq(ctx, 'studentUid', ctx.uid)),
     (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);
@@ -685,6 +718,19 @@ export async function setBlocked(ctx, uid, blocked) {
   const b = ctx.sdk.writeBatch(ctx.db);
   const adminLogId = logAdmin(ctx, b, blocked ? 'block' : 'unblock', uid);
   b.update(R(ctx).user(uid), { disabled: !!blocked, adminLogId });
+  await b.commit();
+}
+// Students choose their college once, at sign-up. HEP can correct a wrong pick; the KK League server then moves
+// the student's points to the new college.
+export const collegeName = (k) => COLLEGES.find(([c]) => c === k)?.[1] || k || '—';
+export async function setCollege(ctx, uid, college, reason) {
+  if (!COLLEGES.some(([k]) => k === college)) throw new Error('Choose a college from the list.');
+  const user = await one(ctx, R(ctx).user(uid));
+  if (!user || user.role !== 'student') throw new Error('Only students have a college.');
+  if (user.college === college) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, 'change-college', uid, `${user.college || '—'} → ${college}: ${String(reason || '').trim()}`);
+  b.update(R(ctx).user(uid), { college, adminLogId });
   await b.commit();
 }
 // Frees a matric number claimed by the wrong person, so the real student can sign up.

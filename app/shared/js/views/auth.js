@@ -488,8 +488,8 @@ export function renderOnboarding(app, done) {
       <label class="field">Your full name<input name="name" required minlength="2" maxlength="100" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
       <div id="student-fields" class="stack">
         <label class="field">Matric number<input name="matric" autocomplete="off" placeholder="e.g. 23001234" pattern="[A-Za-z0-9]{5,15}" title="Letters and numbers only"><small>One account per matric number. You can’t change it later, so check it.</small></label>
-        <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>
-          <small>Your points count towards your college on the leaderboard.</small></label>
+        <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college later.</b> Your points count towards it in the KK League, so check you’ve picked the right one.</span></div>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
       </div>
       <div class="terms-box">
@@ -501,7 +501,7 @@ export function renderOnboarding(app, done) {
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
   const f = $('#ob');
-  const sync = () => { $('#student-fields').classList.toggle('hidden', f.role.value !== 'student'); f.matric.required = f.role.value === 'student'; };
+  const sync = () => { $('#student-fields').classList.toggle('hidden', f.role.value !== 'student'); f.matric.required = f.role.value === 'student'; f.college.required = f.role.value === 'student'; };
   $$('input[name=role]', f).forEach((r) => { r.onchange = sync; }); sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
