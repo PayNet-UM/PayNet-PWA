@@ -8,6 +8,7 @@ import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
+import * as Guide from './guide.js';
 initI18n();
 
 const app = {
@@ -71,7 +72,8 @@ async function onUser(user) {
   if (D.needsTerms(profile)) return Auth.renderTerms(app, () => startRole(profile.role));
   startRole(profile.role);
 }
-async function onboarded() { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
+// A brand-new profile: show the welcome and tour once the app's first screen is up.
+async function onboarded() { Guide.markNewAccount(app.ctx.uid); app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
 
 function startRole(role) {
   app.role = role;
@@ -101,7 +103,7 @@ function startRole(role) {
       app.emit && app.emit('merchant');
     }, () => {}));
   }
-  render();
+  render().then(() => Guide.maybeStart(app));
 }
 
 // tiny event hub so views can refresh parts of the page when live data changes
@@ -122,7 +124,7 @@ function shell(role, routes) {
       <header class="topbar">
         <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
         <span class="spacer"></span>
-        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
+        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('onz-coin')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
         ${langToggleHTML()}
         <button class="avatar" id="avatar" aria-label="Account menu">${esc(initials(p.name))}</button>
       </header>
@@ -149,6 +151,7 @@ function accountSheet() {
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
       ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
+      <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
@@ -156,6 +159,7 @@ function accountSheet() {
     </div>`);
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
+  $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
   $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
 }
 app.accountSheet = accountSheet;

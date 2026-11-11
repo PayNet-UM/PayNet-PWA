@@ -476,7 +476,8 @@ export function renderOnboarding(app, done) {
   const email = app.user.email || '';
   const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
   const looksStudent = !merchantsOpen || /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
-  frame(app, `<div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}.</p></div>
+  frame(app, `<ol class="ob-steps" aria-label="Getting started"><li class="done">${icon('check')}<span>Sign in</span></li><li class="on" aria-current="step"><b>2</b><span>Your profile</span></li><li><b>3</b><span>Quick tour</span></li></ol>
+    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p></div>
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>

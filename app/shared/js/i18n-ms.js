@@ -1994,4 +1994,49 @@ Merchant review|Semakan peniaga
 Welfare request|Permohonan kebajikan
 You were signed out after 30 minutes without activity.|Anda telah dilog keluar selepas 30 minit tanpa aktiviti.
 For your safety, please sign in again. HEP sign-ins last 12 hours.|Demi keselamatan anda, sila log masuk semula. Log masuk HEP sah selama 12 jam.
+Welcome to +Onz!|Selamat datang ke +Onz!
+A quick tour of +Onz|Lawatan ringkas +Onz
+Your campus journey starts here. Take a one-minute tour to see where everything is.|Perjalanan kampus anda bermula di sini. Ikuti lawatan seminit untuk melihat di mana semuanya berada.
+Your business is about to join the campus map. Take a one-minute tour to see how it works.|Perniagaan anda bakal menyertai peta kampus. Ikuti lawatan seminit untuk melihat cara ia berfungsi.
+Here’s where everything is. It takes about a minute.|Inilah tempat semuanya berada. Ia mengambil masa kira-kira seminit.
+Collect points|Kumpul mata
+Swap for rewards|Tukar dengan ganjaran
+Discover campus|Terokai kampus
+Set up your shop|Sediakan kedai anda
+Get on the map|Muncul di peta kampus
+Reach students|Capai pelajar
+Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.|Kad +Onz anda: mata, tahap dan rentetan harian anda. Terokai kedai, tawaran aktif dan Belajar & Kumpul Mata dari sini.
+Every point you earn shows up here. Tap it to see what you can swap them for.|Setiap mata yang anda kumpul dipaparkan di sini. Ketik untuk melihat apa yang boleh anda tukar.
+Climb the KK League with your college, invite friends, and support the student welfare fund.|Naikkan kedudukan kolej anda dalam Liga KK, jemput rakan dan sokong tabung kebajikan pelajar.
+See what’s happening around UM, like FESKUM 2026.|Lihat aktiviti di sekitar UM, seperti FESKUM 2026.
+Swap your points for vouchers, and see your badges and streak.|Tukar mata anda dengan baucar, dan lihat lencana serta rentetan anda.
+Your profile, your invite code and your points history.|Profil anda, kod jemputan anda dan sejarah mata anda.
+Your shop at a glance: its status, live-deal activity and updates from HEP.|Ringkasan kedai anda: status, aktiviti tawaran aktif dan makluman daripada HEP.
+Set up your business here: its details, logo and exact map pin. HEP checks them before students can see you.|Sediakan perniagaan anda di sini: butiran, logo dan pin peta yang tepat. HEP menyemaknya sebelum pelajar dapat melihat kedai anda.
+Show this QR to students so they can claim your live deals.|Tunjukkan QR ini kepada pelajar supaya mereka boleh menuntut tawaran aktif anda.
+Create off-peak deals to bring students in when it’s quiet.|Cipta tawaran waktu lengang untuk menarik pelajar ketika kedai tidak sibuk.
+See how students are responding to your deals.|Lihat maklum balas pelajar terhadap tawaran anda.
+English or Bahasa Malaysia|Bahasa Inggeris atau Bahasa Malaysia
+Switch language any time. Everything changes straight away.|Tukar bahasa bila-bila masa. Semuanya bertukar serta-merta.
+Your account menu|Menu akaun anda
+Tap here for settings, to install +Onz on your phone, or to sign out. You can replay this tour from here too.|Ketik di sini untuk tetapan, memasang +Onz pada telefon anda atau log keluar. Anda juga boleh mengulang lawatan ini dari sini.
+You’re all set!|Anda sudah bersedia!
+That’s the tour|Itulah lawatannya
+Make it your own|Jadikan ia milik anda
+Start exploring|Mula meneroka
+Check your profile|Semak profil anda
+Set up my shop|Sediakan kedai saya
+Go to my shop|Pergi ke kedai saya
+Students see your shop once HEP verifies it.|Pelajar dapat melihat kedai anda selepas HEP mengesahkannya.
+Add your business details and DuitNow QR photo|Tambah butiran perniagaan dan foto DuitNow QR anda
+Pin your shop on the map|Pinkan kedai anda pada peta
+You can replay this tour from your account menu.|Anda boleh mengulang lawatan ini dari menu akaun anda.
+Skip for now|Langkau buat masa ini
+Show me around|Tunjukkan kepada saya
+Skip tour|Langkau lawatan
+Next|Seterusnya
+Take the tour|Ikuti lawatan
+Getting started|Langkah permulaan
+Your profile|Profil anda
+Quick tour|Lawatan ringkas
 `;

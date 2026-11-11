@@ -187,13 +187,60 @@ await mer.setViewportSize({ width: 390, height: 844 });
 if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
 ok('merchant deal preview follows its fields and the new shop hub fits mobile and desktop');
 
+// a brand-new student gets the welcome and tour too, here in Bahasa Malaysia
+const ns = await ctx.newPage(); watch(ns, 'new student'); await fresh(ns);
+await ns.goto(BASE); await ns.waitForSelector('#google', { timeout: 60000 }); await ns.click('#google');
+await ns.fill('#gnew [name=email]', 'new.student.e2e@gmail.com'); await ns.click('#gnew button');
+await ns.waitForSelector('#ob'); await ns.check('#ob input[value="student"]').catch(() => {});
+await ns.fill('#ob [name=name]', 'Nur Aisyah'); await ns.fill('#ob [name=matric]', 'E2E77001'); await ns.check('#ob input[name=terms]');
+await ns.click('#ob button[type=submit]');
+await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
+if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));
+await ns.click('.guide [data-next]'); await ns.waitForSelector('.guide .is-tour');
+// The overlay covers the page, so switch the language from the page's own toggle in code.
+await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="ms"]')?.click());
+await ns.waitForFunction(() => /^Langkah 1 daripada \d+$/.test(document.querySelector('.guide-step')?.textContent.trim() || ''));
+await ns.screenshot({ path: `${shots}/g-student-step-ms.png` });
+await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="en"]')?.click());
+for (let k = 0; k < 12 && await ns.locator('.guide .is-tour').count(); k++) await ns.click('.guide [data-next]');
+await ns.waitForSelector('.guide .is-finish'); await ns.screenshot({ path: `${shots}/g-student-finish.png` });
+await ns.click('.guide-tasks a[data-go="avatar"]'); await ns.waitForFunction(() => location.hash === '#/avatar' && !document.querySelector('.guide'));
+await ns.close();
+ok('new student got a personal welcome, a translated tour, and the checklist opened the avatar editor');
+
 // a brand-new merchant must give a logo and an exact location
 const nm = await ctx.newPage(); watch(nm, 'new merchant'); await fresh(nm);
 await nm.goto(BASE); await nm.waitForSelector('#google', { timeout: 60000 }); await nm.click('#google');
 await nm.fill('#gnew [name=email]', 'satay.stall@gmail.com'); await nm.click('#gnew button');
 await nm.waitForSelector('#ob'); await nm.click('#ob [data-role="merchant"]').catch(() => {});
 await nm.check('#ob input[value="merchant"]').catch(() => {}); await nm.check('#ob input[type=checkbox]').catch(() => {});
+if (!/Sign in.*Your profile.*Quick tour/s.test(await nm.textContent('.ob-steps'))) throw new Error('profile set-up is missing its getting-started steps');
 await nm.click('#ob button[type=submit]'); await nm.waitForSelector('a[href="#/shop"]', { timeout: 20000 });
+// First-time guide: welcome with confetti, a spotlight tour that skips switched-off tabs, then the shop checklist.
+await nm.waitForSelector('.guide .is-welcome', { timeout: 15000 });
+if (!/^Welcome to \+Onz/.test((await nm.textContent('#guide-title')).trim())) throw new Error('no personal welcome: ' + await nm.textContent('#guide-title'));
+if (!await nm.locator('canvas.confetti').count()) throw new Error('the welcome had no confetti');
+await nm.screenshot({ path: `${shots}/g-merchant-welcome.png` });
+await nm.click('.guide [data-next]');
+const tourTitles = [];
+for (let k = 0; k < 12 && await nm.locator('.guide .is-tour').count(); k++) {
+  tourTitles.push((await nm.textContent('#guide-title')).trim());
+  const spot = await nm.evaluate(() => { const r = document.querySelector('.guide-spot').getBoundingClientRect(); return !document.querySelector('.guide').classList.contains('no-target') && r.width > 10 && r.height > 10; });
+  if (!spot) throw new Error('tour step has no spotlight: ' + tourTitles.at(-1));
+  if (k === 0) await nm.screenshot({ path: `${shots}/g-merchant-step.png` });
+  await nm.click('.guide [data-next]');
+}
+if (!tourTitles.includes('My shop') || !tourTitles.includes('Your account menu')) throw new Error('tour missed steps: ' + tourTitles.join(', '));
+await nm.waitForSelector('.guide .is-finish .guide-tasks li'); await nm.screenshot({ path: `${shots}/g-merchant-finish.png` });
+if (await nm.locator('.guide-tasks li').count() !== 4) throw new Error('merchant checklist should have 4 set-up steps');
+await nm.click('.guide .guide-actions [data-go="shop"]'); await nm.waitForSelector('#app-form');
+await nm.waitForFunction(() => !document.querySelector('.guide'), null, { timeout: 3000 }).catch(() => { throw new Error('the guide stayed open after finishing'); });
+await nm.reload(); await nm.waitForSelector('#app-form', { timeout: 30000 }); await nm.waitForTimeout(800);
+if (await nm.locator('.guide').count()) throw new Error('the guide came back after it was finished');
+await nm.click('#avatar'); await nm.click('#tour'); await nm.waitForSelector('.guide .is-welcome');
+if ((await nm.textContent('#guide-title')).trim() !== 'A quick tour of +Onz') throw new Error('replay should not repeat the first-time welcome');
+await nm.keyboard.press('Escape'); await nm.waitForFunction(() => !document.querySelector('.guide'));
+ok(`new merchant got the welcome, a ${tourTitles.length}-step tour (${tourTitles.join(', ')}) and the shop checklist; it shows once and replays from the menu`);
 await nm.goto(BASE + '#/shop'); await nm.waitForSelector('#app-form');
 await nm.fill('#app-form [name=name]', 'Satay Siswa'); await nm.fill('#app-form [name=accountName]', 'Satay Siswa Enterprise'); await nm.fill('#app-form [name=location]', 'KK11 cafeteria');
 await nm.setInputFiles('#app-form [name=qr]', { name: 'qr.png', mimeType: 'image/png', buffer: png });
