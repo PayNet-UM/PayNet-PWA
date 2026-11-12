@@ -8,6 +8,8 @@ import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
+import * as Guide from './guide.js';
+import { unseenReplies } from './feedback.js';
 initI18n();
 
 const app = {
@@ -49,7 +51,7 @@ async function boot() {
 
 async function onUser(user) {
   stopWatchers(); closeSheet();
-  app.user = user; app.profile = null; app.isMpp = false; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
+  app.user = user; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -71,7 +73,8 @@ async function onUser(user) {
   if (D.needsTerms(profile)) return Auth.renderTerms(app, () => startRole(profile.role));
   startRole(profile.role);
 }
-async function onboarded() { app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
+// A brand-new profile: show the welcome and tour once the app's first screen is up.
+async function onboarded() { Guide.markNewAccount(app.ctx.uid); app.profile = await D.getProfile(app.ctx); app.ctx.profile = app.profile; startRole(app.profile.role); }
 
 function startRole(role) {
   app.role = role;
@@ -101,8 +104,12 @@ function startRole(role) {
       app.emit && app.emit('merchant');
     }, () => {}));
   }
-  render();
+  render().then(() => Guide.maybeStart(app));
+  // One quick look for replies to the student's feedback they haven't seen yet (shown as a dot on their avatar).
+  if (role === 'student') D.myFeedback(app.ctx).then((items) => { app.feedbackNew = unseenReplies(app.ctx.uid, items); paintFeedbackDot(); }).catch(() => {});
 }
+function paintFeedbackDot() { const el = $('#avatar'); if (el) el.classList.toggle('has-dot', !!app.feedbackNew); }
+app.paintFeedbackDot = paintFeedbackDot;
 
 // tiny event hub so views can refresh parts of the page when live data changes
 const listeners = new Set();
@@ -133,6 +140,7 @@ function shell(role, routes) {
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
   paintAvatar();
+  paintFeedbackDot(); // the reply check may finish before the top bar exists
 }
 // Students see their avatar in the top bar; merchants see their logo.
 function paintAvatar() {
@@ -148,7 +156,9 @@ function accountSheet() {
   const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
+      ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
       ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
+      <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
@@ -156,6 +166,7 @@ function accountSheet() {
     </div>`);
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
+  $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
   $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
 }
 app.accountSheet = accountSheet;

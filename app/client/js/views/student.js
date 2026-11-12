@@ -12,6 +12,7 @@ import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDi
 import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
 import { closeRender, closeMount } from './close.js';
+import { feedbackRender, feedbackMount } from '../feedback.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -673,7 +674,8 @@ async function meRender(app) {
     <section class="section"><div class="head"><h2>Profile</h2></div><form id="prof" class="card stack">
       <label class="field">Name<input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}"></label>
       <label class="field">Matric number<input value="${esc(p.matric || '')}" readonly aria-readonly="true"></label>
-      <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === p.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+      <label class="field">Residential college<input value="${esc(D.collegeName(p.college))}" readonly aria-readonly="true" aria-describedby="college-locked">
+        <small id="college-locked">${icon('lock')} Your college is set when you sign up, so KK League points stay fair.</small></label>
       <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === p.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
       <button class="btn primary">Save profile</button></form></section>
     <section class="section"><div class="head"><h2>Points history</h2></div>
@@ -722,7 +724,7 @@ function meMount(root, app) {
   if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your friend connection is in Community.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), college: f.college.value, faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
   };
   $('#install', root).onclick = () => app.installApp();
 
@@ -751,5 +753,6 @@ export const routes = {
   community: { title: 'Community', render: communityRender, mount: communityMount },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
+  feedback: { title: 'Questions and feedback', render: feedbackRender, mount: feedbackMount, tab: 'me' },
   'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };

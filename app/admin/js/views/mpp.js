@@ -11,7 +11,7 @@ import { siteUrls } from '../firebase-config.js';
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'],
+  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
   ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
@@ -42,10 +42,12 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w, x] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => [])]);
+    const [m, c, w, x, fb] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
+      D.listFeedback(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
+    set('feedback', fb.filter((f) => f.status === 'new').length);
   } catch { /* not initialised yet */ }
 }
 
@@ -384,6 +386,42 @@ function kpisMount(root, app) {
     ...app._sv.surveys.map((s) => [s.role, app._sv.users.find((u) => u.id === s.id)?.name || '', s.grade, s.score, s.knowledge, s.digital, s.at ? new Date(toMs(s.at)).toISOString() : ''])]);
 }
 
+// ------------------------------------------------------------- feedback (students' questions and comments)
+let fbFilter = 'new';
+const FB_STATUS = { new: 'New', replied: 'Replied', done: 'Done' };
+const FB_ICONS = { question: 'info', idea: 'lightbulb', problem: 'circle-alert', other: 'mail' };
+async function feedbackRender(app) {
+  const all = await D.listFeedback(app.ctx); app._fb = all;
+  const count = (k) => (k === 'all' ? all.length : all.filter((f) => f.status === k).length);
+  const shown = fbFilter === 'all' ? all : all.filter((f) => f.status === fbFilter);
+  return `${hepHeading('Feedback', 'Questions and comments from students. Your replies show in their app; they aren’t emailed.', 'mail')}
+    <div class="chips" role="group" aria-label="Show">${[['new', 'New'], ['replied', 'Replied'], ['done', 'Done'], ['all', 'All']].map(([k, l]) =>
+      `<button type="button" data-fbf="${k}" class="${fbFilter === k ? 'on' : ''}" aria-pressed="${fbFilter === k}">${l} <span data-no-i18n>(${count(k)})</span></button>`).join('')}</div>
+    <div class="list hep-fb-list">${shown.map((f) => `<article class="card pad-lg hep-fb is-${esc(f.status)}">
+      <div class="row between"><div class="row" style="gap:8px"><span class="badge">${icon(FB_ICONS[f.topic] || 'mail')}${esc(D.feedbackTopic(f.topic))}</span><span class="faint">${fmtDateTime(f.createdAt)}</span></div>
+        <span class="hep-fb-status is-${esc(f.status)}">${esc(FB_STATUS[f.status] || 'New')}</span></div>
+      <p class="hep-fb-msg" data-no-i18n>${esc(f.message)}</p>
+      <p class="faint"><b data-no-i18n>${esc(f.name)}</b> · <span data-no-i18n>${esc(f.college || '—')}</span> · <a data-no-i18n href="mailto:${esc(f.email)}?subject=${encodeURIComponent('Your +Onz feedback')}">${esc(f.email)}</a></p>
+      ${f.reply ? `<div class="hep-fb-reply"><b>Your reply</b> <span class="faint" data-no-i18n>${esc(f.repliedBy || '')} · ${fmtDateTime(f.repliedAt)}</span><p data-no-i18n>${esc(f.reply)}</p></div>` : ''}
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn small primary" data-fbr="${esc(f.id)}">${f.reply ? 'Edit reply' : 'Reply'}</button>
+        ${f.status === 'new' ? `<button class="btn small" data-fbd="${esc(f.id)}">Mark as done</button>` : ''}</div></article>`).join('')
+      || `<div class="card empty">${icon('mail')}<p>${fbFilter === 'new' ? 'No new feedback. You’re all caught up.' : 'Nothing here yet.'}</p></div>`}</div>`;
+}
+function feedbackMount(root, app) {
+  $$('[data-fbf]', root).forEach((b) => { b.onclick = () => { fbFilter = b.dataset.fbf; app.render(); }; });
+  $$('[data-fbd]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.markFeedbackDone(app.ctx, b.dataset.fbd); toast('Marked as done.'); app.render(); } catch (err) { toast(errText(err), true); } }); });
+  $$('[data-fbr]', root).forEach((b) => {
+    b.onclick = () => {
+      const f = app._fb.find((x) => x.id === b.dataset.fbr);
+      const el = sheet(`<h2>Reply to ${esc(f.name)}</h2><p class="muted hep-fb-quote" data-no-i18n>${esc(f.message)}</p>
+        <form id="fbr" class="stack" style="margin-top:12px"><label class="field">Your reply<textarea name="reply" rows="5" required minlength="2" maxlength="1000">${esc(f.reply || '')}</textarea>
+          <small>The student sees this under their message in the +Onz app.</small></label><button class="btn primary">Send reply</button></form>`);
+      $('#fbr', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), async () => { try { await D.replyFeedback(app.ctx, f.id, e.target.reply.value); closeSheet(); toast('Reply sent.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+    };
+  });
+}
+
 // ------------------------------------------------------------- students (people)
 let peopleQ = '';
 async function peopleRender(app) {
@@ -396,12 +434,24 @@ function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
     $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
         if (next && !confirm(tr(`Block ${u.name}? They won't be able to earn or redeem until you unblock them.`))) return;
         busy(b, async () => { try { await D.setBlocked(app.ctx, u.id, next); toast(next ? 'Student blocked.' : 'Student unblocked.'); app.render(); } catch (err) { toast(errText(err), true); } });
+      };
+    });
+    // Students can't change their college themselves (it decides where their KK League points go). HEP corrects mistakes here.
+    $$('[data-col]', root).forEach((b) => {
+      b.onclick = () => {
+        const u = app._pp.find((x) => x.id === b.dataset.col);
+        const el = sheet(`<h2>Change college for ${esc(u.name)}</h2><p class="muted">Now: ${esc(D.collegeName(u.college))}. Students can’t change this themselves. Their KK League points move to the new college automatically.</p>
+          <form id="cc" class="stack" style="margin-top:12px"><label class="field">New college<select name="college" required>${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === u.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+          <label class="field">Reason (saved in the Activity log)<input name="reason" required minlength="3" maxlength="200" placeholder="e.g. Picked the wrong college at sign-up"></label><button class="btn primary">Change college</button></form>`);
+        $('#cc', el).onsubmit = (e) => { e.preventDefault(); const college = e.target.college.value;
+          if (college === u.college) return toast('That’s already their college.', true);
+          busy($('button', el), async () => { try { await D.setCollege(app.ctx, u.id, college, e.target.reason.value); closeSheet(); toast('College changed.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
       };
     });
     $$('[data-adj]', root).forEach((b) => {
@@ -452,7 +502,7 @@ function closuresMount(root, app) {
 }
 
 // ------------------------------------------------------------- activity log (who changed what; entries can't be edited)
-const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review']);
+const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review', 'change-college']);
 async function activityRender(app) {
   const [rows, users] = await Promise.all([D.listAdminLog(app.ctx), D.listUsers(app.ctx)]);
   const names = new Map(users.map((u) => [u.id, u.name]));
@@ -524,6 +574,7 @@ export const routes = {
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
   campaigns: { title: 'Campaigns', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
+  feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
   activity: { title: 'Activity log', render: activityRender },
