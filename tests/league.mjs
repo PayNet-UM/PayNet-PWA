@@ -121,6 +121,15 @@ await check('existing saved demo ledgers rebuild totals rather than trusting old
   });
   assert.deepEqual(await league(), { KK3: 1000, KK5: 325 });
 });
+await check('a student without a faculty can choose one once, then only the Admin team can change it', async () => {
+  const faculties = async () => (await sdk.getDoc(sdk.doc(a.db, 'stats', 'league'))).data().faculties;
+  await D.updateProfile(a, { faculty: 'Faculty of Science' });
+  assert.equal((await faculties())['Faculty of Science'], 1000);
+  await assert.rejects(D.updateProfile(a, { faculty: 'Faculty of Law' }), { code: 'permission-denied' });
+  await D.setFaculty(admin, 'a', 'Faculty of Law', 'Picked the wrong faculty');
+  const after = await faculties();
+  assert.equal(after['Faculty of Law'], 1000); assert.ok(!after['Faculty of Science']);
+});
 await check('clients cannot forge league totals or inspect private contribution records', async () => {
   await assert.rejects(sdk.setDoc(sdk.doc(a.db, 'stats', 'league'), { colleges: { KK3: 999999 } }), { code: 'permission-denied' });
   await assert.rejects(sdk.getDoc(sdk.doc(a.db, 'leagueMembers', 'b')), { code: 'permission-denied' });

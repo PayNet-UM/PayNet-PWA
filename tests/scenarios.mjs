@@ -536,7 +536,24 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-college' && r.target === 'stuB');
     if (!entry || !/KK5 → KK1/.test(entry.summary)) throw new Error('no activity-log entry for the change');
   });
-  await ok('the student can still edit their name and faculty', () => D.updateProfile(stuB, { name: 'Badrul Hisham', faculty: 'Faculty of Engineering' }));
+  await ok('the student can still edit their name', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
+  log('Faculty is chosen once');
+  await denied('a student cannot change their own faculty', () => D.updateProfile(stuB, { faculty: 'Faculty of Law' }));
+  await denied('a student cannot change another student’s faculty', () => D.setFaculty(stuA, 'stuB', 'Faculty of Law', 'Trying to move a friend'));
+  await denied('the Admin team cannot change a faculty without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { faculty: 'Faculty of Law' }));
+  await denied('the Admin team cannot give a merchant a faculty', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-faculty', 'mer1', '— → Faculty of Law: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'mer1'), { faculty: 'Faculty of Law', adminLogId });
+    await b.commit();
+  });
+  await ok('the Admin team corrects a wrong faculty, with a logged reason', async () => {
+    await D.setFaculty(mpp, 'stuB', 'Faculty of Law', 'Picked the wrong faculty at sign-up');
+    eq((await D.getProfile(stuB)).faculty, 'Faculty of Law', 'faculty');
+    const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-faculty' && r.target === 'stuB');
+    if (!entry || !/Faculty of Engineering → Faculty of Law/.test(entry.summary)) throw new Error('no activity-log entry for the change');
+  });
+  await ok('the Admin team puts the faculty back', () => D.setFaculty(mpp, 'stuB', 'Faculty of Engineering', 'Test finished'));
   await ok('HEP puts the college back', () => D.setCollege(mpp, 'stuB', 'KK5', 'Test finished'));
   log('Questions and feedback');
   stuA.profile = await D.getProfile(stuA); stuB.profile = await D.getProfile(stuB);
@@ -577,7 +594,7 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
   await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));
   await ok('signing up with Off campus is allowed', () => D.createProfile(fakeCollege, { role: 'student', name: 'Off Campus', matric: 'OFFCAMP01', college: 'OFF' }));
-  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { faculty: 'Science' }));
+  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
 
   const squatter = await makeCtx({ uid: 'squat1', email: 'squat@gmail.com' });
   await ok('someone claims a matric number first', () => D.createProfile(squatter, { role: 'student', name: 'Squatter', matric: 'U7777777', college: 'KK1' }));

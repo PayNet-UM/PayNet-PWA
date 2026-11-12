@@ -2039,17 +2039,28 @@ Take the tour|Ikuti lawatan
 Getting started|Langkah permulaan
 Your profile|Profil anda
 Quick tour|Lawatan ringkas
-You can’t change your college later.|Anda tidak boleh menukar kolej anda kemudian.
-Your points count towards it in the KK League, so check you’ve picked the right one.|Mata anda dikira untuk kolej ini dalam Liga KK, jadi pastikan anda memilih kolej yang betul.
+You can’t change your college or faculty later.|Anda tidak boleh menukar kolej atau fakulti anda kemudian.
+Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.|Mata anda dikira untuk kolej dan fakulti ini dalam Liga KK dan Liga Fakulti, jadi pastikan anda memilih dengan betul.
 Choose your college|Pilih kolej anda
 Your college is set when you sign up, so KK League points stay fair.|Kolej anda ditetapkan semasa mendaftar supaya mata Liga KK kekal adil.
-Change college|Tukar kolej
+Change college or faculty|Tukar kolej atau fakulti
 New college|Kolej baharu
 Reason (saved in the Activity log)|Sebab (disimpan dalam Log aktiviti)
 e.g. Picked the wrong college at sign-up|cth. Tersalah pilih kolej semasa mendaftar
 That’s already their college.|Itu memang kolej pelajar ini.
 College changed.|Kolej telah ditukar.
 Changed a student’s college|Menukar kolej pelajar
+Changed a student’s faculty|Menukar fakulti pelajar
+Choose your faculty|Pilih fakulti anda
+Your faculty is set when you sign up, so Faculty League points stay fair. Picked the wrong one? Ask the Admin team.|Fakulti anda ditetapkan semasa mendaftar supaya mata Liga Fakulti kekal adil. Tersalah pilih? Hubungi pasukan Admin.
+You can only choose your faculty once, so check it’s the right one.|Anda hanya boleh memilih fakulti sekali, jadi pastikan ia betul.
+No faculty|Tiada fakulti
+Save changes|Simpan perubahan
+Nothing has changed.|Tiada perubahan.
+College and faculty changed.|Kolej dan fakulti telah ditukar.
+Faculty changed.|Fakulti telah ditukar.
+Choose a faculty from the list.|Pilih fakulti daripada senarai.
+Only students have a faculty.|Hanya pelajar mempunyai fakulti.
 Choose a college from the list.|Pilih kolej daripada senarai.
 Only students have a college.|Hanya pelajar mempunyai kolej.
 Questions and feedback|Soalan dan maklum balas

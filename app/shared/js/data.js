@@ -111,7 +111,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -742,6 +742,18 @@ export async function setCollege(ctx, uid, college, reason) {
   const b = ctx.sdk.writeBatch(ctx.db);
   const adminLogId = logAdmin(ctx, b, 'change-college', uid, `${user.college || '—'} → ${college}: ${String(reason || '').trim()}`);
   b.update(R(ctx).user(uid), { college, adminLogId });
+  await b.commit();
+}
+// Faculty works the same way: chosen once at sign-up (or once later, by students who signed up before it was asked),
+// and only the Admin team can correct it. The Faculty League server then moves the student's points.
+export async function setFaculty(ctx, uid, faculty, reason) {
+  if (!FACULTIES.includes(faculty)) throw new Error('Choose a faculty from the list.');
+  const user = await one(ctx, R(ctx).user(uid));
+  if (!user || user.role !== 'student') throw new Error('Only students have a faculty.');
+  if (user.faculty === faculty) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, 'change-faculty', uid, `${user.faculty || '—'} → ${faculty}: ${String(reason || '').trim()}`);
+  b.update(R(ctx).user(uid), { faculty, adminLogId });
   await b.commit();
 }
 // Frees a matric number claimed by the wrong person, so the real student can sign up.

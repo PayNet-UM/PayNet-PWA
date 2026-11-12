@@ -195,10 +195,10 @@ await ns.fill('#gnew [name=email]', 'new.student.e2e@gmail.com'); await ns.click
 await ns.waitForSelector('#ob'); await ns.check('#ob input[value="student"]').catch(() => {});
 await ns.fill('#ob [name=name]', 'Nur Aisyah'); await ns.fill('#ob [name=matric]', 'E2E77001'); await ns.check('#ob input[name=terms]');
 // The college must be picked on purpose (no default), with a clear warning that it's final.
-if (!/can’t change your college later/.test(await ns.textContent('#college-warn'))) throw new Error('no college warning at sign-up');
+if (!/can’t change your college or faculty later/.test(await ns.textContent('#college-warn'))) throw new Error('no college warning at sign-up');
 await ns.click('#ob button[type=submit]');
 if (await ns.locator('.guide').count() || !await ns.evaluate(() => document.querySelector('#ob [name=college]').matches(':invalid'))) throw new Error('sign-up went ahead without a college');
-await ns.selectOption('#ob [name=college]', 'KK7'); await ns.screenshot({ path: `${shots}/c-college-warning.png` });
+await ns.selectOption('#ob [name=college]', 'KK7'); await ns.selectOption('#ob [name=faculty]', 'Faculty of Science'); await ns.screenshot({ path: `${shots}/c-college-warning.png` });
 await ns.click('#ob button[type=submit]');
 await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
 if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));

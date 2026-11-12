@@ -725,7 +725,11 @@ async function meRender(app) {
       <label class="field">Matric number<input value="${esc(p.matric || '')}" readonly aria-readonly="true"></label>
       <label class="field">Residential college<input value="${esc(D.collegeName(p.college))}" readonly aria-readonly="true" aria-describedby="college-locked">
         <small id="college-locked">${icon('lock')} Your college is set when you sign up, so KK League points stay fair.</small></label>
-      <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === p.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
+      ${p.faculty
+    ? `<label class="field">Faculty<input value="${esc(p.faculty)}" readonly aria-readonly="true" aria-describedby="faculty-locked">
+        <small id="faculty-locked">${icon('lock')} Your faculty is set when you sign up, so Faculty League points stay fair. Picked the wrong one? Ask the Admin team.</small></label>`
+    : `<label class="field">Faculty<select name="faculty" aria-describedby="faculty-once"><option value="" selected>Choose your faculty</option>${D.FACULTIES.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join('')}</select>
+        <small id="faculty-once">${icon('lock')} You can only choose your faculty once, so check it’s the right one.</small></label>`}
       <button class="btn primary">Save profile</button></form></section>
     <section class="section"><div class="head"><h2>Points history</h2></div>
       <div class="card points-history">
@@ -772,7 +776,9 @@ function meMount(root, app) {
   };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { const fields = { name: f.name.value.trim() };
+      if (f.faculty?.value) fields.faculty = f.faculty.value;
+      await D.updateProfile(app.ctx, fields); toast('Profile saved.'); if (fields.faculty) app.render(); } catch (err) { toast(errText(err), true); } });
   };
   $('#install', root).onclick = () => app.installApp();
 

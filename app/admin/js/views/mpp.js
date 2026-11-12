@@ -434,7 +434,7 @@ function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
     $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
@@ -442,16 +442,25 @@ function peopleMount(root, app) {
         busy(b, async () => { try { await D.setBlocked(app.ctx, u.id, next); toast(next ? 'Student blocked.' : 'Student unblocked.'); app.render(); } catch (err) { toast(errText(err), true); } });
       };
     });
-    // Students can't change their college themselves (it decides where their KK League points go). The Admin team corrects mistakes here.
+    // Students can't change their college or faculty themselves (they decide where their KK League and Faculty League
+    // points go). The Admin team corrects mistakes here, with a reason saved in the Activity log.
     $$('[data-col]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.col);
-        const el = sheet(`<h2>Change college for ${esc(u.name)}</h2><p class="muted">Now: ${esc(D.collegeName(u.college))}. Students can’t change this themselves. Their KK League points move to the new college automatically.</p>
-          <form id="cc" class="stack" style="margin-top:12px"><label class="field">New college<select name="college" required>${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === u.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
-          <label class="field">Reason (saved in the Activity log)<input name="reason" required minlength="3" maxlength="200" placeholder="e.g. Picked the wrong college at sign-up"></label><button class="btn primary">Change college</button></form>`);
-        $('#cc', el).onsubmit = (e) => { e.preventDefault(); const college = e.target.college.value;
-          if (college === u.college) return toast('That’s already their college.', true);
-          busy($('button', el), async () => { try { await D.setCollege(app.ctx, u.id, college, e.target.reason.value); closeSheet(); toast('College changed.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+        const el = sheet(`<h2>Change college or faculty for ${esc(u.name)}</h2><p class="muted">Now: ${esc(D.collegeName(u.college))}, ${esc(u.faculty || 'no faculty')}. Students can’t change these themselves. Their league points move automatically.</p>
+          <form id="cc" class="stack" style="margin-top:12px"><label class="field">College<select name="college" required>${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === u.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+          <label class="field">Faculty<select name="faculty">${u.faculty ? '' : '<option value="" selected>No faculty</option>'}${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === u.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
+          <label class="field">Reason (saved in the Activity log)<input name="reason" required minlength="3" maxlength="200" placeholder="e.g. Picked the wrong college at sign-up"></label><button class="btn primary">Save changes</button></form>`);
+        $('#cc', el).onsubmit = (e) => { e.preventDefault(); const f = e.target;
+          const college = f.college.value !== u.college ? f.college.value : ''; const faculty = f.faculty.value && f.faculty.value !== u.faculty ? f.faculty.value : '';
+          if (!college && !faculty) return toast('Nothing has changed.', true);
+          busy($('button', el), async () => {
+            try {
+              if (college) await D.setCollege(app.ctx, u.id, college, f.reason.value);
+              if (faculty) await D.setFaculty(app.ctx, u.id, faculty, f.reason.value);
+              closeSheet(); toast(college && faculty ? 'College and faculty changed.' : college ? 'College changed.' : 'Faculty changed.'); app.render();
+            } catch (err) { toast(errText(err), true); }
+          }); };
       };
     });
     $$('[data-adj]', root).forEach((b) => {
@@ -502,7 +511,7 @@ function closuresMount(root, app) {
 }
 
 // ------------------------------------------------------------- activity log (who changed what; entries can't be edited)
-const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review', 'change-college']);
+const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review', 'change-college', 'change-faculty']);
 async function activityRender(app) {
   const [rows, users] = await Promise.all([D.listAdminLog(app.ctx), D.listUsers(app.ctx)]);
   const names = new Map(users.map((u) => [u.id, u.name]));

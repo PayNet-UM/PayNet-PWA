@@ -489,8 +489,8 @@ export function renderOnboarding(app, done) {
       <div id="student-fields" class="stack">
         <label class="field">Matric number<input name="matric" autocomplete="off" placeholder="e.g. 23001234" pattern="[A-Za-z0-9]{5,15}" title="Letters and numbers only"><small>One account per matric number. You can’t change it later, so check it.</small></label>
         <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
-        <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college later.</b> Your points count towards it in the KK League, so check you’ve picked the right one.</span></div>
-        <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
+        <label class="field">Faculty<select name="faculty" aria-describedby="college-warn"><option value="" selected disabled>Choose your faculty</option>${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
+        <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college or faculty later.</b> Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.</span></div>
         <fieldset class="field ob-referral"><legend>Are you signing up with a friend’s referral code?</legend>
           <div class="row ob-referral-pick"><label class="check"><input type="radio" name="hasReferral" value="no" checked> No</label>
             <label class="check"><input type="radio" name="hasReferral" value="yes"> Yes</label></div>
@@ -508,7 +508,7 @@ export function renderOnboarding(app, done) {
   const f = $('#ob');
   const sync = () => {
     const student = f.role.value === 'student', referral = student && f.hasReferral.value === 'yes';
-    $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student;
+    $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student; f.faculty.required = student;
     $('#ob-referral-code').classList.toggle('hidden', !referral); f.referral.required = referral;
   };
   $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); sync();
