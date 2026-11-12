@@ -92,6 +92,18 @@ await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
 ok('Community combines friend management, KK League and welfare; legacy links and section shortcuts work');
+// The first plain visit to Community explains the KK League (links straight to Friends didn't), then never again.
+await stu.goto(BASE + '#/community'); await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
+if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Community tour did not start on Your KK');
+await stu.screenshot({ path: `${shots}/04b-community-tour.png` });
+await stu.click('.guide [data-next]');
+if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Community tour does not mention the prize');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/community'); await stu.waitForSelector('#lb .community-podium, #lb .community-league-empty'); await stu.waitForTimeout(900);
+if (await stu.locator('.guide').count()) throw new Error('Community tour showed again after it was seen');
+await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
+ok('first visit to Community explains the KK League and its prize; it shows once, replays from the (i) button and closes on leaving');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');

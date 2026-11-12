@@ -13,6 +13,7 @@ import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
 import { closeRender, closeMount } from './close.js';
 import { feedbackRender, feedbackMount } from '../feedback.js';
+import * as Guide from '../guide.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -503,9 +504,9 @@ async function communityRender(app) {
   const ventures = merchants.filter(isIdea);
   const college = D.COLLEGES.find(([k]) => k === app.profile.college)?.[1] || 'Your college';
   return `<div class="community-page"><section class="community-circle" id="community-circle" aria-label="Your circle" tabindex="-1">${friends}</section>
-    <div class="community-main-grid"><section class="card community-league" id="community-league" tabindex="-1" aria-labelledby="league-title"><div class="community-section-heading"><h2 id="league-title">${icon('trophy')} KK League</h2><span>Total points earned</span></div>
+    <div class="community-main-grid"><section class="card community-league" id="community-league" tabindex="-1" aria-labelledby="league-title"><div class="community-section-heading"><h2 id="league-title">${icon('trophy')} KK League <button type="button" class="league-help" id="league-help" aria-label="How the KK League works" title="How the KK League works">${icon('info')}</button></h2><span>Total points earned</span></div>
       <div class="community-league-summary"><span class="community-college">${icon('graduation-cap')}<span>${esc(college)}</span></span><div class="community-scoreboard"><div><span>Your rank</span><strong id="community-rank">—</strong></div><div><span>KK points</span><strong id="community-points">—</strong></div></div></div>
-      <p class="community-league-hint">All students’ earned points count. Redeeming or donating won’t lower your KK’s score.</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
+      <p class="community-league-hint">All the points you collect add to your KK’s total. The KK with the most points wins prizes!</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
     <div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
       <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
@@ -526,8 +527,13 @@ function communityMount(root, app, [section] = []) {
     el.focus({ preventScroll: true });
     el.scrollIntoView({ block: 'start' });
   }
+  // The first time a student opens Community (not a link to Friends or Welfare), explain the KK League,
+  // once the leaderboard is on screen. The (i) button by the heading shows it again.
+  let tourTried = !!section && section !== 'league';
+  $('#league-help', root).onclick = () => Guide.startPageTour(app, 'community', { replay: true });
   const u1 = D.watchStats(app.ctx, 'league', (s) => {
     const el = $('#lb', root); if (!el) return;
+    if (!tourTried) { tourTried = true; setTimeout(() => { if (root.isConnected) Guide.startPageTour(app, 'community'); }, 350); }
     const rows = Object.entries(s?.colleges || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })); const max = Math.max(1, ...rows.map((r) => r[1]));
     const myRank = rows.findIndex(([k]) => k === app.profile.college);
     $('#community-rank', root).textContent = myRank >= 0 ? '#' + (myRank + 1) : '—';
