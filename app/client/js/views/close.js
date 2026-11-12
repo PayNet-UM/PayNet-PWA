@@ -1,5 +1,5 @@
-// "Delete my account": students delete their account here; businesses send HEP a closing request.
-// Both answer why they're leaving, which HEP sees in the dashboard (Account closures).
+// "Delete my account": students delete their account here; businesses send the Admin team a closing request.
+// Both answer why they're leaving, which the Admin team sees in the dashboard (Account closures).
 import * as D from '../data.js';
 import { $, $$, esc, icon, n, toast, busy, confirmSheet } from '../ui.js';
 
@@ -14,13 +14,13 @@ export function closeRender(app) {
       <h1 style="margin-top:12px">${merchant ? 'Close my business account' : 'Delete my account'}</h1>
       <div class="card stack">
         ${merchant
-    ? `<p>HEP will close your account after settling any vouchers students still hold and updating the PayNet list. They’ll contact you at ${esc(app.user.email)} if they need anything.</p>`
+    ? `<p>The Admin team will close your account after settling any vouchers students still hold and updating the PayNet list. They’ll contact you at ${esc(app.user.email)} if they need anything.</p>`
     : `<p>This deletes your +Onz account straight away. It can’t be undone.</p>
         <ul class="close-list">
           <li>Your profile, matric number, points history, survey answers, friends and username are deleted.</li>
           <li>You lose your ${n(p.points || 0)} points and any unused vouchers.</li>
-          <li>Vouchers you used and welfare requests stay in HEP’s records with your name removed.</li>
-          <li>HEP is told that an account was deleted and why, without your name.</li>
+          <li>Vouchers you used and welfare requests stay in the Admin team’s records with your name removed.</li>
+          <li>The Admin team is told that an account was deleted and why, without your name.</li>
         </ul>`}
       </div>
       <form id="close-form" class="stack" style="margin-top:16px">
@@ -52,7 +52,7 @@ export function closeMount(root, app) {
         try {
           const res = await D.closeMyAccount(app.user, { reasons, comment: f.comment.value });
           if (res.kind === 'request') {
-            toast(res.already ? 'You’ve already sent a closing request. HEP will contact you.' : 'Request sent. HEP will contact you to close your account.');
+            toast(res.already ? 'You’ve already sent a closing request. The Admin team will contact you.' : 'Request sent. The Admin team will contact you to close your account.');
             location.hash = '#/home';
             return;
           }

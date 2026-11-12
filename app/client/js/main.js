@@ -1,5 +1,5 @@
 // Student and merchant app: backend choice, sign-in state, role shells and hash routing.
-// The HEP admin dashboard is a separate website (app/admin), linked from the account menu for HEP admins.
+// The Admin dashboard is a separate website (app/admin), linked from the account menu for Admin team members.
 import { initBackend } from './backend.js';
 import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText } from './ui.js';
@@ -19,7 +19,7 @@ const app = {
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['community', 'Community', 'users'], ['events', 'Campus Events', 'calendar'], ['home', 'Home', 'house', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house', true], ['promote', 'Promote live deals', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
@@ -157,7 +157,7 @@ function accountSheet() {
     <div class="stack" style="margin-top:18px">
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
       ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
-      ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the HEP dashboard</a>` : ''}
+      ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the Admin dashboard</a>` : ''}
       <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>

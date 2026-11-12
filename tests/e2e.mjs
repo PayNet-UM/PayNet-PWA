@@ -81,8 +81,20 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
 await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
-await stu.click('.community-shortcuts [data-friends-jump="community-league"]');
-await stu.waitForFunction(() => document.activeElement?.id === 'community-league');
+await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
+await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+// The first plain visit to Leagues explains the KK League, then never again.
+await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
+if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Leagues tour did not start on Your KK');
+await stu.screenshot({ path: `${shots}/04b-leagues-tour.png` });
+await stu.click('.guide [data-next]');
+if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Leagues tour does not mention the prize');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .community-podium, #league-kk .community-league-empty'); await stu.waitForTimeout(900);
+if (await stu.locator('.guide').count()) throw new Error('Leagues tour showed again after it was seen');
+await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
+await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
 await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
 await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
@@ -91,19 +103,7 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friend management, KK League and welfare; legacy links and section shortcuts work');
-// The first plain visit to Community explains the KK League (links straight to Friends didn't), then never again.
-await stu.goto(BASE + '#/community'); await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
-if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Community tour did not start on Your KK');
-await stu.screenshot({ path: `${shots}/04b-community-tour.png` });
-await stu.click('.guide [data-next]');
-if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Community tour does not mention the prize');
-await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
-await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/community'); await stu.waitForSelector('#lb .community-podium, #lb .community-league-empty'); await stu.waitForTimeout(900);
-if (await stu.locator('.guide').count()) throw new Error('Community tour showed again after it was seen');
-await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
-await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
-ok('first visit to Community explains the KK League and its prize; it shows once, replays from the (i) button and closes on leaving');
+ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
@@ -206,10 +206,10 @@ await ns.fill('#gnew [name=email]', 'new.student.e2e@gmail.com'); await ns.click
 await ns.waitForSelector('#ob'); await ns.check('#ob input[value="student"]').catch(() => {});
 await ns.fill('#ob [name=name]', 'Nur Aisyah'); await ns.fill('#ob [name=matric]', 'E2E77001'); await ns.check('#ob input[name=terms]');
 // The college must be picked on purpose (no default), with a clear warning that it's final.
-if (!/can’t change your college later/.test(await ns.textContent('#college-warn'))) throw new Error('no college warning at sign-up');
+if (!/can’t change your college or faculty later/.test(await ns.textContent('#college-warn'))) throw new Error('no college warning at sign-up');
 await ns.click('#ob button[type=submit]');
 if (await ns.locator('.guide').count() || !await ns.evaluate(() => document.querySelector('#ob [name=college]').matches(':invalid'))) throw new Error('sign-up went ahead without a college');
-await ns.selectOption('#ob [name=college]', 'KK7'); await ns.screenshot({ path: `${shots}/c-college-warning.png` });
+await ns.selectOption('#ob [name=college]', 'KK7'); await ns.selectOption('#ob [name=faculty]', 'Faculty of Science'); await ns.screenshot({ path: `${shots}/c-college-warning.png` });
 await ns.click('#ob button[type=submit]');
 await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
 if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));
@@ -271,7 +271,7 @@ if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caugh
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to HEP', { timeout: 15000 });
+await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
 // ---------- the two websites keep to their own people
@@ -281,7 +281,7 @@ if (await sep.locator(`[data-demo="${adminEmail}"]`).count() !== 0) throw new Er
 const googleAs = async (p, email) => { await p.click('#google'); await p.fill('#gnew [name=email]', email); await p.click('#gnew button'); };
 await sep.goto(ADMIN); await sep.waitForSelector('#google', { timeout: 60000 });
 if (await sep.locator('[data-demo="aina@siswa.um.edu.my"]').count() !== 0) throw new Error('dashboard sign-in offers a student account');
-await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t a HEP admin', { timeout: 30000 });
+await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t an Admin team member', { timeout: 30000 });
 if (await sep.locator('#mpp-rail').count() !== 0) throw new Error('a student got into the HEP dashboard');
 await sep.click('#out'); await sep.waitForSelector('#google');
 await sep.goto(BASE); await sep.waitForSelector('#google'); await googleAs(sep, adminEmail);

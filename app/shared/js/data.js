@@ -18,7 +18,7 @@ export const SEGMENTS = ['Campus permanent merchant', 'Within 100 m of UM gate',
 export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone', 'Campus edge'];
 
 // Active earning rules; transaction rewards are intentionally deferred.
-// Features HEP can switch on and off in Settings. Off unless HEP turns them on.
+// Features the Admin team can switch on and off in Settings. Off unless the Admin team turns them on.
 export const FEATURES = [
   ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
   ['merchantTools', 'Merchant tools', 'Live-deal QR, promotions, insights and the staff readiness check.'],
@@ -29,7 +29,7 @@ export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, fal
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
 // Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
 // everyone is then asked to accept again.
-export const TERMS_VERSION = '2026-11-08';
+export const TERMS_VERSION = '2026-11-13';
 export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -98,8 +98,8 @@ export async function isMppUser(ctx) {
   try { await ctx.sdk.getDoc(R(ctx).config('access')); return true; } catch { return false; }
 }
 
-// ------------------------------------------------------------- HEP admin safety
-// Big HEP changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
+// ------------------------------------------------------------- Admin team safety
+// Big the Admin team changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
 // out a few minutes early so they never meet a refused save.
 export const RECENT_SIGN_IN_MS = 12 * 3600 * 1000;
 export async function signedInRecently(user, now = Date.now()) {
@@ -111,7 +111,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -125,7 +125,7 @@ const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, 
 function configLog(name, data) {
   if (name === 'access') {
     const c = (k) => (data[k] || []).length;
-    return ['access', 'Who can use the app', `${c('mppEmails')} HEP reviewers, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
+    return ['access', 'Who can use the app', `${c('mppEmails')} Admin team members, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
   }
   if (name === 'budget') return ['budget', 'Activation fund', `RM${((data.allocationCents || 0) / 100).toFixed(2)}`];
   if (name === 'rules' && data.features) {
@@ -144,7 +144,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -154,7 +154,12 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     if (!/^[A-Z0-9]{5,15}$/.test(matric)) { const e = new Error('bad-matric'); e.badMatric = true; throw e; }
     const taken = await sdk.getDoc(sdk.doc(ctx.db, 'matrics', matric)).then((x) => x.exists() && x.data().uid !== ctx.uid).catch(() => false);
     if (taken) { const e = new Error('matric-taken'); e.matricTaken = true; throw e; }
-  }
+    // A referral code can only be entered while signing up, so check it before creating the account.
+    referralCode = String(referralCode || '').trim().toUpperCase();
+    if (referralCode && !(await one(ctx, sdk.doc(ctx.db, 'referralCodes', referralCode)).catch(() => null))) {
+      const e = new Error('bad-referral'); e.badReferral = true; throw e;
+    }
+  } else referralCode = '';
   for (let attempt = 0; attempt < 4; attempt++) {
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
@@ -162,9 +167,13 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
       referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
-    try { await b.commit(); return; } catch (e) {
+    try { await b.commit(); } catch (e) {
       if (role !== 'student' || attempt === 3) throw e; // students retry in case the random referral code clashed
+      continue;
     }
+    // The account exists now; a referral that fails at this point shouldn't stop sign-up.
+    if (referralCode) { try { await applyInviterCode(ctx, referralCode); } catch { return { referralFailed: true }; } }
+    return {};
   }
 }
 // Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
@@ -175,7 +184,7 @@ export const needsTerms = (profile) => !!profile && profile.termsVersion !== TER
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 
-// ------------------------------------------------------------- HEP: programme setup
+// ------------------------------------------------------------- the Admin team: programme setup
 export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 'um.edu.my', 'gmail.com'] } = {}) {
   const { sdk } = ctx; const r = R(ctx);
   const b = sdk.writeBatch(ctx.db);
@@ -237,7 +246,7 @@ export async function setMerchantLogo(ctx, logo) {
 export async function setReadiness(ctx) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });
 }
-// Completion stays valid until HEP publishes a new required readiness update.
+// Completion stays valid until the Admin team publishes a new required readiness update.
 export function merchantReadinessCurrent(merchant, rules) {
   if (!merchant?.ready) return false;
   const published = toMs(rules?.merchantReadinessUpdate?.publishedAt);
@@ -246,7 +255,7 @@ export function merchantReadinessCurrent(merchant, rules) {
 export async function publishMerchantReadiness(ctx, message) {
   const text = String(message || '').trim();
   if (text.length < 10 || text.length > 1000) throw new Error('Use 10–1,000 characters for the readiness update.');
-  // The existing config rules allow only HEP to publish.
+  // The existing config rules allow only the Admin team to publish.
   await saveConfig(ctx, 'rules', { merchantReadinessUpdate: { message: text, publishedAt: ctx.sdk.serverTimestamp() } });
 }
 export async function setOccupancy(ctx, seats, occupied) {
@@ -501,6 +510,8 @@ export async function applyInviterCode(ctx, code) {
 }
 export async function claimFriendBonus() { retiredAttendanceFlow(); }
 export async function myReferrals(ctx) { return list(ctx, 'referrals', eq(ctx, 'inviterUid', ctx.uid)); }
+// The 10 students whose referral codes were used most (stats/referrals, kept by the server).
+export async function referralBoard(ctx) { return (await one(ctx, R(ctx).stats('referrals')))?.top || []; }
 export async function claimInviterBonus() { retiredAttendanceFlow(); }
 
 // ------------------------------------------------------------- rewards, vouchers, welfare
@@ -531,7 +542,7 @@ export function watchMyVouchers(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s)), err);
 }
 export async function findVoucher(ctx, raw, asMpp = false) {
-  if (!(await isMppUser(ctx))) { const e = new Error('Only HEP/admin can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
+  if (!(await isMppUser(ctx))) { const e = new Error('Only the Admin team can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
   const s = String(raw).trim();
   const id = s.startsWith('UMV1:') ? s.slice(5) : null;
   if (id) return one(ctx, R(ctx).voucher(id));
@@ -554,7 +565,7 @@ export async function donatePoints(ctx, n) {
   await b.commit();
 }
 
-// Welfare requests are private to the applicant and HEP. Approval moves points
+// Welfare requests are private to the applicant and the Admin team. Approval moves points
 // from the pool to the student's wallet atomically, with one immutable ledger ID.
 export const WELFARE_MAX_POINTS = 1000; // Also set in firestore.rules.
 export async function submitWelfareRequest(ctx, amount, reason) {
@@ -720,7 +731,7 @@ export async function setBlocked(ctx, uid, blocked) {
   b.update(R(ctx).user(uid), { disabled: !!blocked, adminLogId });
   await b.commit();
 }
-// Students choose their college once, at sign-up. HEP can correct a wrong pick; the KK League server then moves
+// Students choose their college once, at sign-up. The Admin team can correct a wrong pick; the KK League server then moves
 // the student's points to the new college.
 export const collegeName = (k) => COLLEGES.find(([c]) => c === k)?.[1] || k || '—';
 export async function setCollege(ctx, uid, college, reason) {
@@ -731,6 +742,18 @@ export async function setCollege(ctx, uid, college, reason) {
   const b = ctx.sdk.writeBatch(ctx.db);
   const adminLogId = logAdmin(ctx, b, 'change-college', uid, `${user.college || '—'} → ${college}: ${String(reason || '').trim()}`);
   b.update(R(ctx).user(uid), { college, adminLogId });
+  await b.commit();
+}
+// Faculty works the same way: chosen once at sign-up (or once later, by students who signed up before it was asked),
+// and only the Admin team can correct it. The Faculty League server then moves the student's points.
+export async function setFaculty(ctx, uid, faculty, reason) {
+  if (!FACULTIES.includes(faculty)) throw new Error('Choose a faculty from the list.');
+  const user = await one(ctx, R(ctx).user(uid));
+  if (!user || user.role !== 'student') throw new Error('Only students have a faculty.');
+  if (user.faculty === faculty) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, 'change-faculty', uid, `${user.faculty || '—'} → ${faculty}: ${String(reason || '').trim()}`);
+  b.update(R(ctx).user(uid), { faculty, adminLogId });
   await b.commit();
 }
 // Frees a matric number claimed by the wrong person, so the real student can sign up.

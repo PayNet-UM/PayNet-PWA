@@ -6,7 +6,7 @@ import { $$, esc, sheet } from './ui.js';
 import { TERMS_VERSION } from './data.js';
 
 export { TERMS_VERSION };
-export const TERMS_EFFECTIVE = { en: '8 November 2026', ms: '8 November 2026' };
+export const TERMS_EFFECTIVE = { en: '13 November 2026', ms: '13 November 2026' };
 // Who to contact about the programme and your data.
 export const TERMS_CONTACT = {
   en: 'the +Onz team at admin@addonz.my',
@@ -19,28 +19,28 @@ const T = {
     lead: 'Please read this before you use +Onz. It explains what we collect, why, who can see it and what you can do about it.',
     sections: [
       ['About +Onz', [
-        '+Onz is Universiti Malaya’s campus app for students and campus businesses, run by Hal Ehwal Pelajar (HEP) with the student team, as part of PayNet Digital Campus 5.0.',
+        '+Onz is Universiti Malaya’s campus app for students and campus businesses, run by the +Onz Admin team with the student team, as part of PayNet Digital Campus 5.0.',
         'By creating an account or continuing to use +Onz, you agree to these terms and to us handling your data as described here, in line with Malaysia’s Personal Data Protection Act 2010 (PDPA).',
         '+Onz is for use in Malaysia only.',
       ]],
       ['Who can use +Onz', [
-        ['Students of Universiti Malaya, signing in with their UM email or an email HEP allows. One account per matric number.',
-          'Campus businesses and student ventures, after HEP approves their application.',
+        ['Students of Universiti Malaya, signing in with their UM email or an email the Admin team allows. One account per matric number.',
+          'Campus businesses and student ventures, after the Admin team approves their application.',
           'Use your real name and your own matric number. Don’t share your account.'],
       ]],
       ['What we collect', [
         ['Your account: name, email address and the Google account you sign in with. Students also give their matric number, residential college and faculty.',
           'Your activity in the app: your points history, lessons and quiz answers, your Money Check survey answers and score, the days you open the app, vouchers you redeem and points you donate.',
-          'Welfare requests: the amount you ask for and the reason you write. Only you and HEP can see them.',
+          'Welfare requests: the amount you ask for and the reason you write. Only you and the Admin team can see them.',
           'Optional social features: your username, avatar, friends and friend requests, and who invited you to +Onz.',
           'Campus map (optional, off unless you switch it on): when on, your friends can see that you’re at a campus shop for 2 hours.',
           'Businesses: business name, type, location pin, logo, contact phone number, account name and DuitNow QR image, plus offers and deals you submit.'],
-        'Your phone’s location is used on your phone only, to show where you are on the map. It isn’t saved to your account. (The first pilot version saved your location at each check-in; those records are kept for HEP’s programme records only.)',
+        'Your phone’s location is used on your phone only, to show where you are on the map. It isn’t saved to your account. (The first pilot version saved your location at each check-in; those records are kept for the Admin team’s programme records only.)',
         'We never ask for your passwords, bank logins or card details. Google handles your sign-in.',
       ]],
       ['How we use it', [
         ['To run +Onz: your account, points, rewards, vouchers, welfare requests and friends.',
-          'To show the college leaderboard, which uses college totals only, never individual students.',
+          'To show the KK League and Faculty League, which use college and faculty totals only, and the top 10 referrers.',
           'To keep the programme fair: one account per matric number, and spotting misuse.',
           'To report how the programme is doing to Universiti Malaya and PayNet, as totals and summaries.',
           'To improve the app.'],
@@ -48,10 +48,10 @@ const T = {
       ]],
       ['Who can see your data', [
         ['You can see your own profile, points, vouchers and requests.',
-          'HEP admins can see profiles, points, vouchers and welfare requests to run and support the programme.',
+          'Admin team members can see profiles, points, vouchers and welfare requests to run and support the programme.',
           'A business sees your name on a voucher when you redeem it with them.',
           'Friends you accept see your username and avatar, and your campus map status if you switched it on.',
-          'Everyone sees college totals on the leaderboard, not individual students.',
+          'Everyone signed in sees college and faculty totals on the leagues, not individual students. The top 10 referrers board shows each of those students’ username (or first name), college and how many people joined with their referral code.',
           'PayNet receives the list of participating businesses and their DuitNow QR details (Lampiran 1), and programme totals. They don’t get students’ personal details.',
           'Service providers that run the app for us: Google Firebase (sign-in, database and hosting) and map providers (Google Maps or OpenStreetMap) when you open the map. Their servers may be outside Malaysia, but your data is used only to run +Onz in Malaysia.'],
       ]],
@@ -59,29 +59,29 @@ const T = {
         ['Sign-in is handled by Google or by Firebase email sign-in, and admin accounts must verify their email.',
           'Data is encrypted between your phone and our servers.',
           'Database rules decide who can read and change each record, so the app can’t be used to see other people’s data.',
-          'Only HEP admins can use the admin dashboard.'],
-        'No system is perfectly secure. If you think someone else has used your account, tell HEP straight away.',
+          'Only Admin team members can use the admin dashboard.'],
+        'No system is perfectly secure. If you think someone else has used your account, tell the Admin team straight away.',
       ]],
       ['How long we keep it', [
         'We keep your data while the +Onz programme runs, then delete it or make it anonymous within 6 months after the programme ends, unless Universiti Malaya’s rules require us to keep records longer. Some data is temporary: campus map status disappears after 2 hours, and iPhone sign-in codes after a few minutes.',
       ]],
       ['Your choices and rights', [
-        ['Correct your details: edit your profile in the app, or ask HEP.',
+        ['Correct your details: edit your profile in the app, or ask the Admin team.',
           'Switch off the campus map, remove friends, or change your avatar and username at any time.',
-          'Ask HEP for a copy of your data, or to correct it.',
-          'Withdraw your consent and delete your account at any time: go to Me, then “Delete my account”. Your account and personal details are deleted, or made anonymous in programme records, straight away, and HEP is told. Your points and unused vouchers are lost. Businesses send a closing request from the account menu, and HEP closes the account after settling any vouchers.'],
+          'Ask the Admin team for a copy of your data, or to correct it.',
+          'Withdraw your consent and delete your account at any time: go to Me, then “Delete my account”. Your account and personal details are deleted, or made anonymous in programme records, straight away, and the Admin team is told. Your points and unused vouchers are lost. Businesses send a closing request from the account menu, and the Admin team closes the account after settling any vouchers.'],
       ]],
       ['Points, rewards and vouchers', [
         ['Points have no cash value. They can’t be sold, swapped for money or moved to another person, except by donating to the welfare fund in the app.',
           'Rewards depend on stock and on each business’s own terms. Vouchers expire after the date shown.',
-          'HEP may correct points that were given by mistake or gained by misuse.',
-          'HEP may change or end the programme, its rewards or features. We’ll tell you in the app.'],
+          'The Admin team may correct points that were given by mistake or gained by misuse.',
+          'The Admin team may change or end the programme, its rewards or features. We’ll tell you in the app.'],
       ]],
       ['Fair use', [
         ['Don’t create fake accounts or use someone else’s matric number.',
           'Don’t try to cheat the points system or get around the app’s rules.',
           'Be respectful: no offensive names, usernames or avatars, and no harassing others through friend requests or waves.',
-          'HEP may block accounts that break these terms.'],
+          'The Admin team may block accounts that break these terms.'],
       ]],
       ['For businesses', [
         ['Give accurate business, location and payment details.',
@@ -100,28 +100,28 @@ const T = {
     lead: 'Sila baca sebelum menggunakan +Onz. Ia menerangkan data yang kami kumpul, sebabnya, siapa yang boleh melihatnya dan apa yang boleh anda lakukan.',
     sections: [
       ['Tentang +Onz', [
-        '+Onz ialah aplikasi kampus Universiti Malaya untuk pelajar dan perniagaan kampus, dikendalikan oleh Hal Ehwal Pelajar (HEP) bersama pasukan pelajar, sebagai sebahagian daripada PayNet Digital Campus 5.0.',
+        '+Onz ialah aplikasi kampus Universiti Malaya untuk pelajar dan perniagaan kampus, dikendalikan oleh pasukan Admin +Onz bersama pasukan pelajar, sebagai sebahagian daripada PayNet Digital Campus 5.0.',
         'Dengan membuat akaun atau terus menggunakan +Onz, anda bersetuju dengan terma ini dan dengan cara kami mengendalikan data anda seperti yang diterangkan di sini, selaras dengan Akta Perlindungan Data Peribadi 2010 (PDPA).',
         '+Onz untuk kegunaan di Malaysia sahaja.',
       ]],
       ['Siapa boleh menggunakan +Onz', [
-        ['Pelajar Universiti Malaya, log masuk dengan e-mel UM atau e-mel yang dibenarkan HEP. Satu akaun bagi setiap nombor matrik.',
-          'Perniagaan kampus dan usaha niaga pelajar, selepas HEP meluluskan permohonan mereka.',
+        ['Pelajar Universiti Malaya, log masuk dengan e-mel UM atau e-mel yang dibenarkan pasukan Admin. Satu akaun bagi setiap nombor matrik.',
+          'Perniagaan kampus dan usaha niaga pelajar, selepas pasukan Admin meluluskan permohonan mereka.',
           'Gunakan nama sebenar dan nombor matrik anda sendiri. Jangan kongsi akaun anda.'],
       ]],
       ['Data yang kami kumpul', [
         ['Akaun anda: nama, alamat e-mel dan akaun Google yang anda gunakan untuk log masuk. Pelajar juga memberikan nombor matrik, kolej kediaman dan fakulti.',
           'Aktiviti anda dalam aplikasi: sejarah mata, pelajaran dan jawapan kuiz, jawapan dan skor tinjauan Semakan Wang, hari anda membuka aplikasi, baucar yang anda tebus dan mata yang anda dermakan.',
-          'Permohonan kebajikan: jumlah yang anda mohon dan sebab yang anda tulis. Hanya anda dan HEP boleh melihatnya.',
+          'Permohonan kebajikan: jumlah yang anda mohon dan sebab yang anda tulis. Hanya anda dan pasukan Admin boleh melihatnya.',
           'Ciri sosial pilihan: nama pengguna, avatar, rakan dan permintaan rakan, serta siapa yang menjemput anda ke +Onz.',
           'Peta kampus (pilihan, tidak aktif melainkan anda menghidupkannya): apabila hidup, rakan anda boleh melihat anda berada di kedai kampus selama 2 jam.',
           'Perniagaan: nama perniagaan, jenis, pin lokasi, logo, nombor telefon, nama akaun dan imej QR DuitNow, serta tawaran dan promosi yang dihantar.'],
-        'Lokasi telefon anda digunakan pada telefon anda sahaja, untuk menunjukkan kedudukan anda pada peta. Ia tidak disimpan dalam akaun anda. (Versi perintis pertama menyimpan lokasi anda pada setiap daftar masuk; rekod itu disimpan untuk rekod program HEP sahaja.)',
+        'Lokasi telefon anda digunakan pada telefon anda sahaja, untuk menunjukkan kedudukan anda pada peta. Ia tidak disimpan dalam akaun anda. (Versi perintis pertama menyimpan lokasi anda pada setiap daftar masuk; rekod itu disimpan untuk rekod program pasukan Admin sahaja.)',
         'Kami tidak sekali-kali meminta kata laluan, log masuk bank atau butiran kad anda. Google mengendalikan log masuk anda.',
       ]],
       ['Cara kami menggunakannya', [
         ['Untuk menjalankan +Onz: akaun, mata, ganjaran, baucar, permohonan kebajikan dan rakan anda.',
-          'Untuk memaparkan papan pendahulu kolej, yang menggunakan jumlah kolej sahaja, bukan pelajar individu.',
+          'Untuk memaparkan Liga KK dan Liga Fakulti, yang menggunakan jumlah kolej dan fakulti sahaja, serta 10 perujuk teratas.',
           'Untuk memastikan program adil: satu akaun bagi setiap nombor matrik, dan mengesan penyalahgunaan.',
           'Untuk melaporkan prestasi program kepada Universiti Malaya dan PayNet, dalam bentuk jumlah dan ringkasan.',
           'Untuk menambah baik aplikasi.'],
@@ -129,10 +129,10 @@ const T = {
       ]],
       ['Siapa boleh melihat data anda', [
         ['Anda boleh melihat profil, mata, baucar dan permohonan anda sendiri.',
-          'Pentadbir HEP boleh melihat profil, mata, baucar dan permohonan kebajikan untuk menjalankan dan menyokong program.',
+          'Pasukan Admin boleh melihat profil, mata, baucar dan permohonan kebajikan untuk menjalankan dan menyokong program.',
           'Perniagaan melihat nama anda pada baucar apabila anda menebusnya di sana.',
           'Rakan yang anda terima melihat nama pengguna dan avatar anda, serta status peta kampus jika anda menghidupkannya.',
-          'Semua orang melihat jumlah kolej pada papan pendahulu, bukan pelajar individu.',
+          'Semua pengguna yang log masuk melihat jumlah kolej dan fakulti pada liga, bukan pelajar individu. Papan 10 perujuk teratas menunjukkan nama pengguna (atau nama pertama), kolej dan bilangan orang yang mendaftar dengan kod rujukan setiap pelajar tersebut.',
           'PayNet menerima senarai perniagaan yang menyertai serta butiran QR DuitNow mereka (Lampiran 1), dan jumlah program. Mereka tidak mendapat butiran peribadi pelajar.',
           'Penyedia perkhidmatan yang menjalankan aplikasi untuk kami: Google Firebase (log masuk, pangkalan data dan pengehosan) dan penyedia peta (Google Maps atau OpenStreetMap) apabila anda membuka peta. Pelayan mereka mungkin berada di luar Malaysia, tetapi data anda hanya digunakan untuk menjalankan +Onz di Malaysia.'],
       ]],
@@ -140,29 +140,29 @@ const T = {
         ['Log masuk dikendalikan oleh Google atau log masuk e-mel Firebase, dan akaun pentadbir mesti mengesahkan e-mel mereka.',
           'Data disulitkan antara telefon anda dan pelayan kami.',
           'Peraturan pangkalan data menentukan siapa boleh membaca dan mengubah setiap rekod, jadi aplikasi tidak boleh digunakan untuk melihat data orang lain.',
-          'Hanya pentadbir HEP boleh menggunakan papan pemuka pentadbir.'],
-        'Tiada sistem yang selamat sepenuhnya. Jika anda rasa orang lain telah menggunakan akaun anda, maklumkan kepada HEP dengan segera.',
+          'Hanya pasukan Admin boleh menggunakan papan pemuka pentadbir.'],
+        'Tiada sistem yang selamat sepenuhnya. Jika anda rasa orang lain telah menggunakan akaun anda, maklumkan kepada pasukan Admin dengan segera.',
       ]],
       ['Tempoh kami menyimpannya', [
         'Kami menyimpan data anda sepanjang program +Onz berjalan, kemudian memadam atau menjadikannya tanpa nama dalam tempoh 6 bulan selepas program tamat, melainkan peraturan Universiti Malaya memerlukan rekod disimpan lebih lama. Sesetengah data adalah sementara: status peta kampus hilang selepas 2 jam, dan kod log masuk iPhone selepas beberapa minit.',
       ]],
       ['Pilihan dan hak anda', [
-        ['Betulkan butiran anda: sunting profil dalam aplikasi, atau minta HEP.',
+        ['Betulkan butiran anda: sunting profil dalam aplikasi, atau minta pasukan Admin.',
           'Matikan peta kampus, buang rakan, atau tukar avatar dan nama pengguna pada bila-bila masa.',
-          'Minta salinan data anda daripada HEP, atau minta ia dibetulkan.',
-          'Tarik balik persetujuan dan padam akaun anda pada bila-bila masa: pergi ke Saya, kemudian “Padam akaun saya”. Akaun dan butiran peribadi anda dipadam, atau dijadikan tanpa nama dalam rekod program, serta-merta, dan HEP dimaklumkan. Mata dan baucar yang belum digunakan akan hilang. Perniagaan menghantar permintaan penutupan dari menu akaun, dan HEP menutup akaun selepas menyelesaikan baucar yang ada.'],
+          'Minta salinan data anda daripada pasukan Admin, atau minta ia dibetulkan.',
+          'Tarik balik persetujuan dan padam akaun anda pada bila-bila masa: pergi ke Saya, kemudian “Padam akaun saya”. Akaun dan butiran peribadi anda dipadam, atau dijadikan tanpa nama dalam rekod program, serta-merta, dan pasukan Admin dimaklumkan. Mata dan baucar yang belum digunakan akan hilang. Perniagaan menghantar permintaan penutupan dari menu akaun, dan pasukan Admin menutup akaun selepas menyelesaikan baucar yang ada.'],
       ]],
       ['Mata, ganjaran dan baucar', [
         ['Mata tidak mempunyai nilai tunai. Ia tidak boleh dijual, ditukar dengan wang atau dipindahkan kepada orang lain, kecuali dengan menderma kepada tabung kebajikan dalam aplikasi.',
           'Ganjaran bergantung pada stok dan terma setiap perniagaan. Baucar tamat tempoh selepas tarikh yang ditunjukkan.',
-          'HEP boleh membetulkan mata yang diberi secara silap atau diperoleh melalui penyalahgunaan.',
-          'HEP boleh mengubah atau menamatkan program, ganjaran atau cirinya. Kami akan memaklumkan anda dalam aplikasi.'],
+          'Pasukan Admin boleh membetulkan mata yang diberi secara silap atau diperoleh melalui penyalahgunaan.',
+          'Pasukan Admin boleh mengubah atau menamatkan program, ganjaran atau cirinya. Kami akan memaklumkan anda dalam aplikasi.'],
       ]],
       ['Penggunaan yang adil', [
         ['Jangan buat akaun palsu atau guna nombor matrik orang lain.',
           'Jangan cuba menipu sistem mata atau mengelak peraturan aplikasi.',
           'Hormati orang lain: tiada nama, nama pengguna atau avatar yang menyinggung, dan jangan ganggu orang lain melalui permintaan rakan atau lambaian.',
-          'HEP boleh menyekat akaun yang melanggar terma ini.'],
+          'Pasukan Admin boleh menyekat akaun yang melanggar terma ini.'],
       ]],
       ['Untuk perniagaan', [
         ['Berikan butiran perniagaan, lokasi dan pembayaran yang tepat.',

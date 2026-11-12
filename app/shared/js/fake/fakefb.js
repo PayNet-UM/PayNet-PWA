@@ -54,17 +54,36 @@ export class FirestoreError extends Error {
 // demo accounts. Only positive ledger credits count; balances are never used.
 function rebuildDemoLeague(docs) {
   if (!docs.has('stats/campus')) return;
-  const earned = new Map(), colleges = {};
+  const earned = new Map(), colleges = {}, faculties = {};
   for (const [path, entry] of docs) {
     const match = /^users\/([^/]+)\/ledger\/[^/]+$/.exec(path);
     if (match && entry.type !== 'welfare' && Number.isSafeInteger(entry.delta) && entry.delta > 0) earned.set(match[1], (earned.get(match[1]) || 0) + entry.delta);
   }
   for (const [path, profile] of docs) {
     const match = /^users\/([^/]+)$/.exec(path);
-    if (!match || profile.role !== 'student' || !/^KK(?:[1-9]|1[0-3])$/.test(profile.college || '')) continue;
-    colleges[profile.college] = (colleges[profile.college] || 0) + (earned.get(match[1]) || 0);
+    if (!match || profile.role !== 'student') continue;
+    const points = earned.get(match[1]) || 0;
+    if (!points) continue;
+    if (/^KK(?:[1-9]|1[0-3])$/.test(profile.college || '')) colleges[profile.college] = (colleges[profile.college] || 0) + points;
+    const faculty = typeof profile.faculty === 'string' ? profile.faculty.trim() : '';
+    if (faculty.length > 1 && faculty.length <= 100) faculties[faculty] = (faculties[faculty] || 0) + points;
   }
-  docs.set('stats/league', { colleges, metric: 'totalEarned' });
+  docs.set('stats/league', { colleges, faculties, metric: 'totalEarned' });
+  rebuildDemoReferrals(docs);
+}
+// Demo equivalent of functions/referrals.js: the 10 students whose referral codes were used most.
+function rebuildDemoReferrals(docs) {
+  const counts = new Map(); let total = 0;
+  for (const [path, r] of docs) {
+    if (!/^referrals\/[^/]+$/.test(path) || !r?.inviterUid) continue;
+    counts.set(r.inviterUid, (counts.get(r.inviterUid) || 0) + 1); total++;
+  }
+  const top = [...counts].filter(([uid]) => docs.get('users/' + uid)?.role === 'student').map(([uid, count]) => {
+    const p = docs.get('users/' + uid);
+    const label = p.username ? '@' + p.username : (String(p.name || 'Student').trim().split(/\s+/)[0] || 'Student');
+    return { uid, count, label, college: p.college || '' };
+  }).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)).slice(0, 10);
+  docs.set('stats/referrals', { top, total });
 }
 class Store {
   constructor() { this.docs = new Map(); this.subs = new Set(); this.load(); }

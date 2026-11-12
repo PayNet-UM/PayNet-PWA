@@ -209,6 +209,32 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('friend rewards stay paused instead of depending on attendance', () => D.claimFriendBonus(stuB, rules));
   await ok('referral still connects friends without qualifying a point reward', async () => { const rows = await D.myReferrals(stuA); eq(rows.length, 1); eq(rows[0].qualified, false); });
   await denied('a student cannot mark their own referral reward qualified', () => stuB.sdk.updateDoc(stuB.sdk.doc(stuB.db, 'referrals', 'stuB'), { qualified: true }));
+  const stuR = await makeCtx({ uid: 'stuR', email: 'rafiq@siswa.um.edu.my' });
+  await ok('a wrong referral code stops sign-up before the account is made', async () => {
+    let msg = '';
+    try { await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: 'NOPE-0000' }); } catch (e) { msg = e.badReferral ? 'bad' : e.message; }
+    eq(msg, 'bad', 'error'); eq(await D.getProfile(stuR), null, 'profile');
+  });
+  await ok('signing up with a referral code connects the friends and counts for the inviter', async () => {
+    const res = await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: stuA.profile.referralCode.toLowerCase() });
+    eq(res.referralFailed, undefined, 'referral failed');
+    eq((await D.getProfile(stuR)).inviterUid, 'stuA', 'inviter');
+    eq((await D.myReferrals(stuA)).length, 2, 'A referrals');
+  });
+  // The board is built by a Cloud Function (functions/referrals.js); only the demo backend builds it here.
+  if (canSetTime) await ok('the open referral board ranks A first with 2 sign-ups', async () => {
+    const top = await D.referralBoard(stuB); eq(top[0].uid, 'stuA'); eq(top[0].count, 2); eq(top.length, 1);
+  });
+  await denied('nobody can write the referral board from the app', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'stats', 'referrals'), { top: [{ uid: 'stuA', count: 99 }] }));
+  await denied('not even the Admin team can write the referral board', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'stats', 'referrals'), { top: [] }));
+  const stuLate = await makeCtx({ uid: 'stuLate', email: 'lina@siswa.um.edu.my' });
+  await ok('a student who signed up without a code', () => D.createProfile(stuLate, { role: 'student', name: 'Lina', matric: 'L1234567', college: 'KK7' }));
+  // Needs a clock that can jump ahead 16 minutes; the emulator runs in real time, and moving T there would put
+  // every later time check 16 minutes in the future.
+  if (canSetTime) {
+    tick(16 * 60000);
+    await denied('can’t add a referral code once sign-up is over', () => D.applyInviterCode(stuLate, stuA.profile.referralCode));
+  }
 
   log('Rewards, vouchers, welfare');
   await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
@@ -515,7 +541,24 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-college' && r.target === 'stuB');
     if (!entry || !/KK5 → KK1/.test(entry.summary)) throw new Error('no activity-log entry for the change');
   });
-  await ok('the student can still edit their name and faculty', () => D.updateProfile(stuB, { name: 'Badrul Hisham', faculty: 'Faculty of Engineering' }));
+  await ok('the student can still edit their name', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
+  log('Faculty is chosen once');
+  await denied('a student cannot change their own faculty', () => D.updateProfile(stuB, { faculty: 'Faculty of Law' }));
+  await denied('a student cannot change another student’s faculty', () => D.setFaculty(stuA, 'stuB', 'Faculty of Law', 'Trying to move a friend'));
+  await denied('the Admin team cannot change a faculty without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { faculty: 'Faculty of Law' }));
+  await denied('the Admin team cannot give a merchant a faculty', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-faculty', 'mer1', '— → Faculty of Law: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'mer1'), { faculty: 'Faculty of Law', adminLogId });
+    await b.commit();
+  });
+  await ok('the Admin team corrects a wrong faculty, with a logged reason', async () => {
+    await D.setFaculty(mpp, 'stuB', 'Faculty of Law', 'Picked the wrong faculty at sign-up');
+    eq((await D.getProfile(stuB)).faculty, 'Faculty of Law', 'faculty');
+    const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-faculty' && r.target === 'stuB');
+    if (!entry || !/Faculty of Engineering → Faculty of Law/.test(entry.summary)) throw new Error('no activity-log entry for the change');
+  });
+  await ok('the Admin team puts the faculty back', () => D.setFaculty(mpp, 'stuB', 'Faculty of Engineering', 'Test finished'));
   await ok('HEP puts the college back', () => D.setCollege(mpp, 'stuB', 'KK5', 'Test finished'));
   log('Questions and feedback');
   stuA.profile = await D.getProfile(stuA); stuB.profile = await D.getProfile(stuB);
@@ -556,7 +599,7 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
   await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));
   await ok('signing up with Off campus is allowed', () => D.createProfile(fakeCollege, { role: 'student', name: 'Off Campus', matric: 'OFFCAMP01', college: 'OFF' }));
-  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { faculty: 'Science' }));
+  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
 
   const squatter = await makeCtx({ uid: 'squat1', email: 'squat@gmail.com' });
   await ok('someone claims a matric number first', () => D.createProfile(squatter, { role: 'student', name: 'Squatter', matric: 'U7777777', college: 'KK1' }));

@@ -72,7 +72,7 @@
 .ob-steps li.on { color: var(--ink); }
 .ob-steps li.on b { background: var(--blue); color: #fff; }
 
-/* (i) button on the KK League heading: shows the Community page tour again. */
+/* (i) button on the KK League heading: shows the Leagues page tour again. */
 .league-help { display: inline-grid; place-items: center; width: 26px; height: 26px; padding: 0; margin-left: 4px; vertical-align: middle;
   border-radius: 50%; border: 1.5px solid var(--line-2); background: transparent; color: var(--ink-3); cursor: pointer; }
 .league-help .ic { width: 15px; height: 15px; }

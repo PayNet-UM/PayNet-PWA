@@ -1,5 +1,5 @@
 /* +Onz service worker (student and merchant app): app shell cached for fast start and offline launch.
-   Firebase and Google requests always go to the network. The HEP dashboard is a separate site with no
+   Firebase and Google requests always go to the network. The Admin dashboard is a separate site with no
    service worker; on the dev server it lives at /admin/ on this address, so this worker leaves it alone. */
 const VERSION = 'umc-__VERSION__';
 const SHELL = [
@@ -27,7 +27,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request; const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/__/')) return; // Firebase Hosting reserved URLs
-  if (url.pathname.startsWith('/admin/')) return; // dev server: the HEP dashboard, a separate site
+  if (url.pathname.startsWith('/admin/')) return; // dev server: the Admin dashboard, a separate site
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then((r) => { const copy = r.clone(); caches.open(VERSION).then((c) => c.put('index.html', copy)); return r; })
       .catch(async () => (await caches.match('index.html')) || caches.match('offline.html')));

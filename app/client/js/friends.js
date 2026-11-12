@@ -34,7 +34,7 @@ export async function friendsRender(app) {
     </section>
     <nav class="community-shortcuts" aria-label="Community sections">
       <button type="button" data-friends-jump="friend-search" aria-controls="friend-search">${icon('user-plus')} Add friends</button>
-      <button type="button" data-friends-jump="community-league" aria-controls="community-league">${icon('trophy')} KK League</button>
+      <a href="#/leagues">${icon('trophy')} Leagues</a>
       <button type="button" data-friends-jump="community-welfare" aria-controls="community-welfare">${icon('hand-heart')} Welfare</button>
     </nav>
     ${profile.username ? ''
@@ -42,7 +42,7 @@ export async function friendsRender(app) {
         <label class="field">Username<input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" title="3–24 letters, numbers or underscores. Permanent once saved." autocomplete="off" placeholder="e.g. aina_um"></label><button class="btn primary">Save username</button></form>`}
     <form id="friend-search" class="card stack friends-search" tabindex="-1" aria-label="Add friends"><div class="row"><span class="tile-icon">${icon('user-plus')}</span><div><h2>Add friends</h2></div></div>
       <div class="friends-search-controls"><div class="friends-autocomplete"><label class="field"><span class="sr">Find by username</span><input name="username" required maxlength="25" placeholder="@username" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="friend-suggestions" aria-expanded="false" ${profile.username ? '' : 'disabled'}></label><ul id="friend-suggestions" class="friends-suggestions" role="listbox" aria-label="Matching users" hidden></ul></div><button class="btn primary" ${profile.username ? '' : 'disabled'}>${icon('user-plus')} Add</button></div>
-      <div id="friend-result" aria-live="polite"></div><p class="faint">Using a referral code also sends its owner a friend request.</p></form>
+      <div id="friend-result" aria-live="polite"></div><p class="faint">Add friends by username any time. Referral codes are only for signing up.</p></form>
     <div id="friend-lists" aria-live="polite" role="region" aria-label="Friend requests and your circle" tabindex="0"><p class="faint">Loading friends…</p></div>`;
 }
 

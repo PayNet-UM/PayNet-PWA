@@ -30,7 +30,7 @@ const makeApp = async (ctx) => ({ ctx, user: { uid: ctx.uid, email: ctx.email },
   merchant: { id: 'merchant', name: 'Test Shop', status: 'verified', ready: true, lat: 3.12, lng: 101.65 } });
 let passed = 0;
 for (const [role, mod, app, routes] of [
-  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'explore', 'delete-account']],
+  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'explore', 'delete-account']],
   ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account']],
   ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings']],
 ]) {
@@ -60,7 +60,7 @@ for (const [role, mod, app, routes] of [
       assert.deepEqual([...directories.matchAll(/href="#\/([^"]+)"/g)].map((match) => match[1]), ['explore', 'community', 'explore/deals', 'learn']);
     }
     if (role === 'Student' && route === 'community') {
-      for (const id of ['friend-search', 'friend-lists', 'community-league', 'community-welfare', 'donate', 'request-welfare']) {
+      for (const id of ['friend-search', 'friend-lists', 'community-welfare', 'donate', 'request-welfare']) {
         assert.ok(html.includes(`id="${id}"`), `Community is missing ${id}`);
       }
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
@@ -68,6 +68,12 @@ for (const [role, mod, app, routes] of [
       assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Community should have one page heading');
       assert.ok(!S.routes.friends, 'Friends should use the combined Community route');
     }
+    if (role === 'Student' && route === 'community') assert.ok(!html.includes('id="community-league"') && html.includes('href="#/leagues"'), 'KK League has its own Leagues page');
+    if (role === 'Student' && route === 'leagues') {
+      for (const id of ['league-kk', 'league-faculty', 'league-referrals', 'referral-list']) assert.ok(html.includes(`id="${id}"`), `Leagues is missing ${id}`);
+      assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Leagues should have one page heading');
+    }
+    if (role === 'Student' && route === 'me') assert.ok(!html.includes('id="inv"'), 'Referral codes can only be entered at sign-up');
     console.log(`  ✓ ${role} ${route} renders without an attendance dependency`); passed++;
   }
 }

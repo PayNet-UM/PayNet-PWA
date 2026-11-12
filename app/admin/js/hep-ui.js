@@ -1,4 +1,4 @@
-// HEP presentation helpers. Counts, permissions and actions stay in the data layer.
+// the Admin team presentation helpers. Counts, permissions and actions stay in the data layer.
 import { esc, icon } from './ui.js';
 
 export const hepEmblem = (glyph, small = false) => `<span class="hep-emblem${small ? ' small' : ''}" aria-hidden="true">${icon(glyph)}<i>${icon('plus')}</i></span>`;
