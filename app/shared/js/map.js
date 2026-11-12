@@ -233,7 +233,7 @@ export async function pinPicker(el, start, onChange) {
   return { map, place, useMyLocation: async () => { const p = await locate(); place(p.lat, p.lng); return p; } };
 }
 
-// A small map with one shop pin (merchant page, HEP review).
+// A small map with one shop pin (merchant page, Admin team review).
 export async function shopPinMap(el, m, { zoom = 17, interactive = true } = {}) {
   const map = await createMap(el, { center: [m.lat, m.lng], zoom, interactive });
   map.setPins([m]);

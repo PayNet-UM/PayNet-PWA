@@ -7,8 +7,8 @@ const MPP_EMAIL = mppBootstrapEmails[0];
 export const DEMO_PASSWORD = 'demo1234';
 export const DEMO_ACCOUNTS = [
   ['aina@siswa.um.edu.my', 'Student: Aina (KK3)'], ['badrul@siswa.um.edu.my', 'Student: Badrul (KK5)'],
-  ['kopikolej@demo.my', 'Merchant: Kopi Kolej'], ['laundry@demo.my', 'Merchant: Fresh Laundry'], ['hana@demo.my', 'Merchant: Roti by Hana (awaiting HEP)'],
-  [MPP_EMAIL, 'HEP admin'],
+  ['kopikolej@demo.my', 'Merchant: Kopi Kolej'], ['laundry@demo.my', 'Merchant: Fresh Laundry'], ['hana@demo.my', 'Merchant: Roti by Hana (awaiting Admin team)'],
+  [MPP_EMAIL, 'Admin team'],
 ];
 const MERCHANTS = [
   ['kopikolej@demo.my', 'Hafiz Rahman', 'Kopi Kolej', 'Kopi Kolej Enterprise', 'Food & drinks', 'Campus permanent merchant', 'KK3 cafeteria', 'Residential colleges', 40, 12, 3.1286, 101.6571],
@@ -130,7 +130,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
   const { sdk, auth, db } = backend;
   if (sdk._rawDocs().has('stats/campus')) {
     // Saved campuses from before feature switches need the same defaults as a
-    // fresh demo. Preserve explicit HEP choices, including switches set to off.
+    // fresh demo. Preserve explicit the Admin team choices, including switches set to off.
     const rules = sdk._rawDocs().get('config/rules');
     if (rules && D.FEATURES.some(([key]) => typeof rules.features?.[key] !== 'boolean')) {
       sdk._rawUpdate((docs) => docs.set('config/rules', { ...rules, features: {
@@ -168,7 +168,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
       await D.createDeal(m, { title: email.startsWith('kopi') ? 'Afternoon study break' : 'Late lunch specials', startMin: email.startsWith('kopi') ? 14 * 60 : 14 * 60 + 30, endMin: email.startsWith('kopi') ? 17 * 60 : 16 * 60 + 30, threshold: 60, bonus: email.startsWith('kopi') ? 40 : 30, limit: 12 });
     }
     mpp = await as(MPP_EMAIL);
-    await D.saveReward(mpp, 'kopi-rm3', { title: 'RM3 HEP reward', merchantId: '', cost: 300, valueCents: 300, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
+    await D.saveReward(mpp, 'kopi-rm3', { title: 'RM3 Admin team reward', merchantId: '', cost: 300, valueCents: 300, stock: 50, issued: 0, lastVoucher: '', validDays: 30, active: true, icon: 'coffee' });
 
     const aina = await as('aina@siswa.um.edu.my');
     await D.createProfile(aina, { role: 'student', name: 'Aina Nadhirah', matric: '23001234', college: 'KK3', faculty: 'Faculty of Science' });
@@ -201,7 +201,7 @@ export function demoSheet(app) {
   const el = sheet(`<h2>You’re in Demo mode</h2><p class="muted">No Firebase project is connected, so everything is stored in this browser and checked against the same security rules as the live app. Overview lets you browse merchants and directions without recording attendance.</p>
     <h3 style="margin-top:18px">Switch account</h3><p class="faint">All demo passwords are ${DEMO_PASSWORD}.</p>
     <div class="stack" style="margin-top:8px">${DEMO_ACCOUNTS.filter(([e]) => (e === MPP_EMAIL) === admin).map(([e, l]) => `<button class="btn block" data-as="${esc(e)}" style="justify-content:flex-start">${icon('user')} ${esc(l)}</button>`).join('')}
-      <a class="btn block" href="${esc(admin ? siteUrls.client : siteUrls.admin)}" style="justify-content:flex-start">${icon(admin ? 'house' : 'layout-dashboard')} ${admin ? 'Open the student and merchant app' : 'Open the HEP dashboard'}</a></div>
+      <a class="btn block" href="${esc(admin ? siteUrls.client : siteUrls.admin)}" style="justify-content:flex-start">${icon(admin ? 'house' : 'layout-dashboard')} ${admin ? 'Open the student and merchant app' : 'Open the Admin dashboard'}</a></div>
     <h3 style="margin-top:18px">Start over</h3><p class="faint">Deletes every demo account and record in this browser, then rebuilds the demo campus.</p>
     <button class="btn warn block" id="reset" style="margin-top:8px">${icon('rotate-ccw')} Reset demo data</button>`);
   $$('[data-as]', el).forEach((b) => {

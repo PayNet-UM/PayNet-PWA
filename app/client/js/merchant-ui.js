@@ -21,7 +21,7 @@ export function merchantSetup(m, hasPin, rules) {
   const updated = !!m?.ready && !current;
   const milestones = [
     ['store', 'Shop profile', !!m], ['map-pin', 'Map pin', hasPin(m)],
-    ['badge-check', 'HEP verified', m?.status === 'verified'], ['shield-check', 'Staff ready', current],
+    ['badge-check', 'Admin verified', m?.status === 'verified'], ['shield-check', 'Staff ready', current],
   ];
   const done = milestones.filter(([, , complete]) => complete).length;
   if (done === 4) return '';

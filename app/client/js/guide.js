@@ -14,7 +14,7 @@ export const isPending = (uid) => read(uid) === 'pending';
 const firstName = (p) => String(p?.name || '').trim().split(/\s+/)[0] || '';
 
 // ------------------------------------------------------------- the steps
-// A step with a target highlights that element; steps whose target isn't on screen (a tab HEP has switched off)
+// A step with a target highlights that element; steps whose target isn't on screen (a tab the Admin team has switched off)
 // are left out. `has` checks for an element, so the list can be tested without a browser.
 export function stepsFor(app, { first = true, has = (sel) => !!document.querySelector(sel) } = {}) {
   const p = app.profile || {}; const name = firstName(p);
@@ -39,8 +39,8 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
     tab('rewards', 'gift', 'Rewards', 'Swap your points for vouchers, and see your badges and streak.'),
     tab('me', 'user', 'Me', 'Your profile, your invite code and your points history.'),
   ] : [
-    tab('home', 'house', 'Home', 'Your shop at a glance: its status, live-deal activity and updates from HEP.'),
-    tab('shop', 'store', 'My shop', 'Set up your business here: its details, logo and exact map pin. HEP checks them before students can see you.'),
+    tab('home', 'house', 'Home', 'Your shop at a glance: its status, live-deal activity and updates from the Admin team.'),
+    tab('shop', 'store', 'My shop', 'Set up your business here: its details, logo and exact map pin. The Admin team checks them before students can see you.'),
     tab('scan', 'qr-code', 'Deal QR', 'Show this QR to students so they can claim your live deals.'),
     tab('promote', 'megaphone', 'Promote live deals', 'Create off-peak deals to bring students in when it’s quiet.'),
     tab('insights', 'chart-column', 'Insights', 'See how students are responding to your deals.'),
@@ -73,12 +73,12 @@ export function tasksFor(app) {
   const sent = !!m && ['pending', 'verified'].includes(m.status);
   return {
     heading: 'Set up your shop', go: 'shop', cta: m?.status === 'verified' ? 'Go to my shop' : 'Set up my shop',
-    note: m?.status === 'verified' ? '' : 'Students see your shop once HEP verifies it.',
+    note: m?.status === 'verified' ? '' : 'Students see your shop once the Admin team verifies it.',
     items: [
       { route: 'shop', icon: 'store', label: 'Add your business details and DuitNow QR photo', done: !!m },
       { route: 'shop', icon: 'image', label: 'Upload your logo', done: !!m?.logo },
       { route: 'shop', icon: 'map-pin', label: 'Pin your shop on the map', done: !!m && 'lat' in m },
-      { route: 'shop', icon: 'check', label: 'Send to HEP for verification', done: sent },
+      { route: 'shop', icon: 'check', label: 'Send to the Admin team for verification', done: sent },
     ],
   };
 }

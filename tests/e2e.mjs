@@ -259,7 +259,7 @@ if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caugh
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to HEP', { timeout: 15000 });
+await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
 // ---------- the two websites keep to their own people
@@ -269,7 +269,7 @@ if (await sep.locator(`[data-demo="${adminEmail}"]`).count() !== 0) throw new Er
 const googleAs = async (p, email) => { await p.click('#google'); await p.fill('#gnew [name=email]', email); await p.click('#gnew button'); };
 await sep.goto(ADMIN); await sep.waitForSelector('#google', { timeout: 60000 });
 if (await sep.locator('[data-demo="aina@siswa.um.edu.my"]').count() !== 0) throw new Error('dashboard sign-in offers a student account');
-await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t a HEP admin', { timeout: 30000 });
+await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t an Admin team member', { timeout: 30000 });
 if (await sep.locator('#mpp-rail').count() !== 0) throw new Error('a student got into the HEP dashboard');
 await sep.click('#out'); await sep.waitForSelector('#google');
 await sep.goto(BASE); await sep.waitForSelector('#google'); await googleAs(sep, adminEmail);

@@ -18,7 +18,7 @@ export const SEGMENTS = ['Campus permanent merchant', 'Within 100 m of UM gate',
 export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone', 'Campus edge'];
 
 // Active earning rules; transaction rewards are intentionally deferred.
-// Features HEP can switch on and off in Settings. Off unless HEP turns them on.
+// Features the Admin team can switch on and off in Settings. Off unless the Admin team turns them on.
 export const FEATURES = [
   ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
   ['merchantTools', 'Merchant tools', 'Live-deal QR, promotions, insights and the staff readiness check.'],
@@ -98,8 +98,8 @@ export async function isMppUser(ctx) {
   try { await ctx.sdk.getDoc(R(ctx).config('access')); return true; } catch { return false; }
 }
 
-// ------------------------------------------------------------- HEP admin safety
-// Big HEP changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
+// ------------------------------------------------------------- Admin team safety
+// Big the Admin team changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
 // out a few minutes early so they never meet a refused save.
 export const RECENT_SIGN_IN_MS = 12 * 3600 * 1000;
 export async function signedInRecently(user, now = Date.now()) {
@@ -125,7 +125,7 @@ const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, 
 function configLog(name, data) {
   if (name === 'access') {
     const c = (k) => (data[k] || []).length;
-    return ['access', 'Who can use the app', `${c('mppEmails')} HEP reviewers, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
+    return ['access', 'Who can use the app', `${c('mppEmails')} Admin team members, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
   }
   if (name === 'budget') return ['budget', 'Activation fund', `RM${((data.allocationCents || 0) / 100).toFixed(2)}`];
   if (name === 'rules' && data.features) {
@@ -175,7 +175,7 @@ export const needsTerms = (profile) => !!profile && profile.termsVersion !== TER
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 
-// ------------------------------------------------------------- HEP: programme setup
+// ------------------------------------------------------------- the Admin team: programme setup
 export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 'um.edu.my', 'gmail.com'] } = {}) {
   const { sdk } = ctx; const r = R(ctx);
   const b = sdk.writeBatch(ctx.db);
@@ -237,7 +237,7 @@ export async function setMerchantLogo(ctx, logo) {
 export async function setReadiness(ctx) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });
 }
-// Completion stays valid until HEP publishes a new required readiness update.
+// Completion stays valid until the Admin team publishes a new required readiness update.
 export function merchantReadinessCurrent(merchant, rules) {
   if (!merchant?.ready) return false;
   const published = toMs(rules?.merchantReadinessUpdate?.publishedAt);
@@ -246,7 +246,7 @@ export function merchantReadinessCurrent(merchant, rules) {
 export async function publishMerchantReadiness(ctx, message) {
   const text = String(message || '').trim();
   if (text.length < 10 || text.length > 1000) throw new Error('Use 10–1,000 characters for the readiness update.');
-  // The existing config rules allow only HEP to publish.
+  // The existing config rules allow only the Admin team to publish.
   await saveConfig(ctx, 'rules', { merchantReadinessUpdate: { message: text, publishedAt: ctx.sdk.serverTimestamp() } });
 }
 export async function setOccupancy(ctx, seats, occupied) {
@@ -531,7 +531,7 @@ export function watchMyVouchers(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s)), err);
 }
 export async function findVoucher(ctx, raw, asMpp = false) {
-  if (!(await isMppUser(ctx))) { const e = new Error('Only HEP/admin can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
+  if (!(await isMppUser(ctx))) { const e = new Error('Only the Admin team can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
   const s = String(raw).trim();
   const id = s.startsWith('UMV1:') ? s.slice(5) : null;
   if (id) return one(ctx, R(ctx).voucher(id));
@@ -554,7 +554,7 @@ export async function donatePoints(ctx, n) {
   await b.commit();
 }
 
-// Welfare requests are private to the applicant and HEP. Approval moves points
+// Welfare requests are private to the applicant and the Admin team. Approval moves points
 // from the pool to the student's wallet atomically, with one immutable ledger ID.
 export const WELFARE_MAX_POINTS = 1000; // Also set in firestore.rules.
 export async function submitWelfareRequest(ctx, amount, reason) {
@@ -720,7 +720,7 @@ export async function setBlocked(ctx, uid, blocked) {
   b.update(R(ctx).user(uid), { disabled: !!blocked, adminLogId });
   await b.commit();
 }
-// Students choose their college once, at sign-up. HEP can correct a wrong pick; the KK League server then moves
+// Students choose their college once, at sign-up. The Admin team can correct a wrong pick; the KK League server then moves
 // the student's points to the new college.
 export const collegeName = (k) => COLLEGES.find(([c]) => c === k)?.[1] || k || '—';
 export async function setCollege(ctx, uid, college, reason) {

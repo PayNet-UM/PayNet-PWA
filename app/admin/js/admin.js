@@ -1,4 +1,4 @@
-// HEP admin dashboard website: backend choice, sign-in, the HEP admin check and hash routing.
+// Admin dashboard website: backend choice, sign-in, the Admin team check and hash routing.
 // Students and merchants use a separate website (app/client). Firestore rules (isMpp) decide what an
 // account can read and change; this page only decides what to show.
 import { initBackend } from './backend.js';
@@ -35,7 +35,7 @@ async function endSession(message) {
 async function checkSession(now = Date.now()) {
   if (!app.user || !app.backend) return;
   if (now - Math.max(lastActive, stored.get()) >= IDLE_MS) return endSession('You were signed out after 30 minutes without activity.');
-  if (!(await D.signedInRecently(app.user, now))) return endSession('For your safety, please sign in again. HEP sign-ins last 12 hours.');
+  if (!(await D.signedInRecently(app.user, now))) return endSession('For your safety, please sign in again. Admin sign-ins last 12 hours.');
 }
 app.checkSession = checkSession;
 for (const type of ['pointerdown', 'keydown', 'scroll', 'touchstart']) window.addEventListener(type, markActive, { passive: true, capture: true });
@@ -49,7 +49,7 @@ async function boot() {
   try {
     app.backend = await initBackend();
   } catch (e) {
-    document.body.innerHTML = `<div class="boot"><div><h2>The HEP dashboard couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
+    document.body.innerHTML = `<div class="boot"><div><h2>The Admin dashboard couldn’t start</h2><p class="muted">${esc(e.message)}</p></div></div>`;
     return;
   }
   const { sdk, auth, mode } = app.backend;
@@ -74,7 +74,7 @@ async function onUser(user) {
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   if (!isMpp) return Auth.renderNotAdmin(app);
-  if (!(await D.signedInRecently(user))) return endSession('For your safety, please sign in again. HEP sign-ins last 12 hours.');
+  if (!(await D.signedInRecently(user))) return endSession('For your safety, please sign in again. Admin sign-ins last 12 hours.');
   markActive(); lastStored = lastActive; stored.set(lastActive); // a fresh sign-in starts the 30 minutes again
   app.isMpp = true; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
@@ -110,7 +110,7 @@ async function render() {
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
   view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
-  document.title = `${r.title} · +Onz HEP`;
+  document.title = `${r.title} · +Onz Admin`;
   const token = Symbol(); render.token = token;
   try {
     const html = await r.render(app, parts.slice(1));

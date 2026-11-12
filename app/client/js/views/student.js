@@ -130,12 +130,12 @@ function eventCard(c, index = 0) {
 
 async function merchantRender(app, [id]) {
   const m = await D.getMerchant(app.ctx, id).catch(() => null);
-  if (!m || m.status !== 'verified') return `<a class="back" href="#/explore">${icon('arrow-left')} Overview</a><div class="card empty">${icon('store')}<h3>This merchant isn’t on +Onz yet</h3><p>Only HEP-verified merchants are listed.</p></div>`;
+  if (!m || m.status !== 'verified') return `<a class="back" href="#/explore">${icon('arrow-left')} Overview</a><div class="card empty">${icon('store')}<h3>This merchant isn’t on +Onz yet</h3><p>Only Admin-verified merchants are listed.</p></div>`;
   const deals = D.featureOn(app.rules, 'dealsAndPay') ? (await D.approvedDeals(app.ctx)).filter((d) => d.merchantId === id && d.enabled) : [];
   return `<a class="back" href="#/explore">${icon('arrow-left')} Overview</a>
     <div class="card pad-lg" style="margin-top:8px"><div class="row" style="gap:14px">${merchantLogo(m, 'logo big')}
       <div><h1 style="font-size:26px">${esc(m.name)}</h1><p class="muted">${esc(m.type)} · ${esc(m.location)}</p></div></div>
-      <div class="row" style="margin-top:14px">${isIdea(m) ? `<span class="badge warn">${icon('lightbulb')}Student venture</span>` : ''}${m.ready ? `<span class="badge ok">${icon('badge-check')}Cashless ready</span>` : ''}<span class="badge">${icon('shield-check')}HEP verified</span></div>
+      <div class="row" style="margin-top:14px">${isIdea(m) ? `<span class="badge warn">${icon('lightbulb')}Student venture</span>` : ''}${m.ready ? `<span class="badge ok">${icon('badge-check')}Cashless ready</span>` : ''}<span class="badge">${icon('shield-check')}Admin verified</span></div>
     </div>
     ${hasPin(m) ? `<section class="section"><div class="head"><h2>Getting there</h2><a href="${wazeUrl(m)}" target="_blank" rel="noopener">Open in Waze</a></div>
       <div class="card map-card"><div id="shop-map" class="mmap small" aria-label="Map showing ${esc(m.name)}"></div>
@@ -183,7 +183,7 @@ async function directoryRender(app, [mode] = []) {
     <section class="checkout-shops" aria-labelledby="checkout-shops-title"><div class="checkout-section-heading"><h2 id="checkout-shops-title">${icon('store')} Nearby shops</h2><span class="overview-result-count" id="directory-results-count" aria-label="Matching shops">${n(merchants.length)}</span></div>
       <div class="overview-search">${icon('search')}<input type="search" id="q" placeholder="Search by name or place" aria-label="Search merchants"></div>
       <div class="chips checkout-filters" id="directory-filters" aria-label="Merchant filters">${types.map((type) => { const [glyph, tone] = directoryCategory(type); return `<button type="button" data-type="${esc(type)}" data-tone="${tone}" ${type === 'Student ventures' ? 'data-ventures' : ''} class="${type === selected ? 'on' : ''}" aria-pressed="${type === selected}"><span class="overview-category-icon">${icon(type === 'All' ? 'compass' : glyph)}</span><span>${esc(type === 'Student ventures' ? 'Student Ventures' : type)}</span></button>`; }).join('')}</div>
-      <div class="checkout-shops-layout"><div class="card map-card checkout-map"><div class="overview-map-title">${icon('map')}<strong>Campus map</strong><span>${icon('badge-check')}<span>HEP verified</span></span></div><div id="cmap" class="mmap small" aria-label="Campus shops and your location, when permitted"></div><div class="nearby-map-legend"><span class="nearby-location-key" id="nearby-location-key" hidden><span class="nearby-you-dot" aria-hidden="true"></span><span>Your location</span></span><span>${icon('store')} Campus shops</span></div></div>
+      <div class="checkout-shops-layout"><div class="card map-card checkout-map"><div class="overview-map-title">${icon('map')}<strong>Campus map</strong><span>${icon('badge-check')}<span>Admin verified</span></span></div><div id="cmap" class="mmap small" aria-label="Campus shops and your location, when permitted"></div><div class="nearby-map-legend"><span class="nearby-location-key" id="nearby-location-key" hidden><span class="nearby-you-dot" aria-hidden="true"></span><span>Your location</span></span><span>${icon('store')} Campus shops</span></div></div>
         <div class="stack" id="clist"></div></div>
     </section>
     <section class="section checkout-deals" id="directory-deals" tabindex="-1" aria-labelledby="checkout-deals-title" ${D.featureOn(app.rules, 'dealsAndPay') ? '' : 'style="display:none"'}><div class="checkout-section-heading"><h2 id="checkout-deals-title">${icon('zap')} Live deals</h2></div>
@@ -255,7 +255,7 @@ function directoryMount(root, app, [mode] = []) {
     const rows = sortedMerchants();
     $('#directory-results-count', root).textContent = n(rows.length);
     $('#clist', root).innerHTML = rows.map((m) => { const [glyph, tone] = directoryCategory(m.type); return `<article class="card checkout-shop ${m.id === focusId ? 'focus' : ''}" data-tone="${tone}">
-      <span class="overview-shop-logo">${merchantLogo(m)}<span class="overview-verified" title="HEP verified">${icon('badge-check')}</span></span><div class="checkout-shop-copy"><h3><a href="#/merchant/${esc(m.id)}">${esc(m.name)}</a></h3>
+      <span class="overview-shop-logo">${merchantLogo(m)}<span class="overview-verified" title="Admin verified">${icon('badge-check')}</span></span><div class="checkout-shop-copy"><h3><a href="#/merchant/${esc(m.id)}">${esc(m.name)}</a></h3>
         <span class="overview-shop-category">${icon(glyph)}<span>${esc(m.type)}</span></span><p>${icon('map-pin')}<span>${esc(m.location)}</span></p>
         ${pos && hasPin(m) ? `<span class="nearby-distance">${icon('navigation')} ${esc(fmtDistance(distanceM(pos, m)))}</span>` : ''}</div>
       <div class="checkout-shop-action">${hasPin(m) ? `<a class="btn small" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : `<a class="btn small" href="#/merchant/${esc(m.id)}">View shop ${icon('chevron-right')}</a>`}</div></article>`; }).join('')
@@ -335,7 +335,7 @@ function appStreakSection(app) {
 async function rewardsRender(app) {
   const rewards = await D.listRewards(app.ctx);
   // Where a voucher can be used, shown before the student spends points.
-  const whereTo = () => 'Redeem with HEP/admin';
+  const whereTo = () => 'Redeem with the Admin team';
   const p = app.profile;
   const achievements = badges(app);
   return `<div class="rewards-page"><div class="rewards-hero"><div class="rewards-hero-copy"><h1>Rewards</h1>
@@ -350,7 +350,7 @@ async function rewardsRender(app) {
           <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
           <div class="reward-prize-footer"><span class="reward-price">${icon('sparkles')}<strong>${n(r.cost)}</strong><span>pts</span></span>
           <button class="btn small ${can ? 'primary' : ''}" data-redeem="${esc(r.id)}" ${can ? '' : 'disabled'}>${left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`}</button></div></div></article>`;
-      }).join('') || `<div class="card empty">${icon('gift')}<p>HEP hasn’t added rewards yet.</p></div>`}</div></section>
+      }).join('') || `<div class="card empty">${icon('gift')}<p>The Admin team hasn’t added rewards yet.</p></div>`}</div></section>
     <section class="section rewards-wallet"><div class="rewards-section-heading"><h2>${icon('ticket')} My vouchers</h2></div><div id="vouchers" class="stack"><div class="skeleton" style="height:80px"></div></div></section>
     <section class="section rewards-badges"><div class="rewards-section-heading"><h2>${icon('trophy')} Badges</h2><span class="rewards-badge-count" aria-label="Badges earned">${achievements.filter(([got]) => got).length}/${achievements.length}</span></div>
       <div class="awards" role="list" style="--achievement-count:${achievements.length}">${achievements.map(([got, ic, label]) => `<div class="award ${got ? 'got' : ''}" role="listitem"><span class="reward-medal" aria-hidden="true">${icon(ic)}<span class="reward-medal-state">${icon(got ? 'check' : 'lock')}</span></span><span class="reward-badge-label">${esc(label)}</span><span class="reward-badge-status">${got ? 'Earned' : 'Locked'}</span></div>`).join('')}</div></section>
@@ -397,7 +397,7 @@ function rewardsMount(root, app, [section] = []) {
 function showVoucher(app, vid, list) {
   const v = list ? list.find((x) => x.id === vid) : null;
   const el = sheet(`<div class="qr-stage"><h2>${esc(v ? v.title : 'Your voucher')}</h2>
-    <p class="muted">${v && v.status === 'used' ? 'This voucher has been used.' : 'Show this voucher to HEP/admin for redemption.'}</p>
+    <p class="muted">${v && v.status === 'used' ? 'This voucher has been used.' : 'Show this voucher to the Admin team for redemption.'}</p>
     <div class="qr-frame ${v && v.status === 'used' ? 'dead' : ''}"><div id="vqr"></div></div><p>Code <span class="code-text">${esc(vid.slice(0, 8).toUpperCase())}</span></p></div>`);
   renderQR($('#vqr', el), 'UMV1:' + vid, 240);
 }
@@ -478,7 +478,7 @@ export function surveyResultText(role, r) {
 async function surveyRender(app) {
   const existing = await D.getSurvey(app.ctx).catch(() => null);
   return `<a class="back" href="#/home">${icon('arrow-left')} Home</a><div class="page-title"><h1>Money check</h1>
-    <p>Four scenario questions and three about your confidence. It helps HEP plan support; it isn’t a test. First completion: ${app.rules.surveyBonus} points.</p></div>${surveyHTML('student', existing)}`;
+    <p>Four scenario questions and three about your confidence. It helps the Admin team plan support; it isn’t a test. First completion: ${app.rules.surveyBonus} points.</p></div>${surveyHTML('student', existing)}`;
 }
 export function surveyMount(root, app, role, back) {
   $('#survey', root).onsubmit = (e) => {
@@ -510,12 +510,12 @@ async function communityRender(app) {
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
       <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
       <button class="btn go" id="donate">${icon('hand-heart')} Give points ${icon('chevron-right')}</button></section>
-    <section class="card community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask HEP for pooled welfare points.</p>
+    <section class="card community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask the Admin team for pooled welfare points.</p>
       <button class="btn primary" type="button" id="request-welfare">${icon('plus')} Request points ${icon('chevron-right')}</button>
       <details class="welfare-history"><summary>My requests <span id="welfare-request-count">0</span>${icon('chevron-right')}</summary><div id="welfare-requests"><p class="faint">Loading requests…</p></div></details>
     </section></div></div>
     ${overviewOn ? `<section class="section community-ventures"><div class="community-section-heading"><h2>${icon('store')} Student Ventures</h2><a href="#/explore/idea">See all ${icon('chevron-right')}</a></div>
-      <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask HEP about joining as a student entrepreneur.</p></div>`}</div></section>` : ''}
+      <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask the Admin team about joining as a student entrepreneur.</p></div>`}</div></section>` : ''}
     <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('user-plus')}</span><div><h3>Invite friends</h3><p>Connect with friends using your referral code.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
 }
 function communityMount(root, app, [section] = []) {
@@ -554,14 +554,14 @@ function communityMount(root, app, [section] = []) {
     };
   };
   $('#request-welfare', root).onclick = () => {
-    const el = sheet(`<div class="welfare-form-heading"><span class="community-support-icon">${icon('wallet')}</span><div><h2>Request welfare points</h2><p class="faint">HEP reviews each request.</p></div></div>
+    const el = sheet(`<div class="welfare-form-heading"><span class="community-support-icon">${icon('wallet')}</span><div><h2>Request welfare points</h2><p class="faint">The Admin team reviews each request.</p></div></div>
       <form id="welfare-request-form" class="stack" style="margin-top:18px"><label class="field">Points requested<input name="amount" type="number" min="1" max="${D.WELFARE_MAX_POINTS}" step="1" inputmode="numeric" required></label>
       <label class="field">What do you need help with?<textarea name="reason" rows="3" minlength="10" maxlength="1000" placeholder="Meals, study materials or other essentials" required></textarea></label>
-      <p class="faint">Only you and HEP can see your request.</p><button class="btn primary block" type="submit">Send request ${icon('arrow-right')}</button></form>`);
+      <p class="faint">Only you and the Admin team can see your request.</p><button class="btn primary block" type="submit">Send request ${icon('arrow-right')}</button></form>`);
     $('#welfare-request-form', el).onsubmit = (event) => {
       event.preventDefault(); const form = event.target;
       busy($('button[type=submit]', form), async () => {
-        try { await D.submitWelfareRequest(app.ctx, Number(form.amount.value), form.reason.value); closeSheet(); $('.welfare-history', root).open = true; toast('Request sent to HEP.'); }
+        try { await D.submitWelfareRequest(app.ctx, Number(form.amount.value), form.reason.value); closeSheet(); $('.welfare-history', root).open = true; toast('Request sent to the Admin team.'); }
         catch (error) { toast(errText(error), true); }
       });
     };
@@ -569,8 +569,8 @@ function communityMount(root, app, [section] = []) {
   const u3 = D.watchMyWelfareRequests(app.ctx, (requests) => {
     const el = $('#welfare-requests', root); if (!el) return;
     $('#welfare-request-count', root).textContent = n(requests.length);
-    el.innerHTML = requests.map((request) => `<details class="welfare-request-entry"><summary><strong>${n(request.amount)} <small>pts</small></strong><span class="welfare-status ${esc(request.status)}">${request.status === 'approved' ? 'Points received' : request.status === 'rejected' ? 'Declined' : 'Pending HEP'}</span>${icon('chevron-right')}</summary>
-      <div><p class="faint">${fmtDate(request.createdAt)}</p><p data-no-i18n>${esc(request.reason)}</p>${request.response ? `<p class="welfare-response"><b>HEP:</b> <span data-no-i18n>${esc(request.response)}</span></p>` : ''}</div></details>`).join('') || '<p class="faint welfare-no-requests">No requests yet.</p>';
+    el.innerHTML = requests.map((request) => `<details class="welfare-request-entry"><summary><strong>${n(request.amount)} <small>pts</small></strong><span class="welfare-status ${esc(request.status)}">${request.status === 'approved' ? 'Points received' : request.status === 'rejected' ? 'Declined' : 'Pending Admin team'}</span>${icon('chevron-right')}</summary>
+      <div><p class="faint">${fmtDate(request.createdAt)}</p><p data-no-i18n>${esc(request.reason)}</p>${request.response ? `<p class="welfare-response"><b>Admin team:</b> <span data-no-i18n>${esc(request.response)}</span></p>` : ''}</div></details>`).join('') || '<p class="faint welfare-no-requests">No requests yet.</p>';
   }, () => { const el = $('#welfare-requests', root); if (el) el.innerHTML = '<p class="faint">Couldn’t load requests.</p>'; });
   return () => { stopFriends(); u1(); u2(); u3(); };
 }
@@ -706,7 +706,7 @@ function ledgerLabel(l) {
   if (l.type === 'checkin') return 'Archived attendance credit';
   if (l.type === 'liveDeal') return 'Live-deal scan reward';
   return { purchase: 'Cashless purchase', survey: 'Money check completed', lesson: 'Lesson completed', friend: 'Referral welcome bonus', inviter: 'Friend joined with your code',
-    offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by HEP' }[l.type] || l.type;
+    offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by the Admin team' }[l.type] || l.type;
 }
 function meMount(root, app) {
   $('#copy-referral', root).onclick = async () => {

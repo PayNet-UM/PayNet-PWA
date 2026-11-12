@@ -1,5 +1,5 @@
 // Questions and feedback: students ask anything or comment on the app, and see the team's replies here.
-// Opened from the account menu. Rules: up to 3 messages a day, readable only by the student and HEP.
+// Opened from the account menu. Rules: up to 3 messages a day, readable only by the student and the Admin team.
 import * as D from './data.js';
 import { $, esc, icon, toast, busy, errText, fmtDate } from './ui.js';
 

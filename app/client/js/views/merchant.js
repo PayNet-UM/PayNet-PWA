@@ -15,12 +15,12 @@ const toMs = D.toMs;
 const statusBadge = (m) => !m ? '<span class="badge grey">Not applied</span>'
   : m.status === 'verified' ? `<span class="badge ok">${icon('badge-check')}Verified</span>`
   : m.status === 'rejected' ? '<span class="badge bad">Needs changes</span>'
-  : m.status === 'suspended' ? '<span class="badge bad">Suspended</span>' : '<span class="badge warn">HEP is reviewing</span>';
+  : m.status === 'suspended' ? '<span class="badge bad">Suspended</span>' : '<span class="badge warn">The Admin team is reviewing</span>';
 
 function needVerified(app) {
   if (app.merchant && app.merchant.status === 'verified') return null;
-  return `<div class="card empty mer-access-card" style="margin-top:16px"><span class="mer-access-icon">${icon('store')}</span><h3>${app.merchant ? 'Waiting for HEP to verify your shop' : 'Apply to join first'}</h3>
-    <p>${app.merchant ? 'Usually reviewed within 1–2 working days.' : 'Submit your shop details for HEP verification.'}</p>
+  return `<div class="card empty mer-access-card" style="margin-top:16px"><span class="mer-access-icon">${icon('store')}</span><h3>${app.merchant ? 'Waiting for the Admin team to verify your shop' : 'Apply to join first'}</h3>
+    <p>${app.merchant ? 'Usually reviewed within 1–2 working days.' : 'Submit your shop details for Admin team verification.'}</p>
     <a class="btn primary" style="margin-top:12px" href="#/shop">${app.merchant ? 'View application' : 'Apply now'}</a></div>`;
 }
 
@@ -79,12 +79,12 @@ async function shopRender(app) {
   const sel = (name, opts, cur) => `<select name="${name}">${opts.map((o) => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   return `<div class="merchant-page mer-shop">${merchantHeading('My shop', 'Your campus storefront, all in one place.', 'store', 'Make it yours')}
     <div class="mer-shop-identity"><span class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</span><div><h2>${esc(m?.name || app.profile.name)}</h2>${m?.location ? `<p>${icon('map-pin')} ${esc(m.location)}</p>` : ''}</div>${statusBadge(m)}</div>
-    ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>HEP asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
-    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. HEP will check that your QR name matches your business.</span></div>` : ''}
+    ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>The Admin team asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
+    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. The Admin team will check that your QR name matches your business.</span></div>` : ''}
     <div class="mer-shop-grid ${!editable ? 'is-verified' : ''}"><section class="section mer-business"><div class="head"><h2>${icon('store')} Business details</h2></div>
     <form id="app-form" class="card stack" ${editable ? '' : 'inert'}>
       <label class="field">Business name, as students know it<input name="name" required minlength="2" maxlength="100" value="${v('name')}"></label>
-      <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>HEP checks this matches the QR.</small></label>
+      <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>The Admin team checks this matches the QR.</small></label>
       <div class="grid-2"><label class="field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
       <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
       <div class="grid-2"><label class="field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
@@ -93,7 +93,7 @@ async function shopRender(app) {
       ${editable ? pinBlock(m) : ''}
       <label class="field">Photo of your DuitNow QR<input name="qr" type="file" accept="image/*" ${priv && priv.qrImage ? '' : 'required'}><small>A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.</small></label>
       ${priv && safeImg(priv.qrImage) ? `<img class="qr-thumb" style="width:120px;height:120px" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR">` : ''}
-      ${editable ? `<button class="btn primary">${m ? 'Send updated details to HEP' : 'Send to HEP for verification'}</button>` : '<p class="faint">Verified details are locked. Ask HEP if something needs to change.</p>'}
+      ${editable ? `<button class="btn primary">${m ? 'Send updated details to the Admin team' : 'Send to the Admin team for verification'}</button>` : '<p class="faint">Verified details are locked. Ask the Admin team if something needs to change.</p>'}
     </form></section>
     ${!editable ? `<section class="section"><div class="head"><h2>Logo</h2></div><form id="logo-form" class="card stack">${logoBlock(m, true)}
       <button class="btn primary" id="logo-save">${icon('image')} Save logo</button></form></section>
@@ -204,7 +204,7 @@ function shopMount(root, app, [section] = []) {
         await D.submitApplication(app.ctx, { name: f.name.value, accountName: f.accountName.value, type: f.type.value, segment: f.segment.value,
           location: f.location.value, zone: f.zone.value, phone: f.phone.value, ambassadorId: f.ambassadorId.value,
           eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage, logo, ...pin });
-        toast('Sent to HEP. You’ll see the status here.'); setTimeout(() => app.render(), 300);
+        toast('Sent to the Admin team. You’ll see the status here.'); setTimeout(() => app.render(), 300);
       } catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });
   };
@@ -317,7 +317,7 @@ function insightsMount(root, app) {
 
 async function surveyRender(app) {
   const existing = await D.getSurvey(app.ctx).catch(() => null);
-  return `<div class="merchant-page mer-survey"><a class="back" href="#/home">${icon('arrow-left')} Home</a>${merchantHeading('Cashless readiness check', 'Your answers help HEP decide who needs an ambassador visit or staff training.', 'target', 'Build your confidence')}${surveyHTML('merchant', existing)}</div>`;
+  return `<div class="merchant-page mer-survey"><a class="back" href="#/home">${icon('arrow-left')} Home</a>${merchantHeading('Cashless readiness check', 'Your answers help the Admin team decide who needs an ambassador visit or staff training.', 'target', 'Build your confidence')}${surveyHTML('merchant', existing)}</div>`;
 }
 
 export const routes = {

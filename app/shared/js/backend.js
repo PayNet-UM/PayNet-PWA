@@ -22,7 +22,7 @@ export async function initBackend() {
   const sdk = await import('../vendor/firebase.js');
   // Run Google sign-in on the same domain as the app. Chrome blocks the popup handshake when the
   // auth domain (firebaseapp.com) differs from the site (web.app). Firebase Hosting serves
-  // /__/auth/handler on every site of the project (the student/merchant app and the HEP dashboard),
+  // /__/auth/handler on every site of the project (the student/merchant app and the Admin dashboard),
   // on both their web.app and firebaseapp.com addresses, and on any custom domain connected to them
   // (siteUrls holds the custom domains when CLIENT_URL / ADMIN_URL are set).
   const cfg = { ...firebaseConfig };
