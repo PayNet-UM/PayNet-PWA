@@ -1804,7 +1804,7 @@ College check-outs|Daftar keluar kolej
 Nearby shops|Kedai berdekatan
 KK points|Mata KK
 Total points earned|Jumlah mata terkumpul
-All students’ earned points count. Redeeming or donating won’t lower your KK’s score.|Mata yang dikumpulkan oleh semua pelajar diambil kira. Penebusan atau sumbangan tidak mengurangkan mata KK anda.
+All the points you collect add to your KK’s total. The KK with the most points wins prizes!|Semua mata yang anda kumpul akan ditambah kepada jumlah mata KK anda. KK dengan mata tertinggi akan memenangi hadiah!
 No points earned yet. Get your KK started.|Belum ada mata terkumpul. Mulakan untuk KK anda.
 Scores are syncing.|Mata sedang disegerakkan.
 League is temporarily unavailable.|Liga tidak tersedia buat sementara waktu.
@@ -2087,4 +2087,10 @@ Send reply|Hantar balasan
 Reply sent.|Balasan dihantar.
 Marked as done.|Ditandakan selesai.
 Write a reply first.|Tulis balasan dahulu.
+Got it|Faham
+Your KK|KK anda
+This is your college, its rank and its total points. All the points you collect add to it.|Inilah kolej anda, kedudukannya dan jumlah matanya. Semua mata yang anda kumpul ditambah kepadanya.
+The leaderboard|Papan kedudukan
+See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
+How the KK League works|Cara Liga KK berfungsi
 `;
