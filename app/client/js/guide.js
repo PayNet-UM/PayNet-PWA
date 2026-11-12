@@ -4,8 +4,12 @@
 import { $, $$, esc, icon, n, confetti } from './ui.js';
 
 const KEY = (uid) => `onz-guide-v1:${uid}`;
-const read = (uid) => { try { return localStorage.getItem(KEY(uid)); } catch { return null; } };
-const write = (uid, v) => { try { localStorage.setItem(KEY(uid), v); } catch { /* private mode */ } };
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+};
+const read = (uid) => store.get(KEY(uid));
+const write = (uid, v) => store.set(KEY(uid), v);
 
 /** Call once when a brand-new profile is created: the welcome and tour then show on the next screen. */
 export function markNewAccount(uid) { write(uid, 'pending'); }
@@ -89,11 +93,13 @@ let active = null;
 // A sign-out replaces the whole page, so an overlay that's no longer on the page doesn't count as open.
 export const isOpen = () => !!active && document.body.contains(active.root);
 
-export function start(app, { first = false } = {}) {
+// A page tour passes its own `steps` (tour steps only) and `onDone`; it closes if the student leaves the page.
+export function start(app, { first = false, steps: pageSteps = null, onDone = null } = {}) {
   if (isOpen()) return;
   active = null;
   const uid = app.ctx?.uid;
-  const steps = stepsFor(app, { first });
+  const steps = pageSteps || stepsFor(app, { first });
+  const tourSteps = steps.filter((x) => !x.kind);
   const root = document.createElement('div');
   root.className = 'guide'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'guide-title');
   root.innerHTML = '<div class="guide-spot" aria-hidden="true"></div><div class="guide-card" tabindex="-1"></div>';
@@ -104,8 +110,8 @@ export function start(app, { first = false } = {}) {
 
   const close = (route) => {
     if (!active) return;
-    if (uid) write(uid, 'done');
-    removeEventListener('resize', place); removeEventListener('keydown', onKey, true);
+    if (onDone) onDone(); else if (uid) write(uid, 'done');
+    removeEventListener('resize', place); removeEventListener('keydown', onKey, true); removeEventListener('hashchange', onLeave);
     root.classList.add('leaving');
     setTimeout(() => root.remove(), 180);
     active = null;
@@ -117,18 +123,25 @@ export function start(app, { first = false } = {}) {
     const s = steps[i]; const el = s.target && document.querySelector(s.target);
     root.classList.toggle('no-target', !el);
     if (!el) { card.style.top = card.style.bottom = ''; return; }
-    el.scrollIntoView({ block: 'nearest' });
+    // Bring it to the middle of the screen if the top bar or tab bar would cover it (items in those bars never scroll).
+    const r0 = el.getBoundingClientRect();
+    const topSafe = (document.querySelector('.topbar')?.getBoundingClientRect().bottom || 0) + 8;
+    const bottomSafe = (document.querySelector('.tabbar')?.getBoundingClientRect().top || innerHeight) - 8;
+    if (!el.closest('.topbar, .tabbar') && (r0.top < topSafe || r0.bottom > bottomSafe)) el.scrollIntoView({ block: 'center' });
     const r = el.getBoundingClientRect(); const pad = 6;
     Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
-    // Put the card on the side of the screen away from the highlighted element.
-    if (r.top + r.height / 2 > innerHeight / 2) { card.style.top = ''; card.style.bottom = `${Math.max(16, innerHeight - r.top + 18)}px`; }
-    else { card.style.bottom = ''; card.style.top = `${Math.min(innerHeight - 200, r.bottom + 18)}px`; }
+    // Put the card next to the highlighted element, on the side with room for it, and never off the screen.
+    const h = card.offsetHeight, gap = 16, edge = 8;
+    const fitsAbove = r.top - gap - h >= edge, fitsBelow = r.bottom + gap + h <= innerHeight - edge;
+    const preferBelow = r.top + r.height / 2 <= innerHeight / 2;
+    if (fitsAbove && !(preferBelow && fitsBelow)) { card.style.top = ''; card.style.bottom = `${innerHeight - r.top + gap}px`; }
+    else { card.style.bottom = ''; card.style.top = `${Math.max(edge, Math.min(r.bottom + gap, innerHeight - h - edge))}px`; }
   }
 
   function show(n) {
     i = Math.max(0, Math.min(steps.length - 1, n));
     const s = steps[i];
-    const tourCount = steps.length - 2; // steps between the welcome and the finish
+    const last = i === steps.length - 1;
     const dots = `<div class="guide-dots" aria-hidden="true">${steps.map((_, k) => `<span class="${k === i ? 'on' : ''}"></span>`).join('')}</div>`;
     let html;
     if (s.kind === 'welcome') {
@@ -150,12 +163,13 @@ export function start(app, { first = false } = {}) {
         ${dots}<div class="guide-actions"><button type="button" class="btn ghost" data-back>${icon('arrow-left')} Back</button>
           <button type="button" class="btn primary" data-go="${esc(t.go)}">${esc(t.cta)}</button></div>`;
     } else {
-      html = `<p class="guide-step">Step ${i} of ${tourCount}</p>
+      html = `<p class="guide-step">Step ${tourSteps.indexOf(s) + 1} of ${tourSteps.length}</p>
         <div class="guide-head"><span class="tile-icon" aria-hidden="true">${icon(s.icon)}</span><h2 id="guide-title">${esc(s.title)}</h2></div>
         <p>${esc(s.body)}</p>
-        ${dots}<div class="guide-actions"><button type="button" class="btn ghost small" data-skip>Skip tour</button><span class="spacer"></span>
-          <button type="button" class="btn" data-back aria-label="Back">${icon('arrow-left')}</button>
-          <button type="button" class="btn primary" data-next>Next ${icon('arrow-right')}</button></div>`;
+        ${dots}<div class="guide-actions">${last ? '' : '<button type="button" class="btn ghost small" data-skip>Skip tour</button>'}<span class="spacer"></span>
+          ${i > 0 ? `<button type="button" class="btn" data-back aria-label="Back">${icon('arrow-left')}</button>` : ''}
+          ${last ? `<button type="button" class="btn primary" data-skip>Got it ${icon('check')}</button>`
+            : `<button type="button" class="btn primary" data-next>Next ${icon('arrow-right')}</button>`}</div>`;
     }
     card.className = `guide-card is-${s.kind || 'tour'}`;
     card.innerHTML = html;
@@ -171,7 +185,7 @@ export function start(app, { first = false } = {}) {
   function onKey(e) {
     if (!active) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-    if (e.key === 'ArrowRight' && steps[i].kind !== 'finish') { e.preventDefault(); show(i + 1); return; }
+    if (e.key === 'ArrowRight' && i < steps.length - 1) { e.preventDefault(); show(i + 1); return; }
     if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); show(i - 1); return; }
     if (e.key === 'Tab') {
       const f = $$('a[href], button:not([disabled])', card); if (!f.length) return;
@@ -182,10 +196,32 @@ export function start(app, { first = false } = {}) {
     }
   }
 
+  // A page tour belongs to its page: leaving the page ends it (and counts as seen).
+  function onLeave() { close(); }
   active = { close, root };
   addEventListener('resize', place); addEventListener('keydown', onKey, true);
+  if (pageSteps) addEventListener('hashchange', onLeave);
   show(0);
   if (first) { confetti(); setTimeout(() => active && confetti(), 650); }
+}
+
+// ------------------------------------------------------------- page tours: a short explanation the first time a page opens
+const PAGE_KEY = (uid, page) => `onz-page-tour-v1:${page}:${uid}`;
+export const PAGE_TOURS = {
+  leagues: () => [
+    { target: '#league-kk .community-league-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. All the points you collect add to it.' },
+    { target: '#league-kk [data-board]', icon: 'chart-column', title: 'The leaderboard', body: 'See how your KK compares with the others. The KK with the most points wins prizes!' },
+  ],
+};
+export const pageTourSeen = (uid, page) => store.get(PAGE_KEY(uid, page)) === 'done';
+/** Shows a page's tour (replay: always; otherwise only the first time, and never on top of another tour). */
+export function startPageTour(app, page, { replay = false, has = (sel) => !!document.querySelector(sel) } = {}) {
+  const uid = app.ctx?.uid; if (!uid || !PAGE_TOURS[page] || isOpen()) return false;
+  if (!replay && (pageTourSeen(uid, page) || isPending(uid))) return false;
+  const steps = PAGE_TOURS[page]().filter((x) => has(x.target));
+  if (!steps.length) return false;
+  start(app, { steps, onDone: () => store.set(PAGE_KEY(uid, page), 'done') });
+  return true;
 }
 
 /** After the first screen renders: start the welcome if this account was just created. */

@@ -13,6 +13,7 @@ import * as AV from '../avatar.js';
 import { hereNowSection, mountHereNow } from '../herenow.js';
 import { closeRender, closeMount } from './close.js';
 import { feedbackRender, feedbackMount } from '../feedback.js';
+import * as Guide from '../guide.js';
 import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
@@ -497,8 +498,8 @@ export function surveyMount(root, app, role, back) {
 
 // ------------------------------------------------------------- Leagues: KK League, Faculty League, top referrers
 // Both leagues count points earned (stats/league, kept by the server); spending or donating never lowers them.
-function leagueBoard({ id, title, iconName, mine, mineLabel, unit, hint }) {
-  return `<section class="card community-league league-board" id="${id}" tabindex="-1" aria-labelledby="${id}-title"><div class="community-section-heading"><h2 id="${id}-title">${icon(iconName)} ${title}</h2><span>Total points earned</span></div>
+function leagueBoard({ id, title, iconName, mine, mineLabel, unit, hint, help = '' }) {
+  return `<section class="card community-league league-board" id="${id}" tabindex="-1" aria-labelledby="${id}-title"><div class="community-section-heading"><h2 id="${id}-title">${icon(iconName)} ${title}${help}</h2><span>Total points earned</span></div>
     <div class="community-league-summary"><span class="community-college">${icon('graduation-cap')}<span>${esc(mine || mineLabel)}</span></span><div class="community-scoreboard"><div><span>Your rank</span><strong data-rank>—</strong></div><div><span>${unit}</span><strong data-points>—</strong></div></div></div>
     <p class="community-league-hint">${hint}</p><div data-board><div class="skeleton" style="height:220px"></div></div></section>`;
 }
@@ -526,7 +527,8 @@ async function leaguesRender(app) {
       <a href="#/leagues/kk">${icon('trophy')} KK League</a><a href="#/leagues/faculty">${icon('graduation-cap')} Faculty League</a><a href="#/leagues/referrals">${icon('user-plus')} Top referrers</a></nav>
     <div class="leagues-grid">
     ${leagueBoard({ id: 'league-kk', title: 'KK League', iconName: 'trophy', mine: D.COLLEGES.find(([k]) => k === p.college)?.[1], mineLabel: 'No residential college', unit: 'KK points',
-    hint: 'All students’ earned points count. Redeeming or donating won’t lower your KK’s score.' })}
+    hint: 'All the points you collect add to your KK’s total. The KK with the most points wins prizes!',
+    help: ` <button type="button" class="league-help" id="league-help" aria-label="How the KK League works" title="How the KK League works">${icon('info')}</button>` })}
     ${leagueBoard({ id: 'league-faculty', title: 'Faculty League', iconName: 'graduation-cap', mine: p.faculty, mineLabel: 'No faculty set', unit: 'Faculty points',
     hint: 'Your earned points also count for your faculty, whichever college you live in.' })}
     </div>
@@ -540,7 +542,12 @@ function leaguesMount(root, app, [section] = []) {
   if (target) { const el = $(target, root); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'start' }); }
   const p = app.profile;
   const facultyNames = new Set(D.FACULTIES);
+  // The first time a student opens Leagues (not a link to the Faculty League or Top referrers), explain the KK League,
+  // once the leaderboard is on screen. The (i) button by the heading shows it again.
+  let tourTried = !!section && section !== 'kk';
+  $('#league-help', root).onclick = () => Guide.startPageTour(app, 'leagues', { replay: true });
   const stop = D.watchStats(app.ctx, 'league', (s) => {
+    if (!tourTried) { tourTried = true; setTimeout(() => { if (root.isConnected) Guide.startPageTour(app, 'leagues'); }, 350); }
     fillBoard($('#league-kk', root), s ? s.colleges || {} : null, { mineKey: p.college, crestOf: (k) => k,
       nameOf: (k) => D.COLLEGES.find(([c]) => c === k)?.[1] || k, mineLabel: 'Your college', empty: 'No points earned yet. Get your KK started.' });
     // Only real faculties are shown, so a made-up faculty name can never appear on the public board.

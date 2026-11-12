@@ -83,6 +83,17 @@ await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
 await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
 await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+// The first plain visit to Leagues explains the KK League, then never again.
+await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
+if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Leagues tour did not start on Your KK');
+await stu.screenshot({ path: `${shots}/04b-leagues-tour.png` });
+await stu.click('.guide [data-next]');
+if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Leagues tour does not mention the prize');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .community-podium, #league-kk .community-league-empty'); await stu.waitForTimeout(900);
+if (await stu.locator('.guide').count()) throw new Error('Leagues tour showed again after it was seen');
+await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
 await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
 await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
@@ -92,7 +103,7 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friends and welfare, Leagues has its own page; legacy links and section shortcuts work');
+ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');

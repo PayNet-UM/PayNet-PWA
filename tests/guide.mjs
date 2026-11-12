@@ -72,6 +72,13 @@ test('the merchant checklist follows the shop set-up', () => {
   assert.equal(G.tasksFor(merchant({ status: 'verified' })).cta, 'Go to my shop');
   assert.equal(G.tasksFor(merchant(null)).cta, 'Set up my shop');
 });
+test('the Leagues tour explains the KK League and its prize, in two highlighted steps', () => {
+  const steps = G.PAGE_TOURS.leagues();
+  assert.deepEqual(steps.map((s) => s.title), ['Your KK', 'The leaderboard']);
+  assert.ok(steps.every((s) => s.target && !s.kind));
+  assert.match(steps.map((s) => s.body).join(' '), /All the points you collect add to it\..*most points wins prizes!/);
+  assert.equal(G.pageTourSeen('s1', 'leagues'), false);
+});
 test('every phrase in the guide has a Malay translation', () => {
   const phrases = new Set([
     ...texts(G.stepsFor(student, { has: all })), ...texts(G.stepsFor(student, { first: false, has: all })),
@@ -80,6 +87,7 @@ test('every phrase in the guide has a Malay translation', () => {
     'Step 2 of 8', 'Skip for now', 'Show me around', 'Skip tour', 'Next', 'Back', 'Done',
     'You can replay this tour from your account menu.', 'Take the tour', 'Getting started', 'Sign in', 'Your profile', 'Quick tour',
     'Signed in as aina@gmail.com. One quick step, then we’ll show you around.',
+    ...texts(G.PAGE_TOURS.leagues()), 'Got it', 'How the KK League works',
   ]);
   const missing = [...phrases].filter((p) => _test.translate(p) === p);
   assert.deepEqual(missing, []);
