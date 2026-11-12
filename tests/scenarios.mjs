@@ -221,15 +221,20 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     eq((await D.getProfile(stuR)).inviterUid, 'stuA', 'inviter');
     eq((await D.myReferrals(stuA)).length, 2, 'A referrals');
   });
-  await ok('the open referral board ranks A first with 2 sign-ups', async () => {
+  // The board is built by a Cloud Function (functions/referrals.js); only the demo backend builds it here.
+  if (canSetTime) await ok('the open referral board ranks A first with 2 sign-ups', async () => {
     const top = await D.referralBoard(stuB); eq(top[0].uid, 'stuA'); eq(top[0].count, 2); eq(top.length, 1);
   });
   await denied('nobody can write the referral board from the app', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'stats', 'referrals'), { top: [{ uid: 'stuA', count: 99 }] }));
   await denied('not even the Admin team can write the referral board', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'stats', 'referrals'), { top: [] }));
   const stuLate = await makeCtx({ uid: 'stuLate', email: 'lina@siswa.um.edu.my' });
   await ok('a student who signed up without a code', () => D.createProfile(stuLate, { role: 'student', name: 'Lina', matric: 'L1234567', college: 'KK7' }));
-  tick(16 * 60000);
-  await denied('can’t add a referral code once sign-up is over', () => D.applyInviterCode(stuLate, stuA.profile.referralCode));
+  // Needs a clock that can jump ahead 16 minutes; the emulator runs in real time, and moving T there would put
+  // every later time check 16 minutes in the future.
+  if (canSetTime) {
+    tick(16 * 60000);
+    await denied('can’t add a referral code once sign-up is over', () => D.applyInviterCode(stuLate, stuA.profile.referralCode));
+  }
 
   log('Rewards, vouchers, welfare');
   await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
