@@ -34,10 +34,11 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
   const tour = student ? [
     tab('home', 'house', 'Home', 'Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.'),
     { target: '.topbar .pts-chip', icon: 'sparkles', title: 'Your points', body: 'Every point you earn shows up here. Tap it to see what you can swap them for.' },
-    tab('community', 'users', 'Community', 'Climb the KK League with your college, invite friends, and support the student welfare fund.'),
+    tab('community', 'users', 'Community', 'Add friends and support the student welfare fund.'),
+    tab('leagues', 'trophy', 'Leagues', 'See how your college and faculty rank in the KK and Faculty Leagues, and who tops the referral board.'),
     tab('events', 'calendar', 'Campus Events', 'See what’s happening around UM, like FESKUM 2026.'),
     tab('rewards', 'gift', 'Rewards', 'Swap your points for vouchers, and see your badges and streak.'),
-    tab('me', 'user', 'Me', 'Your profile, your invite code and your points history.'),
+    tab('me', 'user', 'Me', 'Your profile, your referral code and your points history.'),
   ] : [
     tab('home', 'house', 'Home', 'Your shop at a glance: its status, live-deal activity and updates from the Admin team.'),
     tab('shop', 'store', 'My shop', 'Set up your business here: its details, logo and exact map pin. The Admin team checks them before students can see you.'),

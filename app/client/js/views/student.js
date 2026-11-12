@@ -495,18 +495,79 @@ export function surveyMount(root, app, role, back) {
   };
 }
 
+// ------------------------------------------------------------- Leagues: KK League, Faculty League, top referrers
+// Both leagues count points earned (stats/league, kept by the server); spending or donating never lowers them.
+function leagueBoard({ id, title, iconName, mine, mineLabel, unit, hint }) {
+  return `<section class="card community-league league-board" id="${id}" tabindex="-1" aria-labelledby="${id}-title"><div class="community-section-heading"><h2 id="${id}-title">${icon(iconName)} ${title}</h2><span>Total points earned</span></div>
+    <div class="community-league-summary"><span class="community-college">${icon('graduation-cap')}<span>${esc(mine || mineLabel)}</span></span><div class="community-scoreboard"><div><span>Your rank</span><strong data-rank>—</strong></div><div><span>${unit}</span><strong data-points>—</strong></div></div></div>
+    <p class="community-league-hint">${hint}</p><div data-board><div class="skeleton" style="height:220px"></div></div></section>`;
+}
+function fillBoard(root, totals, { mineKey, nameOf, crestOf, mineLabel, empty }) {
+  const el = $('[data-board]', root); if (!el) return;
+  const rows = Object.entries(totals || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true }));
+  const max = Math.max(1, ...rows.map((r) => r[1]));
+  const myRank = rows.findIndex(([k]) => k === mineKey);
+  $('[data-rank]', root).textContent = myRank >= 0 ? '#' + (myRank + 1) : '—';
+  $('[data-points]', root).textContent = totals ? n(totals[mineKey] || 0) : '—';
+  el.innerHTML = rows.length ? `<div class="community-podium">${rows.slice(0, 3).map(([k, v], i) => `<div class="community-contender place-${i + 1} ${k === mineKey ? 'is-mine' : ''}">
+    <span class="contender-place">${i === 0 ? icon('trophy') : icon('medal')}<b>#${i + 1}</b></span><span class="contender-crest">${esc(crestOf(k))}</span>
+    <span class="contender-name">${esc(nameOf(k))}</span><strong class="contender-score">${n(v)} <small>pts</small></strong>
+    ${k === mineKey ? `<span class="contender-mine">${mineLabel}</span>` : ''}</div>`).join('')}</div>
+    <div class="community-rank-list">${rows.slice(3, 10).map(([k, v], i) => `<div class="lb-row ${k === mineKey ? 'me' : ''}"><span class="rank">${i + 4}</span>
+    <div><span class="name">${esc(nameOf(k))}</span><div class="bar"><i style="width:${Math.round((v / max) * 100)}%"></i></div></div><b class="num">${n(v)} <small>pts</small></b></div>`).join('')
+    }</div>` : `<div class="community-league-empty">${icon('trophy')}<p>${totals ? empty : 'Scores are syncing.'}</p></div>`;
+}
+// Short crest for a faculty: its capital letters, e.g. "Faculty of Computer Science and Information Technology" -> FCSIT.
+const facultyCrest = (f) => (f.match(/\b[A-Z]/g) || []).join('').slice(0, 5) || f.slice(0, 3);
+async function leaguesRender(app) {
+  const p = app.profile;
+  return `<div class="leagues-page"><div class="page-title"><h1>${icon('trophy')} Leagues</h1><p class="muted">Every point you earn counts for your residential college and your faculty.</p></div>
+    <nav class="community-shortcuts leagues-tabs" aria-label="Leagues">
+      <a href="#/leagues/kk">${icon('trophy')} KK League</a><a href="#/leagues/faculty">${icon('graduation-cap')} Faculty League</a><a href="#/leagues/referrals">${icon('user-plus')} Top referrers</a></nav>
+    <div class="leagues-grid">
+    ${leagueBoard({ id: 'league-kk', title: 'KK League', iconName: 'trophy', mine: D.COLLEGES.find(([k]) => k === p.college)?.[1], mineLabel: 'No residential college', unit: 'KK points',
+    hint: 'All students’ earned points count. Redeeming or donating won’t lower your KK’s score.' })}
+    ${leagueBoard({ id: 'league-faculty', title: 'Faculty League', iconName: 'graduation-cap', mine: p.faculty, mineLabel: 'No faculty set', unit: 'Faculty points',
+    hint: 'Your earned points also count for your faculty, whichever college you live in.' })}
+    </div>
+    <section class="card referral-board" id="league-referrals" tabindex="-1" aria-labelledby="referrals-title"><div class="community-section-heading"><h2 id="referrals-title">${icon('user-plus')} Top referrers</h2><span>Students who joined with their code</span></div>
+      <p class="community-league-hint">The 10 students whose referral codes were used most, open to everyone so referrals stay fair.</p>
+      <ol class="referral-list" id="referral-list"><li class="skeleton" style="height:160px"></li></ol>
+      <a class="btn small ghost" href="#/me">${icon('share-2')} Share your referral code</a></section></div>`;
+}
+function leaguesMount(root, app, [section] = []) {
+  const target = { kk: '#league-kk', faculty: '#league-faculty', referrals: '#league-referrals' }[section];
+  if (target) { const el = $(target, root); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'start' }); }
+  const p = app.profile;
+  const facultyNames = new Set(D.FACULTIES);
+  const stop = D.watchStats(app.ctx, 'league', (s) => {
+    fillBoard($('#league-kk', root), s ? s.colleges || {} : null, { mineKey: p.college, crestOf: (k) => k,
+      nameOf: (k) => D.COLLEGES.find(([c]) => c === k)?.[1] || k, mineLabel: 'Your college', empty: 'No points earned yet. Get your KK started.' });
+    // Only real faculties are shown, so a made-up faculty name can never appear on the public board.
+    const faculties = s ? Object.fromEntries(Object.entries(s.faculties || {}).filter(([k]) => facultyNames.has(k))) : null;
+    fillBoard($('#league-faculty', root), faculties, { mineKey: p.faculty, crestOf: facultyCrest, nameOf: (k) => k,
+      mineLabel: 'Your faculty', empty: 'No points earned yet. Get your faculty started.' });
+  }, () => { $$('[data-board]', root).forEach((el) => { el.innerHTML = '<p class="faint">League is temporarily unavailable.</p>'; }); });
+  const stopRefs = D.watchStats(app.ctx, 'referrals', (s) => {
+    const el = $('#referral-list', root); if (!el) return;
+    const top = s?.top || [];
+    el.innerHTML = top.length ? top.map((r, i) => `<li class="lb-row ${r.uid === app.ctx.uid ? 'me' : ''}"><span class="rank">${i + 1}</span>
+      <div><span class="name" data-no-i18n>${esc(r.label)}</span>${r.college ? ` <span class="faint">${esc(r.college)}</span>` : ''}${r.uid === app.ctx.uid ? ' <span class="badge">You</span>' : ''}</div>
+      <b class="num">${n(r.count)} <small>${r.count === 1 ? 'friend' : 'friends'}</small></b></li>`).join('')
+      : `<li class="community-league-empty">${icon('user-plus')}<p>No one has joined with a referral code yet.</p></li>`;
+  }, () => { const el = $('#referral-list', root); if (el) el.innerHTML = '<li class="faint">The board is temporarily unavailable.</li>'; });
+  return () => { stop(); stopRefs(); };
+}
+
 // ------------------------------------------------------------- Komuniti Kita: colleges, welfare, ventures
 async function communityRender(app) {
   const friends = await friendsRender(app);
   const overviewOn = D.featureOn(app.rules, 'overview');
   const merchants = overviewOn ? await D.listVerifiedMerchants(app.ctx) : [];
   const ventures = merchants.filter(isIdea);
-  const college = D.COLLEGES.find(([k]) => k === app.profile.college)?.[1] || 'Your college';
   return `<div class="community-page"><section class="community-circle" id="community-circle" aria-label="Your circle" tabindex="-1">${friends}</section>
-    <div class="community-main-grid"><section class="card community-league" id="community-league" tabindex="-1" aria-labelledby="league-title"><div class="community-section-heading"><h2 id="league-title">${icon('trophy')} KK League</h2><span>Total points earned</span></div>
-      <div class="community-league-summary"><span class="community-college">${icon('graduation-cap')}<span>${esc(college)}</span></span><div class="community-scoreboard"><div><span>Your rank</span><strong id="community-rank">—</strong></div><div><span>KK points</span><strong id="community-points">—</strong></div></div></div>
-      <p class="community-league-hint">All students’ earned points count. Redeeming or donating won’t lower your KK’s score.</p><div id="lb"><div class="skeleton" style="height:220px"></div></div></section>
-    <div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
+    <a class="community-invite community-leagues-link" href="#/leagues"><span class="community-invite-icon">${icon('trophy')}</span><div><h3>Leagues</h3><p>See how your KK and your faculty rank, and the top referrers.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a>
+    <div class="community-main-grid"><div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="card community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
       <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
       <button class="btn go" id="donate">${icon('hand-heart')} Give points ${icon('chevron-right')}</button></section>
@@ -516,30 +577,17 @@ async function communityRender(app) {
     </section></div></div>
     ${overviewOn ? `<section class="section community-ventures"><div class="community-section-heading"><h2>${icon('store')} Student Ventures</h2><a href="#/explore/idea">See all ${icon('chevron-right')}</a></div>
       <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask the Admin team about joining as a student entrepreneur.</p></div>`}</div></section>` : ''}
-    <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('user-plus')}</span><div><h3>Invite friends</h3><p>Connect with friends using your referral code.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
+    <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('user-plus')}</span><div><h3>Invite friends</h3><p>Share your referral code with friends who haven’t signed up yet.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
 }
 function communityMount(root, app, [section] = []) {
   const stopFriends = friendsMount(root, app);
-  const target = { friends: '#community-circle', add: '#friend-search', league: '#community-league', welfare: '#community-welfare' }[section];
+  if (section === 'league') { location.hash = '#/leagues'; return stopFriends; }
+  const target = { friends: '#community-circle', add: '#friend-search', welfare: '#community-welfare' }[section];
   if (target) {
     const el = $(target, root);
     el.focus({ preventScroll: true });
     el.scrollIntoView({ block: 'start' });
   }
-  const u1 = D.watchStats(app.ctx, 'league', (s) => {
-    const el = $('#lb', root); if (!el) return;
-    const rows = Object.entries(s?.colleges || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })); const max = Math.max(1, ...rows.map((r) => r[1]));
-    const myRank = rows.findIndex(([k]) => k === app.profile.college);
-    $('#community-rank', root).textContent = myRank >= 0 ? '#' + (myRank + 1) : '—';
-    $('#community-points', root).textContent = s ? n(s.colleges?.[app.profile.college] || 0) : '—';
-    el.innerHTML = rows.length ? `<div class="community-podium">${rows.slice(0, 3).map(([k, v], i) => `<div class="community-contender place-${i + 1} ${k === app.profile.college ? 'is-mine' : ''}">
-      <span class="contender-place">${i === 0 ? icon('trophy') : icon('medal')}<b>#${i + 1}</b></span><span class="contender-crest">${esc(k)}</span>
-      <span class="contender-name">${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</span><strong class="contender-score">${n(v)} <small>pts</small></strong>
-      ${k === app.profile.college ? '<span class="contender-mine">Your college</span>' : ''}</div>`).join('')}</div>
-      <div class="community-rank-list">${rows.slice(3, 8).map(([k, v], i) => `<div class="lb-row ${k === app.profile.college ? 'me' : ''}"><span class="rank">${i + 4}</span>
-      <div><span class="name">${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</span><div class="bar"><i style="width:${Math.round((v / max) * 100)}%"></i></div></div><b class="num">${n(v)} <small>pts</small></b></div>`).join('')
-      }</div>` : `<div class="community-league-empty">${icon('trophy')}<p>${s ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.'}</p>${D.featureOn(app.rules, 'overview') ? `<a class="btn small primary" href="#/explore">Overview ${icon('chevron-right')}</a>` : ''}</div>`;
-  }, () => { const el = $('#lb', root); if (el) el.innerHTML = '<p class="faint">League is temporarily unavailable.</p>'; });
   const u2 = D.watchStats(app.ctx, 'welfare', (s) => { const el = $('#welfare', root); if (el) countUp(el, s?.points || 0); }, () => {});
   $('#donate', root).onclick = () => {
     const el = sheet(`<h2>Give points to the welfare fund</h2><p class="muted">You have ${n(app.profile.points)} points.</p>
@@ -572,7 +620,7 @@ function communityMount(root, app, [section] = []) {
     el.innerHTML = requests.map((request) => `<details class="welfare-request-entry"><summary><strong>${n(request.amount)} <small>pts</small></strong><span class="welfare-status ${esc(request.status)}">${request.status === 'approved' ? 'Points received' : request.status === 'rejected' ? 'Declined' : 'Pending Admin team'}</span>${icon('chevron-right')}</summary>
       <div><p class="faint">${fmtDate(request.createdAt)}</p><p data-no-i18n>${esc(request.reason)}</p>${request.response ? `<p class="welfare-response"><b>Admin team:</b> <span data-no-i18n>${esc(request.response)}</span></p>` : ''}</div></details>`).join('') || '<p class="faint welfare-no-requests">No requests yet.</p>';
   }, () => { const el = $('#welfare-requests', root); if (el) el.innerHTML = '<p class="faint">Couldn’t load requests.</p>'; });
-  return () => { stopFriends(); u1(); u2(); u3(); };
+  return () => { stopFriends(); u2(); u3(); };
 }
 
 // ------------------------------------------------------------- avatar editor
@@ -667,9 +715,10 @@ async function meRender(app) {
         <button class="btn small" type="button" id="copy-referral" aria-label="Copy referral code">Copy</button>
         <button class="btn primary" id="share">${icon('share-2')} Share</button>
       </div>
-      <p class="faint">Using a referral code sends its owner a friend request.</p>
-      ${refs.length ? `<details class="invite-activity"><summary>Referral activity <span class="badge">${n(refs.length)}</span></summary><div class="list">${refs.map((r) => `<div class="item"><span class="tile-icon">${icon('user-plus')}</span><div class="grow"><h3>${esc(r.friendName)}</h3><p>Friend request sent</p></div></div>`).join('')}</div></details>` : ''}
-      ${!p.inviterUid ? `<form id="inv" class="row" style="margin-top:14px;flex-wrap:nowrap"><input name="code" placeholder="Friend’s code, e.g. AINA-7K2Q" required aria-label="Friend’s referral code"><button class="btn">Add</button></form>` : p.inviterCode ? `<p class="faint" style="margin-top:12px">You joined with code ${esc(p.inviterCode)}.</p>` : ''}
+      <p class="faint">Friends enter your code when they sign up. It also sends you a friend request.</p>
+      <div class="invite-count"><strong>${n(refs.length)}</strong><span>${refs.length === 1 ? 'person has' : 'people have'} joined with your code</span><a class="btn small ghost" href="#/leagues/referrals">${icon('trophy')} Top referrers</a></div>
+      ${refs.length ? `<details class="invite-activity"><summary>Who joined with your code <span class="badge">${n(refs.length)}</span></summary><div class="list">${refs.map((r) => `<div class="item"><span class="tile-icon">${icon('user-plus')}</span><div class="grow"><h3>${esc(r.friendName)}</h3><p>Friend request sent</p></div></div>`).join('')}</div></details>` : ''}
+      ${p.inviterCode ? `<p class="faint" style="margin-top:12px">You joined with code ${esc(p.inviterCode)}.</p>` : ''}
     </section>
     <section class="section"><div class="head"><h2>Profile</h2></div><form id="prof" class="card stack">
       <label class="field">Name<input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}"></label>
@@ -718,10 +767,9 @@ function meMount(root, app) {
     }
   };
   $('#share', root).onclick = async () => {
-    const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Use my code ${app.profile.referralCode} to connect with me: ${location.origin}${location.pathname}`);
+    const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Enter my referral code ${app.profile.referralCode} when you sign up: ${location.origin}${location.pathname}`);
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it to a friend.'); } } catch { /* cancelled */ }
   };
-  if ($('#inv', root)) $('#inv', root).onsubmit = (e) => { e.preventDefault(); busy($('button', e.target), async () => { try { await D.applyInviterCode(app.ctx, e.target.code.value); toast('Code added. Your friend connection is in Community.'); app.render(); } catch (err) { toast(err.code ? errText(err) : err.message, true); } }); };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { try { await D.updateProfile(app.ctx, { name: f.name.value.trim(), faculty: f.faculty.value }); toast('Profile saved.'); } catch (err) { toast(errText(err), true); } });
@@ -751,6 +799,7 @@ export const routes = {
   learn: { title: 'Learn & Earn', render: learnRender, mount: learnMount, tab: 'home' },
   survey: { title: 'Money check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'student', 'home'), tab: 'home' },
   community: { title: 'Community', render: communityRender, mount: communityMount },
+  leagues: { title: 'Leagues', render: leaguesRender, mount: leaguesMount },
   avatar: { title: 'Your avatar', render: avatarRender, mount: avatarMount, tab: 'me' },
   me: { title: 'Me', render: meRender, mount: meMount },
   feedback: { title: 'Questions and feedback', render: feedbackRender, mount: feedbackMount, tab: 'me' },

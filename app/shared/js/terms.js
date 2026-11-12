@@ -6,7 +6,7 @@ import { $$, esc, sheet } from './ui.js';
 import { TERMS_VERSION } from './data.js';
 
 export { TERMS_VERSION };
-export const TERMS_EFFECTIVE = { en: '8 November 2026', ms: '8 November 2026' };
+export const TERMS_EFFECTIVE = { en: '13 November 2026', ms: '13 November 2026' };
 // Who to contact about the programme and your data.
 export const TERMS_CONTACT = {
   en: 'the +Onz team at admin@addonz.my',
@@ -40,7 +40,7 @@ const T = {
       ]],
       ['How we use it', [
         ['To run +Onz: your account, points, rewards, vouchers, welfare requests and friends.',
-          'To show the college leaderboard, which uses college totals only, never individual students.',
+          'To show the KK League and Faculty League, which use college and faculty totals only, and the top 10 referrers.',
           'To keep the programme fair: one account per matric number, and spotting misuse.',
           'To report how the programme is doing to Universiti Malaya and PayNet, as totals and summaries.',
           'To improve the app.'],
@@ -51,7 +51,7 @@ const T = {
           'Admin team members can see profiles, points, vouchers and welfare requests to run and support the programme.',
           'A business sees your name on a voucher when you redeem it with them.',
           'Friends you accept see your username and avatar, and your campus map status if you switched it on.',
-          'Everyone sees college totals on the leaderboard, not individual students.',
+          'Everyone signed in sees college and faculty totals on the leagues, not individual students. The top 10 referrers board shows each of those students’ username (or first name), college and how many people joined with their referral code.',
           'PayNet receives the list of participating businesses and their DuitNow QR details (Lampiran 1), and programme totals. They don’t get students’ personal details.',
           'Service providers that run the app for us: Google Firebase (sign-in, database and hosting) and map providers (Google Maps or OpenStreetMap) when you open the map. Their servers may be outside Malaysia, but your data is used only to run +Onz in Malaysia.'],
       ]],
@@ -121,7 +121,7 @@ const T = {
       ]],
       ['Cara kami menggunakannya', [
         ['Untuk menjalankan +Onz: akaun, mata, ganjaran, baucar, permohonan kebajikan dan rakan anda.',
-          'Untuk memaparkan papan pendahulu kolej, yang menggunakan jumlah kolej sahaja, bukan pelajar individu.',
+          'Untuk memaparkan Liga KK dan Liga Fakulti, yang menggunakan jumlah kolej dan fakulti sahaja, serta 10 perujuk teratas.',
           'Untuk memastikan program adil: satu akaun bagi setiap nombor matrik, dan mengesan penyalahgunaan.',
           'Untuk melaporkan prestasi program kepada Universiti Malaya dan PayNet, dalam bentuk jumlah dan ringkasan.',
           'Untuk menambah baik aplikasi.'],
@@ -132,7 +132,7 @@ const T = {
           'Pasukan Admin boleh melihat profil, mata, baucar dan permohonan kebajikan untuk menjalankan dan menyokong program.',
           'Perniagaan melihat nama anda pada baucar apabila anda menebusnya di sana.',
           'Rakan yang anda terima melihat nama pengguna dan avatar anda, serta status peta kampus jika anda menghidupkannya.',
-          'Semua orang melihat jumlah kolej pada papan pendahulu, bukan pelajar individu.',
+          'Semua pengguna yang log masuk melihat jumlah kolej dan fakulti pada liga, bukan pelajar individu. Papan 10 perujuk teratas menunjukkan nama pengguna (atau nama pertama), kolej dan bilangan orang yang mendaftar dengan kod rujukan setiap pelajar tersebut.',
           'PayNet menerima senarai perniagaan yang menyertai serta butiran QR DuitNow mereka (Lampiran 1), dan jumlah program. Mereka tidak mendapat butiran peribadi pelajar.',
           'Penyedia perkhidmatan yang menjalankan aplikasi untuk kami: Google Firebase (log masuk, pangkalan data dan pengehosan) dan penyedia peta (Google Maps atau OpenStreetMap) apabila anda membuka peta. Pelayan mereka mungkin berada di luar Malaysia, tetapi data anda hanya digunakan untuk menjalankan +Onz di Malaysia.'],
       ]],

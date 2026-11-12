@@ -19,7 +19,7 @@ const app = {
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['community', 'Community', 'users'], ['events', 'Campus Events', 'calendar'], ['home', 'Home', 'house', true], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house', true], ['promote', 'Promote live deals', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 

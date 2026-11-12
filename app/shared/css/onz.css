@@ -1325,7 +1325,8 @@ button.welcome-tier .ic:last-child { width:12px;height:12px;color:#fff; }
 .community-league-summary .community-college .ic { color:var(--onz-blue); }
 .community-league-summary .community-scoreboard { grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;border:0;padding:0;color:var(--onz-blue); }
 .community-league-summary .community-scoreboard > div > span { color:#686b8d; }
-.community-league-summary .community-scoreboard strong { font-size:24px; }
+.community-league-summary .community-scoreboard strong { font-size:24px;white-space:nowrap; }
+.community-league-summary .community-scoreboard { grid-template-columns:auto auto; }
 @media (max-width:440px) {
   .community-shortcuts button { font-size:11px;gap:5px; }
   .community-league-summary .community-scoreboard { flex:1; }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { leagueContribution, syncLeagueStudent } from '../functions/league.js';
+import { referralBoard } from '../functions/referrals.js';
 import * as sdk from '../app/shared/js/fake/fakefb.js';
 import * as D from '../app/shared/js/data.js';
 
@@ -49,9 +50,30 @@ await check('deleted students are reconciled out of their college', async () => 
   assert.deepEqual(docs.get('stats/league').colleges, { KK1: 50, KK2: 900 });
 });
 await check('merchants, off-campus accounts and invalid credit amounts do not inflate KK scores', async () => {
-  assert.deepEqual(leagueContribution({ role: 'merchant', college: 'KK1' }, [{ delta: 500 }]), { college: '', earned: 0 });
-  assert.deepEqual(leagueContribution({ role: 'student', college: 'OFF' }, [{ delta: 500 }]), { college: '', earned: 0 });
+  assert.deepEqual(leagueContribution({ role: 'merchant', college: 'KK1', faculty: 'Faculty of Law' }, [{ delta: 500 }]), { college: '', faculty: '', earned: 0 });
+  assert.deepEqual(leagueContribution({ role: 'student', college: 'OFF' }, [{ delta: 500 }]), { college: '', faculty: '', earned: 0 });
+  assert.deepEqual(leagueContribution({ role: 'student', college: 'OFF', faculty: 'Faculty of Law' }, [{ delta: 500 }]), { college: '', faculty: 'Faculty of Law', earned: 500 });
   assert.equal(leagueContribution({ role: 'student', college: 'KK1' }, [{ delta: '100' }, { delta: -10 }, { delta: 5 }]).earned, 5);
+});
+await check('Faculty League: earned points count for the faculty, and move with a faculty change', async () => {
+  docs.set('users/f', { role: 'student', college: 'KK4', faculty: 'Faculty of Science', points: 0 });
+  docs.set('users/f/ledger/0', { delta: 120 }); docs.set('users/f/ledger/1', { type: 'welfare', delta: 500 });
+  docs.set('users/g', { role: 'student', college: 'OFF', faculty: 'Faculty of Science', points: 0 });
+  docs.set('users/g/ledger/0', { delta: 30 });
+  await syncLeagueStudent(db, 'f'); await syncLeagueStudent(db, 'g');
+  assert.equal(docs.get('stats/league').faculties['Faculty of Science'], 150);
+  assert.equal(docs.get('stats/league').colleges.KK4, 120);
+  docs.get('users/f').faculty = 'Faculty of Law'; await syncLeagueStudent(db, 'f');
+  assert.deepEqual(docs.get('stats/league').faculties, { 'Faculty of Science': 30, 'Faculty of Law': 120 });
+  assert.equal(docs.get('stats/league').colleges.KK4, 120);
+});
+await check('referral board: top 10 by uses, students only, username before first name', async () => {
+  const profiles = new Map([['a', { role: 'student', name: 'Aina Nadhirah', college: 'KK3' }], ['b', { role: 'student', name: 'Badrul', username: 'bad_um', college: 'KK5' }],
+    ['m', { role: 'merchant', name: 'Kopi' }]]);
+  const top = referralBoard([{ inviterUid: 'a' }, { inviterUid: 'b' }, { inviterUid: 'b' }, { inviterUid: 'm' }, { inviterUid: 'gone' }], profiles);
+  assert.deepEqual(top, [{ uid: 'b', count: 2, label: '@bad_um', college: 'KK5' }, { uid: 'a', count: 1, label: 'Aina', college: 'KK3' }]);
+  const many = [...Array(15)].map((_, i) => ['s' + i, { role: 'student', name: 'S' + i }]);
+  assert.equal(referralBoard(many.flatMap(([uid], i) => Array(i + 1).fill({ inviterUid: uid })), new Map(many)).length, 10);
 });
 
 const source = fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');

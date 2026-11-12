@@ -26,6 +26,7 @@ const RM = '(RM[\\d.,]+)';
 
 // [regex, (match groups…) => Malay]; t() translates a fragment recursively.
 const PATTERNS = [
+  [/^([\d,]+) friends?$/, (n) => `${n} rakan`],
   [/^You lose your ([\d,]+) points and any unused vouchers\.$/, (n) => `Anda kehilangan ${n} mata dan semua baucar yang belum digunakan.`],
   [/^The Admin team will close your account after settling any vouchers students still hold and updating the PayNet list\. They’ll contact you at (.+) if they need anything\.$/, (email) => `Pasukan Admin akan menutup akaun anda selepas menyelesaikan baucar yang masih dipegang pelajar dan mengemas kini senarai PayNet. Mereka akan menghubungi anda di ${email} jika perlu.`],
   [/^All closures \((\d+)\)$/, (n) => `Semua penutupan (${n})`],
@@ -33,6 +34,7 @@ const PATTERNS = [
   [/^([\d,]+) points lost$/, (n) => `${n} mata hilang`],
   [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) for a welcome bonus: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk mendapat bonus alu-aluan: ${url}`],
   [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Use my code (.+) to connect with me: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Gunakan kod saya ${code} untuk berhubung dengan saya: ${url}`],
+  [/^Join \+Onz, UM’s campus app for merchants, events and rewards\. Enter my referral code (.+) when you sign up: (https?:\/\/\S+)$/, (code, url) => `Sertai +Onz, aplikasi kampus UM untuk peniaga, acara dan ganjaran. Masukkan kod rujukan saya ${code} semasa mendaftar: ${url}`],
 
   [/^Block (.+)\? They won't be able to earn or redeem until you unblock them\.$/, (name) => `Sekat ${name}? Pelajar ini tidak dapat mengumpul atau menebus mata sehingga sekatan ditarik balik.`],
   [/^Release matric number (.+)\?$/, (number) => `Lepaskan nombor matrik ${number}?`],

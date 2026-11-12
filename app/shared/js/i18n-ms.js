@@ -2006,10 +2006,11 @@ Get on the map|Muncul di peta kampus
 Reach students|Capai pelajar
 Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.|Kad +Onz anda: mata, tahap dan rentetan harian anda. Terokai kedai, tawaran aktif dan Belajar & Kumpul Mata dari sini.
 Every point you earn shows up here. Tap it to see what you can swap them for.|Setiap mata yang anda kumpul dipaparkan di sini. Ketik untuk melihat apa yang boleh anda tukar.
-Climb the KK League with your college, invite friends, and support the student welfare fund.|Naikkan kedudukan kolej anda dalam Liga KK, jemput rakan dan sokong tabung kebajikan pelajar.
+Add friends and support the student welfare fund.|Tambah rakan dan sokong tabung kebajikan pelajar.
+See how your college and faculty rank in the KK and Faculty Leagues, and who tops the referral board.|Lihat kedudukan kolej dan fakulti anda dalam Liga KK dan Liga Fakulti, serta siapa mendahului papan rujukan.
 See what’s happening around UM, like FESKUM 2026.|Lihat aktiviti di sekitar UM, seperti FESKUM 2026.
 Swap your points for vouchers, and see your badges and streak.|Tukar mata anda dengan baucar, dan lihat lencana serta rentetan anda.
-Your profile, your invite code and your points history.|Profil anda, kod jemputan anda dan sejarah mata anda.
+Your profile, your referral code and your points history.|Profil anda, kod rujukan anda dan sejarah mata anda.
 Your shop at a glance: its status, live-deal activity and updates from the Admin team.|Ringkasan kedai anda: status, aktiviti tawaran aktif dan makluman daripada pasukan Admin.
 Set up your business here: its details, logo and exact map pin. The Admin team checks them before students can see you.|Sediakan perniagaan anda di sini: butiran, logo dan pin peta yang tepat. Pasukan Admin menyemaknya sebelum pelajar dapat melihat kedai anda.
 Show this QR to students so they can claim your live deals.|Tunjukkan QR ini kepada pelajar supaya mereka boleh menuntut tawaran aktif anda.
@@ -2086,4 +2087,33 @@ Send reply|Hantar balasan
 Reply sent.|Balasan dihantar.
 Marked as done.|Ditandakan selesai.
 Write a reply first.|Tulis balasan dahulu.
+Leagues|Liga
+Faculty League|Liga Fakulti
+Top referrers|Perujuk teratas
+Every point you earn counts for your residential college and your faculty.|Setiap mata yang anda peroleh dikira untuk kolej kediaman dan fakulti anda.
+No residential college|Tiada kolej kediaman
+No faculty set|Fakulti belum ditetapkan
+Faculty points|Mata fakulti
+Your earned points also count for your faculty, whichever college you live in.|Mata yang anda peroleh juga dikira untuk fakulti anda, walau di kolej mana anda tinggal.
+Students who joined with their code|Pelajar yang mendaftar dengan kod mereka
+The 10 students whose referral codes were used most, open to everyone so referrals stay fair.|10 pelajar yang kod rujukannya paling banyak digunakan, terbuka kepada semua supaya rujukan kekal adil.
+Share your referral code|Kongsi kod rujukan anda
+Your faculty|Fakulti anda
+No points earned yet. Get your faculty started.|Belum ada mata diperoleh. Mulakan untuk fakulti anda.
+No one has joined with a referral code yet.|Belum ada sesiapa yang mendaftar dengan kod rujukan.
+The board is temporarily unavailable.|Papan ini tidak tersedia buat sementara waktu.
+See how your KK and your faculty rank, and the top referrers.|Lihat kedudukan KK dan fakulti anda, serta perujuk teratas.
+Share your referral code with friends who haven’t signed up yet.|Kongsi kod rujukan anda dengan rakan yang belum mendaftar.
+Friends enter your code when they sign up. It also sends you a friend request.|Rakan memasukkan kod anda semasa mendaftar. Ia juga menghantar permintaan rakan kepada anda.
+people have joined with your code|orang telah mendaftar dengan kod anda
+person has joined with your code|orang telah mendaftar dengan kod anda
+Who joined with your code|Siapa yang mendaftar dengan kod anda
+Are you signing up with a friend’s referral code?|Adakah anda mendaftar dengan kod rujukan rakan?
+Yes|Ya
+No|Tidak
+Referral code|Kod rujukan
+You can only enter a referral code now, while signing up. It also sends your friend a friend request.|Anda hanya boleh memasukkan kod rujukan sekarang, semasa mendaftar. Ia juga menghantar permintaan rakan kepada rakan anda.
+That referral code doesn’t exist. Check it with your friend, or choose No.|Kod rujukan itu tidak wujud. Semak dengan rakan anda, atau pilih Tidak.
+Your account is ready, but the referral code couldn’t be added.|Akaun anda sudah sedia, tetapi kod rujukan tidak dapat ditambah.
+Add friends by username any time. Referral codes are only for signing up.|Tambah rakan melalui nama pengguna pada bila-bila masa. Kod rujukan hanya untuk pendaftaran.
 `;

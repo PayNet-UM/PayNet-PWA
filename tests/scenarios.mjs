@@ -209,6 +209,27 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('friend rewards stay paused instead of depending on attendance', () => D.claimFriendBonus(stuB, rules));
   await ok('referral still connects friends without qualifying a point reward', async () => { const rows = await D.myReferrals(stuA); eq(rows.length, 1); eq(rows[0].qualified, false); });
   await denied('a student cannot mark their own referral reward qualified', () => stuB.sdk.updateDoc(stuB.sdk.doc(stuB.db, 'referrals', 'stuB'), { qualified: true }));
+  const stuR = await makeCtx({ uid: 'stuR', email: 'rafiq@siswa.um.edu.my' });
+  await ok('a wrong referral code stops sign-up before the account is made', async () => {
+    let msg = '';
+    try { await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: 'NOPE-0000' }); } catch (e) { msg = e.badReferral ? 'bad' : e.message; }
+    eq(msg, 'bad', 'error'); eq(await D.getProfile(stuR), null, 'profile');
+  });
+  await ok('signing up with a referral code connects the friends and counts for the inviter', async () => {
+    const res = await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: stuA.profile.referralCode.toLowerCase() });
+    eq(res.referralFailed, undefined, 'referral failed');
+    eq((await D.getProfile(stuR)).inviterUid, 'stuA', 'inviter');
+    eq((await D.myReferrals(stuA)).length, 2, 'A referrals');
+  });
+  await ok('the open referral board ranks A first with 2 sign-ups', async () => {
+    const top = await D.referralBoard(stuB); eq(top[0].uid, 'stuA'); eq(top[0].count, 2); eq(top.length, 1);
+  });
+  await denied('nobody can write the referral board from the app', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'stats', 'referrals'), { top: [{ uid: 'stuA', count: 99 }] }));
+  await denied('not even the Admin team can write the referral board', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'stats', 'referrals'), { top: [] }));
+  const stuLate = await makeCtx({ uid: 'stuLate', email: 'lina@siswa.um.edu.my' });
+  await ok('a student who signed up without a code', () => D.createProfile(stuLate, { role: 'student', name: 'Lina', matric: 'L1234567', college: 'KK7' }));
+  tick(16 * 60000);
+  await denied('can’t add a referral code once sign-up is over', () => D.applyInviterCode(stuLate, stuA.profile.referralCode));
 
   log('Rewards, vouchers, welfare');
   await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',

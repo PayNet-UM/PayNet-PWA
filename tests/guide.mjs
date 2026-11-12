@@ -42,7 +42,7 @@ test('a student starts with a personal welcome and ends with the checklist', () 
   assert.equal(steps[0].title, 'Welcome to +Onz, Aina!');
   assert.equal(steps.at(-1).kind, 'finish');
   assert.deepEqual(steps.filter((s) => s.target).map((s) => s.title),
-    ['Home', 'Your points', 'Community', 'Campus Events', 'Rewards', 'Me', 'English or Bahasa Malaysia', 'Your account menu']);
+    ['Home', 'Your points', 'Community', 'Leagues', 'Campus Events', 'Rewards', 'Me', 'English or Bahasa Malaysia', 'Your account menu']);
 });
 test('replaying the tour skips the first-time welcome wording', () => {
   assert.equal(G.stepsFor(student, { first: false, has: all })[0].title, 'A quick tour of +Onz');

@@ -983,3 +983,23 @@ button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; tex
 .close-account .close-reasons legend h2 { margin: 0; }
 .closure-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
 .closure-reasons .badge { white-space: normal; height: auto; min-height: 26px; }
+
+/* Leagues page: KK League, Faculty League, top referrers */
+.community-shortcuts a { display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;min-height:46px;padding:10px 8px;border:1px solid #d5cff4;border-bottom-width:3px;border-radius:15px;background:#eeebff;color:var(--onz-blue);font-size:12px;font-weight:700;text-decoration:none; }
+.community-shortcuts a:nth-child(2) { background:#f4fad5;border-color:#d8e3a6;color:#4b571c; }
+.community-shortcuts a:nth-child(3) { background:#e4f7ef;border-color:#b8dfce;color:#236550; }
+.community-shortcuts a > .ic { width:18px;height:18px;flex-shrink:0; }
+.leagues-grid { display:grid;gap:16px; }
+@media (min-width: 900px) { .leagues-grid { grid-template-columns:1fr 1fr; } }
+.league-board, .referral-board { scroll-margin-top:100px; }
+.league-board:focus-visible, .referral-board:focus-visible { outline:2px solid var(--onz-blue);outline-offset:4px; }
+.referral-board { margin-top:16px; }
+.referral-list { list-style:none;margin:12px 0 16px;padding:0; }
+.referral-list .lb-row .num small { font-weight:600;color:var(--ink-3); }
+.community-leagues-link { margin:0 0 16px; }
+.invite-count { display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px;padding:12px 14px;border-radius:14px;background:#f1efff; }
+.invite-count strong { font-size:28px;line-height:1;color:var(--onz-blue); }
+.invite-count span { flex:1;min-width:140px;font-weight:600; }
+.ob-referral { border:0;padding:0;margin:0; }
+.ob-referral legend { font-weight:700;margin-bottom:6px; }
+.ob-referral-pick { gap:18px; }

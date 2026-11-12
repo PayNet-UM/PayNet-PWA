@@ -491,6 +491,11 @@ export function renderOnboarding(app, done) {
         <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
         <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college later.</b> Your points count towards it in the KK League, so check you’ve picked the right one.</span></div>
         <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
+        <fieldset class="field ob-referral"><legend>Are you signing up with a friend’s referral code?</legend>
+          <div class="row ob-referral-pick"><label class="check"><input type="radio" name="hasReferral" value="no" checked> No</label>
+            <label class="check"><input type="radio" name="hasReferral" value="yes"> Yes</label></div>
+          <label class="field hidden" id="ob-referral-code">Referral code<input name="referral" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="e.g. AINA-7K2Q" spellcheck="false"></label>
+          <small>You can only enter a referral code now, while signing up. It also sends your friend a friend request.</small></fieldset>
       </div>
       <div class="terms-box">
         <p><b>Before you continue</b><br><span class="faint">+Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. Admin team members can see it; businesses only see your name on vouchers you redeem with them. Details below.</span></p>
@@ -501,8 +506,12 @@ export function renderOnboarding(app, done) {
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
   const f = $('#ob');
-  const sync = () => { $('#student-fields').classList.toggle('hidden', f.role.value !== 'student'); f.matric.required = f.role.value === 'student'; f.college.required = f.role.value === 'student'; };
-  $$('input[name=role]', f).forEach((r) => { r.onchange = sync; }); sync();
+  const sync = () => {
+    const student = f.role.value === 'student', referral = student && f.hasReferral.value === 'yes';
+    $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student;
+    $('#ob-referral-code').classList.toggle('hidden', !referral); f.referral.required = referral;
+  };
+  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
   f.onsubmit = (e) => {
@@ -510,13 +519,16 @@ export function renderOnboarding(app, done) {
     busy($('button[type=submit]', f), async () => {
       const role = f.role.value;
       try {
-        await D.createProfile(app.ctx, role === 'student'
-          ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value }
+        const res = await D.createProfile(app.ctx, role === 'student'
+          ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value,
+            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '' }
           : { role, name: f.name.value });
+        if (res?.referralFailed) toast('Your account is ready, but the referral code couldn’t be added.', true);
         await done();
       } catch (err) {
         if (err.notReady) toast('+Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
+        else if (err.badReferral) toast('That referral code doesn’t exist. Check it with your friend, or choose No.', true);
         else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact the Admin team.', true);
         else if (err.code === 'permission-denied' && role === 'student')
           toast('This email can’t join as a student. Use your Gmail or UM email, or ask the Admin team to add you as a tester.', true);

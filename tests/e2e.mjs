@@ -81,8 +81,9 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
 await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
-await stu.click('.community-shortcuts [data-friends-jump="community-league"]');
-await stu.waitForFunction(() => document.activeElement?.id === 'community-league');
+await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
+await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
 await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
 await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
@@ -91,7 +92,7 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friend management, KK League and welfare; legacy links and section shortcuts work');
+ok('Community combines friends and welfare, Leagues has its own page; legacy links and section shortcuts work');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');

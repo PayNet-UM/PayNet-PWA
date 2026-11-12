@@ -29,7 +29,7 @@ export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, fal
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
 // Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
 // everyone is then asked to accept again.
-export const TERMS_VERSION = '2026-11-08';
+export const TERMS_VERSION = '2026-11-13';
 export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -144,7 +144,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -154,7 +154,12 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     if (!/^[A-Z0-9]{5,15}$/.test(matric)) { const e = new Error('bad-matric'); e.badMatric = true; throw e; }
     const taken = await sdk.getDoc(sdk.doc(ctx.db, 'matrics', matric)).then((x) => x.exists() && x.data().uid !== ctx.uid).catch(() => false);
     if (taken) { const e = new Error('matric-taken'); e.matricTaken = true; throw e; }
-  }
+    // A referral code can only be entered while signing up, so check it before creating the account.
+    referralCode = String(referralCode || '').trim().toUpperCase();
+    if (referralCode && !(await one(ctx, sdk.doc(ctx.db, 'referralCodes', referralCode)).catch(() => null))) {
+      const e = new Error('bad-referral'); e.badReferral = true; throw e;
+    }
+  } else referralCode = '';
   for (let attempt = 0; attempt < 4; attempt++) {
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
@@ -162,9 +167,13 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
       referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
-    try { await b.commit(); return; } catch (e) {
+    try { await b.commit(); } catch (e) {
       if (role !== 'student' || attempt === 3) throw e; // students retry in case the random referral code clashed
+      continue;
     }
+    // The account exists now; a referral that fails at this point shouldn't stop sign-up.
+    if (referralCode) { try { await applyInviterCode(ctx, referralCode); } catch { return { referralFailed: true }; } }
+    return {};
   }
 }
 // Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
@@ -501,6 +510,8 @@ export async function applyInviterCode(ctx, code) {
 }
 export async function claimFriendBonus() { retiredAttendanceFlow(); }
 export async function myReferrals(ctx) { return list(ctx, 'referrals', eq(ctx, 'inviterUid', ctx.uid)); }
+// The 10 students whose referral codes were used most (stats/referrals, kept by the server).
+export async function referralBoard(ctx) { return (await one(ctx, R(ctx).stats('referrals')))?.top || []; }
 export async function claimInviterBonus() { retiredAttendanceFlow(); }
 
 // ------------------------------------------------------------- rewards, vouchers, welfare

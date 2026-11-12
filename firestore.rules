@@ -101,8 +101,10 @@ service cloud.firestore {
           && ledgerAfter().delta == D().points - resource.data.points
         );
       }
+      // A referral code can only be entered while signing up: within 15 minutes of creating the account.
       function validInviter() {
         return !('inviterUid' in resource.data)
+          && request.time < resource.data.createdAt + duration.value(15, 'm')
           && D().inviterUid != u
           && get(/databases/$(database)/documents/referralCodes/$(D().inviterCode)).data.uid == D().inviterUid
           && existsAfter(/databases/$(database)/documents/referrals/$(u))
@@ -433,6 +435,12 @@ service cloud.firestore {
     // College totals are published by server triggers. No student profiles or
     // individual point balances need to be exposed to the leaderboard client.
     match /stats/league {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    // Referral leaderboard: the 10 students whose codes were used most. Written only by the server
+    // (functions/referrals.js); everyone signed in can see it.
+    match /stats/referrals {
       allow read: if signedIn();
       allow write: if false;
     }
