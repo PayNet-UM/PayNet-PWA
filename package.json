@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "dev:demo": "node scripts/serve.mjs --demo",
-    "test": "node tests/local.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/account.mjs && node tests/safety.mjs && node tests/i18n.mjs && node tests/league.mjs && node tests/nearby.mjs && node tests/learning.mjs && node tests/app-activity.mjs",
+    "test": "node tests/local.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/account.mjs && node tests/safety.mjs && node tests/i18n.mjs && node tests/league.mjs && node tests/nearby.mjs && node tests/learning.mjs && node tests/app-activity.mjs && node tests/guide.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:views": "node scripts/build.mjs --env demo && node tests/role-views.mjs",
     "test:legacy": "node legacy/campus.test.cjs",

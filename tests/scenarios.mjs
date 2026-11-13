@@ -209,6 +209,32 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('friend rewards stay paused instead of depending on attendance', () => D.claimFriendBonus(stuB, rules));
   await ok('referral still connects friends without qualifying a point reward', async () => { const rows = await D.myReferrals(stuA); eq(rows.length, 1); eq(rows[0].qualified, false); });
   await denied('a student cannot mark their own referral reward qualified', () => stuB.sdk.updateDoc(stuB.sdk.doc(stuB.db, 'referrals', 'stuB'), { qualified: true }));
+  const stuR = await makeCtx({ uid: 'stuR', email: 'rafiq@siswa.um.edu.my' });
+  await ok('a wrong referral code stops sign-up before the account is made', async () => {
+    let msg = '';
+    try { await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: 'NOPE-0000' }); } catch (e) { msg = e.badReferral ? 'bad' : e.message; }
+    eq(msg, 'bad', 'error'); eq(await D.getProfile(stuR), null, 'profile');
+  });
+  await ok('signing up with a referral code connects the friends and counts for the inviter', async () => {
+    const res = await D.createProfile(stuR, { role: 'student', name: 'Rafiq', matric: 'R1234567', college: 'KK2', referralCode: stuA.profile.referralCode.toLowerCase() });
+    eq(res.referralFailed, undefined, 'referral failed');
+    eq((await D.getProfile(stuR)).inviterUid, 'stuA', 'inviter');
+    eq((await D.myReferrals(stuA)).length, 2, 'A referrals');
+  });
+  // The board is built by a Cloud Function (functions/referrals.js); only the demo backend builds it here.
+  if (canSetTime) await ok('the open referral board ranks A first with 2 sign-ups', async () => {
+    const top = await D.referralBoard(stuB); eq(top[0].uid, 'stuA'); eq(top[0].count, 2); eq(top.length, 1);
+  });
+  await denied('nobody can write the referral board from the app', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'stats', 'referrals'), { top: [{ uid: 'stuA', count: 99 }] }));
+  await denied('not even the Admin team can write the referral board', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'stats', 'referrals'), { top: [] }));
+  const stuLate = await makeCtx({ uid: 'stuLate', email: 'lina@siswa.um.edu.my' });
+  await ok('a student who signed up without a code', () => D.createProfile(stuLate, { role: 'student', name: 'Lina', matric: 'L1234567', college: 'KK7' }));
+  // Needs a clock that can jump ahead 16 minutes; the emulator runs in real time, and moving T there would put
+  // every later time check 16 minutes in the future.
+  if (canSetTime) {
+    tick(16 * 60000);
+    await denied('can’t add a referral code once sign-up is over', () => D.applyInviterCode(stuLate, stuA.profile.referralCode));
+  }
 
   log('Rewards, vouchers, welfare');
   await ok('HEP adds a merchant-specific reward', () => D.saveReward(mpp, 'kopi-rm2', { title: 'Kopi Kolej RM2 off', merchantId: 'mer1',
@@ -492,7 +518,88 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot unblock themselves', () => D.updateProfile(stuB, { disabled: false }));
   await denied('a student cannot block someone else', () => D.setBlocked(stuA, 'stuB', false));
   await ok('HEP unblocks a student', () => D.setBlocked(mpp, 'stuB', false));
-  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { faculty: 'Science' }));
+
+  log('College is chosen once');
+  await denied('a student cannot change their own college', () => D.updateProfile(stuB, { college: 'KK1' }));
+  await denied('a student cannot change another student’s college', () => D.setCollege(stuA, 'stuB', 'KK1', 'Trying to move a friend'));
+  await denied('HEP cannot change a college without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { college: 'KK1' }));
+  await denied('HEP cannot set a college that doesn’t exist', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-college', 'stuB', 'KK5 → KK99: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { college: 'KK99', adminLogId });
+    await b.commit();
+  });
+  await denied('HEP cannot give a merchant a college', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-college', 'mer1', '— → KK1: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'mer1'), { college: 'KK1', adminLogId });
+    await b.commit();
+  });
+  await ok('HEP corrects a wrong college, with a logged reason', async () => {
+    await D.setCollege(mpp, 'stuB', 'KK1', 'Picked the wrong college at sign-up');
+    eq((await D.getProfile(stuB)).college, 'KK1', 'college');
+    const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-college' && r.target === 'stuB');
+    if (!entry || !/KK5 → KK1/.test(entry.summary)) throw new Error('no activity-log entry for the change');
+  });
+  await ok('the student can still edit their name', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
+  log('Faculty is chosen once');
+  await denied('a student cannot change their own faculty', () => D.updateProfile(stuB, { faculty: 'Faculty of Law' }));
+  await denied('a student cannot change another student’s faculty', () => D.setFaculty(stuA, 'stuB', 'Faculty of Law', 'Trying to move a friend'));
+  await denied('the Admin team cannot change a faculty without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'users', 'stuB'), { faculty: 'Faculty of Law' }));
+  await denied('the Admin team cannot give a merchant a faculty', async () => {
+    const b = mpp.sdk.writeBatch(mpp.db);
+    const adminLogId = D.logAdmin(mpp, b, 'change-faculty', 'mer1', '— → Faculty of Law: test');
+    b.update(mpp.sdk.doc(mpp.db, 'users', 'mer1'), { faculty: 'Faculty of Law', adminLogId });
+    await b.commit();
+  });
+  await ok('the Admin team corrects a wrong faculty, with a logged reason', async () => {
+    await D.setFaculty(mpp, 'stuB', 'Faculty of Law', 'Picked the wrong faculty at sign-up');
+    eq((await D.getProfile(stuB)).faculty, 'Faculty of Law', 'faculty');
+    const entry = (await D.listAdminLog(mpp)).find((r) => r.action === 'change-faculty' && r.target === 'stuB');
+    if (!entry || !/Faculty of Engineering → Faculty of Law/.test(entry.summary)) throw new Error('no activity-log entry for the change');
+  });
+  await ok('the Admin team puts the faculty back', () => D.setFaculty(mpp, 'stuB', 'Faculty of Engineering', 'Test finished'));
+  await ok('HEP puts the college back', () => D.setCollege(mpp, 'stuB', 'KK5', 'Test finished'));
+  log('Questions and feedback');
+  stuA.profile = await D.getProfile(stuA); stuB.profile = await D.getProfile(stuB);
+  let firstFeedback = '';
+  await ok('a student sends a question', async () => {
+    firstFeedback = await D.sendFeedback(stuA, 'question', 'How do I earn more points for my KK?');
+    const mine = await D.myFeedback(stuA);
+    eq(mine.length, 1, 'messages'); eq(mine[0].status, 'new', 'status'); eq(mine[0].name, 'Aina Nadhirah', 'name'); eq(mine[0].email, 'aina@siswa.um.edu.my', 'email');
+  });
+  await ok('they can send up to 3 a day, then the app says to wait', async () => {
+    await D.sendFeedback(stuA, 'idea', 'A dark mode would be nice.'); await D.sendFeedback(stuA, 'problem', 'The map was slow to load today.');
+    try { await D.sendFeedback(stuA, 'other', 'A fourth message today.'); } catch (e) { if (/3 messages today/.test(e.message)) return; throw e; }
+    throw new Error('a fourth message was accepted');
+  });
+  await denied('the rules also refuse a 4th message in a day', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback.replace(/_1$/, '_4')),
+    { studentUid: 'stuA', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK3', topic: 'other', message: 'Sneaking past the limit.', status: 'new', createdAt: stuA.sdk.serverTimestamp() }));
+  await denied('a student cannot overwrite a message they already sent', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback),
+    { studentUid: 'stuA', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK3', topic: 'other', message: 'Changed my mind.', status: 'new', createdAt: stuA.sdk.serverTimestamp() }));
+  await denied('a student cannot send feedback in someone else’s name', () => stuB.sdk.setDoc(stuB.sdk.doc(stuB.db, 'feedback', firstFeedback.replace('stuA_', 'stuB_')),
+    { studentUid: 'stuB', name: 'Aina Nadhirah', email: 'aina@siswa.um.edu.my', college: 'KK5', topic: 'other', message: 'Pretending to be Aina.', status: 'new', createdAt: stuB.sdk.serverTimestamp() }));
+  await denied('a student cannot read another student’s feedback', () => stuB.sdk.getDoc(stuB.sdk.doc(stuB.db, 'feedback', firstFeedback)));
+  await denied('a student cannot mark their own message as answered', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'feedback', firstFeedback), { status: 'replied', reply: 'Yes!', repliedBy: 'aina@siswa.um.edu.my', repliedAt: stuA.sdk.serverTimestamp() }));
+  await denied('a merchant cannot use the student feedback form', () => D.sendFeedback({ ...merch, profile: { name: 'Hafiz Rahman' } }, 'question', 'Can merchants send feedback?'));
+  await ok('HEP sees every message and replies; the student sees the reply', async () => {
+    const all = await D.listFeedback(mpp);
+    eq(all.filter((f) => f.studentUid === 'stuA').length, 3, 'messages HEP can see');
+    await D.replyFeedback(mpp, firstFeedback, 'Every point you earn counts for KK3. Try Learn & Earn!');
+    const mine = (await D.myFeedback(stuA)).find((f) => f.id === firstFeedback);
+    eq(mine.status, 'replied', 'status'); eq(mine.reply, 'Every point you earn counts for KK3. Try Learn & Earn!', 'reply');
+  });
+  await ok('HEP marks a message as done without replying', async () => {
+    const idea = (await D.myFeedback(stuA)).find((f) => f.topic === 'idea');
+    await D.markFeedbackDone(mpp, idea.id);
+    eq((await D.myFeedback(stuA)).find((f) => f.id === idea.id).status, 'done', 'status');
+  });
+  await denied('HEP cannot change what the student wrote', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'feedback', firstFeedback), { message: 'Edited by an admin.' }));
+
+  const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
+  await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));
+  await ok('signing up with Off campus is allowed', () => D.createProfile(fakeCollege, { role: 'student', name: 'Off Campus', matric: 'OFFCAMP01', college: 'OFF' }));
+  await ok('an unblocked student can edit again', () => D.updateProfile(stuB, { name: 'Badrul Hisham' }));
 
   const squatter = await makeCtx({ uid: 'squat1', email: 'squat@gmail.com' });
   await ok('someone claims a matric number first', () => D.createProfile(squatter, { role: 'student', name: 'Squatter', matric: 'U7777777', college: 'KK1' }));
@@ -500,6 +607,41 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('HEP releases the matric number', () => D.releaseMatric(mpp, 'U7777777'));
   const realOwner = await makeCtx({ uid: 'real1', email: 'real@siswa.um.edu.my' });
   await ok('the real student can then sign up', () => D.createProfile(realOwner, { role: 'student', name: 'Real Owner', matric: 'U7777777', college: 'KK1' }));
+
+  log('HEP admin safety: activity log and recent sign-in');
+  const { sdk: s } = mpp;
+  await ok('big HEP changes are recorded in the activity log, by the admin who made them', async () => {
+    const entries = await D.listAdminLog(mpp), actions = new Set(entries.map((e) => e.action));
+    for (const a of ['programme-setup', 'features', 'block', 'unblock', 'release-matric', 'adjust-points', 'reward', 'merchant-review']) eq(actions.has(a), true, a);
+    eq(entries.every((e) => e.by === adminEmail), true, 'by');
+    eq(entries.find((e) => e.action === 'block').target, 'stuB', 'student entries name the account ID, not the name');
+  });
+  await denied('a settings change without its activity-log entry is refused', () => s.setDoc(s.doc(mpp.db, 'config', 'rules'), { surveyBonus: 999 }, { merge: true }));
+  await denied('a reward change without its activity-log entry is refused', () => s.setDoc(s.doc(mpp.db, 'rewards', 'sec-test'), { cost: 0 }, { merge: true }));
+  await denied('blocking a student without an activity-log entry is refused', () => s.updateDoc(s.doc(mpp.db, 'users', 'stuB'), { disabled: true }));
+  await denied('an admin cannot log a change in someone else’s name', async () => {
+    const b = s.writeBatch(mpp.db), ref = s.doc(s.collection(mpp.db, 'adminLog'));
+    b.set(ref, { at: s.serverTimestamp(), by: 'someone.else@gmail.com', action: 'features', target: 'x', summary: '' });
+    b.set(s.doc(mpp.db, 'config', 'rules'), { surveyBonus: 999, logId: ref.id }, { merge: true }); await b.commit();
+  });
+  await denied('an admin cannot write a log entry under another admin’s name', () => s.setDoc(s.doc(mpp.db, 'adminLog', 'forged'),
+    { at: s.serverTimestamp(), by: 'someone.else@gmail.com', action: 'features', target: 'x', summary: '' }));
+  const firstLog = (await D.listAdminLog(mpp))[0];
+  await denied('an activity-log entry cannot be edited', () => s.updateDoc(s.doc(mpp.db, 'adminLog', firstLog.id), { summary: 'changed' }));
+  await denied('an activity-log entry cannot be deleted', () => s.deleteDoc(s.doc(mpp.db, 'adminLog', firstLog.id)));
+  await denied('a student cannot read the activity log', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'adminLog')));
+  await denied('a student cannot write to the activity log', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'adminLog', 'fake'),
+    { at: stuA.sdk.serverTimestamp(), by: stuA.email, action: 'features', target: 'x', summary: '' }));
+  const staleMpp = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 13 });
+  await denied('an admin who signed in 13 hours ago cannot change feature switches', () => D.saveConfig(staleMpp, 'rules', { features: { overview: true } }));
+  await denied('an admin who signed in 13 hours ago cannot change who can use the app', () => D.saveConfig(staleMpp, 'access', { mppEmails: ['new.admin@gmail.com'] }));
+  await denied('an admin who signed in 13 hours ago cannot block a student', () => D.setBlocked(staleMpp, 'stuB', true));
+  await denied('an admin who signed in 13 hours ago cannot adjust points', () => D.adjustPoints(staleMpp, 'stuB', 100, 'Old session'));
+  await denied('an admin who signed in 13 hours ago cannot release a matric number', () => D.releaseMatric(staleMpp, 'U7777777'));
+  await denied('an admin who signed in 13 hours ago cannot change a reward', () => D.saveReward(staleMpp, 'sec-test', { cost: 0 }));
+  await ok('an admin who signed in 13 hours ago can still read the dashboard', () => D.listAdminLog(staleMpp));
+  const recentMpp = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 11 });
+  await ok('an admin who signed in 11 hours ago can still make changes', () => D.saveConfig(recentMpp, 'budget', { allocationCents: 2000000 }));
   log('Here now (campus map presence)');
   const hn1 = await makeCtx({ uid: 'hn1', email: 'hana.here@gmail.com' });
   const hn2 = await makeCtx({ uid: 'hn2', email: 'imran.here@gmail.com' });

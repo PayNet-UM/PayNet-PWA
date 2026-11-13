@@ -1,0 +1,29 @@
+/* Questions and feedback (js/feedback.js) */
+.fb-form { margin-top: 14px; }
+.fb-topics { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fb-topics legend { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 8px; padding: 0; }
+.fb-topic { position: relative; cursor: pointer; }
+.fb-topic input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.fb-topic > span { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: var(--r-ctl, 10px);
+  background: var(--card, #fff); font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ink-2); transition: border-color .15s, background .15s; }
+.fb-topic .ic { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
+.fb-topic input:checked + span { border-color: var(--blue); background: var(--blue-wash); color: var(--ink); }
+.fb-topic input:checked + span .ic { color: var(--blue); }
+.fb-topic input:focus-visible + span { outline: 2px solid var(--blue); outline-offset: 2px; }
+.fb-count { display: block; text-align: right; }
+
+.fb-item { padding: 14px 16px; }
+.fb-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.fb-meta .badge .ic { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
+.fb-status { margin-left: auto; font-weight: 700; color: var(--ink-3); }
+.fb-status.replied { color: var(--green); }
+.fb-msg { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.fb-reply { margin-top: 12px; padding: 10px 12px; border-radius: var(--r-ctl, 10px); background: var(--mint-wash); border-left: 3px solid var(--green); }
+.fb-reply b { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--green); }
+.fb-reply b .ic { width: 15px; height: 15px; }
+.fb-reply p { margin: 4px 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+
+/* A new reply waiting: a dot on the account button. */
+.topbar .avatar { position: relative; }
+.topbar .avatar.has-dot::after { content: ''; position: absolute; top: -1px; right: -1px; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--red, #D93A3F); box-shadow: 0 0 0 2px #fff; }

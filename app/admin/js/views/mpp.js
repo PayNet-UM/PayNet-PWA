@@ -1,4 +1,4 @@
-// HEP dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
+// Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
 import { hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-ui.js';
@@ -11,9 +11,9 @@ import { siteUrls } from '../firebase-config.js';
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'],
+  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -23,11 +23,11 @@ const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchang
 
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">HEP</em></a>
+    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">Admin</em></a>
       <button class="btn small menu-toggle" id="menu" aria-expanded="false" aria-controls="hep-navigation">${icon('list-checks')} Menu</button></header>
       <span class="hep-nav-title">Campus workspace</span>
-      <nav id="hep-navigation" aria-label="HEP">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
-      <div class="who"><div class="hep-account"><span class="hep-account-icon" aria-hidden="true">${icon('shield-check')}</span><div class="hep-account-copy"><strong>HEP team</strong><small>${esc(app.user.email)}</small></div></div>${langToggleHTML('on-dark')}<div class="hep-account-actions">
+      <nav id="hep-navigation" aria-label="Admin">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
+      <div class="who"><div class="hep-account"><span class="hep-account-icon" aria-hidden="true">${icon('shield-check')}</span><div class="hep-account-copy"><strong>Admin team</strong><small>${esc(app.user.email)}</small></div></div>${langToggleHTML('on-dark')}<div class="hep-account-actions">
         ${app.profile ? `<a class="btn small" id="as-user" href="${esc(siteUrls.client)}">${icon('arrow-right')} Open my ${esc(app.profile.role)} app</a>` : ''}
         <button class="btn small" id="mpp-out">${icon('log-out')} Sign out</button></div></div></aside>
       <main class="view" id="view"></main></div>`;
@@ -42,10 +42,12 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w, x] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => [])]);
+    const [m, c, w, x, fb] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
+      D.listFeedback(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
+    set('feedback', fb.filter((f) => f.status === 'new').length);
   } catch { /* not initialised yet */ }
 }
 
@@ -75,7 +77,7 @@ async function overviewRender(app) {
       ${hepMetric('Welfare fund', n(welfare.exists() ? welfare.data().points : 0), 'hand-heart', 'peach', 'points available')}
     </div>
     <div class="hep-section-title"><h2>Needs your attention</h2></div>
-    <nav class="hep-shortcut-grid" aria-label="HEP shortcuts">
+    <nav class="hep-shortcut-grid" aria-label="Admin shortcuts">
       ${hepShortcut('merchants', 'Merchant reviews', `${pending.length} <span>waiting for review</span>`, 'store', 'violet')}
       ${hepShortcut('approvals', 'Welfare requests', `${requests.length} <span>waiting for review</span>`, 'hand-heart', 'lime')}
       ${hepShortcut('paynet', 'PayNet list', 'Export Lampiran 1', 'file-spreadsheet', 'peach')}
@@ -142,7 +144,7 @@ function merchantsMount(root, app) {
           const f = $('#rv', el); const s = x.dataset.s;
           if (s === 'verified' && $$('[name=c]', f).some((c) => !c.checked)) return toast('Tick all three checks before verifying.', true);
           if (s !== 'verified' && !f.note.value.trim()) return toast('Add a note so the merchant knows what to fix.', true);
-          busy(x, async () => { try { await D.reviewMerchant(app.ctx, m.id, s, f.note.value.trim()); closeSheet(); toast(s === 'verified' ? `${m.name} verified.` : 'Status updated.'); app.render(); } catch (err) { toast(errText(err), true); } });
+          busy(x, async () => { try { await D.reviewMerchant(app.ctx, m.id, s, f.note.value.trim(), m.name); closeSheet(); toast(s === 'verified' ? `${m.name} verified.` : 'Status updated.'); app.render(); } catch (err) { toast(errText(err), true); } });
         };
       });
     };
@@ -292,10 +294,10 @@ async function rewardsRender(app) {
     <div class="hep-budget-track"><div class="row between"><span>Activation fund allocation</span><span class="hep-budget-legend"><span>Promised</span><span>Paid out</span><span>Campaigns</span></span></div><div class="hep-budget-meter" role="img" aria-label="Activation fund allocation">${[committed, spent, campBudget].map((v) => `<i style="width:${Math.max(0, v) / Math.max(1, alloc, committed + spent + campBudget) * 100}%"></i>`).join('')}</div></div>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Reward catalogue</h2><button class="btn small primary" id="new-rw">${icon('plus')} New reward</button></div>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Reward</th><th>Redeem at</th><th class="r">Points</th><th class="r">Value</th><th class="r">Issued / stock</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>HEP/admin</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
+      ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>the Admin team</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
         <td>${r.active ? '<span class="badge ok">On</span>' : '<span class="badge grey">Off</span>'}</td><td class="r"><button class="btn small" data-rw="${esc(r.id)}">Edit</button></td></tr>`).join('')}</tbody></table></div></section>
-    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the HEP counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
-      <p class="faint">Only HEP/admin fulfils reward vouchers. Mark each voucher used after handing over its value.</p>
+    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the Admin team counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
+      <p class="faint">Only the Admin team fulfils reward vouchers. Mark each voucher used after handing over its value.</p>
       <div class="list" style="margin-top:6px">${open.map((v) => `<div class="item"><div class="grow"><h3>${esc(v.title)} · ${esc(v.code)}</h3><p>${esc(v.studentName)} · issued ${fmtDate(v.createdAt)}</p></div><button class="btn small go" data-use="${esc(v.id)}">Mark used</button></div>`).join('') || '<p class="faint" style="padding:10px 0">None waiting.</p>'}</div></section>`;
 }
 function rewardsMount(root, app) {
@@ -307,7 +309,7 @@ function rewardsMount(root, app) {
   const edit = (r) => {
     const el = sheet(`<h2>${r ? 'Edit reward' : 'New reward'}</h2><form id="rf" class="stack" style="margin-top:12px">
       <label class="field">Title<input name="title" required value="${esc(r?.title || '')}" placeholder="e.g. RM5 campus reward"></label>
-      <p class="notice">Redeem with HEP/admin</p><input type="hidden" name="merchantId" value="">
+      <p class="notice">Redeem with the Admin team</p><input type="hidden" name="merchantId" value="">
       <div class="grid-2"><label class="field">Points needed<input name="cost" type="number" min="1" step="1" required value="${r?.cost || 500}"></label><label class="field">Value (RM)<input name="value" type="number" min="0" step="0.5" required value="${(r?.valueCents || 500) / 100}"></label></div>
       <div class="grid-2"><label class="field">Stock<input name="stock" type="number" min="${r?.issued || 0}" step="1" required value="${r?.stock || 100}"></label><label class="field">Valid for (days)<input name="validDays" type="number" min="1" required value="${r?.validDays || 30}"></label></div>
       <label class="check"><input type="checkbox" name="active" ${!r || r.active ? 'checked' : ''}> Students can swap points for this</label><button class="btn primary">Save reward</button></form>`);
@@ -384,6 +386,42 @@ function kpisMount(root, app) {
     ...app._sv.surveys.map((s) => [s.role, app._sv.users.find((u) => u.id === s.id)?.name || '', s.grade, s.score, s.knowledge, s.digital, s.at ? new Date(toMs(s.at)).toISOString() : ''])]);
 }
 
+// ------------------------------------------------------------- feedback (students' questions and comments)
+let fbFilter = 'new';
+const FB_STATUS = { new: 'New', replied: 'Replied', done: 'Done' };
+const FB_ICONS = { question: 'info', idea: 'lightbulb', problem: 'circle-alert', other: 'mail' };
+async function feedbackRender(app) {
+  const all = await D.listFeedback(app.ctx); app._fb = all;
+  const count = (k) => (k === 'all' ? all.length : all.filter((f) => f.status === k).length);
+  const shown = fbFilter === 'all' ? all : all.filter((f) => f.status === fbFilter);
+  return `${hepHeading('Feedback', 'Questions and comments from students. Your replies show in their app; they aren’t emailed.', 'mail')}
+    <div class="chips" role="group" aria-label="Show">${[['new', 'New'], ['replied', 'Replied'], ['done', 'Done'], ['all', 'All']].map(([k, l]) =>
+      `<button type="button" data-fbf="${k}" class="${fbFilter === k ? 'on' : ''}" aria-pressed="${fbFilter === k}">${l} <span data-no-i18n>(${count(k)})</span></button>`).join('')}</div>
+    <div class="list hep-fb-list">${shown.map((f) => `<article class="card pad-lg hep-fb is-${esc(f.status)}">
+      <div class="row between"><div class="row" style="gap:8px"><span class="badge">${icon(FB_ICONS[f.topic] || 'mail')}${esc(D.feedbackTopic(f.topic))}</span><span class="faint">${fmtDateTime(f.createdAt)}</span></div>
+        <span class="hep-fb-status is-${esc(f.status)}">${esc(FB_STATUS[f.status] || 'New')}</span></div>
+      <p class="hep-fb-msg" data-no-i18n>${esc(f.message)}</p>
+      <p class="faint"><b data-no-i18n>${esc(f.name)}</b> · <span data-no-i18n>${esc(f.college || '—')}</span> · <a data-no-i18n href="mailto:${esc(f.email)}?subject=${encodeURIComponent('Your +Onz feedback')}">${esc(f.email)}</a></p>
+      ${f.reply ? `<div class="hep-fb-reply"><b>Your reply</b> <span class="faint" data-no-i18n>${esc(f.repliedBy || '')} · ${fmtDateTime(f.repliedAt)}</span><p data-no-i18n>${esc(f.reply)}</p></div>` : ''}
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn small primary" data-fbr="${esc(f.id)}">${f.reply ? 'Edit reply' : 'Reply'}</button>
+        ${f.status === 'new' ? `<button class="btn small" data-fbd="${esc(f.id)}">Mark as done</button>` : ''}</div></article>`).join('')
+      || `<div class="card empty">${icon('mail')}<p>${fbFilter === 'new' ? 'No new feedback. You’re all caught up.' : 'Nothing here yet.'}</p></div>`}</div>`;
+}
+function feedbackMount(root, app) {
+  $$('[data-fbf]', root).forEach((b) => { b.onclick = () => { fbFilter = b.dataset.fbf; app.render(); }; });
+  $$('[data-fbd]', root).forEach((b) => { b.onclick = () => busy(b, async () => { try { await D.markFeedbackDone(app.ctx, b.dataset.fbd); toast('Marked as done.'); app.render(); } catch (err) { toast(errText(err), true); } }); });
+  $$('[data-fbr]', root).forEach((b) => {
+    b.onclick = () => {
+      const f = app._fb.find((x) => x.id === b.dataset.fbr);
+      const el = sheet(`<h2>Reply to ${esc(f.name)}</h2><p class="muted hep-fb-quote" data-no-i18n>${esc(f.message)}</p>
+        <form id="fbr" class="stack" style="margin-top:12px"><label class="field">Your reply<textarea name="reply" rows="5" required minlength="2" maxlength="1000">${esc(f.reply || '')}</textarea>
+          <small>The student sees this under their message in the +Onz app.</small></label><button class="btn primary">Send reply</button></form>`);
+      $('#fbr', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), async () => { try { await D.replyFeedback(app.ctx, f.id, e.target.reply.value); closeSheet(); toast('Reply sent.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+    };
+  });
+}
+
 // ------------------------------------------------------------- students (people)
 let peopleQ = '';
 async function peopleRender(app) {
@@ -396,12 +434,33 @@ function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
     $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
         if (next && !confirm(tr(`Block ${u.name}? They won't be able to earn or redeem until you unblock them.`))) return;
         busy(b, async () => { try { await D.setBlocked(app.ctx, u.id, next); toast(next ? 'Student blocked.' : 'Student unblocked.'); app.render(); } catch (err) { toast(errText(err), true); } });
+      };
+    });
+    // Students can't change their college or faculty themselves (they decide where their KK League and Faculty League
+    // points go). The Admin team corrects mistakes here, with a reason saved in the Activity log.
+    $$('[data-col]', root).forEach((b) => {
+      b.onclick = () => {
+        const u = app._pp.find((x) => x.id === b.dataset.col);
+        const el = sheet(`<h2>Change college or faculty for ${esc(u.name)}</h2><p class="muted">Now: ${esc(D.collegeName(u.college))}, ${esc(u.faculty || 'no faculty')}. Students can’t change these themselves. Their league points move automatically.</p>
+          <form id="cc" class="stack" style="margin-top:12px"><label class="field">College<select name="college" required>${D.COLLEGES.map(([k, v]) => `<option value="${k}" ${k === u.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+          <label class="field">Faculty<select name="faculty">${u.faculty ? '' : '<option value="" selected>No faculty</option>'}${D.FACULTIES.map((f) => `<option value="${esc(f)}" ${f === u.faculty ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
+          <label class="field">Reason (saved in the Activity log)<input name="reason" required minlength="3" maxlength="200" placeholder="e.g. Picked the wrong college at sign-up"></label><button class="btn primary">Save changes</button></form>`);
+        $('#cc', el).onsubmit = (e) => { e.preventDefault(); const f = e.target;
+          const college = f.college.value !== u.college ? f.college.value : ''; const faculty = f.faculty.value && f.faculty.value !== u.faculty ? f.faculty.value : '';
+          if (!college && !faculty) return toast('Nothing has changed.', true);
+          busy($('button', el), async () => {
+            try {
+              if (college) await D.setCollege(app.ctx, u.id, college, f.reason.value);
+              if (faculty) await D.setFaculty(app.ctx, u.id, faculty, f.reason.value);
+              closeSheet(); toast(college && faculty ? 'College and faculty changed.' : college ? 'College changed.' : 'Faculty changed.'); app.render();
+            } catch (err) { toast(errText(err), true); }
+          }); };
       };
     });
     $$('[data-adj]', root).forEach((b) => {
@@ -419,7 +478,7 @@ function peopleMount(root, app) {
 }
 
 // ------------------------------------------------------------- account closures
-// Students who deleted their account (anonymous) and businesses asking HEP to close theirs, with their reasons.
+// Students who deleted their account (anonymous) and businesses asking the Admin team to close theirs, with their reasons.
 async function closuresRender(app) {
   const rows = await D.listClosures(app.ctx); app._cl = rows;
   const counts = {}; rows.forEach((r) => (r.reasons || []).forEach((k) => { counts[k] = (counts[k] || 0) + 1; }));
@@ -451,6 +510,21 @@ function closuresMount(root, app) {
       r.businessName || '', (r.reasons || []).map(D.closeReasonLabel).join('; '), r.comment || '', r.kind === 'request' ? r.status : 'deleted'])]);
 }
 
+// ------------------------------------------------------------- activity log (who changed what; entries can't be edited)
+const STUDENT_ACTIONS = new Set(['block', 'unblock', 'adjust-points', 'welfare-review', 'change-college', 'change-faculty']);
+async function activityRender(app) {
+  const [rows, users] = await Promise.all([D.listAdminLog(app.ctx), D.listUsers(app.ctx)]);
+  const names = new Map(users.map((u) => [u.id, u.name]));
+  // Student entries store the account ID; show today's name, or "Deleted account" once the student has gone.
+  const target = (r) => STUDENT_ACTIONS.has(r.action) ? (names.get(r.target) || 'Deleted account') : (r.target || '');
+  return `${hepHeading('Activity log', 'Who changed what on this dashboard, newest first. Entries can’t be edited or deleted.', 'shield-check')}
+    <div class="card"><div class="table-wrap"><table class="data"><thead><tr><th>When</th><th>Admin</th><th>Change</th><th>Applies to</th><th>Details</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr><td>${fmtDateTime(r.at)}</td><td data-no-i18n>${esc(r.by)}</td><td>${esc(D.ADMIN_ACTIONS[r.action] || r.action)}</td>
+      <td data-no-i18n>${esc(target(r))}</td><td data-no-i18n class="faint">${esc(r.summary || '')}</td></tr>`).join('')
+      || '<tr><td colspan="5" class="faint">No changes recorded yet.</td></tr>'}</tbody></table></div></div>
+    ${rows.length >= 200 ? '<p class="faint" style="margin-top:10px">Showing the newest 200 changes.</p>' : ''}`;
+}
+
 // ------------------------------------------------------------- settings
 async function settingsRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) await D.initProgramme(app.ctx);
@@ -473,7 +547,7 @@ async function settingsRender(app) {
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
       <label class="field">Testers allowed as students<textarea name="testerEmails">${list('testerEmails')}</textarea><small>Individual emails outside those domains, for the pilot team</small></label>
-      <label class="field">HEP reviewers<textarea name="mppEmails">${list('mppEmails')}</textarea><small>They get full access to this dashboard after signing in with a verified email</small></label>
+      <label class="field">Admin team members<textarea name="mppEmails">${list('mppEmails')}</textarea><small>They get full access to this dashboard after signing in with a verified email</small></label>
       <button class="btn primary">Save access</button></form></div></div>`;
 }
 function settingsMount(root, app) {
@@ -509,7 +583,9 @@ export const routes = {
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
   campaigns: { title: 'Campaigns', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
+  feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
+  activity: { title: 'Activity log', render: activityRender },
   settings: { title: 'Settings', render: settingsRender, mount: settingsMount },
 };

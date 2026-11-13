@@ -52,6 +52,7 @@ await test('the erase plan covers every place a student’s data lives', async (
   assert.deepEqual(q('vouchers', 'studentUid').patch, { studentUid: DELETED, studentName: 'Deleted account' });
   assert.deepEqual(q('liveDealClaims', 'studentUid').patch, { studentUid: DELETED, studentName: 'Deleted account' });
   assert.equal(q('welfareRequests', 'studentUid').patch.reason, '');
+  assert.equal(q('feedback', 'studentUid').action, 'delete');
   assert.equal(q('visits', 'uid').patch.uid, DELETED);
   assert.ok(!plan.docs.some((p) => p.startsWith('leagueMembers/')), 'leaderboard entry is left for syncLeagueStudent to subtract');
 });

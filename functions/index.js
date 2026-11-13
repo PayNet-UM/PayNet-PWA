@@ -7,6 +7,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
+import { rebuildReferralBoard } from './referrals.js';
 import { closeAccount, patchFor } from './account.js';
 
 initializeApp();
@@ -16,11 +17,15 @@ const auth = getAuth();
 const leagueOptions = { region: 'asia-southeast1', retry: true, maxInstances: 5 };
 export const kkLeaguePoints = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}/ledger/{entry}' },
   (event) => syncLeagueStudent(db, event.params.uid));
-export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}' }, (event) => {
+export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}' }, async (event) => {
   const before = event.data?.before.data(), after = event.data?.after.data();
-  if (before?.college === after?.college && before?.role === after?.role) return;
+  // The referral board shows usernames, and drops students who deleted their account.
+  if (before?.username !== after?.username || !after) await rebuildReferralBoard(db);
+  if (before?.college === after?.college && before?.faculty === after?.faculty && before?.role === after?.role) return;
   return syncLeagueStudent(db, event.params.uid);
 });
+// Referral leaderboard (stats/referrals): recounted whenever a referral is added or removed.
+export const referralBoard = onDocumentWritten({ ...leagueOptions, document: 'referrals/{friend}' }, () => rebuildReferralBoard(db));
 
 // Hand-off records live in a collection the app itself can't read or write (firestore.rules denies it).
 const store = {

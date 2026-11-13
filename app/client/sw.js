@@ -1,12 +1,12 @@
 /* +Onz service worker (student and merchant app): app shell cached for fast start and offline launch.
-   Firebase and Google requests always go to the network. The HEP dashboard is a separate site with no
+   Firebase and Google requests always go to the network. The Admin dashboard is a separate site with no
    service worker; on the dev server it lives at /admin/ on this address, so this worker leaves it alone. */
 const VERSION = 'umc-__VERSION__';
 const SHELL = [
   './', 'index.html', 'offline.html', 'manifest.webmanifest', 'firestore.rules',
-  'css/app.css?v=__VERSION__', 'css/onz.css?v=__VERSION__', 'css/merchant.css?v=__VERSION__', 'css/feskum.css?v=__VERSION__', 'css/event-carousel.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
+  'css/app.css?v=__VERSION__', 'css/onz.css?v=__VERSION__', 'css/merchant.css?v=__VERSION__', 'css/feskum.css?v=__VERSION__', 'css/event-carousel.css?v=__VERSION__', 'css/guide.css?v=__VERSION__', 'css/feedback.css?v=__VERSION__', 'js/main.js?v=__VERSION__',
   'js/backend.js', 'js/firebase-config.js', 'js/data.js', 'js/ui.js', 'js/icons.js', 'js/cafes.js', 'js/feskum.js', 'js/event-carousel.js', 'js/demo-seed.js', 'js/i18n.js', 'js/terms.js', 'js/i18n-ms.js', 'js/map.js', 'js/avatar.js', 'js/herenow.js', 'js/friends.js',
-  'js/views/auth.js', 'js/views/student.js', 'js/views/merchant.js', 'js/views/close.js', 'js/avatar-backgrounds.js', 'js/directory-art.js', 'js/merchant-ui.js', 'js/deal-flow.js', 'js/live-deals.js', 'js/student-paths.js', 'js/app-activity.js',
+  'js/views/auth.js', 'js/views/student.js', 'js/views/merchant.js', 'js/views/close.js', 'js/avatar-backgrounds.js', 'js/directory-art.js', 'js/merchant-ui.js', 'js/deal-flow.js', 'js/live-deals.js', 'js/student-paths.js', 'js/app-activity.js', 'js/guide.js', 'js/feedback.js',
   'js/fake/fakefb.js', 'js/fake/rules-engine.js',
   'vendor/firebase.js', 'vendor/qrcode.min.js', 'vendor/jsQR.js', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'fonts/montserrat-latin-500-normal.woff2', 'fonts/montserrat-latin-600-normal.woff2',
@@ -27,7 +27,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request; const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/__/')) return; // Firebase Hosting reserved URLs
-  if (url.pathname.startsWith('/admin/')) return; // dev server: the HEP dashboard, a separate site
+  if (url.pathname.startsWith('/admin/')) return; // dev server: the Admin dashboard, a separate site
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then((r) => { const copy = r.clone(); caches.open(VERSION).then((c) => c.put('index.html', copy)); return r; })
       .catch(async () => (await caches.match('index.html')) || caches.match('offline.html')));

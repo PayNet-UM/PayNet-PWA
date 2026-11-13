@@ -81,8 +81,20 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
 await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
-await stu.click('.community-shortcuts [data-friends-jump="community-league"]');
-await stu.waitForFunction(() => document.activeElement?.id === 'community-league');
+await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
+await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+// The first plain visit to Leagues explains the KK League, then never again.
+await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
+if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Leagues tour did not start on Your KK');
+await stu.screenshot({ path: `${shots}/04b-leagues-tour.png` });
+await stu.click('.guide [data-next]');
+if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Leagues tour does not mention the prize');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .community-podium, #league-kk .community-league-empty'); await stu.waitForTimeout(900);
+if (await stu.locator('.guide').count()) throw new Error('Leagues tour showed again after it was seen');
+await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
+await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
 await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
 await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
@@ -91,7 +103,7 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friend management, KK League and welfare; legacy links and section shortcuts work');
+ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
 
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
 await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
@@ -187,13 +199,68 @@ await mer.setViewportSize({ width: 390, height: 844 });
 if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
 ok('merchant deal preview follows its fields and the new shop hub fits mobile and desktop');
 
+// a brand-new student gets the welcome and tour too, here in Bahasa Malaysia
+const ns = await ctx.newPage(); watch(ns, 'new student'); await fresh(ns);
+await ns.goto(BASE); await ns.waitForSelector('#google', { timeout: 60000 }); await ns.click('#google');
+await ns.fill('#gnew [name=email]', 'new.student.e2e@gmail.com'); await ns.click('#gnew button');
+await ns.waitForSelector('#ob'); await ns.check('#ob input[value="student"]').catch(() => {});
+await ns.fill('#ob [name=name]', 'Nur Aisyah'); await ns.fill('#ob [name=matric]', 'E2E77001'); await ns.check('#ob input[name=terms]');
+// The college must be picked on purpose (no default), with a clear warning that it's final.
+if (!/can’t change your college or faculty later/.test(await ns.textContent('#college-warn'))) throw new Error('no college warning at sign-up');
+await ns.click('#ob button[type=submit]');
+if (await ns.locator('.guide').count() || !await ns.evaluate(() => document.querySelector('#ob [name=college]').matches(':invalid'))) throw new Error('sign-up went ahead without a college');
+await ns.selectOption('#ob [name=college]', 'KK7'); await ns.selectOption('#ob [name=faculty]', 'Faculty of Science'); await ns.screenshot({ path: `${shots}/c-college-warning.png` });
+await ns.click('#ob button[type=submit]');
+await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
+if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));
+await ns.click('.guide [data-next]'); await ns.waitForSelector('.guide .is-tour');
+// The overlay covers the page, so switch the language from the page's own toggle in code.
+await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="ms"]')?.click());
+await ns.waitForFunction(() => /^Langkah 1 daripada \d+$/.test(document.querySelector('.guide-step')?.textContent.trim() || ''));
+await ns.screenshot({ path: `${shots}/g-student-step-ms.png` });
+await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="en"]')?.click());
+for (let k = 0; k < 12 && await ns.locator('.guide .is-tour').count(); k++) await ns.click('.guide [data-next]');
+await ns.waitForSelector('.guide .is-finish'); await ns.screenshot({ path: `${shots}/g-student-finish.png` });
+await ns.click('.guide-tasks a[data-go="avatar"]'); await ns.waitForFunction(() => location.hash === '#/avatar' && !document.querySelector('.guide'));
+await ns.goto(BASE + '#/me'); await ns.waitForSelector('#prof');
+if (await ns.locator('#prof select[name=college]').count() || !/Kolej Kediaman Ketujuh \(KK7\)/.test(await ns.inputValue('#prof input[aria-describedby="college-locked"]'))) throw new Error('college is still editable in Me');
+await ns.screenshot({ path: `${shots}/c-me-locked.png`, fullPage: true });
+await ns.close();
+ok('new student chose a college after a clear warning, got the welcome and tour, and sees the college locked in Me');
+
 // a brand-new merchant must give a logo and an exact location
 const nm = await ctx.newPage(); watch(nm, 'new merchant'); await fresh(nm);
 await nm.goto(BASE); await nm.waitForSelector('#google', { timeout: 60000 }); await nm.click('#google');
 await nm.fill('#gnew [name=email]', 'satay.stall@gmail.com'); await nm.click('#gnew button');
 await nm.waitForSelector('#ob'); await nm.click('#ob [data-role="merchant"]').catch(() => {});
 await nm.check('#ob input[value="merchant"]').catch(() => {}); await nm.check('#ob input[type=checkbox]').catch(() => {});
+if (!/Sign in.*Your profile.*Quick tour/s.test(await nm.textContent('.ob-steps'))) throw new Error('profile set-up is missing its getting-started steps');
 await nm.click('#ob button[type=submit]'); await nm.waitForSelector('a[href="#/shop"]', { timeout: 20000 });
+// First-time guide: welcome with confetti, a spotlight tour that skips switched-off tabs, then the shop checklist.
+await nm.waitForSelector('.guide .is-welcome', { timeout: 15000 });
+if (!/^Welcome to \+Onz/.test((await nm.textContent('#guide-title')).trim())) throw new Error('no personal welcome: ' + await nm.textContent('#guide-title'));
+if (!await nm.locator('canvas.confetti').count()) throw new Error('the welcome had no confetti');
+await nm.screenshot({ path: `${shots}/g-merchant-welcome.png` });
+await nm.click('.guide [data-next]');
+const tourTitles = [];
+for (let k = 0; k < 12 && await nm.locator('.guide .is-tour').count(); k++) {
+  tourTitles.push((await nm.textContent('#guide-title')).trim());
+  const spot = await nm.evaluate(() => { const r = document.querySelector('.guide-spot').getBoundingClientRect(); return !document.querySelector('.guide').classList.contains('no-target') && r.width > 10 && r.height > 10; });
+  if (!spot) throw new Error('tour step has no spotlight: ' + tourTitles.at(-1));
+  if (k === 0) await nm.screenshot({ path: `${shots}/g-merchant-step.png` });
+  await nm.click('.guide [data-next]');
+}
+if (!tourTitles.includes('My shop') || !tourTitles.includes('Your account menu')) throw new Error('tour missed steps: ' + tourTitles.join(', '));
+await nm.waitForSelector('.guide .is-finish .guide-tasks li'); await nm.screenshot({ path: `${shots}/g-merchant-finish.png` });
+if (await nm.locator('.guide-tasks li').count() !== 4) throw new Error('merchant checklist should have 4 set-up steps');
+await nm.click('.guide .guide-actions [data-go="shop"]'); await nm.waitForSelector('#app-form');
+await nm.waitForFunction(() => !document.querySelector('.guide'), null, { timeout: 3000 }).catch(() => { throw new Error('the guide stayed open after finishing'); });
+await nm.reload(); await nm.waitForSelector('#app-form', { timeout: 30000 }); await nm.waitForTimeout(800);
+if (await nm.locator('.guide').count()) throw new Error('the guide came back after it was finished');
+await nm.click('#avatar'); await nm.click('#tour'); await nm.waitForSelector('.guide .is-welcome');
+if ((await nm.textContent('#guide-title')).trim() !== 'A quick tour of +Onz') throw new Error('replay should not repeat the first-time welcome');
+await nm.keyboard.press('Escape'); await nm.waitForFunction(() => !document.querySelector('.guide'));
+ok(`new merchant got the welcome, a ${tourTitles.length}-step tour (${tourTitles.join(', ')}) and the shop checklist; it shows once and replays from the menu`);
 await nm.goto(BASE + '#/shop'); await nm.waitForSelector('#app-form');
 await nm.fill('#app-form [name=name]', 'Satay Siswa'); await nm.fill('#app-form [name=accountName]', 'Satay Siswa Enterprise'); await nm.fill('#app-form [name=location]', 'KK11 cafeteria');
 await nm.setInputFiles('#app-form [name=qr]', { name: 'qr.png', mimeType: 'image/png', buffer: png });
@@ -204,7 +271,7 @@ if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caugh
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to HEP', { timeout: 15000 });
+await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
 // ---------- the two websites keep to their own people
@@ -214,7 +281,7 @@ if (await sep.locator(`[data-demo="${adminEmail}"]`).count() !== 0) throw new Er
 const googleAs = async (p, email) => { await p.click('#google'); await p.fill('#gnew [name=email]', email); await p.click('#gnew button'); };
 await sep.goto(ADMIN); await sep.waitForSelector('#google', { timeout: 60000 });
 if (await sep.locator('[data-demo="aina@siswa.um.edu.my"]').count() !== 0) throw new Error('dashboard sign-in offers a student account');
-await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t a HEP admin', { timeout: 30000 });
+await googleAs(sep, 'aina@siswa.um.edu.my'); await sep.waitForSelector('text=isn’t an Admin team member', { timeout: 30000 });
 if (await sep.locator('#mpp-rail').count() !== 0) throw new Error('a student got into the HEP dashboard');
 await sep.click('#out'); await sep.waitForSelector('#google');
 await sep.goto(BASE); await sep.waitForSelector('#google'); await googleAs(sep, adminEmail);
@@ -222,6 +289,18 @@ await sep.waitForSelector('#to-admin', { timeout: 30000 });
 if (await sep.getAttribute('#to-admin', 'href') !== '/admin/') throw new Error('HEP admin was not sent to the dashboard site');
 await sep.close();
 ok('a student is turned away from the HEP dashboard, and a HEP admin on the student app is sent to the dashboard');
+
+// ---------- questions and feedback: a student sends a message from the account menu
+const fbp = await ctx.newPage(); watch(fbp, 'feedback'); await fresh(fbp);
+await login(fbp, 'aina@siswa.um.edu.my'); await fbp.waitForSelector('.kk-hero', { timeout: 90000 });
+await fbp.click('#avatar'); await fbp.click('#to-feedback'); await fbp.waitForSelector('#fb-form');
+await fbp.check('#fb-form input[value="idea"]'); await fbp.fill('#fb-form [name=message]', 'Could the map show opening hours?');
+if ((await fbp.textContent('#fb-count')).trim() !== '33') throw new Error('character counter did not update');
+await fbp.click('#fb-form button[type=submit]'); await fbp.waitForSelector('#fb-list .fb-item');
+if (!/Could the map show opening hours\?/.test(await fbp.textContent('#fb-list'))) throw new Error('sent message missing from My messages');
+await fbp.screenshot({ path: `${shots}/f-student-sent.png`, fullPage: true });
+await fbp.goto(BASE + '#/home'); await fbp.waitForSelector('.kk-hero'); // leave the page, so the reply arrives while they're elsewhere
+ok('a student sent feedback from the account menu and sees it in My messages');
 
 // ---------- HEP on desktop, on the dashboard site
 const mpp = await ctx.newPage(); watch(mpp, 'mpp'); await fresh(mpp); await mpp.setViewportSize({ width: 1360, height: 900 });
@@ -235,7 +314,30 @@ for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewar
   await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }
-const ci = (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/);
+// HEP corrects a student's college from the Students page, and it shows in the Activity log.
+await mpp.goto(ADMIN + '#/people'); await mpp.waitForSelector('#pq'); await mpp.fill('#pq', 'Nur Aisyah');
+await mpp.click('[data-col]'); await mpp.waitForSelector('#cc'); await mpp.selectOption('#cc [name=college]', 'KK8');
+await mpp.fill('#cc [name=reason]', 'Picked the wrong college at sign-up'); await mpp.click('#cc button.primary');
+await mpp.waitForSelector('#toast.show'); if (!/College changed/.test(await mpp.textContent('#toast'))) throw new Error('college change failed: ' + await mpp.textContent('#toast'));
+await mpp.goto(ADMIN + '#/activity'); await mpp.waitForSelector('table.data');
+if (!/Changed a student’s college[\s\S]*Nur Aisyah[\s\S]*KK7 → KK8/.test(await mpp.textContent('#view'))) throw new Error('college change missing from the Activity log');
+ok('HEP changed a student’s college with a reason, and the Activity log records it');
+// HEP reads the feedback and replies; the student gets a dot on their avatar and sees the reply.
+await mpp.goto(ADMIN + '#/feedback'); await mpp.waitForSelector('.hep-fb');
+if ((await mpp.textContent('[data-count="feedback"]')).trim() !== '1') throw new Error('Feedback menu should count 1 new message');
+const fbCard = mpp.locator('.hep-fb', { hasText: 'opening hours' });
+await fbCard.locator('[data-fbr]').click(); await mpp.waitForSelector('#fbr');
+await mpp.fill('#fbr [name=reply]', 'Good idea! We’re adding opening hours to shop pages.'); await mpp.click('#fbr button.primary');
+await mpp.waitForSelector('#toast.show'); if (!/Reply sent/.test(await mpp.textContent('#toast'))) throw new Error('reply failed: ' + await mpp.textContent('#toast'));
+await mpp.click('[data-fbf="replied"]'); await mpp.waitForSelector('.hep-fb-reply'); await mpp.screenshot({ path: `${shots}/f-hep-replied.png`, fullPage: true });
+await fbp.goto(BASE + '#/home'); await fbp.reload(); await fbp.waitForSelector('#avatar.has-dot', { timeout: 20000 });
+await fbp.click('#avatar'); if (!/1 new reply/.test(await fbp.textContent('#to-feedback'))) throw new Error('account menu does not show the new reply');
+await fbp.click('#to-feedback'); await fbp.waitForSelector('#fb-list .fb-reply');
+if (!/opening hours to shop pages/.test(await fbp.textContent('#fb-list .fb-reply'))) throw new Error('reply not shown to the student');
+await fbp.waitForFunction(() => !document.querySelector('#avatar.has-dot')); await fbp.screenshot({ path: `${shots}/f-student-reply.png`, fullPage: true });
+await fbp.close();
+ok('HEP replied to the feedback; the student saw a dot, "1 new reply" and the answer in the app');
+const ci = (await mpp.goto(ADMIN + '#/kpis'), await mpp.waitForTimeout(900), (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/));
 ok('all HEP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
 const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(ADMIN + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
 await dl.saveAs(`${shots}/Lampiran1.xlsx`); ok('Lampiran 1 Excel exported: ' + dl.suggestedFilename());
@@ -276,6 +378,11 @@ if (await off.locator('#features input[type=checkbox]').count() !== 4) throw new
 for (const c of await off.$$('#features input[type=checkbox]')) await c.uncheck();
 await off.click('#features button'); await off.waitForSelector('#toast.show');
 ok('HEP turned every feature off in Settings');
+await off.goto(ADMIN + '#/activity'); await off.waitForSelector('#view table.data');
+const activity = await off.locator('#view table.data').innerText();
+for (const text of ['Feature switches', 'All off', 'Readiness update', adminEmail]) if (!activity.includes(text)) throw new Error('activity log is missing: ' + text);
+ok('the Activity log lists those changes and the admin who made them');
+await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
@@ -309,6 +416,10 @@ ok('HEP turned Overview back on, and the directory returned without Live deals')
 // Leaving a map straight after it opens must not leave work running against the removed map.
 await offStu.evaluate(async () => { const { createMap } = await import(new URL('js/map.js', location.href).href); const el = document.createElement('div'); el.style.cssText = 'width:200px;height:200px'; document.body.append(el); const m = await createMap(el); m.remove(); el.remove(); await new Promise((r) => setTimeout(r, 300)); });
 ok('a map closed straight after opening leaves nothing running');
+// The idle check, run as if 31 minutes had passed with no clicks or typing.
+await off.evaluate(() => window.__umc.checkSession(Date.now() + 31 * 60_000));
+await off.waitForSelector('#google', { timeout: 20000 });
+ok('the HEP dashboard signs out after 30 minutes without activity');
 
 console.log(errors.length ? '\nErrors:\n' + errors.join('\n') : '\nNo page errors.');
 await b.close();

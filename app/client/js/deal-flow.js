@@ -4,7 +4,7 @@ import { $, $$, esc, icon, n, sheet, closeSheet, onSheetClose, renderQR, busy, t
 import { merchantHeading, merchantEmpty } from './merchant-ui.js';
 
 export async function merchantDealQRRender(app) {
-  if (app.merchant?.status !== 'verified') return `<div class="card empty"><h1>Deal QR</h1><p>HEP must verify your shop before you can show a deal QR.</p><a class="btn primary" href="#/shop">My shop</a></div>`;
+  if (app.merchant?.status !== 'verified') return `<div class="card empty"><h1>Deal QR</h1><p>The Admin team must verify your shop before you can show a deal QR.</p><a class="btn primary" href="#/shop">My shop</a></div>`;
   const deals = await D.myDeals(app.ctx);
   const rows = await D.dealOverview(app.ctx, deals, [app.merchant]);
   app._dealQRRows = rows;

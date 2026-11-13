@@ -65,7 +65,7 @@ const translations = [
   ['Live deals', 'Tawaran aktif'],
   ['Shop readiness', 'Kesediaan kedai'],
   ['Scan to claim', 'Imbas untuk menuntut'],
-  ['Redeem with HEP/admin', 'Tebus melalui HEP/pentadbir'],
+  ['Redeem with the Admin team', 'Tebus melalui pasukan Admin'],
   ['QR expires in 75s', 'QR tamat tempoh dalam 75s'],
   ['Promote live deals', 'Promosikan tawaran aktif'],
   ['Ready to scan?', 'Sedia untuk mengimbas?'],
@@ -110,7 +110,7 @@ check('dictionary entries are well formed', () => {
   }
 });
 check('names, identifiers and amounts stay intact', () => {
-  for (const value of ['@aina_um', 'AINA-7K2Q', '23001234', 'Kopi Kolej', 'RM5.00', 'HEP', 'PayNet', 'DuitNow QR']) {
+  for (const value of ['@aina_um', 'AINA-7K2Q', '23001234', 'Kopi Kolej', 'RM5.00', 'UM', 'PayNet', 'DuitNow QR']) {
     assert.equal(_test.translate(value), value);
   }
 });

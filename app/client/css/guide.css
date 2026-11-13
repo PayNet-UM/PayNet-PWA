@@ -1,0 +1,79 @@
+/* First-time guide (js/guide.js): welcome card with confetti, then a spotlight tour. */
+.guide { position: fixed; inset: 0; z-index: 150; animation: guide-in .2s ease-out; }
+.guide.leaving { opacity: 0; transition: opacity .18s ease-in; }
+/* No element to point at: dim the whole screen and centre the card. */
+.guide.no-target { background: rgba(14, 26, 43, .62); display: grid; place-items: center; padding: 16px; }
+.guide.no-target .guide-spot { display: none; }
+/* The spotlight: a clear rounded hole, with everything around it dimmed. */
+.guide-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(14, 26, 43, .62), 0 0 0 3px var(--mint, #3db166);
+  transition: left .25s ease, top .25s ease, width .25s ease, height .25s ease; pointer-events: none; }
+
+.guide-card { position: fixed; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px); overflow-y: auto; background: var(--card, #fff); color: var(--ink);
+  border-radius: var(--r-sheet, 24px); padding: 22px 22px 18px; box-shadow: 0 18px 50px -12px rgba(14, 26, 43, .45); outline: none; }
+.guide.no-target .guide-card { position: relative; left: auto; transform: none; animation: guide-pop .32s cubic-bezier(.2, .9, .3, 1.2); }
+.guide-card h2 { font-size: 21px; line-height: 1.25; margin: 0; }
+.guide-card p { color: var(--ink-2); margin: 8px 0 0; }
+
+/* Welcome and finish */
+.guide-card.is-welcome, .guide-card.is-finish { text-align: center; padding-top: 26px; }
+.guide-hero { width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 24px; display: grid; place-items: center;
+  background: var(--grad); color: #fff; box-shadow: 0 10px 24px -10px rgba(38, 135, 71, .7); }
+.guide-hero .ic { width: 36px; height: 36px; }
+.is-welcome .guide-hero { animation: guide-bob 2.4s ease-in-out infinite; }
+.guide-chips { list-style: none; padding: 0; margin: 18px 0 4px; display: grid; gap: 8px; text-align: left; }
+.guide-chips li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-ctl, 10px); background: var(--mint-wash); font-weight: 600; }
+.guide-chips .ic { width: 20px; height: 20px; color: var(--green); flex: none; }
+.guide-sub { font-weight: 700; color: var(--ink) !important; margin-top: 14px !important; }
+.guide-tasks { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; text-align: left; }
+.guide-tasks a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r-ctl, 10px);
+  color: var(--ink); text-decoration: none; font-weight: 600; }
+.guide-tasks a:hover, .guide-tasks a:focus-visible { border-color: var(--green); background: var(--mint-wash); }
+.guide-tasks a > span:nth-child(2) { flex: 1; }
+.guide-tasks a > .ic { width: 18px; height: 18px; color: var(--ink-3); }
+.guide-tick { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--blue-wash); color: var(--blue); flex: none; }
+.guide-tick .ic { width: 16px; height: 16px; }
+.guide-tasks li.done a { color: var(--ink-3); }
+.guide-tasks li.done span:nth-child(2) { text-decoration: line-through; }
+.guide-tasks li.done .guide-tick { background: var(--green); color: #fff; }
+.guide-note { font-size: 13px; color: var(--ink-3) !important; }
+
+/* Tour steps */
+.guide-step { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--green) !important; margin: 0 0 8px !important; }
+.guide-head { display: flex; align-items: center; gap: 12px; }
+.guide-head .tile-icon { flex: none; }
+.guide-dots { display: flex; justify-content: center; gap: 6px; margin: 16px 0 2px; }
+.guide-dots span { width: 7px; height: 7px; border-radius: 99px; background: var(--line-2); transition: width .2s ease, background .2s ease; }
+.guide-dots span.on { width: 20px; background: var(--green); }
+.guide-actions { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.is-tour .guide-actions { justify-content: flex-start; flex-wrap: wrap; row-gap: 4px; }
+.is-tour .guide-actions .btn { white-space: nowrap; }
+.is-tour .guide-actions [data-skip] { padding-inline: 4px; }
+.guide-actions .spacer { flex: 1; }
+.guide-actions .btn .ic { width: 18px; height: 18px; }
+.is-welcome .guide-actions .btn.primary, .is-finish .guide-actions .btn.primary { flex: 1; }
+
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@keyframes guide-in { from { opacity: 0; } }
+@keyframes guide-pop { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+@keyframes guide-bob { 50% { transform: translateY(-5px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .guide, .guide-card, .is-welcome .guide-hero { animation: none !important; }
+  .guide-spot, .guide-dots span { transition: none; }
+}
+
+/* Getting-started steps on the profile set-up screen (views/auth.js). */
+.ob-steps { list-style: none; padding: 0; margin: 0 0 4px; display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.ob-steps li { display: flex; align-items: center; gap: 6px; }
+.ob-steps li + li::before { content: ''; width: 18px; height: 2px; background: var(--line-2); border-radius: 2px; margin-right: 2px; }
+.ob-steps b, .ob-steps .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--line); color: var(--ink-2); flex: none; }
+.ob-steps .ic { padding: 4px; background: var(--green); color: #fff; }
+.ob-steps li.on { color: var(--ink); }
+.ob-steps li.on b { background: var(--blue); color: #fff; }
+
+/* (i) button on the KK League heading: shows the Leagues page tour again. */
+.league-help { display: inline-grid; place-items: center; width: 26px; height: 26px; padding: 0; margin-left: 4px; vertical-align: middle;
+  border-radius: 50%; border: 1.5px solid var(--line-2); background: transparent; color: var(--ink-3); cursor: pointer; }
+.league-help .ic { width: 15px; height: 15px; }
+.league-help:hover, .league-help:focus-visible { color: var(--blue); border-color: var(--blue); }

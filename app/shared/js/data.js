@@ -18,7 +18,7 @@ export const SEGMENTS = ['Campus permanent merchant', 'Within 100 m of UM gate',
 export const ZONES = ['Residential colleges', 'Central campus', 'Academic zone', 'Campus edge'];
 
 // Active earning rules; transaction rewards are intentionally deferred.
-// Features HEP can switch on and off in Settings. Off unless HEP turns them on.
+// Features the Admin team can switch on and off in Settings. Off unless the Admin team turns them on.
 export const FEATURES = [
   ['merchantSignup', 'Merchant sign-up', 'New businesses can register and apply to join.'],
   ['merchantTools', 'Merchant tools', 'Live-deal QR, promotions, insights and the staff readiness check.'],
@@ -29,7 +29,7 @@ export const DEFAULT_FEATURES = Object.fromEntries(FEATURES.map(([k]) => [k, fal
 export const featureOn = (rules, key) => rules?.features?.[key] === true;
 // Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
 // everyone is then asked to accept again.
-export const TERMS_VERSION = '2026-11-08';
+export const TERMS_VERSION = '2026-11-13';
 export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
@@ -97,6 +97,45 @@ export async function getRules(ctx) {
 export async function isMppUser(ctx) {
   try { await ctx.sdk.getDoc(R(ctx).config('access')); return true; } catch { return false; }
 }
+
+// ------------------------------------------------------------- Admin team safety
+// Big the Admin team changes need a sign-in from the last 12 hours (recentSignIn() in firestore.rules). The app signs the admin
+// out a few minutes early so they never meet a refused save.
+export const RECENT_SIGN_IN_MS = 12 * 3600 * 1000;
+export async function signedInRecently(user, now = Date.now()) {
+  try { return now - Date.parse((await user.getIdTokenResult()).authTime) < RECENT_SIGN_IN_MS - 5 * 60_000; }
+  catch { return true; } // if the token can't be read, the rules still decide
+}
+// Activity log (adminLog). Each entry is written in the same batch as the change it describes; the rules require it
+// for settings, rewards and blocks, and nobody can edit or delete an entry.
+export const ADMIN_ACTIONS = {
+  'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
+  budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', 'change-faculty': 'Changed a student’s faculty',
+};
+export function logAdmin(ctx, batch, action, target = '', summary = '') {
+  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
+  batch.set(ref, { at: ctx.sdk.serverTimestamp(), by: ctx.email, action, target: String(target).slice(0, 100), summary: String(summary).slice(0, 300) });
+  return ref.id;
+}
+export async function listAdminLog(ctx, max = 200) {
+  return (await list(ctx, 'adminLog')).sort((a, b) => (toMs(b.at) || 0) - (toMs(a.at) || 0)).slice(0, max);
+}
+const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, label]));
+function configLog(name, data) {
+  if (name === 'access') {
+    const c = (k) => (data[k] || []).length;
+    return ['access', 'Who can use the app', `${c('mppEmails')} Admin team members, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
+  }
+  if (name === 'budget') return ['budget', 'Activation fund', `RM${((data.allocationCents || 0) / 100).toFixed(2)}`];
+  if (name === 'rules' && data.features) {
+    const on = Object.entries(data.features).filter(([, v]) => v).map(([k]) => FEATURE_NAMES()[k] || k);
+    return ['features', 'Feature switches', on.length ? 'On: ' + on.join(', ') : 'All off'];
+  }
+  if (name === 'rules' && data.merchantReadinessUpdate) return ['merchant-readiness', 'Readiness update', String(data.merchantReadinessUpdate.message || '')];
+  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
+  return ['points-rules', 'Points rules', parts.join(', ')];
+}
 export async function getProfile(ctx, u = ctx.uid) { return one(ctx, R(ctx).user(u)); }
 
 function makeReferralCode(name) {
@@ -105,7 +144,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', termsVersion = TERMS_VERSION }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -115,7 +154,12 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
     if (!/^[A-Z0-9]{5,15}$/.test(matric)) { const e = new Error('bad-matric'); e.badMatric = true; throw e; }
     const taken = await sdk.getDoc(sdk.doc(ctx.db, 'matrics', matric)).then((x) => x.exists() && x.data().uid !== ctx.uid).catch(() => false);
     if (taken) { const e = new Error('matric-taken'); e.matricTaken = true; throw e; }
-  }
+    // A referral code can only be entered while signing up, so check it before creating the account.
+    referralCode = String(referralCode || '').trim().toUpperCase();
+    if (referralCode && !(await one(ctx, sdk.doc(ctx.db, 'referralCodes', referralCode)).catch(() => null))) {
+      const e = new Error('bad-referral'); e.badReferral = true; throw e;
+    }
+  } else referralCode = '';
   for (let attempt = 0; attempt < 4; attempt++) {
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
@@ -123,9 +167,13 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
       referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
-    try { await b.commit(); return; } catch (e) {
+    try { await b.commit(); } catch (e) {
       if (role !== 'student' || attempt === 3) throw e; // students retry in case the random referral code clashed
+      continue;
     }
+    // The account exists now; a referral that fails at this point shouldn't stop sign-up.
+    if (referralCode) { try { await applyInviterCode(ctx, referralCode); } catch { return { referralFailed: true }; } }
+    return {};
   }
 }
 // Records that the user accepted the current Terms of Use and Privacy Notice (shown once; see terms.js).
@@ -136,21 +184,22 @@ export const needsTerms = (profile) => !!profile && profile.termsVersion !== TER
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 
-// ------------------------------------------------------------- HEP: programme setup
+// ------------------------------------------------------------- the Admin team: programme setup
 export async function initProgramme(ctx, { studentDomains = ['siswa.um.edu.my', 'um.edu.my', 'gmail.com'] } = {}) {
   const { sdk } = ctx; const r = R(ctx);
   const b = sdk.writeBatch(ctx.db);
   const existing = async (ref) => (await sdk.getDoc(ref)).exists();
+  const logId = logAdmin(ctx, b, 'programme-setup', 'Programme', 'Default settings, rewards and counters');
   const cur = await one(ctx, r.config('rules'));
-  if (!cur) b.set(r.config('rules'), DEFAULT_RULES);
-  else { const missing = Object.fromEntries(Object.entries(DEFAULT_RULES).filter(([k]) => !(k in cur))); if (Object.keys(missing).length) b.set(r.config('rules'), missing, { merge: true }); }
-  if (!(await existing(r.config('access')))) b.set(r.config('access'), { mppEmails: [], studentDomains, testerEmails: [] });
-  b.set(r.config('lessonKeys'), LESSON_KEYS);
-  if (!(await existing(r.config('budget')))) b.set(r.config('budget'), { allocationCents: 2000000 });
+  if (!cur) b.set(r.config('rules'), { ...DEFAULT_RULES, logId });
+  else { const missing = Object.fromEntries(Object.entries(DEFAULT_RULES).filter(([k]) => !(k in cur))); if (Object.keys(missing).length) b.set(r.config('rules'), { ...missing, logId }, { merge: true }); }
+  if (!(await existing(r.config('access')))) b.set(r.config('access'), { mppEmails: [], studentDomains, testerEmails: [], logId });
+  b.set(r.config('lessonKeys'), { ...LESSON_KEYS, logId });
+  if (!(await existing(r.config('budget')))) b.set(r.config('budget'), { allocationCents: 2000000, logId });
   if (!(await existing(r.stats('campus')))) b.set(r.stats('campus'), { checkins: 0, colleges: {}, lastVisit: '' });
   if (!(await existing(r.stats('welfare')))) b.set(r.stats('welfare'), { points: 0, lastUid: '', lastId: '' });
   for (const rw of DEFAULT_REWARDS) {
-    if (!(await existing(r.reward(rw.id)))) { const { id, ...rest } = rw; b.set(r.reward(id), { ...rest, issued: 0, lastVoucher: '' }); }
+    if (!(await existing(r.reward(rw.id)))) { const { id, ...rest } = rw; b.set(r.reward(id), { ...rest, issued: 0, lastVoucher: '', logId }); }
   }
   await b.commit();
 }
@@ -197,7 +246,7 @@ export async function setMerchantLogo(ctx, logo) {
 export async function setReadiness(ctx) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { ready: true, readyAt: ctx.sdk.serverTimestamp() });
 }
-// Completion stays valid until HEP publishes a new required readiness update.
+// Completion stays valid until the Admin team publishes a new required readiness update.
 export function merchantReadinessCurrent(merchant, rules) {
   if (!merchant?.ready) return false;
   const published = toMs(rules?.merchantReadinessUpdate?.publishedAt);
@@ -206,14 +255,17 @@ export function merchantReadinessCurrent(merchant, rules) {
 export async function publishMerchantReadiness(ctx, message) {
   const text = String(message || '').trim();
   if (text.length < 10 || text.length > 1000) throw new Error('Use 10–1,000 characters for the readiness update.');
-  // The existing config rules allow only HEP to publish.
+  // The existing config rules allow only the Admin team to publish.
   await saveConfig(ctx, 'rules', { merchantReadinessUpdate: { message: text, publishedAt: ctx.sdk.serverTimestamp() } });
 }
 export async function setOccupancy(ctx, seats, occupied) {
   await ctx.sdk.updateDoc(R(ctx).merchant(ctx.uid), { seats, occupied, occupancyAt: ctx.sdk.serverTimestamp() });
 }
-export async function reviewMerchant(ctx, id, status, note = '') {
-  await ctx.sdk.updateDoc(R(ctx).merchant(id), { status, reviewNote: note, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+export async function reviewMerchant(ctx, id, status, note = '', name = '') {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'merchant-review', name || id, status + (note ? ': ' + note : ''));
+  b.update(R(ctx).merchant(id), { status, reviewNote: note, reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+  await b.commit();
 }
 export async function listMerchantsAll(ctx) { return list(ctx, 'merchants'); }
 
@@ -373,6 +425,8 @@ export function watchLedger(ctx, cb, err) {
 export async function hasLedger(ctx, id) { return !!(await one(ctx, R(ctx).ledger(ctx.uid, id))); }
 export async function adjustPoints(ctx, studentUid, delta, note) {
   const b = ctx.sdk.writeBatch(ctx.db); const id = R(ctx).newId('adjustments');
+  // Student entries name the account ID, not the name, so nothing personal is left behind if the account is deleted.
+  logAdmin(ctx, b, 'adjust-points', studentUid, `${delta > 0 ? '+' : ''}${delta} points: ${note}`);
   addPoints(ctx, b, studentUid, 'adj_' + id, { type: 'adjust', delta, note });
   await b.commit();
 }
@@ -456,11 +510,20 @@ export async function applyInviterCode(ctx, code) {
 }
 export async function claimFriendBonus() { retiredAttendanceFlow(); }
 export async function myReferrals(ctx) { return list(ctx, 'referrals', eq(ctx, 'inviterUid', ctx.uid)); }
+// The 10 students whose referral codes were used most (stats/referrals, kept by the server).
+export async function referralBoard(ctx) { return (await one(ctx, R(ctx).stats('referrals')))?.top || []; }
 export async function claimInviterBonus() { retiredAttendanceFlow(); }
 
 // ------------------------------------------------------------- rewards, vouchers, welfare
 export async function listRewards(ctx) { return list(ctx, 'rewards'); }
-export async function saveReward(ctx, id, data) { await ctx.sdk.setDoc(R(ctx).reward(id), data, { merge: true }); }
+export async function saveReward(ctx, id, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const bits = [data.cost != null && `${data.cost} points`, data.valueCents != null && `RM${(data.valueCents / 100).toFixed(2)}`,
+    data.stock != null && `stock ${data.stock}`, data.active != null && (data.active ? 'on' : 'off')].filter(Boolean);
+  const logId = logAdmin(ctx, b, 'reward', data.title || id, bits.join(', '));
+  b.set(R(ctx).reward(id), { ...data, logId }, { merge: true });
+  await b.commit();
+}
 export async function redeemReward(ctx, reward) {
   const { sdk } = ctx; const r = R(ctx); const vid = r.newId('vouchers');
   const b = sdk.writeBatch(ctx.db);
@@ -479,7 +542,7 @@ export function watchMyVouchers(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'vouchers'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s)), err);
 }
 export async function findVoucher(ctx, raw, asMpp = false) {
-  if (!(await isMppUser(ctx))) { const e = new Error('Only HEP/admin can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
+  if (!(await isMppUser(ctx))) { const e = new Error('Only the Admin team can look up reward vouchers.'); e.code = 'permission-denied'; throw e; }
   const s = String(raw).trim();
   const id = s.startsWith('UMV1:') ? s.slice(5) : null;
   if (id) return one(ctx, R(ctx).voucher(id));
@@ -502,7 +565,7 @@ export async function donatePoints(ctx, n) {
   await b.commit();
 }
 
-// Welfare requests are private to the applicant and HEP. Approval moves points
+// Welfare requests are private to the applicant and the Admin team. Approval moves points
 // from the pool to the student's wallet atomically, with one immutable ledger ID.
 export const WELFARE_MAX_POINTS = 1000; // Also set in firestore.rules.
 export async function submitWelfareRequest(ctx, amount, reason) {
@@ -517,6 +580,39 @@ export async function submitWelfareRequest(ctx, amount, reason) {
     amount, reason, status: 'pending', createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
 }
+// ------------------------------------------------------------- feedback: students ask anything or comment on the app
+export const FEEDBACK_TOPICS = [['question', 'A question'], ['idea', 'An idea or suggestion'], ['problem', 'Something isn’t working'], ['other', 'Anything else']];
+export const FEEDBACK_PER_DAY = 3;
+export const feedbackTopic = (k) => FEEDBACK_TOPICS.find(([t]) => t === k)?.[1] || 'Anything else';
+const byNewest = (a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0);
+export async function sendFeedback(ctx, topic, message) {
+  message = String(message || '').trim();
+  if (!FEEDBACK_TOPICS.some(([t]) => t === topic)) throw new Error('Choose what your message is about.');
+  if (message.length < 5) throw new Error('Write a little more so we can help.');
+  if (message.length > 1000) throw new Error('Keep your message under 1,000 characters.');
+  const day = dayKey(clock(ctx));
+  const used = new Set((await list(ctx, 'feedback', eq(ctx, 'studentUid', ctx.uid))).map((f) => f.id));
+  const slot = Array.from({ length: FEEDBACK_PER_DAY }, (_, i) => `${ctx.uid}_${day}_${i + 1}`).find((id) => !used.has(id));
+  if (!slot) throw new Error(`You’ve sent ${FEEDBACK_PER_DAY} messages today. Send more tomorrow.`);
+  const p = ctx.profile || await getProfile(ctx);
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'feedback', slot), { studentUid: ctx.uid, name: p.name, email: ctx.email, college: p.college || '',
+    topic, message, status: 'new', createdAt: ctx.sdk.serverTimestamp() });
+  return slot;
+}
+export async function myFeedback(ctx) { return (await list(ctx, 'feedback', eq(ctx, 'studentUid', ctx.uid))).sort(byNewest); }
+export function watchMyFeedback(ctx, cb, err) {
+  return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'feedback'), eq(ctx, 'studentUid', ctx.uid)), (s) => cb(snapList(s).sort(byNewest)), err);
+}
+export async function listFeedback(ctx) { return (await list(ctx, 'feedback')).sort(byNewest); }
+export async function replyFeedback(ctx, id, reply) {
+  reply = String(reply || '').trim();
+  if (reply.length < 2) throw new Error('Write a reply first.');
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'replied', reply: reply.slice(0, 1000), repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
+}
+export async function markFeedbackDone(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'done', repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
+}
+
 export function watchMyWelfareRequests(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'welfareRequests'), eq(ctx, 'studentUid', ctx.uid)),
     (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);
@@ -531,6 +627,7 @@ export async function reviewWelfareRequest(ctx, id, approve, response = '') {
   if (response.length > 500 || (!approve && response.length < 3)) throw new Error('Please add a short response of up to 500 characters.');
   if (approve && ((await getWelfareFund(ctx))?.points || 0) < request.amount) throw new Error('The welfare fund does not have enough points for this request.');
   const b = sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'welfare-review', request.studentUid, `${approve ? 'Approved' : 'Declined'} ${request.amount} points`);
   b.update(ref, { status: approve ? 'approved' : 'rejected', response, reviewedBy: ctx.email, reviewedAt: sdk.serverTimestamp() });
   if (approve) {
     addPoints(ctx, b, request.studentUid, 'welfare_' + id, { type: 'welfare', delta: request.amount, requestId: id });
@@ -621,11 +718,51 @@ export async function saveCampaign(ctx, id, data) {
 }
 export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
-export async function saveConfig(ctx, name, data) { await ctx.sdk.setDoc(R(ctx).config(name), data, { merge: true }); }
+export async function saveConfig(ctx, name, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, ...configLog(name, data));
+  b.set(R(ctx).config(name), { ...data, logId }, { merge: true });
+  await b.commit();
+}
 export async function listUsers(ctx) { return list(ctx, 'users'); }
-export async function setBlocked(ctx, uid, blocked) { await ctx.sdk.updateDoc(R(ctx).user(uid), { disabled: !!blocked }); }
+export async function setBlocked(ctx, uid, blocked) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, blocked ? 'block' : 'unblock', uid);
+  b.update(R(ctx).user(uid), { disabled: !!blocked, adminLogId });
+  await b.commit();
+}
+// Students choose their college once, at sign-up. The Admin team can correct a wrong pick; the KK League server then moves
+// the student's points to the new college.
+export const collegeName = (k) => COLLEGES.find(([c]) => c === k)?.[1] || k || '—';
+export async function setCollege(ctx, uid, college, reason) {
+  if (!COLLEGES.some(([k]) => k === college)) throw new Error('Choose a college from the list.');
+  const user = await one(ctx, R(ctx).user(uid));
+  if (!user || user.role !== 'student') throw new Error('Only students have a college.');
+  if (user.college === college) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, 'change-college', uid, `${user.college || '—'} → ${college}: ${String(reason || '').trim()}`);
+  b.update(R(ctx).user(uid), { college, adminLogId });
+  await b.commit();
+}
+// Faculty works the same way: chosen once at sign-up (or once later, by students who signed up before it was asked),
+// and only the Admin team can correct it. The Faculty League server then moves the student's points.
+export async function setFaculty(ctx, uid, faculty, reason) {
+  if (!FACULTIES.includes(faculty)) throw new Error('Choose a faculty from the list.');
+  const user = await one(ctx, R(ctx).user(uid));
+  if (!user || user.role !== 'student') throw new Error('Only students have a faculty.');
+  if (user.faculty === faculty) return;
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const adminLogId = logAdmin(ctx, b, 'change-faculty', uid, `${user.faculty || '—'} → ${faculty}: ${String(reason || '').trim()}`);
+  b.update(R(ctx).user(uid), { faculty, adminLogId });
+  await b.commit();
+}
 // Frees a matric number claimed by the wrong person, so the real student can sign up.
-export async function releaseMatric(ctx, matric) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric))); }
+export async function releaseMatric(ctx, matric) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'release-matric', normMatric(matric));
+  b.delete(ctx.sdk.doc(ctx.db, 'matrics', normMatric(matric)));
+  await b.commit();
+}
 export async function listSurveys(ctx) { return list(ctx, 'surveys'); }
 export async function listReferrals(ctx) { return list(ctx, 'referrals'); }
 export async function listManualVolumes(ctx) { return list(ctx, 'manualVolumes'); }

@@ -1,5 +1,5 @@
 // Sign in, sign up, email verification and first-time profile. Shared by both websites:
-// app.site is 'client' (students and merchants) or 'admin' (the HEP dashboard).
+// app.site is 'client' (students and merchants) or 'admin' (the Admin dashboard).
 import * as D from '../data.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
@@ -14,7 +14,7 @@ function frame(app, inner) {
   document.body.innerHTML = `<div class="auth">
     <aside class="art">
       <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"></a>
-      <div><h2>${admin ? 'HEP admin dashboard' : 'Add on to campus life.'}</h2>
+      <div><h2>${admin ? 'Admin dashboard' : 'Add on to campus life.'}</h2>
         <p>${admin ? 'Review merchants, manage rewards and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
@@ -215,7 +215,7 @@ export async function renderHandoffDone(app, user, hash, isAdmin = false) {
   // Never hand over an admin session through a link.
   if (isAdmin) {
     frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
-      <div><h1>Not available for HEP accounts</h1><p class="lede">For security, HEP accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.</p>
+      <div><h1>Not available for Admin team accounts</h1><p class="lede">For security, Admin team accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.</p>
       <button class="btn block" id="ho-here" style="margin-top:14px">Continue in Safari</button></div>`);
     $('#ho-here').onclick = leave;
     return;
@@ -330,7 +330,7 @@ export async function finishRedirect(app) {
 }
 
 function demoGoogleChooser(app) {
-  const accounts = isAdminSite(app) ? [[MPP_EMAIL, 'HEP admin', 'Dashboard']]
+  const accounts = isAdminSite(app) ? [[MPP_EMAIL, 'Admin team', 'Dashboard']]
     : [['aina@siswa.um.edu.my', 'Aina Nadhirah', 'Student, has history'], ['kopikolej@demo.my', 'Kopi Kolej', 'Merchant']];
   const el = sheet(`<h2>Choose a Google account</h2><p class="muted">Demo mode stands in for Google’s account picker. Live, this is Google’s own sign-in window.</p>
     <div class="stack" style="margin-top:14px">
@@ -349,8 +349,8 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   const forApp = !admin && !demo && !!handoffHash();
   frame(app, `
     <div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
-    <div><h1>${admin ? 'Sign in to the HEP dashboard' : 'Sign in to +Onz'}</h1>
-      <p class="lede">${admin ? 'For HEP staff only. Use the email HEP gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
+    <div><h1>${admin ? 'Sign in to the Admin dashboard' : 'Sign in to +Onz'}</h1>
+      <p class="lede">${admin ? 'For the Admin team only. Use the email the Admin team gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
     ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
@@ -368,7 +368,7 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
     <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
     ${admin ? '' : `<p class="faint" style="text-align:center">By signing in you agree to the <button class="link" type="button" id="terms-link">Terms of Use and Privacy Notice</button>.</p>`}
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
-      <div class="row">${admin ? `<button class="btn small" data-demo="${MPP_EMAIL}">HEP admin</button>`
+      <div class="row">${admin ? `<button class="btn small" data-demo="${MPP_EMAIL}">Admin team</button>`
         : '<button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button>'}</div></div>` : ''}
     ${admin ? `<p class="faint" style="text-align:center">Student or merchant? <a href="${esc(siteUrls.client)}">Open the +Onz app</a></p>` : ''}`);
   const { sdk, auth } = app.backend;
@@ -406,7 +406,7 @@ export function renderComingSoon(app) {
 }
 export function renderBlocked(app) {
   frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
-    <div><h1>This account is blocked</h1><p class="lede">Contact HEP if you think this is a mistake.</p>
+    <div><h1>This account is blocked</h1><p class="lede">Contact the Admin team if you think this is a mistake.</p>
     <button class="btn block" id="blk-out" style="margin-top:14px">Sign out</button></div>`);
   $('#blk-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
@@ -427,20 +427,20 @@ export function renderVerify(app) {
   $('#out').onclick = () => sdk.signOut(auth);
 }
 
-// Client site: a HEP admin with no student or merchant profile most likely wanted the dashboard.
+// Client site: an Admin team member with no student or merchant profile most likely wanted the dashboard.
 export function renderAdminElsewhere(app, setUpProfile) {
-  frame(app, `<div><h1>You’re a HEP admin</h1><p class="lede">Signed in as ${esc(app.user.email || '')}. The HEP dashboard is a separate website.</p></div>
-    <div class="stack"><a class="btn primary block" id="to-admin" href="${esc(siteUrls.admin)}">Open the HEP dashboard</a>
+  frame(app, `<div><h1>You’re an Admin team member</h1><p class="lede">Signed in as ${esc(app.user.email || '')}. The Admin dashboard is a separate website.</p></div>
+    <div class="stack"><a class="btn primary block" id="to-admin" href="${esc(siteUrls.admin)}">Open the Admin dashboard</a>
       <button class="btn block" id="setup">Set up a student or merchant profile here</button>
       <button class="btn ghost block" id="out">Sign out</button></div>`);
   $('#setup').onclick = () => setUpProfile();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
 }
 
-// Admin site: signed in, but this account isn't on the HEP admin list.
+// Admin site: signed in, but this account isn't on the Admin team list.
 export function renderNotAdmin(app) {
-  frame(app, `<div><h1>This account isn’t a HEP admin</h1><p class="lede">${esc(app.user.email || 'This account')} doesn’t have access to the HEP dashboard.
-      If you should, ask an existing HEP admin to add your email under Settings.</p></div>
+  frame(app, `<div><h1>This account isn’t an Admin team member</h1><p class="lede">${esc(app.user.email || 'This account')} doesn’t have access to the Admin dashboard.
+      If you should, ask an existing Admin team member to add your email under Settings.</p></div>
     <div class="stack"><a class="btn primary block" href="${esc(siteUrls.client)}">Open the +Onz app for students and merchants</a>
       <button class="btn ghost block" id="out">Sign out and use another account</button></div>`);
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
@@ -476,7 +476,8 @@ export function renderOnboarding(app, done) {
   const email = app.user.email || '';
   const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
   const looksStudent = !merchantsOpen || /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
-  frame(app, `<div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}.</p></div>
+  frame(app, `<ol class="ob-steps" aria-label="Getting started"><li class="done">${icon('check')}<span>Sign in</span></li><li class="on" aria-current="step"><b>2</b><span>Your profile</span></li><li><b>3</b><span>Quick tour</span></li></ol>
+    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p></div>
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
@@ -487,12 +488,17 @@ export function renderOnboarding(app, done) {
       <label class="field">Your full name<input name="name" required minlength="2" maxlength="100" autocomplete="name" value="${esc(app.user.displayName || '')}"></label>
       <div id="student-fields" class="stack">
         <label class="field">Matric number<input name="matric" autocomplete="off" placeholder="e.g. 23001234" pattern="[A-Za-z0-9]{5,15}" title="Letters and numbers only"><small>One account per matric number. You can’t change it later, so check it.</small></label>
-        <label class="field">Residential college<select name="college">${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>
-          <small>Your points count towards your college on the leaderboard.</small></label>
-        <label class="field">Faculty<select name="faculty">${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
+        <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <label class="field">Faculty<select name="faculty" aria-describedby="college-warn"><option value="" selected disabled>Choose your faculty</option>${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
+        <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college or faculty later.</b> Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.</span></div>
+        <fieldset class="field ob-referral"><legend>Are you signing up with a friend’s referral code?</legend>
+          <div class="row ob-referral-pick"><label class="check"><input type="radio" name="hasReferral" value="no" checked> No</label>
+            <label class="check"><input type="radio" name="hasReferral" value="yes"> Yes</label></div>
+          <label class="field hidden" id="ob-referral-code">Referral code<input name="referral" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="e.g. AINA-7K2Q" spellcheck="false"></label>
+          <small>You can only enter a referral code now, while signing up. It also sends your friend a friend request.</small></fieldset>
       </div>
       <div class="terms-box">
-        <p><b>Before you continue</b><br><span class="faint">+Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. HEP admins can see it; businesses only see your name on vouchers you redeem with them. Details below.</span></p>
+        <p><b>Before you continue</b><br><span class="faint">+Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. Admin team members can see it; businesses only see your name on vouchers you redeem with them. Details below.</span></p>
         <button class="btn small" type="button" id="ob-terms">Read the Terms of Use and Privacy Notice</button>
         <label class="check"><input type="checkbox" name="terms" required> I have read and agree to the +Onz Terms of Use and Privacy Notice.</label>
       </div>
@@ -500,8 +506,12 @@ export function renderOnboarding(app, done) {
       <button class="btn ghost block" type="button" id="out">Sign out</button>
     </form>`);
   const f = $('#ob');
-  const sync = () => { $('#student-fields').classList.toggle('hidden', f.role.value !== 'student'); f.matric.required = f.role.value === 'student'; };
-  $$('input[name=role]', f).forEach((r) => { r.onchange = sync; }); sync();
+  const sync = () => {
+    const student = f.role.value === 'student', referral = student && f.hasReferral.value === 'yes';
+    $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student; f.faculty.required = student;
+    $('#ob-referral-code').classList.toggle('hidden', !referral); f.referral.required = referral;
+  };
+  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
   f.onsubmit = (e) => {
@@ -509,16 +519,19 @@ export function renderOnboarding(app, done) {
     busy($('button[type=submit]', f), async () => {
       const role = f.role.value;
       try {
-        await D.createProfile(app.ctx, role === 'student'
-          ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value }
+        const res = await D.createProfile(app.ctx, role === 'student'
+          ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value,
+            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '' }
           : { role, name: f.name.value });
+        if (res?.referralFailed) toast('Your account is ready, but the referral code couldn’t be added.', true);
         await done();
       } catch (err) {
-        if (err.notReady) toast('+Onz isn’t open for students yet. The HEP admin needs to sign in once to set it up.', true);
+        if (err.notReady) toast('+Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
-        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact HEP.', true);
+        else if (err.badReferral) toast('That referral code doesn’t exist. Check it with your friend, or choose No.', true);
+        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact the Admin team.', true);
         else if (err.code === 'permission-denied' && role === 'student')
-          toast('This email can’t join as a student. Use your Gmail or UM email, or ask HEP to add you as a tester.', true);
+          toast('This email can’t join as a student. Use your Gmail or UM email, or ask the Admin team to add you as a tester.', true);
         else toast(errText(err), true);
       }
     });

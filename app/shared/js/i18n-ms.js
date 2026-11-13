@@ -2,7 +2,7 @@
 export const MS = `
 Campus management|Pengurusan kampus
 Campus workspace|Ruang kerja kampus
-HEP team|Pasukan HEP
+Admin team|Pasukan Admin
 Your campus, connected|Kampus anda, saling terhubung
 Students, merchants and campus opportunities. One place to keep things moving.|Pelajar, peniaga dan peluang kampus. Semuanya di satu tempat untuk menggerakkan aktiviti kampus.
 PayNet list due on the 20th|Senarai PayNet perlu dihantar pada 20 hari bulan
@@ -57,14 +57,14 @@ Student QR scans will appear here.|Imbasan QR pelajar akan dipaparkan di sini.
 Staff know how to show a live-deal QR and apply the discount|Staf tahu cara memaparkan QR tawaran aktif dan memberikan diskaun
 Discount details|Butiran diskaun
 e.g. 20% off any coffee|cth. Diskaun 20% untuk mana-mana kopi
-HEP must verify your shop before you can show a deal QR.|HEP mesti mengesahkan kedai anda sebelum anda boleh memaparkan QR tawaran.
+The Admin team must verify your shop before you can show a deal QR.|Pasukan Admin mesti mengesahkan kedai anda sebelum anda boleh memaparkan QR tawaran.
 Show your QR. Students scan. Apply the discount.|Paparkan QR anda. Pelajar mengimbas. Berikan diskaun.
 Show deal QR|Paparkan QR tawaran
 Student scans|Pelajar mengimbas
 Apply discount|Berikan diskaun
-Reward vouchers are redeemed by HEP/admin. Merchant discounts use live deals.|Baucar ganjaran ditebus melalui HEP/pentadbir. Diskaun peniaga menggunakan tawaran aktif.
+Reward vouchers are redeemed by the Admin team. Merchant discounts use live deals.|Baucar ganjaran ditebus melalui pasukan Admin. Diskaun peniaga menggunakan tawaran aktif.
 Choose a live deal|Pilih tawaran aktif
-Create a live deal and send it to HEP for approval.|Cipta tawaran aktif dan hantar kepada HEP untuk kelulusan.
+Create a live deal and send it to the Admin team for approval.|Cipta tawaran aktif dan hantar kepada pasukan Admin untuk kelulusan.
 Students scan this QR|Pelajar mengimbas QR ini
 QR codes expire automatically. Show a fresh QR when needed.|Kod QR tamat tempoh secara automatik. Paparkan QR baharu apabila diperlukan.
 Refresh QR|Jana QR baharu
@@ -89,10 +89,10 @@ Show this confirmation to staff. They will apply your discount.|Tunjukkan penges
 Valid for 15 minutes after scanning|Sah selama 15 minit selepas mengimbas
 This confirms a deal claim, not a payment.|Ini mengesahkan tuntutan tawaran, bukan pembayaran.
 Back to live deals|Kembali ke tawaran aktif
-Redeem with HEP/admin|Tebus melalui HEP/pentadbir
+Redeem with the Admin team|Tebus melalui pasukan Admin
 e.g. RM5 campus reward|cth. Ganjaran kampus RM5
-Show this voucher to HEP/admin for redemption.|Tunjukkan baucar ini kepada HEP/pentadbir untuk penebusan.
-Only HEP/admin fulfils reward vouchers. Mark each voucher used after handing over its value.|Hanya HEP/pentadbir mengurus penebusan baucar ganjaran. Tandakan setiap baucar sebagai digunakan selepas menyerahkan nilainya.
+Show this voucher to the Admin team for redemption.|Tunjukkan baucar ini kepada pasukan Admin untuk penebusan.
+Only the Admin team fulfils reward vouchers. Mark each voucher used after handing over its value.|Hanya pasukan Admin mengurus penebusan baucar ganjaran. Tandakan setiap baucar sebagai digunakan selepas menyerahkan nilainya.
 Live-deal QR activity|Aktiviti QR tawaran aktif
 QR claims and applied discounts are separate from PayNet transaction counts.|Tuntutan QR dan diskaun yang diberikan direkodkan secara berasingan daripada jumlah transaksi PayNet.
 Scan the merchant’s live-deal QR. This is not a live-deal code.|Imbas QR tawaran aktif peniaga. Ini bukan kod tawaran aktif.
@@ -104,7 +104,7 @@ This QR has expired. Ask the merchant for a fresh QR.|QR ini telah tamat tempoh.
 That QR belongs to a different live deal.|QR itu adalah untuk tawaran aktif yang lain.
 Only students can claim a live deal.|Hanya pelajar boleh menuntut tawaran aktif.
 You’ve already claimed this deal today.|Anda telah menuntut tawaran ini hari ini.
-Only HEP/admin can look up reward vouchers.|Hanya HEP/pentadbir boleh menyemak baucar ganjaran.
+Only the Admin team can look up reward vouchers.|Hanya pasukan Admin boleh menyemak baucar ganjaran.
 Merchant discounts are now managed through live deals.|Diskaun peniaga kini diurus melalui tawaran aktif.
 Open the app in a camera-enabled browser to scan the merchant’s QR.|Buka aplikasi dalam pelayar yang menyokong kamera untuk mengimbas QR peniaga.
 Allow camera access in your browser settings, then try again.|Benarkan akses kamera dalam tetapan pelayar anda, kemudian cuba lagi.
@@ -126,7 +126,7 @@ A new readiness update is available. Review it before confirming.|Kemas kini kes
 Use 10–1,000 characters for the readiness update.|Gunakan 10–1,000 aksara untuk kemas kini kesediaan.
 Shop profile|Profil kedai
 Map pin|Pin peta
-HEP verified|Disahkan HEP
+Admin verified|Disahkan pasukan Admin
 All set|Semuanya sedia
 Ready for campus|Sedia untuk warga kampus
 Build your shop|Lengkapkan kedai anda
@@ -153,9 +153,9 @@ seats taken|tempat duduk diduduki
 Keep your availability up to date.|Pastikan maklumat kekosongan sentiasa terkini.
 Make some noise|Serlahkan tawaran anda
 Fill the quiet hours.|Rancakkan waktu lengang.
-Set a time and seat limit. Send your deal to HEP.|Tetapkan masa dan had pengisian tempat duduk. Hantar tawaran kepada HEP.
-HEP approval before going live|Kelulusan HEP diperlukan sebelum tawaran disiarkan
-HEP approved|Diluluskan HEP
+Set a time and seat limit. Send your deal to the Admin team.|Tetapkan masa dan had pengisian tempat duduk. Hantar tawaran kepada pasukan Admin.
+Admin team approval before going live|Kelulusan pasukan Admin diperlukan sebelum tawaran disiarkan
+Admin approved|Diluluskan pasukan Admin
 Your next deal starts with the New deal button.|Mulakan tawaran anda dengan butang Tawaran baharu.
 Create a discount or free-item offer.|Cipta tawaran diskaun atau barangan percuma.
 Give them a little extra|Berikan sedikit keistimewaan
@@ -276,8 +276,8 @@ Student: Aina (KK3)|Pelajar: Aina (KK3)
 Student: Badrul (KK5)|Pelajar: Badrul (KK5)
 Merchant: Kopi Kolej|Peniaga: Kopi Kolej
 Merchant: Fresh Laundry|Peniaga: Fresh Laundry
-Merchant: Roti by Hana (awaiting HEP)|Peniaga: Roti by Hana (menunggu HEP)
-HEP admin|Pentadbir HEP
+Merchant: Roti by Hana (awaiting Admin team)|Peniaga: Roti by Hana (menunggu pasukan Admin)
+Admin team|Pasukan Admin
 Check your email|Semak e-mel anda
 We sent a verification link to|Kami telah menghantar pautan pengesahan ke
 . Open it, then come back and tap “I’ve verified”.|. Buka pautan itu, kemudian kembali dan ketik “Saya sudah sahkan”.
@@ -314,7 +314,7 @@ Install +Onz|Pasang +Onz
 Install the app on this device|Pasang aplikasi pada peranti ini
 In Safari, tap the Share button, then “Add to Home Screen”.|Dalam Safari, ketik butang Kongsi, kemudian “Add to Home Screen”.
 Open your browser menu and choose “Install app” or “Add to Home screen”. If it’s already installed, open it from your home screen.|Buka menu pelayar dan pilih “Install app” atau “Add to Home screen”. Jika sudah dipasang, buka dari skrin utama anda.
-Open the HEP dashboard|Buka papan pemuka HEP
+Open the Admin dashboard|Buka papan pemuka Admin
 Opening +Onz…|Membuka +Onz…
 +Onz couldn’t start|+Onz tidak dapat dimulakan
 +Onz needs JavaScript turned on.|+Onz memerlukan JavaScript dihidupkan.
@@ -325,7 +325,6 @@ Points and payments need a connection so the cashier can confirm them. Reconnect
 A new version is ready. Reopen the app to update.|Versi baharu sudah sedia. Buka semula aplikasi untuk mengemas kini.
 Student|Pelajar
 Merchant|Peniaga
-HEP|HEP
 +Onz|+Onz
 +Onz|+Onz
 Hi|Hai
@@ -368,8 +367,8 @@ Campus food map|Peta makanan kampus
 Café directory|Direktori kafe
 Campus cafés|Kafe kampus
 Public listings of where to eat on campus. Only places on the Explore list give +Onz points.|Senarai awam tempat makan di kampus. Hanya tempat dalam senarai Teroka memberi mata +Onz.
-Every merchant here is checked by HEP and gives you points when you pay with DuitNow QR.|Setiap peniaga di sini disemak oleh HEP dan memberi anda mata apabila anda bayar dengan DuitNow QR.
-Points only count at HEP-verified merchants.|Mata hanya dikira di peniaga yang disahkan HEP.
+Every merchant here is checked by the Admin team and gives you points when you pay with DuitNow QR.|Setiap peniaga di sini disemak oleh pasukan Admin dan memberi anda mata apabila anda bayar dengan DuitNow QR.
+Points only count at Admin-verified merchants.|Mata hanya dikira di peniaga yang disahkan pasukan Admin.
 Sources:|Sumber:
 UM food and vendor listings|Senarai makanan dan vendor UM
 campus food guide (2023)|panduan makanan kampus (2023)
@@ -452,9 +451,9 @@ Five days, cashless ways|Lima hari, cara tanpa tunai
 Campus explorer|Penjelajah kampus
 Pay cashless on 5 different days this week|Bayar tanpa tunai pada 5 hari berbeza minggu ini
 Visit 3 different merchants this week|Kunjungi 3 peniaga berbeza minggu ini
-HEP checks mission claims before adding points, usually within a day.|HEP menyemak tuntutan misi sebelum menambah mata, biasanya dalam masa sehari.
-HEP is checking|HEP sedang menyemak
-HEP is reviewing|HEP sedang menyemak
+The Admin team checks mission claims before adding points, usually within a day.|Pasukan Admin menyemak tuntutan misi sebelum menambah mata, biasanya dalam masa sehari.
+The Admin team is checking|Pasukan Admin sedang menyemak
+The Admin team is reviewing|Pasukan Admin sedang menyemak
 Not approved|Tidak diluluskan
 Badges|Lencana
 First cashless buy|Belian tanpa tunai pertama
@@ -478,10 +477,10 @@ Your rewards|Ganjaran anda
 My vouchers|Baucar saya
 Your voucher|Baucar anda
 Vouchers you swap points for appear here.|Baucar yang anda tukar dengan mata akan dipaparkan di sini.
-HEP hasn’t added rewards yet.|HEP belum menambah ganjaran.
+The Admin team hasn’t added rewards yet.|Pasukan Admin belum menambah ganjaran.
 Redeem at|Tebus di
 Show this to the cashier. They scan it to apply the discount.|Tunjukkan ini kepada juruwang. Mereka akan mengimbasnya untuk memberi diskaun.
-Show this to HEP at the welfare counter to collect.|Tunjukkan ini kepada HEP di kaunter kebajikan untuk menuntut.
+Show this to the Admin team at the welfare counter to collect.|Tunjukkan ini kepada pasukan Admin di kaunter kebajikan untuk menuntut.
 Your balance:|Baki anda:
 You have|Anda ada
 points. Swap them for vouchers, or give them to the student welfare fund.|mata. Tukar dengan baucar, atau berikan kepada tabung kebajikan pelajar.
@@ -493,7 +492,7 @@ Referral welcome bonus|Bonus alu-aluan rujukan
 Friend joined with your code|Rakan menyertai dengan kod anda
 Swapped for a voucher|Ditukar dengan baucar
 Given to the welfare fund|Diberi kepada tabung kebajikan
-Adjustment by HEP|Pelarasan oleh HEP
+Adjustment by the Admin team|Pelarasan oleh pasukan Admin
 Pilot tester welcome bonus|Bonus alu-aluan penguji perintis
 Invite friends|Jemput rakan
 When a friend signs up with your code and makes their first cashless purchase, you get 100 points and they get 100.|Apabila rakan mendaftar dengan kod anda dan membuat pembelian tanpa tunai pertama, anda dapat 100 mata dan mereka juga dapat 100.
@@ -522,9 +521,9 @@ Bonus points|Mata bonus
 Money check|Semakan kewangan
 Take the 2-minute money check|Ambil semakan wang 2 minit
 See where you stand on payment safety and budgeting.|Lihat tahap anda dalam keselamatan bayaran dan bajet.
-Four scenario questions and three about your confidence. It helps HEP plan support; it isn’t a test. First completion: 50 points.|Empat soalan senario dan tiga tentang keyakinan anda. Ia membantu HEP merancang sokongan; ia bukan ujian. Lengkap kali pertama: 50 mata.
+Four scenario questions and three about your confidence. It helps the Admin team plan support; it isn’t a test. First completion: 50 points.|Empat soalan senario dan tiga tentang keyakinan anda. Ia membantu pasukan Admin merancang sokongan; ia bukan ujian. Lengkap kali pertama: 50 mata.
 Seven questions, 50 points the first time.|Tujuh soalan, 50 mata untuk kali pertama.
-Seven questions so HEP knows what support you need.|Tujuh soalan supaya HEP tahu sokongan yang anda perlukan.
+Seven questions so the Admin team knows what support you need.|Tujuh soalan supaya pasukan Admin tahu sokongan yang anda perlukan.
 A seller asks for your banking OTP to issue a refund. What do you do?|Penjual meminta OTP perbankan anda untuk membuat bayaran balik. Apa yang anda lakukan?
 Share it to receive the refund|Kongsi untuk menerima bayaran balik
 Keep it private and contact the bank through an official channel|Rahsiakan dan hubungi bank melalui saluran rasmi
@@ -574,7 +573,7 @@ Start with the basics|Mulakan dengan asas
 Try the Learn and earn lessons next.|Cuba pelajaran Belajar dan kumpul seterusnya.
 Ask an ambassador to help set up your business QR and train staff.|Minta duta membantu menyediakan QR perniagaan dan melatih kakitangan anda.
 Ready; promote missions and deals|Sedia; promosikan misi dan tawaran
-Your answers help HEP decide who needs an ambassador visit or staff training.|Jawapan anda membantu HEP menentukan siapa yang memerlukan lawatan duta atau latihan kakitangan.
+Your answers help the Admin team decide who needs an ambassador visit or staff training.|Jawapan anda membantu pasukan Admin menentukan siapa yang memerlukan lawatan duta atau latihan kakitangan.
 My spending|Perbelanjaan saya
 Weekly spending goal|Sasaran perbelanjaan mingguan
 Save goal|Simpan sasaran
@@ -598,11 +597,11 @@ Get set up|Mulakan persediaan
 Apply now|Mohon sekarang
 Apply to join first|Mohon untuk menyertai dahulu
 View application|Lihat permohonan
-Waiting for HEP to verify your shop|Menunggu HEP mengesahkan kedai anda
-Send your business details and DuitNow QR to HEP. Once verified, students earn points when they pay you.|Hantar butiran perniagaan dan DuitNow QR anda kepada HEP. Setelah disahkan, pelajar akan mendapat mata apabila membayar anda.
-You can scan student codes once HEP checks your DuitNow QR. This usually takes 1–2 working days.|Anda boleh mengimbas kod pelajar setelah HEP menyemak DuitNow QR anda. Biasanya mengambil masa 1–2 hari bekerja.
+Waiting for the Admin team to verify your shop|Menunggu pasukan Admin mengesahkan kedai anda
+Send your business details and DuitNow QR to the Admin team. Once verified, students earn points when they pay you.|Hantar butiran perniagaan dan DuitNow QR anda kepada pasukan Admin. Setelah disahkan, pelajar akan mendapat mata apabila membayar anda.
+You can scan student codes once the Admin team checks your DuitNow QR. This usually takes 1–2 working days.|Anda boleh mengimbas kod pelajar setelah pasukan Admin menyemak DuitNow QR anda. Biasanya mengambil masa 1–2 hari bekerja.
 Send your details and DuitNow QR|Hantar butiran dan DuitNow QR anda
-HEP verifies your shop|HEP mengesahkan kedai anda
+The Admin team verifies your shop|Pasukan Admin mengesahkan kedai anda
 They check the QR name matches your business. Usually 1–2 working days.|Mereka menyemak nama QR sepadan dengan perniagaan anda. Biasanya 1–2 hari bekerja.
 Scan your first student|Imbas pelajar pertama anda
 Train your staff|Latih kakitangan anda
@@ -616,7 +615,7 @@ Business name, as students know it|Nama perniagaan, seperti yang dikenali pelaja
 Account name on your DuitNow QR|Nama akaun pada DuitNow QR anda
 Account name on QR|Nama akaun pada QR
 Account name|Nama akaun
-HEP checks this matches the QR.|HEP menyemak ini sepadan dengan QR.
+The Admin team checks this matches the QR.|Pasukan Admin menyemak ini sepadan dengan QR.
 Category|Kategori
 Location / type of business|Lokasi / jenis perniagaan
 Location / type|Lokasi / jenis
@@ -627,17 +626,17 @@ Event ends|Acara tamat
 Photo of your DuitNow QR|Foto DuitNow QR anda
 A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.|Foto yang jelas dan lurus. Ia dimasukkan ke dalam senarai bulanan yang digunakan PayNet untuk mengira transaksi anda.
 That file isn’t an image we can read. Upload a JPG or PNG photo of the QR.|Fail itu bukan imej yang boleh dibaca. Muat naik foto QR dalam format JPG atau PNG.
-Send to HEP|Hantar kepada HEP
-Send to HEP for verification|Hantar kepada HEP untuk pengesahan
-Send updated details to HEP|Hantar butiran terkini kepada HEP
-Sent to HEP. You’ll see the status here.|Dihantar kepada HEP. Anda akan melihat status di sini.
-Verified details are locked. Ask HEP if something needs to change.|Butiran yang disahkan dikunci. Tanya HEP jika ada yang perlu diubah.
-HEP needs your QR photo to add you to PayNet’s monthly merchant list.|HEP memerlukan foto QR anda untuk menambah anda ke senarai peniaga bulanan PayNet.
+Send to the Admin team|Hantar kepada pasukan Admin
+Send to the Admin team for verification|Hantar kepada pasukan Admin untuk pengesahan
+Send updated details to the Admin team|Hantar butiran terkini kepada pasukan Admin
+Sent to the Admin team. You’ll see the status here.|Dihantar kepada pasukan Admin. Anda akan melihat status di sini.
+Verified details are locked. Ask the Admin team if something needs to change.|Butiran yang disahkan dikunci. Tanya pasukan Admin jika ada yang perlu diubah.
+The Admin team needs your QR photo to add you to PayNet’s monthly merchant list.|Pasukan Admin memerlukan foto QR anda untuk menambah anda ke senarai peniaga bulanan PayNet.
 Waiting for approval|Menunggu kelulusan
 Waiting|Menunggu
-Awaiting HEP|Menunggu HEP
-HEP reviewing|HEP sedang menyemak
-HEP verified|Disahkan HEP
+Awaiting Admin team|Menunggu pasukan Admin
+Admin team reviewing|Pasukan Admin sedang menyemak
+Admin verified|Disahkan pasukan Admin
 Verified|Disahkan
 Needs changes|Perlu pembetulan
 Suspended|Digantung
@@ -684,7 +683,7 @@ Voucher marked as used.|Baucar ditandakan telah digunakan.
 Voucher marked used.|Baucar ditandakan digunakan.
 No voucher with this code for your shop. Check the code, or the student’s voucher for where to use it.|Tiada baucar dengan kod ini untuk kedai anda. Semak kod, atau baucar pelajar untuk lokasi penggunaannya.
 This voucher isn’t for your shop. The student’s voucher shows where to use it.|Baucar ini bukan untuk kedai anda. Baucar pelajar menunjukkan lokasi penggunaannya.
-Collect at the HEP counter|Tuntut di kaunter HEP
+Collect at the Admin team counter|Tuntut di kaunter pasukan Admin
 Features|Ciri
 Save features|Simpan ciri
 Features saved.|Ciri disimpan.
@@ -721,14 +720,14 @@ Seats taken|Tempat duduk diisi
 Update seats|Kemas kini tempat duduk
 Seats updated.|Tempat duduk dikemas kini.
 Seats taken can’t be more than total seats.|Tempat duduk diisi tidak boleh melebihi jumlah tempat duduk.
-Offers bring students back. Quiet-hour deals fill seats when you’re slow. HEP approves both before students see them.|Tawaran membawa pelajar kembali. Tawaran waktu lengang mengisi tempat duduk semasa perniagaan perlahan. HEP meluluskan kedua-duanya sebelum pelajar melihatnya.
+Offers bring students back. Quiet-hour deals fill seats when you’re slow. The Admin team approves both before students see them.|Tawaran membawa pelajar kembali. Tawaran waktu lengang mengisi tempat duduk semasa perniagaan perlahan. Pasukan Admin meluluskan kedua-duanya sebelum pelajar melihatnya.
 New offer|Tawaran baharu
 New deal|Tawaran baharu
 New quiet-hour deal|Tawaran waktu lengang baharu
 No offers yet. A first-visit bonus is a good start.|Belum ada tawaran. Bonus kunjungan pertama ialah permulaan yang baik.
 No deals yet. Try one for your slowest two hours.|Belum ada tawaran. Cuba satu untuk dua jam paling perlahan anda.
-Offer sent to HEP.|Tawaran dihantar kepada HEP.
-Deal sent to HEP.|Tawaran dihantar kepada HEP.
+Offer sent to the Admin team.|Tawaran dihantar kepada pasukan Admin.
+Deal sent to the Admin team.|Tawaran dihantar kepada pasukan Admin.
 Offer is live.|Tawaran kini aktif.
 Offer rejected.|Tawaran ditolak.
 Deal is live.|Tawaran kini aktif.
@@ -794,7 +793,7 @@ See image|Lihat imej
 Last review|Semakan terakhir
 Status updated.|Status dikemas kini.
 No merchants match. Try another word or filter.|Tiada peniaga sepadan. Cuba perkataan atau penapis lain.
-No merchants are verified yet. HEP is onboarding campus businesses now.|Belum ada peniaga disahkan. HEP sedang mendaftarkan perniagaan kampus.
+No merchants are verified yet. The Admin team is onboarding campus businesses now.|Belum ada peniaga disahkan. Pasukan Admin sedang mendaftarkan perniagaan kampus.
 No verified merchants yet.|Belum ada peniaga disahkan.
 No verified merchants.|Tiada peniaga disahkan.
 Search name, email or matric|Cari nama, e-mel atau matrik
@@ -815,7 +814,7 @@ Merchant offers and quiet-hour deals go live when you approve them. Mission clai
 Offers, deals and missions|Tawaran, tawaran waktu lengang dan misi
 Mission claims approved|Tuntutan misi diluluskan
 Claim reviewed.|Tuntutan disemak.
-Claim sent to HEP.|Tuntutan dihantar kepada HEP.
+Claim sent to the Admin team.|Tuntutan dihantar kepada pasukan Admin.
 No claims waiting.|Tiada tuntutan menunggu.
 No deals waiting.|Tiada tawaran menunggu.
 No offers waiting.|Tiada tawaran menunggu.
@@ -837,8 +836,8 @@ Value (RM)|Nilai (RM)
 Valid for (days)|Sah selama (hari)
 Issued / stock|Dikeluarkan / stok
 Students can swap points for this|Pelajar boleh menukar mata dengan ini
-HEP counter|Kaunter HEP
-HEP counter (cashback or credit)|Kaunter HEP (pulangan tunai atau kredit)
+Admin team counter|Kaunter pasukan Admin
+Admin team counter (cashback or credit)|Kaunter pasukan Admin (pulangan tunai atau kredit)
 Cashback and credits not tied to a merchant. Mark them used when you hand over the value.|Pulangan tunai dan kredit yang tidak terikat dengan peniaga. Tandakan digunakan apabila anda menyerahkan nilainya.
 Available|Tersedia
 Off|Mati
@@ -932,7 +931,7 @@ One per line, e.g. siswa.um.edu.my|Satu setiap baris, cth. siswa.um.edu.my
 Only these domains can sign up as students. Keep gmail.com if students sign in with Google; each matric number can only register once.|Hanya domain ini boleh mendaftar sebagai pelajar. Kekalkan gmail.com jika pelajar log masuk dengan Google; setiap nombor matrik hanya boleh didaftarkan sekali.
 Testers allowed as students|Penguji dibenarkan sebagai pelajar
 Individual emails outside those domains, for the pilot team|E-mel individu di luar domain tersebut, untuk pasukan perintis
-HEP reviewers|Penyemak HEP
+Admin team members|Ahli pasukan Admin
 They get full access to this dashboard after signing in with a verified email|Mereka mendapat akses penuh ke papan pemuka ini selepas log masuk dengan e-mel yang disahkan
 Save access|Simpan akses
 Access saved.|Akses disimpan.
@@ -983,10 +982,10 @@ Excel export failed:|Eksport Excel gagal:
 Google sign-in isn’t switched on yet. Turn it on in Firebase > Authentication > Sign-in method.|Log masuk Google belum dihidupkan. Hidupkannya di Firebase > Authentication > Sign-in method.
 This web address isn’t authorised for Google sign-in yet. Add it in Firebase > Authentication > Settings > Authorized domains.|Alamat web ini belum dibenarkan untuk log masuk Google. Tambahkannya di Firebase > Authentication > Settings > Authorized domains.
 This email already has a password account. Sign in with email instead.|E-mel ini sudah mempunyai akaun kata laluan. Log masuk dengan e-mel.
-This email can’t join as a student. Use your Gmail or UM email, or ask HEP to add you as a tester.|E-mel ini tidak boleh menyertai sebagai pelajar. Guna Gmail atau e-mel UM anda, atau minta HEP menambah anda sebagai penguji.
-+Onz isn’t open for students yet. The HEP admin needs to sign in once to set it up.|+Onz belum dibuka untuk pelajar. Pentadbir HEP perlu log masuk sekali untuk menyediakannya.
+This email can’t join as a student. Use your Gmail or UM email, or ask the Admin team to add you as a tester.|E-mel ini tidak boleh menyertai sebagai pelajar. Guna Gmail atau e-mel UM anda, atau minta pasukan Admin menambah anda sebagai penguji.
++Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.|+Onz belum dibuka untuk pelajar. Pasukan Admin perlu log masuk sekali untuk menyediakannya.
 Enter your matric number using letters and numbers only (5–15 characters).|Masukkan nombor matrik menggunakan huruf dan nombor sahaja (5–15 aksara).
-That matric number is already registered. If it’s yours, contact HEP.|Nombor matrik itu sudah didaftarkan. Jika ia milik anda, hubungi HEP.
+That matric number is already registered. If it’s yours, contact the Admin team.|Nombor matrik itu sudah didaftarkan. Jika ia milik anda, hubungi pasukan Admin.
 Enter the amount you paid, at least RM0.50.|Masukkan jumlah yang anda bayar, sekurang-kurangnya RM0.50.
 Deal claimed for 20 minutes. Pay, then show your code.|Tawaran dituntut selama 20 minit. Bayar, kemudian tunjukkan kod anda.
 Password reset email sent. Check your inbox.|E-mel set semula kata laluan dihantar. Semak peti masuk anda.
@@ -994,7 +993,7 @@ Type your email first, then tap “Forgot your password?”.|Taip e-mel anda dah
 Not verified yet. Open the link in the email first.|Belum disahkan. Buka pautan dalam e-mel dahulu.
 Verification email sent.|E-mel pengesahan dihantar.
 You don’t have that many points.|Anda tidak mempunyai mata sebanyak itu.
-That action isn’t allowed for your account. If you think it should be, ask HEP.|Tindakan itu tidak dibenarkan untuk akaun anda. Jika anda rasa ia sepatutnya dibenarkan, tanya HEP.
+That action isn’t allowed for your account. If you think it should be, ask the Admin team.|Tindakan itu tidak dibenarkan untuk akaun anda. Jika anda rasa ia sepatutnya dibenarkan, tanya pasukan Admin.
 Email or password is incorrect.|E-mel atau kata laluan tidak betul.
 No account uses that email.|Tiada akaun menggunakan e-mel itu.
 An account already uses that email. Sign in instead.|E-mel itu sudah digunakan oleh akaun lain. Log masuk sahaja.
@@ -1010,7 +1009,7 @@ Not applied|Tidak dimohon
 What students get|Apa yang pelajar dapat
 and|dan
 Mission claims|Tuntutan misi
-Vouchers to hand out at the HEP counter|Baucar untuk diserahkan di kaunter HEP
+Vouchers to hand out at the Admin team counter|Baucar untuk diserahkan di kaunter pasukan Admin
 No days yet.|Belum ada hari.
 RM2 printing credit|Kredit cetakan RM2
 RM3 cashback|Pulangan tunai RM3
@@ -1067,7 +1066,7 @@ Visit +Onz merchants and pay cashless. Every check-in counts for your college.|K
 Student-run stalls with DuitNow QR. Check in at three for the explorer mission.|Gerai kendalian pelajar dengan DuitNow QR. Daftar masuk di tiga gerai untuk misi penjelajah.
 Niaga|Niaga
 Check in|Daftar masuk
-Campus merchants, local businesses and student entrepreneurs, all checked by HEP.|Peniaga kampus, perniagaan tempatan dan usahawan pelajar, semuanya disemak oleh HEP.
+Campus merchants, local businesses and student entrepreneurs, all checked by the Admin team.|Peniaga kampus, perniagaan tempatan dan usahawan pelajar, semuanya disemak oleh pasukan Admin.
 Student ventures and pop-up stalls run by UM students.|Usaha niaga dan gerai sementara kendalian pelajar UM.
 Student ventures|Usaha niaga pelajar
 Student venture|Usaha niaga pelajar
@@ -1099,7 +1098,7 @@ Keep your receipt|Simpan resit anda
 Your bank app keeps the record. +Onz never asks for your banking details or OTP.|Aplikasi bank anda menyimpan rekod. +Onz tidak akan meminta butiran perbankan atau OTP anda.
 Participating merchants|Peniaga yang menyertai
 Check-ins|Daftar masuk
-Running a stall or small business? Ask HEP about joining as a student entrepreneur.|Ada gerai atau perniagaan kecil? Tanya HEP tentang menyertai sebagai usahawan pelajar.
+Running a stall or small business? Ask the Admin team about joining as a student entrepreneur.|Ada gerai atau perniagaan kecil? Tanya pasukan Admin tentang menyertai sebagai usahawan pelajar.
 You both get bonus points after their first check-in.|Anda berdua dapat mata bonus selepas daftar masuk pertama mereka.
 Invite|Jemput
 Your avatar|Avatar anda
@@ -1178,13 +1177,13 @@ Redeem a voucher|Tebus baucar
 Students swap their points for vouchers. Scan the voucher QR on their phone, give the discount, and mark it used.|Pelajar menukar mata dengan baucar. Imbas QR baucar pada telefon mereka, beri diskaun, dan tandakan telah digunakan.
 8-letter voucher code|Kod baucar 8 huruf
 That isn’t a +Onz voucher. Ask the student to open the voucher in Rewards.|Itu bukan baucar +Onz. Minta pelajar membuka baucar dalam Ganjaran.
-Offers bring students back. Quiet-hour bonuses give extra check-in points when you’re slow. HEP approves both before students see them.|Tawaran membawa pelajar kembali. Bonus waktu lengang memberi mata daftar masuk tambahan semasa perniagaan perlahan. HEP meluluskan kedua-duanya sebelum pelajar melihatnya.
+Offers bring students back. Quiet-hour bonuses give extra check-in points when you’re slow. The Admin team approves both before students see them.|Tawaran membawa pelajar kembali. Bonus waktu lengang memberi mata daftar masuk tambahan semasa perniagaan perlahan. Pasukan Admin meluluskan kedua-duanya sebelum pelajar melihatnya.
 Quiet-hour bonuses only switch on while seats taken stay under your limit. Students also see how busy you are on your shop page. Update this when it changes.|Bonus waktu lengang hanya aktif semasa tempat duduk yang diisi kekal di bawah had anda. Pelajar juga melihat tahap kesibukan anda di halaman kedai. Kemas kini apabila ia berubah.
 New bonus|Bonus baharu
 New quiet-hour bonus|Bonus waktu lengang baharu
 Students get bonus points for checking in while you have free seats.|Pelajar mendapat mata bonus kerana mendaftar masuk semasa anda ada tempat duduk kosong.
 No quiet-hour bonuses yet. Try one for your slowest two hours.|Belum ada bonus waktu lengang. Cuba satu untuk dua jam paling perlahan anda.
-Bonus sent to HEP.|Bonus dihantar kepada HEP.
+Bonus sent to the Admin team.|Bonus dihantar kepada pasukan Admin.
 From students who checked in at your shop on +Onz.|Daripada pelajar yang mendaftar masuk di kedai anda melalui +Onz.
 check-ins|daftar masuk
 Top college|Kolej teratas
@@ -1202,8 +1201,8 @@ A 2-minute checklist on cashless payments and redeeming vouchers.|Senarai semak 
 Welcome your first visitors|Sambut pengunjung pertama anda
 Students find you on the map and check in when they arrive.|Pelajar mencari anda pada peta dan mendaftar masuk apabila tiba.
 Promote my shop|Promosikan kedai saya
-Students can find and check in at your shop once HEP checks your details. This usually takes 1–2 working days.|Pelajar boleh mencari dan mendaftar masuk di kedai anda setelah HEP menyemak butiran anda. Biasanya mengambil masa 1–2 hari bekerja.
-Send your business details, logo, location and DuitNow QR to HEP. Once verified, students see you on the +Onz map.|Hantar butiran perniagaan, logo, lokasi dan DuitNow QR anda kepada HEP. Setelah disahkan, pelajar akan melihat anda pada peta +Onz.
+Students can find and check in at your shop once the Admin team checks your details. This usually takes 1–2 working days.|Pelajar boleh mencari dan mendaftar masuk di kedai anda setelah pasukan Admin menyemak butiran anda. Biasanya mengambil masa 1–2 hari bekerja.
+Send your business details, logo, location and DuitNow QR to the Admin team. Once verified, students see you on the +Onz map.|Hantar butiran perniagaan, logo, lokasi dan DuitNow QR anda kepada pasukan Admin. Setelah disahkan, pelajar akan melihat anda pada peta +Onz.
 Activity check|Semakan aktiviti
 Check-ins per day|Daftar masuk sehari
 No check-ins yet. Yours could put your college first.|Belum ada daftar masuk. Daftar masuk anda boleh meletakkan kolej anda di tempat pertama.
@@ -1235,7 +1234,7 @@ Install +Onz|Pasang +Onz
 Opening +Onz…|Membuka +Onz…
 +Onz couldn’t start|+Onz tidak dapat dimulakan
 +Onz needs JavaScript turned on.|+Onz memerlukan JavaScript dihidupkan.
-+Onz isn’t open for students yet. The HEP admin needs to sign in once to set it up.|+Onz belum dibuka untuk pelajar. Pentadbir HEP perlu log masuk sekali untuk menyediakannya.
++Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.|+Onz belum dibuka untuk pelajar. Pasukan Admin perlu log masuk sekali untuk menyediakannya.
 I agree that +Onz stores my name, email, avatar and the check-ins I make, for running and reporting this campus programme (PDPA notice).|Saya bersetuju +Onz menyimpan nama, e-mel, avatar dan daftar masuk saya, untuk menjalankan dan melaporkan program kampus ini (notis PDPA).
 Join campus events, learn and collect rewards|Sertai acara kampus, belajar dan kumpul ganjaran
 Join the campus map so students can find and visit you|Sertai peta kampus supaya pelajar boleh mencari dan mengunjungi anda
@@ -1339,8 +1338,8 @@ Weekly missions|Misi mingguan
 Around campus|Sekitar kampus
 Verified shops will appear here.|Kedai yang disahkan akan dipaparkan di sini.
 Student-run stalls and businesses.|Gerai dan perniagaan pelajar.
-HEP-verified shops and student businesses.|Kedai dan perniagaan pelajar yang disahkan HEP.
-Claims reviewed by HEP, usually within a day.|Tuntutan disemak HEP, biasanya dalam sehari.
+Admin-verified shops and student businesses.|Kedai dan perniagaan pelajar yang disahkan pasukan Admin.
+Claims reviewed by the Admin team, usually within a day.|Tuntutan disemak pasukan Admin, biasanya dalam sehari.
 Unlock hats as you earn points.|Buka topi dengan mengumpul mata.
 Pay with DuitNow QR in your bank or e-wallet app.|Bayar dengan DuitNow QR dalam aplikasi bank atau e-dompet anda.
 Events, lessons and rewards in one place.|Acara, pelajaran dan ganjaran di satu tempat.
@@ -1348,8 +1347,8 @@ You can ask for up to 1,000 points at a time.|Anda boleh meminta sehingga 1,000 
 You’ve already sent a request today. You can send another tomorrow.|Anda sudah menghantar permohonan hari ini. Anda boleh menghantar lagi esok.
 Sign in with Google. New users get an account.|Log masuk dengan Google. Pengguna baharu akan mendapat akaun.
 Usually reviewed within 1–2 working days.|Biasanya disemak dalam 1–2 hari bekerja.
-Submit your shop details for HEP verification.|Hantar butiran kedai untuk pengesahan HEP.
-HEP reviews offers and quiet-hour bonuses before publishing.|HEP menyemak tawaran dan bonus waktu lengang sebelum diterbitkan.
+Submit your shop details for Admin team verification.|Hantar butiran kedai untuk pengesahan pasukan Admin.
+The Admin team reviews offers and quiet-hour bonuses before publishing.|Pasukan Admin menyemak tawaran dan bonus waktu lengang sebelum diterbitkan.
 7 questions to identify support needs.|7 soalan untuk mengenal pasti keperluan sokongan.
 points available.|mata tersedia.
 Confirm current details with the organiser.|Sahkan maklumat terkini dengan penganjur.
@@ -1492,7 +1491,7 @@ Merchant shortcuts|Pintasan peniaga
 Manage your shop details|Urus maklumat kedai anda
 Scan a student’s voucher|Imbas baucar pelajar
 Manage live deals and offers|Urus tawaran aktif dan promosi
-Send deals and offers to HEP for approval.|Hantar tawaran dan promosi kepada HEP untuk kelulusan.
+Send deals and offers to the Admin team for approval.|Hantar tawaran dan promosi kepada pasukan Admin untuk kelulusan.
 Café occupancy|Pengisian tempat duduk kafe
 Keep seat counts current so off-peak deals switch on when you have space.|Kemas kini bilangan tempat duduk yang digunakan supaya tawaran waktu lengang diaktifkan apabila tempat tersedia.
 No live deals yet.|Belum ada tawaran aktif.
@@ -1516,8 +1515,8 @@ Check their student ID first, then release the number so the real student can si
 Release|Lepaskan
 Blocked|Disekat
 Matric number to release|Nombor matrik untuk dilepaskan
-HEP shortcuts|Pintasan HEP
-The HEP dashboard couldn’t start|Papan pemuka HEP tidak dapat dimulakan
+Admin shortcuts|Pintasan Admin
+The Admin dashboard couldn’t start|Papan pemuka Admin tidak dapat dimulakan
 No.|Bil.
 This voucher has expired.|Baucar ini telah tamat tempoh.
 Location accuracy (m)|Ketepatan lokasi (m)
@@ -1576,10 +1575,10 @@ Sound and vibration when you earn points|Bunyi dan getaran apabila anda memperol
 Build your look. Earn points to unlock hats.|Cipta gaya anda. Kumpul mata untuk membuka akses kepada topi.
 Live preview|Pratonton langsung
 Tap a shop for directions. See the|Ketik kedai untuk mendapatkan arah. Lihat
-Only HEP-verified merchants are listed.|Hanya peniaga yang disahkan oleh HEP disenaraikan.
+Only Admin-verified merchants are listed.|Hanya peniaga yang disahkan oleh pasukan Admin disenaraikan.
 +Onz Student|+Onz Pelajar
 +Onz Merchant|+Onz Peniaga
-+Onz HEP|+Onz HEP
++Onz Admin|+Onz Admin
 Campus Events slideshow|Tayangan slaid acara kampus
 Upcoming campus events|Acara kampus akan datang
 Previous event|Acara sebelumnya
@@ -1747,8 +1746,8 @@ Sign in with Google in Safari. Then come back to this app: you’ll be signed in
 Your code:|Kod anda:
 Open Safari|Buka Safari
 Safari didn’t open? Tap “Open Safari”.|Safari tidak terbuka? Ketik “Buka Safari”.
-Not available for HEP accounts|Tidak tersedia untuk akaun HEP
-For security, HEP accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.|Atas sebab keselamatan, akaun HEP tidak boleh log masuk ke aplikasi skrin utama dengan cara ini. Gunakan e-mel dan kata laluan dalam aplikasi, atau gunakan +Onz di Safari.
+Not available for Admin team accounts|Tidak tersedia untuk akaun pasukan Admin
+For security, Admin team accounts can't sign in to the home-screen app this way. Use email and password in the app, or use +Onz here in Safari.|Atas sebab keselamatan, akaun pasukan Admin tidak boleh log masuk ke aplikasi skrin utama dengan cara ini. Gunakan e-mel dan kata laluan dalam aplikasi, atau gunakan +Onz di Safari.
 Continue in Safari|Teruskan dalam Safari
 Sign in to the +Onz app?|Log masuk ke aplikasi +Onz?
 You're signed in as|Anda telah log masuk sebagai
@@ -1758,13 +1757,13 @@ This wasn't me|Bukan saya
 Student or merchant?|Pelajar atau peniaga?
 Open the +Onz app|Buka aplikasi +Onz
 This account is blocked|Akaun ini disekat
-Contact HEP if you think this is a mistake.|Hubungi HEP jika anda berpendapat ini satu kesilapan.
-You’re a HEP admin|Anda pentadbir HEP
+Contact the Admin team if you think this is a mistake.|Hubungi pasukan Admin jika anda berpendapat ini satu kesilapan.
+You’re an Admin team member|Anda pasukan Admin
 Set up a student or merchant profile here|Sediakan profil pelajar atau peniaga di sini
-This account isn’t a HEP admin|Akaun ini bukan akaun pentadbir HEP
+This account isn’t an Admin team member|Akaun ini bukan akaun pasukan Admin
 Open the +Onz app for students and merchants|Buka aplikasi +Onz untuk pelajar dan peniaga
 Sign out and use another account|Log keluar dan gunakan akaun lain
-HEP admin dashboard|Papan pemuka pentadbir HEP
+Admin dashboard|Papan pemuka Admin
 Review merchants, manage rewards and report on the +Onz programme.|Semak peniaga, urus ganjaran dan sediakan laporan program +Onz.
 Signed in.|Berjaya log masuk.
 This account|Akaun ini
@@ -1785,7 +1784,7 @@ Try the Learn & Earn lessons next.|Cuba pelajaran Belajar & Kumpul Mata seterusn
 View mission|Lihat misi
 Explore shops|Terokai kedai
 Reload missions|Muat semula misi
-claim on Home for HEP review.|tuntut di Utama untuk semakan HEP.
+claim on Home for Admin team review.|tuntut di Utama untuk semakan pasukan Admin.
 Upcoming|Akan datang
 Happening now|Sedang berlangsung
 Happening Now|Sedang berlangsung
@@ -1804,7 +1803,7 @@ College check-outs|Daftar keluar kolej
 Nearby shops|Kedai berdekatan
 KK points|Mata KK
 Total points earned|Jumlah mata terkumpul
-All students’ earned points count. Redeeming or donating won’t lower your KK’s score.|Mata yang dikumpulkan oleh semua pelajar diambil kira. Penebusan atau sumbangan tidak mengurangkan mata KK anda.
+All the points you collect add to your KK’s total. The KK with the most points wins prizes!|Semua mata yang anda kumpul akan ditambah kepada jumlah mata KK anda. KK dengan mata tertinggi akan memenangi hadiah!
 No points earned yet. Get your KK started.|Belum ada mata terkumpul. Mulakan untuk KK anda.
 Scores are syncing.|Mata sedang disegerakkan.
 League is temporarily unavailable.|Liga tidak tersedia buat sementara waktu.
@@ -1829,21 +1828,21 @@ Using a referral code sends its owner a friend request. Transaction points are b
 Past activity · MYT|Aktiviti terdahulu · MYT
 points available|mata tersedia
 Need support?|Perlukan bantuan?
-Ask HEP for pooled welfare points.|Mohon mata daripada tabung kebajikan melalui HEP.
+Ask the Admin team for pooled welfare points.|Mohon mata daripada tabung kebajikan melalui pasukan Admin.
 Request points|Mohon mata
 My requests|Permohonan saya
 Loading requests…|Memuatkan permohonan…
 Request welfare points|Mohon mata kebajikan
-HEP reviews each request.|HEP menyemak setiap permohonan.
+The Admin team reviews each request.|Pasukan Admin menyemak setiap permohonan.
 Points requested|Jumlah mata dimohon
 What do you need help with?|Apakah bantuan yang anda perlukan?
 Meals, study materials or other essentials|Makanan, bahan pembelajaran atau keperluan asas lain
-Only you and HEP can see your request.|Hanya anda dan HEP boleh melihat permohonan anda.
+Only you and the Admin team can see your request.|Hanya anda dan pasukan Admin boleh melihat permohonan anda.
 Send request|Hantar permohonan
-Request sent to HEP.|Permohonan dihantar kepada HEP.
+Request sent to the Admin team.|Permohonan dihantar kepada pasukan Admin.
 Points received|Mata diterima
 Declined|Ditolak
-Pending HEP|Menunggu semakan HEP
+Pending Admin team|Menunggu semakan pasukan Admin
 No requests yet.|Belum ada permohonan.
 Couldn’t load requests.|Permohonan tidak dapat dimuatkan.
 Welfare requests|Permohonan kebajikan
@@ -1930,7 +1929,7 @@ Couldn’t save today’s app check-in. We’ll retry when you return.|Daftar ma
 By signing in you agree to the|Dengan log masuk, anda bersetuju dengan
 Terms of Use and Privacy Notice|Terma Penggunaan dan Notis Privasi
 Before you continue|Sebelum anda teruskan
-+Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. HEP admins can see it; businesses only see your name on vouchers you redeem with them. Details below.|+Onz menyimpan nama dan e-mel anda (pelajar juga memberikan nombor matrik, kolej dan fakulti) serta aktiviti anda dalam aplikasi (mata, pelajaran, baucar dan permohonan), untuk menjalankan program kampus ini. Pentadbir HEP boleh melihatnya; perniagaan hanya melihat nama anda pada baucar yang anda tebus di tempat mereka. Butiran di bawah.
++Onz keeps your name and email (students also give their matric number, college and faculty) and your activity in the app (points, lessons, vouchers and requests), to run this campus programme. Admin team members can see it; businesses only see your name on vouchers you redeem with them. Details below.|+Onz menyimpan nama dan e-mel anda (pelajar juga memberikan nombor matrik, kolej dan fakulti) serta aktiviti anda dalam aplikasi (mata, pelajaran, baucar dan permohonan), untuk menjalankan program kampus ini. Pasukan Admin boleh melihatnya; perniagaan hanya melihat nama anda pada baucar yang anda tebus di tempat mereka. Butiran di bawah.
 Read the Terms of Use and Privacy Notice|Baca Terma Penggunaan dan Notis Privasi
 I have read and agree to the +Onz Terms of Use and Privacy Notice.|Saya telah membaca dan bersetuju dengan Terma Penggunaan dan Notis Privasi +Onz.
 We’ve added terms of use and a privacy notice to +Onz. Please read and accept them to keep using the app. You’ll only be asked once.|Kami telah menambah terma penggunaan dan notis privasi kepada +Onz. Sila baca dan terima untuk terus menggunakan aplikasi. Anda hanya akan ditanya sekali.
@@ -1941,8 +1940,8 @@ Close my business account|Tutup akaun perniagaan saya
 Back|Kembali
 This deletes your +Onz account straight away. It can’t be undone.|Ini memadam akaun +Onz anda serta-merta. Ia tidak boleh dibatalkan.
 Your profile, matric number, points history, survey answers, friends and username are deleted.|Profil, nombor matrik, sejarah mata, jawapan tinjauan, rakan dan nama pengguna anda dipadam.
-Vouchers you used and welfare requests stay in HEP’s records with your name removed.|Baucar yang telah digunakan dan permintaan kebajikan kekal dalam rekod HEP tanpa nama anda.
-HEP is told that an account was deleted and why, without your name.|HEP dimaklumkan bahawa sebuah akaun telah dipadam dan sebabnya, tanpa nama anda.
+Vouchers you used and welfare requests stay in the Admin team’s records with your name removed.|Baucar yang telah digunakan dan permintaan kebajikan kekal dalam rekod pasukan Admin tanpa nama anda.
+The Admin team is told that an account was deleted and why, without your name.|Pasukan Admin dimaklumkan bahawa sebuah akaun telah dipadam dan sebabnya, tanpa nama anda.
 Why are you leaving?|Kenapa anda berhenti?
 Choose all that apply. It helps the team improve +Onz.|Pilih semua yang berkaitan. Ia membantu pasukan menambah baik +Onz.
 I don’t find it useful|Saya rasa ia tidak berguna
@@ -1965,8 +1964,8 @@ Choose at least one reason, or “I’d rather not say”.|Pilih sekurang-kurang
 Demo mode: accounts can’t be deleted here.|Mod demo: akaun tidak boleh dipadam di sini.
 Delete your account?|Padam akaun anda?
 Your account, points and unused vouchers will be deleted. This can’t be undone.|Akaun, mata dan baucar anda yang belum digunakan akan dipadam. Ia tidak boleh dibatalkan.
-You’ve already sent a closing request. HEP will contact you.|Anda telah menghantar permintaan penutupan. HEP akan menghubungi anda.
-Request sent. HEP will contact you to close your account.|Permintaan dihantar. HEP akan menghubungi anda untuk menutup akaun anda.
+You’ve already sent a closing request. The Admin team will contact you.|Anda telah menghantar permintaan penutupan. Pasukan Admin akan menghubungi anda.
+Request sent. The Admin team will contact you to close your account.|Permintaan dihantar. Pasukan Admin akan menghubungi anda untuk menutup akaun anda.
 Your account has been deleted. Goodbye from +Onz.|Akaun anda telah dipadam. Selamat tinggal daripada +Onz.
 Account closures|Penutupan akaun
 Why people leave|Sebab pengguna berhenti
@@ -1977,4 +1976,161 @@ Deleted|Dipadam
 Closed|Ditutup
 Reasons|Sebab
 No one has closed an account yet.|Belum ada sesiapa yang menutup akaun.
+Activity log|Log aktiviti
+Who changed what on this dashboard, newest first. Entries can’t be edited or deleted.|Siapa mengubah apa di papan pemuka ini, yang terbaru dahulu. Catatan tidak boleh diubah atau dipadam.
+Admin|Pentadbir
+Applies to|Berkaitan dengan
+No changes recorded yet.|Belum ada perubahan direkodkan.
+Showing the newest 200 changes.|Menunjukkan 200 perubahan terbaru.
+Deleted account|Akaun dipadam
+Feature switches|Suis ciri
+Readiness update|Kemas kini kesediaan
+Blocked a student|Menyekat pelajar
+Unblocked a student|Membuka sekatan pelajar
+Adjusted points|Melaraskan mata
+Released a matric number|Melepaskan nombor matrik
+Merchant review|Semakan peniaga
+Welfare request|Permohonan kebajikan
+You were signed out after 30 minutes without activity.|Anda telah dilog keluar selepas 30 minit tanpa aktiviti.
+For your safety, please sign in again. Admin sign-ins last 12 hours.|Demi keselamatan anda, sila log masuk semula. Log masuk pasukan Admin sah selama 12 jam.
+Welcome to +Onz!|Selamat datang ke +Onz!
+A quick tour of +Onz|Lawatan ringkas +Onz
+Your campus journey starts here. Take a one-minute tour to see where everything is.|Perjalanan kampus anda bermula di sini. Ikuti lawatan seminit untuk melihat di mana semuanya berada.
+Your business is about to join the campus map. Take a one-minute tour to see how it works.|Perniagaan anda bakal menyertai peta kampus. Ikuti lawatan seminit untuk melihat cara ia berfungsi.
+Here’s where everything is. It takes about a minute.|Inilah tempat semuanya berada. Ia mengambil masa kira-kira seminit.
+Collect points|Kumpul mata
+Swap for rewards|Tukar dengan ganjaran
+Discover campus|Terokai kampus
+Set up your shop|Sediakan kedai anda
+Get on the map|Muncul di peta kampus
+Reach students|Capai pelajar
+Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.|Kad +Onz anda: mata, tahap dan rentetan harian anda. Terokai kedai, tawaran aktif dan Belajar & Kumpul Mata dari sini.
+Every point you earn shows up here. Tap it to see what you can swap them for.|Setiap mata yang anda kumpul dipaparkan di sini. Ketik untuk melihat apa yang boleh anda tukar.
+Add friends and support the student welfare fund.|Tambah rakan dan sokong tabung kebajikan pelajar.
+See how your college and faculty rank in the KK and Faculty Leagues, and who tops the referral board.|Lihat kedudukan kolej dan fakulti anda dalam Liga KK dan Liga Fakulti, serta siapa mendahului papan rujukan.
+See what’s happening around UM, like FESKUM 2026.|Lihat aktiviti di sekitar UM, seperti FESKUM 2026.
+Swap your points for vouchers, and see your badges and streak.|Tukar mata anda dengan baucar, dan lihat lencana serta rentetan anda.
+Your profile, your referral code and your points history.|Profil anda, kod rujukan anda dan sejarah mata anda.
+Your shop at a glance: its status, live-deal activity and updates from the Admin team.|Ringkasan kedai anda: status, aktiviti tawaran aktif dan makluman daripada pasukan Admin.
+Set up your business here: its details, logo and exact map pin. The Admin team checks them before students can see you.|Sediakan perniagaan anda di sini: butiran, logo dan pin peta yang tepat. Pasukan Admin menyemaknya sebelum pelajar dapat melihat kedai anda.
+Show this QR to students so they can claim your live deals.|Tunjukkan QR ini kepada pelajar supaya mereka boleh menuntut tawaran aktif anda.
+Create off-peak deals to bring students in when it’s quiet.|Cipta tawaran waktu lengang untuk menarik pelajar ketika kedai tidak sibuk.
+See how students are responding to your deals.|Lihat maklum balas pelajar terhadap tawaran anda.
+English or Bahasa Malaysia|Bahasa Inggeris atau Bahasa Malaysia
+Switch language any time. Everything changes straight away.|Tukar bahasa bila-bila masa. Semuanya bertukar serta-merta.
+Your account menu|Menu akaun anda
+Tap here for settings, to install +Onz on your phone, or to sign out. You can replay this tour from here too.|Ketik di sini untuk tetapan, memasang +Onz pada telefon anda atau log keluar. Anda juga boleh mengulang lawatan ini dari sini.
+You’re all set!|Anda sudah bersedia!
+That’s the tour|Itulah lawatannya
+Make it your own|Jadikan ia milik anda
+Start exploring|Mula meneroka
+Check your profile|Semak profil anda
+Set up my shop|Sediakan kedai saya
+Go to my shop|Pergi ke kedai saya
+Students see your shop once the Admin team verifies it.|Pelajar dapat melihat kedai anda selepas pasukan Admin mengesahkannya.
+Add your business details and DuitNow QR photo|Tambah butiran perniagaan dan foto DuitNow QR anda
+Pin your shop on the map|Pinkan kedai anda pada peta
+You can replay this tour from your account menu.|Anda boleh mengulang lawatan ini dari menu akaun anda.
+Skip for now|Langkau buat masa ini
+Show me around|Tunjukkan kepada saya
+Skip tour|Langkau lawatan
+Next|Seterusnya
+Take the tour|Ikuti lawatan
+Getting started|Langkah permulaan
+Your profile|Profil anda
+Quick tour|Lawatan ringkas
+You can’t change your college or faculty later.|Anda tidak boleh menukar kolej atau fakulti anda kemudian.
+Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.|Mata anda dikira untuk kolej dan fakulti ini dalam Liga KK dan Liga Fakulti, jadi pastikan anda memilih dengan betul.
+Choose your college|Pilih kolej anda
+Your college is set when you sign up, so KK League points stay fair.|Kolej anda ditetapkan semasa mendaftar supaya mata Liga KK kekal adil.
+Change college or faculty|Tukar kolej atau fakulti
+New college|Kolej baharu
+Reason (saved in the Activity log)|Sebab (disimpan dalam Log aktiviti)
+e.g. Picked the wrong college at sign-up|cth. Tersalah pilih kolej semasa mendaftar
+That’s already their college.|Itu memang kolej pelajar ini.
+College changed.|Kolej telah ditukar.
+Changed a student’s college|Menukar kolej pelajar
+Changed a student’s faculty|Menukar fakulti pelajar
+Choose your faculty|Pilih fakulti anda
+Your faculty is set when you sign up, so Faculty League points stay fair. Picked the wrong one? Ask the Admin team.|Fakulti anda ditetapkan semasa mendaftar supaya mata Liga Fakulti kekal adil. Tersalah pilih? Hubungi pasukan Admin.
+You can only choose your faculty once, so check it’s the right one.|Anda hanya boleh memilih fakulti sekali, jadi pastikan ia betul.
+No faculty|Tiada fakulti
+Save changes|Simpan perubahan
+Nothing has changed.|Tiada perubahan.
+College and faculty changed.|Kolej dan fakulti telah ditukar.
+Faculty changed.|Fakulti telah ditukar.
+Choose a faculty from the list.|Pilih fakulti daripada senarai.
+Only students have a faculty.|Hanya pelajar mempunyai fakulti.
+Choose a college from the list.|Pilih kolej daripada senarai.
+Only students have a college.|Hanya pelajar mempunyai kolej.
+Questions and feedback|Soalan dan maklum balas
+Ask us anything, or tell us what you think of +Onz. The +Onz team reads every message.|Tanya apa sahaja, atau beritahu kami pendapat anda tentang +Onz. Pasukan +Onz membaca setiap mesej.
+What’s it about?|Tentang apa?
+A question|Soalan
+An idea or suggestion|Idea atau cadangan
+Something isn’t working|Ada yang tidak berfungsi
+Anything else|Lain-lain
+Your message|Mesej anda
+Type your question or comment|Taip soalan atau komen anda
+Send|Hantar
+My messages|Mesej saya
+Replied|Dibalas
+Read by the team|Dibaca oleh pasukan
++Onz team|Pasukan +Onz
+No messages yet. Your questions and our replies will show here.|Belum ada mesej. Soalan anda dan balasan kami akan dipaparkan di sini.
+Couldn’t load your messages.|Tidak dapat memuatkan mesej anda.
+Write a little more so we can help.|Tulis sedikit lagi supaya kami boleh membantu.
+Thanks! Your message has been sent to the +Onz team.|Terima kasih! Mesej anda telah dihantar kepada pasukan +Onz.
+Choose what your message is about.|Pilih topik mesej anda.
+Keep your message under 1,000 characters.|Pastikan mesej anda kurang daripada 1,000 aksara.
+Tap here for settings, to ask us anything or send feedback, to install +Onz on your phone, or to sign out. You can replay this tour from here too.|Ketik di sini untuk tetapan, bertanya apa sahaja atau menghantar maklum balas, memasang +Onz pada telefon anda atau log keluar. Anda juga boleh mengulang lawatan ini dari sini.
+Feedback|Maklum balas
+Questions and comments from students. Your replies show in their app; they aren’t emailed.|Soalan dan komen daripada pelajar. Balasan anda dipaparkan dalam aplikasi mereka dan tidak dihantar melalui e-mel.
+New|Baharu
+Reply|Balas
+Edit reply|Sunting balasan
+Mark as done|Tandakan selesai
+Your reply|Balasan anda
+No new feedback. You’re all caught up.|Tiada maklum balas baharu. Semuanya sudah diuruskan.
+Nothing here yet.|Belum ada apa-apa di sini.
+The student sees this under their message in the +Onz app.|Pelajar akan melihat balasan ini di bawah mesej mereka dalam aplikasi +Onz.
+Send reply|Hantar balasan
+Reply sent.|Balasan dihantar.
+Marked as done.|Ditandakan selesai.
+Write a reply first.|Tulis balasan dahulu.
+Leagues|Liga
+Faculty League|Liga Fakulti
+Top referrers|Perujuk teratas
+Every point you earn counts for your residential college and your faculty.|Setiap mata yang anda peroleh dikira untuk kolej kediaman dan fakulti anda.
+No residential college|Tiada kolej kediaman
+No faculty set|Fakulti belum ditetapkan
+Faculty points|Mata fakulti
+Your earned points also count for your faculty, whichever college you live in.|Mata yang anda peroleh juga dikira untuk fakulti anda, walau di kolej mana anda tinggal.
+Students who joined with their code|Pelajar yang mendaftar dengan kod mereka
+The 10 students whose referral codes were used most, open to everyone so referrals stay fair.|10 pelajar yang kod rujukannya paling banyak digunakan, terbuka kepada semua supaya rujukan kekal adil.
+Share your referral code|Kongsi kod rujukan anda
+Your faculty|Fakulti anda
+No points earned yet. Get your faculty started.|Belum ada mata diperoleh. Mulakan untuk fakulti anda.
+No one has joined with a referral code yet.|Belum ada sesiapa yang mendaftar dengan kod rujukan.
+The board is temporarily unavailable.|Papan ini tidak tersedia buat sementara waktu.
+See how your KK and your faculty rank, and the top referrers.|Lihat kedudukan KK dan fakulti anda, serta perujuk teratas.
+Share your referral code with friends who haven’t signed up yet.|Kongsi kod rujukan anda dengan rakan yang belum mendaftar.
+Friends enter your code when they sign up. It also sends you a friend request.|Rakan memasukkan kod anda semasa mendaftar. Ia juga menghantar permintaan rakan kepada anda.
+people have joined with your code|orang telah mendaftar dengan kod anda
+person has joined with your code|orang telah mendaftar dengan kod anda
+Who joined with your code|Siapa yang mendaftar dengan kod anda
+Are you signing up with a friend’s referral code?|Adakah anda mendaftar dengan kod rujukan rakan?
+Yes|Ya
+No|Tidak
+Referral code|Kod rujukan
+You can only enter a referral code now, while signing up. It also sends your friend a friend request.|Anda hanya boleh memasukkan kod rujukan sekarang, semasa mendaftar. Ia juga menghantar permintaan rakan kepada rakan anda.
+That referral code doesn’t exist. Check it with your friend, or choose No.|Kod rujukan itu tidak wujud. Semak dengan rakan anda, atau pilih Tidak.
+Your account is ready, but the referral code couldn’t be added.|Akaun anda sudah sedia, tetapi kod rujukan tidak dapat ditambah.
+Add friends by username any time. Referral codes are only for signing up.|Tambah rakan melalui nama pengguna pada bila-bila masa. Kod rujukan hanya untuk pendaftaran.
+Got it|Faham
+Your KK|KK anda
+This is your college, its rank and its total points. All the points you collect add to it.|Inilah kolej anda, kedudukannya dan jumlah matanya. Semua mata yang anda kumpul ditambah kepadanya.
+The leaderboard|Papan kedudukan
+See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
+How the KK League works|Cara Liga KK berfungsi
 `;
