@@ -1,3 +1,6 @@
+import { livePointEarningOn } from '../points-policy.js';
+import { pointsSummaryHTML } from '../points-guide.js';
+import { INFORMATION_ROUTES } from '../information.js';
 // Merchant app: shop setup, readiness, live-deal QR claims, applied discounts and counter poster.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
@@ -27,11 +30,12 @@ function needVerified(app) {
 // ------------------------------------------------------------- home
 async function homeRender(app) {
   const m = app.merchant; const name = m ? m.name : app.profile.name;
+  const liveOn=livePointEarningOn(app.rules);
   const verified = m?.status === 'verified'; const toolsOn = D.featureOn(app.rules, 'merchantTools');
   const readiness = merchantSetup(m, hasPin, app.rules);
   const shortcuts = [
     ['shop', 'store', 'My shop', 'Manage your shop details'],
-    ...(verified && toolsOn ? [
+    ...(verified && liveOn ? [
       ['scan', 'qr-code', 'Deal QR', 'Show a QR for students to claim'],
       ['promote', 'badge-percent', 'Promote live deals', 'Manage live deals and offers'],
     ] : []),
@@ -46,6 +50,7 @@ async function homeRender(app) {
     <div class="mer-home-grid ${readiness ? '' : 'is-ready'}"><section class="mer-quick-section"><div class="mer-section-head"><h2>Explore</h2><span class="mer-eyebrow">Let's go</span></div>
       <nav class="mer-actions" aria-label="Merchant shortcuts">${shortcuts.map((args, index) => merchantAction(...args, index)).join('')}</nav></section>
       ${readiness}</div>
+    ${pointsSummaryHTML(app)}
     ${verified ? `
       <section class="section"><div class="mer-section-head"><h2>Live-deal activity</h2>${toolsOn ? `<a href="#/insights">Insights ${icon('arrow-right')}</a>` : ''}</div><div class="stats mer-stats" id="merchant-wallet"><div class="skeleton" style="height:130px"></div></div></section>` : ''}</div>`;
 }
@@ -321,11 +326,12 @@ async function surveyRender(app) {
 }
 
 export const routes = {
+  ...INFORMATION_ROUTES,
   home: { title: 'Home', render: homeRender, mount: homeMount, wide: true },
   scan: { title: 'Deal QR', render: merchantDealQRRender, mount: merchantDealQRMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   shop: { title: 'My shop', render: shopRender, mount: shopMount, wide: true },
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
-  promote: { title: 'Promote live deals', render: promoteRender, mount: promoteMount, feature: 'merchantTools', wide: true },
+  promote: { title: 'Promote live deals', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools', wide: true },
   'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },

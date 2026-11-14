@@ -19,7 +19,7 @@ if (useEnv) {
   try { env = loadEnv('staging'); } catch (e) { console.error(`${e.message}\nFix ${ENV_FILES.staging}, or run npm run dev:demo.`); process.exit(1); }
 }
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml',
-  '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.rules': 'text/plain', '.txt': 'text/plain' };
+  '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.rules': 'text/plain', '.txt': 'text/plain' };
 const rulesFile = path.join(root, 'firestore.rules');
 const generate = (p, file) => {
   if (!env) return null;

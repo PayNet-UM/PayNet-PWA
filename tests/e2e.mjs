@@ -10,7 +10,7 @@ const shots = process.env.SHOTS || '/tmp/e2e';
 fs.mkdirSync(shots, { recursive: true });
 const adminEmail = /function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'))[1];
 const LAUNDRY = { latitude: 3.10994, longitude: 101.65856, accuracy: 10 }; // demo pin for Fresh Laundry
-const b = await chromium.launch();
+const b = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{});
 const ctx = await b.newContext({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1, geolocation: LAUNDRY, permissions: ['geolocation'] });
 // map tiles come from the internet; serve a blank tile so the test runs offline
 const TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
@@ -126,6 +126,33 @@ for (const r of ['rewards', 'community', 'events', 'bayar', 'learn', 'deals', 'e
   if (await stu.$('text=This page didn’t load')) throw new Error('student page failed: ' + r);
   await stu.screenshot({ path: `${shots}/s-${r.replace('/', '-')}.png`, fullPage: true });
 }
+await stu.goto(BASE + '#/events'); await stu.waitForSelector('[data-explore-stalls]');
+await stu.click('[data-explore-stalls]'); await stu.waitForSelector('[data-kps-booth]');
+if (await stu.textContent('#kps-zoom-value') !== '100%') throw new Error('The map should open with the entire site visible');
+await stu.click('[data-kps-area="lower"]');
+if (parseInt(await stu.textContent('#kps-zoom-value'))<=100) throw new Error('Choosing a stall group did not magnify it');
+const pointsBeforeExploring = await pointsOf(stu);
+if (await stu.locator('[data-kps-booth]').count() !== 76) throw new Error('KPS allocations do not match the supplied plan');
+await stu.click('[data-booth="KPS-01"]'); await stu.waitForSelector('#festival-vendor-dropdown:not([hidden])');
+if (!/Stall info coming soon/.test(await stu.textContent('#festival-vendor-dropdown'))) throw new Error('Unconfirmed KPS booth shows invented vendor details');
+if (/RM\d/.test(await stu.textContent('#festival-vendor-dropdown'))) throw new Error('Unconfirmed KPS booth shows a price');
+await stu.screenshot({ path: `${shots}/s-feskum-kps-booth.png`, fullPage: true });
+await stu.keyboard.press('Escape'); await stu.waitForSelector('#festival-vendor-dropdown[hidden]', { state: 'attached' });
+await stu.click('[data-booth="KPS-01"]');
+if (await stu.textContent('#kps-explored-count') !== '1') throw new Error('The explored counter must count unique stalls');
+await stu.keyboard.press('Escape');
+const oldMapZoom=parseInt(await stu.textContent('#kps-zoom-value'));
+await stu.click('#kps-zoom-in');
+if(parseInt(await stu.textContent('#kps-zoom-value'))<=oldMapZoom) throw new Error('The map did not zoom in');
+await stu.click('#kps-zoom-fit'); await stu.waitForFunction(() => document.querySelector('#kps-zoom-value').textContent === '100%');
+await stu.focus('[data-kps-area="upper"]');await stu.keyboard.press('Enter');
+await stu.focus('[data-booth="KPS-SV1"]'); await stu.keyboard.press('Enter');
+await stu.waitForSelector('#festival-vendor-dropdown:not([hidden])');
+if (!/Unnumbered in source plan/.test(await stu.textContent('#festival-vendor-dropdown'))) throw new Error('Student space is presented as an official booth number');
+if (await stu.textContent('#kps-explored-count') !== '2' || await pointsOf(stu) !== pointsBeforeExploring) throw new Error('Exploring stalls must track views without awarding points');
+await stu.keyboard.press('Escape');
+if (await stu.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('KPS page overflows on mobile');
+ok('Tapak KPS preserves allocations in the adapted layout, opens pending vendor details, supports keyboard selection and zooms without mobile overflow');
 await stu.goto(BASE + '#/learn'); await stu.waitForSelector('[data-lesson="2"]'); await stu.click('[data-lesson="2"]');
 await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#toast.show');
 ok('all student screens rendered; lesson: ' + (await stu.textContent('#toast')));

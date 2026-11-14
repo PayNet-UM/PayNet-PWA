@@ -37,11 +37,11 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
   const tab = (key, ic, title, body) => ({ target: `.tabbar [data-tab="${key}"]`, icon: ic, title, body });
   const tour = student ? [
     tab('home', 'house', 'Home', 'Your +Onz card: your points, your level and your daily streak. Explore shops, live deals and Learn & Earn from here.'),
-    { target: '.topbar .pts-chip', icon: 'sparkles', title: 'Your points', body: 'Every point you earn shows up here. Tap it to see what you can swap them for.' },
+    { target: '.topbar .pts-chip', icon: 'sparkles', title: 'Your points', body: 'Your available balance is for vouchers or welfare donations. Points have no cash value.' },
     tab('community', 'users', 'Community', 'Add friends and support the student welfare fund.'),
     tab('leagues', 'trophy', 'Leagues', 'See how your college and faculty rank in the KK and Faculty Leagues, and who tops the referral board.'),
     tab('events', 'calendar', 'Campus Events', 'See what’s happening around UM, like FESKUM 2026.'),
-    tab('rewards', 'gift', 'Rewards', 'Swap your points for vouchers, and see your badges and streak.'),
+    tab('rewards', 'gift', 'Rewards', 'Swap points for Admin-fulfilled vouchers. Streaks track app visits and do not award points.'),
     tab('me', 'user', 'Me', 'Your profile, your referral code and your points history.'),
   ] : [
     tab('home', 'house', 'Home', 'Your shop at a glance: its status, live-deal activity and updates from the Admin team.'),
@@ -209,7 +209,7 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
 const PAGE_KEY = (uid, page) => `onz-page-tour-v1:${page}:${uid}`;
 export const PAGE_TOURS = {
   leagues: () => [
-    { target: '#league-kk .community-league-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. All the points you collect add to it.' },
+    { target: '#league-kk .community-league-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. Positive earned points add to it; welfare grants do not.' },
     { target: '#league-kk [data-board]', icon: 'chart-column', title: 'The leaderboard', body: 'See how your KK compares with the others. The KK with the most points wins prizes!' },
   ],
 };

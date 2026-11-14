@@ -319,3 +319,120 @@ main.view.wide:has(.festival-canvas-page) { max-width:none; }
   .festival-canvas-page .event-plan-booth.selected { outline-width:2px;outline-offset:2px; }
 }
 @media(max-width:460px) { .festival-canvas-page .event-plan-booth span { display:none; }.festival-vendor-dropdown { max-height:62dvh; }.festival-canvas-page .event-plan-toolbar { padding:12px; } }
+
+/* Tapak KPS: a single flat vector style; compact source-based booth groups. */
+.festival-canvas-page .festival-page-header.festival-identity { grid-template-columns:138px minmax(0,1fr);margin:3px 0 12px;border:1px solid #e2e6ef;border-radius:14px;background:#fff;box-shadow:none; }
+.festival-canvas-page .festival-identity-art { width:138px;height:66px;aspect-ratio:auto;object-fit:cover;background:#f5f6fa; }
+.festival-canvas-page .festival-identity-caption { padding:10px 17px; }.festival-canvas-page .festival-identity-caption h1 { font-size:24px;letter-spacing:-.6px; }.festival-canvas-page .festival-identity-caption h1 em { color:#454cc9; }.festival-canvas-page .festival-identity-caption p { display:none; }
+.festival-canvas-page .festival-identity:after { display:none; }
+.kps-section { margin:8px 0; }
+.kps-section-head { display:flex;align-items:center;gap:9px;margin-bottom:10px; }
+.kps-section-number { display:grid;place-items:center;flex:0 0 29px;height:29px;border-radius:8px;background:#edf0fb;color:#717a9c;font-size:10px;font-weight:700; }
+.kps-section-head > div { flex:1;min-width:0; }.kps-section-head h2 { color:#252a50;font-size:22px;line-height:1.2;letter-spacing:-.5px; }.kps-section-head p { display:none; }
+.kps-section-head > .btn { min-height:32px;padding:7px 10px;font-size:10px;background:#fff;border:1px solid #e2e6ef;border-radius:8px;color:#77809a; }
+.kps-plan-shell { background:#fff;border:1px solid #dce2ec;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px #25355b05; }
+.kps-plan-toolbar { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#fff; }
+.kps-play-title { min-width:0; }.kps-play-title > div { display:flex;align-items:center;gap:11px;flex-wrap:wrap; }
+.kps-play-title h3 { font-size:14px;font-weight:700;line-height:1.3;color:#293150;letter-spacing:-.2px; }
+.kps-explored { display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#76829b; }.kps-explored b { color:#6f7895;font-weight:600; }.kps-explored .ic { width:12px;height:12px;color:#9aa2b6; }
+.kps-map-mode { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:6px 10px;border:1px solid #dfe4ef;border-radius:8px;color:#4f5e82;background:#fff;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap; }
+.kps-map-mode .ic { width:14px;height:14px; }.kps-map-mode:hover { border-color:#aab8db;background:#f6f8ff; }.kps-map-mode[aria-pressed="true"] { background:#eef2ff;color:#434ec3;border-color:#cdd4f6; }
+.kps-explore-progress { height:2px;background:#edf0f6; }.kps-explore-progress i { display:block;width:var(--explored,0%);height:100%;background:#707de5;transition:width .2s ease; }
+.kps-viewport-wrap { position:relative;isolation:isolate; }
+.kps-map-scroll { width:100%;height:clamp(510px,72dvh,880px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#c9d1e3 #f8faff;background:#fafbfe;cursor:grab;user-select:none; }
+.kps-map-scroll.is-dragging,.kps-map-scroll.is-dragging .kps-booth { cursor:grabbing; }
+.kps-map-scroll:focus-visible { outline:2px solid #6a78de;outline-offset:-2px; }
+.kps-map-canvas { position:relative;width:100%;aspect-ratio:196/226;margin-inline:auto; }
+.kps-map-svg { display:block;width:100%;height:100%;overflow:hidden; }
+.kps-map-landmarks { pointer-events:none; }
+.kps-walkway { fill:none;stroke:#edf0f6;stroke-width:5;stroke-linecap:round; }
+.kps-building-area { fill:#eef1f6;stroke:#e0e5ee;stroke-width:.35; }
+.kps-parking-area { fill:#e1e6ed;stroke:#f8fafc;stroke-width:.4; }
+.kps-green-area { fill:#edf3f0; }
+.kps-stage-area { fill:#e9e6f3;stroke:#d8d2e8;stroke-width:.3; }
+.kps-dining-area { fill:#f4e9e8;stroke:#ead9d8;stroke-width:.3; }
+.kps-map-svg > .kps-building-title { font-family:'Helvetica World',Helvetica,Arial,sans-serif;font-size:5.3px;font-weight:600;fill:#8995ab;letter-spacing:.5px; }
+.kps-map-svg > .kps-road-title { font-family:Helvetica,Arial,sans-serif;font-size:2.5px;fill:#abb4c6; }
+.kps-landmark-label { font-family:'Helvetica World',Helvetica,Arial,sans-serif;font-size:2.8px;font-weight:500;fill:#7e8ba1; }
+.kps-booth { cursor:pointer;outline:none; }
+.kps-booth .kps-booth-face { fill:#fff;stroke:#6578da;stroke-width:.3;transition:fill .12s,stroke .12s; }
+.kps-booth text { font-family:'Helvetica World',Helvetica,Arial,sans-serif;font-size:3.1px;font-weight:600;fill:#495b9f;pointer-events:none; }
+.kps-booth.kps-student .kps-booth-face { fill:#eeeafb;stroke:#afa1d6; }.kps-booth.kps-student text { font-size:2.8px;fill:#7c68a1; }
+.kps-booth.kps-merch .kps-booth-face { fill:#edf5ba;stroke:#b6c65b; }.kps-booth.kps-merch text { font-size:2.8px;fill:#74852e; }
+.kps-booth.is-explored .kps-booth-face { fill:#eff2ff; }
+.kps-booth-visited { opacity:0;fill:#8795d2;pointer-events:none; }.kps-booth.is-explored .kps-booth-visited { opacity:1; }
+.kps-booth:hover .kps-booth-face { fill:#e5ebff;stroke:#394fc4;stroke-width:.4; }
+.kps-booth.selected .kps-booth-face,.kps-booth:focus-visible .kps-booth-face { fill:#4d61ce;stroke:#3348b0;stroke-width:.45; }
+.kps-booth.selected text,.kps-booth:focus-visible text { fill:#fff; }.kps-booth.selected .kps-booth-visited { fill:#dce6ff; }
+.kps-zoom-controls { position:absolute;z-index:3;right:14px;bottom:14px;display:flex;align-items:center;gap:2px;padding:4px;background:#ffffffed;border:1px solid #dfe4ed;border-radius:10px;box-shadow:0 2px 8px #25345c08; }
+.kps-zoom-controls button { display:grid;place-items:center;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:6px;background:#fff;color:#596a92;cursor:pointer; }
+.kps-zoom-controls button:disabled { opacity:.35;cursor:default; }.kps-zoom-controls button .ic { width:17px;height:17px; }.kps-zoom-controls button > span { font-size:23px;font-weight:400;line-height:1; }.kps-zoom-controls button:hover:not(:disabled) { background:#eff3fc; }
+.kps-zoom-controls output { width:38px;font-size:10px;text-align:center;font-variant-numeric:tabular-nums;color:#8490aa; }
+.kps-minimap { position:absolute;left:14px;bottom:14px;z-index:2;width:63px;padding:5px;display:grid;gap:3px;justify-items:center;border:1px solid #dfe4ed;border-radius:9px;background:#ffffffed;cursor:pointer; }
+.kps-minimap[hidden] { display:none; }.kps-minimap svg { display:block;width:43px;height:50px;background:#fafbfe; }.kps-minimap span { font-size:7px;color:#8d97ae; }
+#kps-minimap-window { fill:#748ee315;stroke:#758dd6;stroke-width:.8; }
+.kps-legend { display:flex;align-items:center;justify-content:center;gap:7px 16px;flex-wrap:wrap;padding:11px 14px;border-top:1px solid #edf0f5;background:#fff; }
+.kps-legend > span { display:inline-flex;align-items:center;gap:6px;font-size:10px;color:#6d7891; }.kps-legend i { width:8px;height:8px;flex:0 0 8px;border:1px solid #0000000c;border-radius:2px; }
+.kps-key-food { background:#e2e7fc; }.kps-key-student { background:#e5def6; }.kps-key-merch { background:#edf5ba; }.kps-key-stage { background:#e9e6f3; }.kps-key-dining { background:#f4e9e8; }.kps-key-parking { background:#e1e6ed; }
+.kps-layout-note { margin-top:9px;font-size:9px;color:#99a2b5; }.kps-source-note { margin-top:4px;font-size:9px;line-height:1.5;color:#a2aabd; }.kps-reference-note { margin-top:2px;font-size:8px; }
+.festival-other-areas { margin-top:12px;border-top:1px solid #e8ebf2;padding-top:8px; }
+.festival-other-areas > summary { display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none;color:#8b95aa;font-size:11px;font-weight:500;padding:5px 0; }.festival-other-areas > summary::-webkit-details-marker { display:none; }.festival-other-areas > summary .ic { width:14px;height:14px;transform:rotate(90deg); }.festival-other-areas[open] > summary { margin-bottom:13px; }.festival-other-areas[open] > summary .ic { transform:rotate(270deg); }
+.kps-detail-heading { background:#f0f3fc; }.kps-detail-heading.kps-detail-student { background:#f3effa; }.kps-detail-heading.kps-detail-merch { background:#f4f7e8; }
+.kps-detail-heading h3 { color:#354365;letter-spacing:-.4px; }
+.kps-detail-icon { display:inline-grid;place-items:center;width:30px;height:30px;color:#8292bb;margin-right:8px;vertical-align:middle; }.kps-detail-icon .ic { width:23px;height:23px; }
+.kps-vendor-pending { display:grid;justify-items:center;gap:9px;padding:15px 8px 18px;text-align:center; }.kps-vendor-pending > .ic { width:24px;height:24px;color:#b1b9cb; }.kps-vendor-pending strong { font-size:13px;font-weight:600;color:#7a879f; }.kps-vendor-pending p { font-size:11px;line-height:1.6;color:#a2abbe; }
+.kps-vendor-photo { width:100%;height:180px;object-fit:cover;display:block; }.kps-detail-body .festival-vendor-location { font-size:11px;line-height:1.5;background:#f7f9fc;border-radius:8px; }
+.festival-canvas-page .festival-vendor-dropdown { border:1px solid #dce2ed;border-radius:14px;scroll-margin-top:96px;scroll-margin-bottom:100px;max-height:min(460px,calc(100dvh - 192px));box-shadow:0 10px 28px #25345e1f; }
+.festival-canvas-page .festival-dropdown-close { border-color:#e0e5ef;color:#8c98ad;background:#ffffffd9; }
+.event-slide-caption .event-explore-stalls { background:#f0ffad;border:1px solid #cbdc91;color:#3b426d;border-radius:12px;padding:11px 16px;font-weight:700; }
+main.view.wide:has(.festival-canvas-page) { padding-inline:20px;padding-bottom:14px; }.festival-canvas-page > .back { margin:3px 0 7px; }
+@media(min-width:1024px) { main.view.wide:has(.festival-canvas-page) { padding-top:88px; } }
+@media(max-width:600px) {
+  main.view.wide:has(.festival-canvas-page) { padding-inline:12px; }
+  .festival-canvas-page .festival-page-header.festival-identity { grid-template-columns:80px minmax(0,1fr);margin:2px 0 11px;border-radius:12px; }.festival-canvas-page .festival-identity-art { width:80px;height:58px; }.festival-canvas-page .festival-identity-caption { padding:10px 13px; }.festival-canvas-page .festival-identity-caption h1 { font-size:21px; }
+  .kps-section-head { gap:8px; }.kps-section-head h2 { font-size:21px; }.kps-section-head > .btn { font-size:9px; }.kps-section-number { flex-basis:26px;height:26px;font-size:9px; }
+  .kps-plan-shell { border-radius:12px; }.kps-plan-toolbar { padding:11px 12px;gap:10px; }.kps-play-title > div { display:block; }.kps-play-title h3 { font-size:13px; }.kps-explored { margin-top:4px;font-size:9px; }.kps-map-mode { min-height:32px;font-size:9px;padding:6px 9px; }
+  .kps-map-scroll { height:67dvh;min-height:420px; }.kps-zoom-controls { right:10px;bottom:12px; }.kps-zoom-controls button { width:32px;height:32px; }.kps-zoom-controls output { width:34px;font-size:9px; }
+  .kps-minimap { left:10px;bottom:12px;width:55px;padding:4px; }.kps-minimap svg { width:36px;height:42px; }
+  .kps-legend { justify-content:start;gap:8px 10px;padding:11px 12px; }.kps-legend > span { flex:1 1 calc(50% - 12px);font-size:9px; }
+}
+@media(prefers-reduced-motion:reduce) { .kps-booth .kps-booth-face,.kps-explore-progress i { transition:none; } }
+
+.festival-canvas-page .kps-detail-heading { padding:17px 18px 14px; }.festival-canvas-page .kps-detail-heading h3 { font-size:20px;margin-top:9px; }.festival-canvas-page .kps-detail-body { padding:15px 18px; }
+
+/* Guided map: orient first, then reveal readable booth numbers within a group. */
+.kps-map-guide { display:flex;align-items:center;gap:10px;padding:11px 16px;background:#f0f3ff;border-bottom:1px solid #e2e7f7; }
+.kps-guide-step { display:grid;place-items:center;width:27px;height:27px;flex:0 0 27px;border-radius:9px;background:#4a59c9;color:#fff;font-size:12px;font-weight:700; }
+.kps-map-guide > div { display:flex;align-items:baseline;gap:10px;flex-wrap:wrap; }.kps-map-guide b { font-size:12px;font-weight:700;color:#343f7a; }.kps-map-guide #kps-guide-hint { font-size:11px;color:#6c78a1; }
+.kps-map-scroll { background:#f8fafc; }
+.kps-area-shortcuts { position:absolute;inset:0;pointer-events:none; }
+.kps-area-card { position:absolute;left:clamp(88px,var(--area-x),calc(100% - 88px));transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;width:170px;min-height:58px;padding:10px;text-align:left;cursor:pointer;pointer-events:auto;border:1px solid #d6dff2;border-radius:13px;background:#fff;color:#28386a;box-shadow:0 5px 16px #2b40741c;transition:border-color .15s,box-shadow .15s; }
+.kps-area-card[hidden] { display:none; }
+.kps-area-card:hover { border-color:#7c91d2;box-shadow:0 7px 20px #2b40742b; }.kps-area-card:focus-visible { outline:3px solid #8da1ed;outline-offset:3px; }
+.kps-area-symbol { display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#edf1ff;color:#566ac9; }.kps-area-symbol .ic { width:18px;height:18px; }
+.kps-area-card > span:nth-child(2) { flex:1;min-width:0; }.kps-area-card b { display:block;font-size:12px;line-height:1.35;font-weight:700;white-space:nowrap; }.kps-area-card small { display:block;margin-top:3px;font-size:9px;line-height:1.35;color:#7582a0; }
+.kps-area-arrow { display:grid;place-items:center;width:18px;height:18px;flex:0 0 18px;color:#7184bf; }.kps-area-arrow .ic { width:15px;height:15px; }
+.kps-viewport-wrap[data-mode="overview"] .kps-booth text,.kps-viewport-wrap[data-mode="overview"] .kps-booth-visited { visibility:hidden; }
+.kps-viewport-wrap[data-mode="overview"] .kps-booth .kps-booth-face { stroke:#879cde;stroke-width:.2; }
+.kps-booth .kps-booth-face { fill:#e0e8ff;stroke:#6f85cb; }.kps-booth.kps-student .kps-booth-face { fill:#ffe3d9;stroke:#d9a092; }.kps-booth.kps-student text { fill:#9a675a; }.kps-booth.kps-merch .kps-booth-face { fill:#edf5b7;stroke:#acbe55; }
+.kps-key-food { background:#d5e1ff; }.kps-key-student { background:#ffe3d9; }.kps-key-merch { background:#edf5b7; }
+.kps-map-mode:disabled { cursor:default;color:#929db6;border-color:#e6ebf4;background:#fafbfe; }
+.kps-map-svg > .kps-building-title { font-size:6px;font-weight:700;fill:#7d8ba3; }.kps-parking-label { font-family:Helvetica,Arial,sans-serif;font-size:3.5px;fill:#8c99b0;pointer-events:none; }
+.kps-landmark-label { font-size:3.4px;font-weight:600;fill:#8f809e; }
+.kps-legend > span { font-size:11px;color:#718099; }.kps-legend i { width:9px;height:9px;flex-basis:9px; }
+@media(max-width:600px) {
+  .kps-map-scroll { height:clamp(340px,calc((100vw - 26px)*226/196),520px);min-height:0; }
+  .kps-map-guide { padding:10px 12px;gap:9px; }.kps-map-guide > div { display:block; }.kps-map-guide b { display:block;font-size:12px; }.kps-map-guide #kps-guide-hint { display:block;margin-top:3px;font-size:10px;line-height:1.35; }.kps-guide-step { width:26px;height:26px;flex-basis:26px; }
+  .kps-area-card { left:clamp(66px,var(--area-x),calc(100% - 66px));width:126px;min-height:52px;padding:8px;gap:6px;border-radius:11px; }.kps-area-symbol { width:23px;height:26px;flex-basis:23px;background:none; }.kps-area-symbol .ic { width:18px;height:18px; }.kps-area-card b { font-size:10px; }.kps-area-card small { font-size:8px;margin-top:2px; }.kps-area-arrow { width:12px;flex-basis:12px; }.kps-area-arrow .ic { width:12px;height:12px; }
+  .kps-legend { gap:8px 11px; }.kps-legend > span { font-size:10px; }
+}
+@media(max-width:350px) { .kps-area-card { width:116px;left:clamp(61px,var(--area-x),calc(100% - 61px));padding:7px;gap:4px; }.kps-area-symbol { width:20px;flex-basis:20px; }.kps-area-card b { font-size:9px; }.kps-area-card small { font-size:7.5px; } }
+@media(prefers-reduced-motion:reduce) { .kps-area-card { transition:none; } }
+.kps-viewport-wrap[data-mode="overview"] .kps-zoom-controls { top:10px;bottom:auto; }
+.kps-viewport-wrap[data-mode="overview"] .kps-booth.is-area-highlight .kps-booth-face { fill:#b8caff;stroke:#536bc5;stroke-width:.4; }
+.kps-viewport-wrap[data-mode="overview"] .kps-student.is-area-highlight .kps-booth-face { fill:#ffc7b3;stroke:#c78c7a; }
+.kps-viewport-wrap[data-mode="overview"] .kps-merch.is-area-highlight .kps-booth-face { fill:#dfed8f;stroke:#9eaf43; }
+
+.kps-map-back { position:absolute;z-index:4;top:12px;left:12px;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #4254bb;border-radius:10px;background:#4a5dcc;color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 3px 10px #283d8e20; }
+.kps-map-back[hidden] { display:none; }.kps-map-back .ic { width:17px;height:17px; }.kps-map-back:hover { background:#3c4eb9; }.kps-map-back:focus-visible { outline:3px solid #a8b9ff;outline-offset:3px; }
+@media(max-width:600px) { .kps-map-back { top:10px;left:10px;font-size:11px;padding:10px 12px; } }

@@ -1,3 +1,5 @@
+import { learningPlan, unspentPointExposure } from '../points-policy.js';
+import { pointsPageRender } from '../points-guide.js';
 // Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
@@ -170,7 +172,7 @@ function approvalsMount(root, app) {
   $$('[data-welfare]', root).forEach((button) => { button.onclick = () => {
     const request = app._ap.requests.find((item) => item.id === button.dataset.welfare), approve = button.dataset.ok === '1';
     const el = sheet(`<h2>${approve ? 'Approve welfare request' : 'Decline welfare request'}</h2><p class="muted">${esc(request.name)} · ${n(request.amount)} <span>pts</span></p>
-      <p class="hep-welfare-reason" data-no-i18n>${esc(request.reason)}</p>${approve ? '<p class="faint">Points move from the welfare pool to the student’s balance.</p>' : ''}
+      <p class="hep-welfare-reason" data-no-i18n>${esc(request.reason)}</p>${approve ? '<p class="faint">Points move from the welfare pool to the student’s balance. They do not count towards levels or leagues.</p>' : ''}
       <form id="welfare-review-form" class="stack" style="margin-top:14px"><label class="field">Response to student<textarea name="response" rows="3" maxlength="500" ${approve ? '' : 'required minlength="3"'}></textarea></label>
       <button class="btn ${approve ? 'go' : 'warn'} block" type="submit">${approve ? 'Approve and transfer points' : 'Decline request'}</button></form>`);
     $('#welfare-review-form', el).onsubmit = (event) => {
@@ -277,13 +279,14 @@ function reconMount(root, app) {
 
 // ------------------------------------------------------------- rewards and budget
 async function rewardsRender(app) {
-  const [rewards, vouchers, budget, merchants, camps] = await Promise.all([D.listRewards(app.ctx), D.listVouchers(app.ctx), D.getConfig(app.ctx, 'budget'), D.listMerchantsAll(app.ctx), D.listCampaigns(app.ctx)]);
+  const [rewards, vouchers, budget, merchants, camps, users, welfare] = await Promise.all([D.listRewards(app.ctx), D.listVouchers(app.ctx), D.getConfig(app.ctx, 'budget'), D.listMerchantsAll(app.ctx), D.listCampaigns(app.ctx), D.listUsers(app.ctx), D.getWelfareFund(app.ctx)]);
   app._rw = { rewards, vouchers, merchants };
-  const alloc = budget?.allocationCents || 0; const committed = vouchers.filter((v) => v.status === 'issued').reduce((s, v) => s + (v.valueCents || 0), 0);
+  const open=vouchers.filter(v=>v.status==='issued'&&!D.voucherExpired(v,D.clock(app.ctx)));
+  const exposure=unspentPointExposure(users,welfare?.points||0);
+  const alloc = budget?.allocationCents || 0; const committed = open.reduce((s, v) => s + (v.valueCents || 0), 0);
   const spent = vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + (v.valueCents || 0), 0);
   const campBudget = camps.reduce((s, c) => s + (c.budgetCents || 0), 0);
-  const open = vouchers.filter((v) => v.status === 'issued');
-  const voucherCount = (status) => { const count = vouchers.filter((v) => v.status === status).length; return `${count} voucher${count === 1 ? '' : 's'}`; };
+  const voucherCount = (status) => { const count = status==='issued'?open.length:vouchers.filter((v) => v.status === status).length; return `${count} voucher${count === 1 ? '' : 's'}`; };
   return `${hepHeading('Rewards and budget', 'Vouchers are paid from the activation fund. Track what’s promised (issued, not yet used) and what’s paid out.', 'gift')}
     <div class="stats">
       ${hepMetric('Activation fund', rm(alloc), 'wallet', 'violet', `<button class="btn small ghost" id="alloc">${icon('pencil')} Edit</button>`)}
@@ -292,12 +295,14 @@ async function rewardsRender(app) {
       ${hepMetric('Left to commit', `<span${alloc - committed - spent - campBudget < 0 ? ' style="color:var(--red)"' : ''}>${rm(alloc - committed - spent - campBudget)}</span>`, 'gift', 'lime', `after ${rm(campBudget)} set aside for campaigns`)}
     </div>
     <div class="hep-budget-track"><div class="row between"><span>Activation fund allocation</span><span class="hep-budget-legend"><span>Promised</span><span>Paid out</span><span>Campaigns</span></span></div><div class="hep-budget-meter" role="img" aria-label="Activation fund allocation">${[committed, spent, campBudget].map((v) => `<i style="width:${Math.max(0, v) / Math.max(1, alloc, committed + spent + campBudget) * 100}%"></i>`).join('')}</div></div>
+    <section class="points-budget-scenario"><div><span class="points-eyebrow">Unspent-point scenario</span><h2>${rm(exposure.referenceCents)} <small>at default voucher prices</small></h2><p><b>${n(exposure.studentPoints)}</b> <span>student points</span> + <b>${n(exposure.welfarePoints)}</b> <span>pooled welfare points</span></p><p>This is a planning estimate at 1 point per sen, assuming enough reward stock. It is not paid out or committed; each reward can use a different rate.</p></div><a class="btn small" href="#/points">${icon('info')} Points guide</a></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Reward catalogue</h2><button class="btn small primary" id="new-rw">${icon('plus')} New reward</button></div>
+      <p class="faint">Default pricing is 100 points per RM1 of voucher value. Each reward has its own price; this is not a fixed cash exchange rate.</p>
       <div class="table-wrap" style="margin-top:10px"><table class="data"><thead><tr><th>Reward</th><th>Redeem at</th><th class="r">Points</th><th class="r">Value</th><th class="r">Issued / stock</th><th>Status</th><th></th></tr></thead><tbody>
       ${rewards.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>the Admin team</td><td class="r num">${n(r.cost)}</td><td class="r num">${rm(r.valueCents)}</td><td class="r num">${n(r.issued || 0)} / ${n(r.stock)}</td>
         <td>${r.active ? '<span class="badge ok">On</span>' : '<span class="badge grey">Off</span>'}</td><td class="r"><button class="btn small" data-rw="${esc(r.id)}">Edit</button></td></tr>`).join('')}</tbody></table></div></section>
     <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Vouchers to hand out at the Admin team counter (${open.length})</h2><form id="vfind" class="row" style="flex-wrap:nowrap"><input name="code" placeholder="Voucher code" style="min-height:38px;width:160px"><button class="btn small">Find</button></form></div>
-      <p class="faint">Only the Admin team fulfils reward vouchers. Mark each voucher used after handing over its value.</p>
+      <p class="faint">Only the Admin team fulfils reward vouchers. Mark each voucher used after honouring it. Expired unused vouchers are excluded from promised value.</p>
       <div class="list" style="margin-top:6px">${open.map((v) => `<div class="item"><div class="grow"><h3>${esc(v.title)} · ${esc(v.code)}</h3><p>${esc(v.studentName)} · issued ${fmtDate(v.createdAt)}</p></div><button class="btn small go" data-use="${esc(v.id)}">Mark used</button></div>`).join('') || '<p class="faint" style="padding:10px 0">None waiting.</p>'}</div></section>`;
 }
 function rewardsMount(root, app) {
@@ -309,7 +314,7 @@ function rewardsMount(root, app) {
   const edit = (r) => {
     const el = sheet(`<h2>${r ? 'Edit reward' : 'New reward'}</h2><form id="rf" class="stack" style="margin-top:12px">
       <label class="field">Title<input name="title" required value="${esc(r?.title || '')}" placeholder="e.g. RM5 campus reward"></label>
-      <p class="notice">Redeem with the Admin team</p><input type="hidden" name="merchantId" value="">
+      <p class="notice">Redeem with the Admin team</p><p class="faint">Set points needed and voucher value independently. The default guide is 1 point per sen.</p><input type="hidden" name="merchantId" value="">
       <div class="grid-2"><label class="field">Points needed<input name="cost" type="number" min="1" step="1" required value="${r?.cost || 500}"></label><label class="field">Value (RM)<input name="value" type="number" min="0" step="0.5" required value="${(r?.valueCents || 500) / 100}"></label></div>
       <div class="grid-2"><label class="field">Stock<input name="stock" type="number" min="${r?.issued || 0}" step="1" required value="${r?.stock || 100}"></label><label class="field">Valid for (days)<input name="validDays" type="number" min="1" required value="${r?.validDays || 30}"></label></div>
       <label class="check"><input type="checkbox" name="active" ${!r || r.active ? 'checked' : ''}> Students can swap points for this</label><button class="btn primary">Save reward</button></form>`);
@@ -466,7 +471,7 @@ function peopleMount(root, app) {
     $$('[data-adj]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.adj);
-        const el = sheet(`<h2>Adjust points for ${esc(u.name)}</h2><p class="muted">Current balance ${n(u.points)}. Use a minus sign to remove points.</p><form id="aj" class="stack" style="margin-top:12px">
+        const el = sheet(`<h2>Adjust points for ${esc(u.name)}</h2><p class="muted">Current balance ${n(u.points)}. Use a minus sign to remove points.</p><p class="faint">Positive awards count for levels and leagues; welfare support must be approved from the pooled fund.</p><form id="aj" class="stack" style="margin-top:12px">
           <label class="field">Points (+ or −)<input name="d" type="number" step="1" required></label><label class="field">Reason (the student sees this)<input name="note" required minlength="3" placeholder="e.g. Bazaar prize, or duplicate purchase removed"></label><button class="btn primary">Save adjustment</button></form>`);
         $('#aj', el).onsubmit = (e) => { e.preventDefault(); const d = Math.trunc(+e.target.d.value); if (!d) return; if (u.points + d < 0) return toast('That would make the balance negative.', true);
           busy($('button', el), async () => { try { await D.adjustPoints(app.ctx, u.id, d, e.target.note.value.trim()); closeSheet(); toast('Points adjusted.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
@@ -541,8 +546,9 @@ async function settingsRender(app) {
       <label class="field">Update for merchants<textarea name="message" required minlength="10" maxlength="1000" rows="3" placeholder="What should merchants review or complete?">${esc(rules.merchantReadinessUpdate?.message || '')}</textarea></label>
       ${rules.merchantReadinessUpdate?.publishedAt ? `<p class="faint">Last published ${fmtDate(rules.merchantReadinessUpdate.publishedAt)}</p>` : ''}
       <button class="btn primary">${icon('megaphone')} Publish readiness update</button></form>
+    <div class="points-admin-summary"><span>${icon('sparkles')}</span><div><b>${n(learningPlan(rules).total)} <span>one-time learning points</span></b><p>Three lesson bonuses plus one Money check. Daily streaks and referrals do not award points.</p></div><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
-      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}${field('liveDealPoints', 'Points per live-deal scan', 'Awarded immediately, once per student and deal each day.', 1, 1000)}</div>
+      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}${field('liveDealPoints', 'Points per live-deal scan', 'Only when live deals are enabled. Once per student, per deal, per day.', 1, 1000)}</div>
       <button class="btn primary">Save rules</button></form>
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
@@ -555,11 +561,11 @@ function settingsMount(root, app) {
   if (!$('#rules', root)) return;
   $('#features', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, f[k].checked])) }); toast('Features saved.'); app.rules = await D.getRules(app.ctx); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { features: Object.fromEntries(D.FEATURES.map(([k]) => [k, f[k].checked])) }); toast('Features saved.'); app.rules = await D.getRules(app.ctx); app.render(); } catch (err) { toast(errText(err), true); } });
   };
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), liveDealPoints: v('liveDealPoints') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), liveDealPoints: v('liveDealPoints') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); app.render(); } catch (err) { toast(errText(err), true); } });
   };
   $('#readiness-update', root).onsubmit = (e) => {
     e.preventDefault(); const form = e.target;
@@ -575,6 +581,7 @@ function settingsMount(root, app) {
 }
 
 export const routes = {
+  points: { title:'Points guide',render:pointsPageRender },
   overview: { title: 'Overview', render: overviewRender, mount: overviewMount },
   merchants: { title: 'Merchants', render: merchantsRender, mount: merchantsMount },
   approvals: { title: 'Approvals', render: approvalsRender, mount: approvalsMount },

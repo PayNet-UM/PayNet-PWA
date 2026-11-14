@@ -7,6 +7,7 @@ import { $, esc, icon, toast, closeSheet, sheetOpen, errText } from './ui.js';
 import * as Auth from './views/auth.js';
 import * as Hep from './views/mpp.js';
 import { initI18n } from './i18n.js';
+import { mountPageMotion } from './motion.js';
 initI18n();
 
 const app = {
@@ -65,6 +66,7 @@ async function boot() {
 }
 
 async function onUser(user) {
+  if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   closeSheet();
   app.user = user; app.profile = null; app.isMpp = false; app.role = null; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
@@ -119,7 +121,8 @@ async function render() {
     window.scrollTo(0, 0);
     const cleanup = r.mount ? await r.mount(view, app, parts.slice(1)) : null;
     if (render.token !== token) { cleanup && cleanup(); return; }
-    app.viewCleanup = cleanup || null;
+    const stopMotion=mountPageMotion(view);
+    app.viewCleanup = ()=>{stopMotion();cleanup?.();};
   } catch (e) {
     console.error(e);
     view.innerHTML = `<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p>

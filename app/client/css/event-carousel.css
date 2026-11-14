@@ -12,7 +12,8 @@
 .event-showcase-body { background:#fff;border:1px solid #dfd6ca;border-radius:18px;overflow:hidden;position:relative; }
 .event-poster { display:block;position:relative;width:100%;border:0;padding:0;background:#efe8db;cursor:zoom-in;text-align:left;touch-action:pan-y; }
 .event-poster img { display:block;width:100%;height:auto;aspect-ratio:1600/710;object-fit:contain;user-select:none; }
-.event-poster-hint { position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:5px;background:#fffdf3eb;color:#183d53;border:1px solid #fff8;border-radius:30px;font-size:10px;font-weight:700;padding:6px 10px;box-shadow:0 2px 8px #0002; }
+.event-poster img.event-poster-incoming { position:absolute;inset:0;height:100%;pointer-events:none; }
+.event-poster-hint { position:absolute;z-index:1;right:12px;bottom:12px;display:flex;align-items:center;gap:5px;background:#fffdf3eb;color:#183d53;border:1px solid #fff8;border-radius:30px;font-size:10px;font-weight:700;padding:6px 10px;box-shadow:0 2px 8px #0002; }
 .event-poster-hint svg { width:14px;height:14px; }
 .event-slide-caption { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 22px; }
 .event-slide-tag { display:inline-block;font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:1.3px;color:#b74834;background:#fff0e3;border:1px solid #f4d9c5;border-radius:99px;padding:4px 8px;margin-bottom:8px; }

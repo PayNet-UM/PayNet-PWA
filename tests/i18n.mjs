@@ -117,6 +117,8 @@ check('names, identifiers and amounts stay intact', () => {
 
 const label = body.append(new Element('P')).text('  Request sent  ');
 const input = body.append(new Element('INPUT', { placeholder: '@username', 'aria-label': 'Find by username' }));
+const textarea = body.append(new Element('TEXTAREA', { placeholder: 'Tell us a little about your question or idea.' }));
+const messageText = textarea.text('Request sent');
 const image = body.append(new Element('IMG', { alt: 'Pre-FESKUM calendar — original FESKUM event poster' }));
 const option = body.append(new Element('OPTION')); const optionText = option.text('Discount');
 const user = body.append(new Element('SPAN', { 'data-no-i18n': '' })).text('Regular');
@@ -133,6 +135,8 @@ check('switch to Malay translates text, title and accessible attributes', () => 
   assert.equal(option.value, 'Discount');
   assert.equal(optionText.data, 'Diskaun');
   assert.equal(user.data, 'Regular');
+  assert.equal(textarea.getAttribute('placeholder'), 'Kongsikan sedikit tentang soalan atau idea anda.');
+  assert.equal(messageText.data, 'Request sent');
 });
 check('new text and changing attributes translate after rendering', () => {
   label.data = 'Live now'; input.setAttribute('aria-label', 'Copy username');
@@ -148,6 +152,8 @@ check('English restores current originals and form values', () => {
   setLang('en');
   assert.equal(label.data, 'Live now');
   assert.equal(input.getAttribute('placeholder'), '@username');
+  assert.equal(textarea.getAttribute('placeholder'), 'Tell us a little about your question or idea.');
+  assert.equal(messageText.data, 'Request sent');
   assert.equal(input.getAttribute('aria-label'), 'Copy username');
   assert.equal(document.title, 'Friends · +Onz Student');
   assert.equal(image.getAttribute('alt'), 'Pre-FESKUM calendar — original FESKUM event poster');
