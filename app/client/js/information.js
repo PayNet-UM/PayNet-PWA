@@ -44,7 +44,7 @@ export function aboutRender(app={}) {
     <section class="info-section" id="about-join" tabindex="-1">${sectionHead('You are part of it','Choose your way in.','There is more than one way to add something to campus life.')}<div class="info-join-grid">${[
       ['store','Merchant / business owner','Put your business on the campus radar. Connect with students and explore live-deal collaborations.','merchant','Partner with us'],
       ['calendar','KK / event organiser','Bring your college, club or event into the picture. Share your plans, activities and stall layouts with us.','events','Plan a collaboration'],
-      ['graduation-cap','Student','Discover, learn, earn and invite friends. Share your ideas or ask how to help with the campaign.','student','Join the journey'],
+      ['graduation-cap','Student','Discover, learn, earn and refer friends. Share your ideas or ask how to help with the campaign.','student','Join the journey'],
     ].map(([glyph,title,copy,topic,cta])=>`<article class="info-join-card"><span class="info-tile-icon">${icon(glyph)}</span><h3>${title}</h3><p>${copy}</p><a href="#/contact/${topic}">${cta} ${icon('arrow-right')}</a></article>`).join('')}</div></section>
     <section class="info-section" id="about-points" tabindex="-1">${sectionHead('Participation that counts','How the points work.','Earn through eligible activities, then choose how to use your points.')}${pointsGuideHTML(app)}
       <aside class="info-prize-note">${icon('gift')}<div><b>Something to work towards.</b><p>Programme prizes and KK League prize details will be announced here once confirmed.</p></div><span>Coming soon</span></aside>
