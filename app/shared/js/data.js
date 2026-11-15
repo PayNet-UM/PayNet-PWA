@@ -1,3 +1,4 @@
+import { DEFAULT_POINT_RULES } from './points-policy.js';
 // Kampus Kita+ data layer. Every write here is shaped to pass firestore.rules,
 // and the same functions run in the app and in the test suite.
 
@@ -30,7 +31,7 @@ export const featureOn = (rules, key) => rules?.features?.[key] === true;
 // Version of the Terms of Use and Privacy Notice (text in terms.js). Change it only for an important change:
 // everyone is then asked to accept again.
 export const TERMS_VERSION = '2026-11-13';
-export const DEFAULT_RULES = { features: DEFAULT_FEATURES, surveyBonus: 50, lessonBonus: 50, liveDealPoints: 10 };
+export const DEFAULT_RULES = { features: DEFAULT_FEATURES, ...DEFAULT_POINT_RULES };
 export const LESSON_KEYS = { lesson0: 1, lesson1: 0, lesson2: 1 };
 export const DEFAULT_REWARDS = [
   { id: 'cafe-rm5', title: 'RM5 café voucher', merchantId: '', cost: 500, valueCents: 500, stock: 100, validDays: 30, active: true, icon: 'coffee' },
@@ -432,14 +433,15 @@ export async function adjustPoints(ctx, studentUid, delta, note) {
 }
 
 // ------------------------------------------------------------- earning
-export async function submitSurvey(ctx, result, rules) {
+export async function submitSurvey(ctx, result, _rules) {
   const { sdk } = ctx;
   await sdk.setDoc(sdk.doc(ctx.db, 'surveys', ctx.uid), { ...result, at: sdk.serverTimestamp() });
   if (ctx.profile.role !== 'student' || (await hasLedger(ctx, 'survey'))) return 0;
   const b = sdk.writeBatch(ctx.db);
-  addPoints(ctx, b, ctx.uid, 'survey', { type: 'survey', delta: rules.surveyBonus });
+  const current=await getRules(ctx);
+  addPoints(ctx, b, ctx.uid, 'survey', { type: 'survey', delta: current.surveyBonus });
   await b.commit();
-  return rules.surveyBonus;
+  return current.surveyBonus;
 }
 export async function getSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'surveys', u)); }
 function addLearningDay(ctx, batch, lesson, answer) {
@@ -474,11 +476,12 @@ export async function recordAppDay(ctx) {
 export function watchAppDays(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.collection(ctx.db, 'users', ctx.uid, 'appDays'), (s) => cb(snapList(s)), err);
 }
-export async function answerLesson(ctx, i, choice, rules) {
+export async function answerLesson(ctx, i, choice, _rules) {
   const id = 'lesson' + i;
   if (await hasLedger(ctx, id)) return 'done';
   const b = ctx.sdk.writeBatch(ctx.db);
-  addPoints(ctx, b, ctx.uid, id, { type: 'lesson', delta: rules.lessonBonus, answer: choice });
+  const current=await getRules(ctx);
+  addPoints(ctx, b, ctx.uid, id, { type: 'lesson', delta: current.lessonBonus, answer: choice });
   addLearningDay(ctx, b, id, choice);
   try { await b.commit(); return 'correct'; } catch (e) { if (e.code === 'permission-denied') return 'wrong'; throw e; }
 }

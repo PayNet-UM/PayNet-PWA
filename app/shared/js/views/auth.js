@@ -19,7 +19,7 @@ function frame(app, inner) {
       <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
       ${chevron('#29B6F6', 16)}
     </aside>
-    <div class="form-side">${langToggleHTML('auth-lang')}${inner}</div></div>`;
+    <div class="form-side">${langToggleHTML('auth-lang')}${inner}${!admin?'<nav class="auth-info-links" aria-label="About and contact"><a href="#/about">About us</a><span aria-hidden="true">·</span><a href="#/contact">Contact us</a></nav>':''}</div></div>`;
   app.shellRole = null;
   if (app.addDemoRibbon) app.addDemoRibbon();
 }

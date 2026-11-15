@@ -76,7 +76,7 @@ test('the Leagues tour explains the KK League and its prize, in two highlighted 
   const steps = G.PAGE_TOURS.leagues();
   assert.deepEqual(steps.map((s) => s.title), ['Your KK', 'The leaderboard']);
   assert.ok(steps.every((s) => s.target && !s.kind));
-  assert.match(steps.map((s) => s.body).join(' '), /All the points you collect add to it\..*most points wins prizes!/);
+  assert.match(steps.map((s) => s.body).join(' '), /Positive earned points add to it; welfare grants do not\..*most points wins prizes!/);
   assert.equal(G.pageTourSeen('s1', 'leagues'), false);
 });
 test('every phrase in the guide has a Malay translation', () => {

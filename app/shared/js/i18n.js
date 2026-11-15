@@ -91,7 +91,9 @@ const PATTERNS = [
   [/^(.+) — original FESKUM event poster$/, (title) => `${t(title)} — poster acara FESKUM asal`],
   [/^Poster (\d+) of (\d+): (.+)$/, (a, b, title) => `Poster ${a} daripada ${b}: ${t(title)}`],
   [/^(\d+) booths?$/, (n) => `${n} gerai`],
-  [/^Booth ([A-Z]\d+)$/, (id) => `Gerai ${id}`],
+  [/^Tapak KPS, (Booth \d+|SV[1-5]|UM), (.+)$/, (label, rest) => `Tapak KPS, ${t(label)}, ${t(rest)}`],
+  [/^Exploring stall ([A-Z0-9]+)$/, (id) => `Meneroka gerai ${id}`],
+  [/^Booth ([A-Z]\d+|\d+)$/, (id) => `Gerai ${id}`],
   [/^Booth ([A-Z]\d+), (.+), ([^,]+)$/, (id, name, category) => `Gerai ${id}, ${name}, ${t(category)}`],
   [/^(.+) · Row (\d+)$/, (name, row) => `${t(name)} · Baris ${row}`],
   [/^Position (\d+)$/, (n) => `Kedudukan ${n}`],
@@ -280,12 +282,12 @@ try { lang = localStorage.getItem(KEY) || (/^ms\b/i.test(navigator.language || '
 const ATTRS = ['placeholder', 'aria-label', 'aria-description', 'aria-valuetext', 'title', 'alt', 'aria-roledescription'];
 const origText = new WeakMap(); const wroteText = new WeakMap();
 const origAttr = new WeakMap();
-const SKIP = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'NOSCRIPT']);
+const SKIP = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT']);
 const skipped = (el) => !el || SKIP.has(el.nodeName) || (el.closest && el.closest('[data-no-i18n]'));
 let busy = false;
 
 function doText(node) {
-  const p = node.parentElement; if (skipped(p)) return;
+  const p = node.parentElement; if (skipped(p) || p.nodeName === 'TEXTAREA') return;
   if (wroteText.get(node) !== node.data) origText.set(node, node.data); // the app changed it: new original
   const orig = origText.get(node);
   if (p.nodeName === 'OPTION' && !p.hasAttribute('value')) p.setAttribute('value', p.value); // keep form values in English

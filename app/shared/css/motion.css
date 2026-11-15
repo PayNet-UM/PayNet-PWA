@@ -1,0 +1,36 @@
+/* Motion is feedback, not a prerequisite: no content starts hidden or moves the page layout. */
+@media (prefers-reduced-motion:no-preference) {
+  .btn:not(:disabled),.info-button {
+    transition:translate .18s ease,scale .18s ease,background-color .18s ease,box-shadow .18s ease;
+  }
+  .btn:not(:disabled):active,.info-button:active { translate:0 1px;scale:.98; }
+  .points-summary,.info-links a,.hep-shortcut { transition:translate .22s ease,box-shadow .22s ease,border-color .22s ease; }
+  .info-join-card a > .ic,.info-story-note a > .ic,.event-showcase-heading a > .ic,
+  .info-button > .ic { transition:translate .22s ease; }
+  .tabbar a > .ic,.tabbar a .bubble > .ic { transition:translate .2s ease,scale .2s ease; }
+  .tabbar a.on > .ic,.tabbar a.on .bubble > .ic { animation:onz-nav-settle .38s ease-out; }
+  .tabbar a:active > .ic,.tabbar a:active .bubble > .ic { scale:.9; }
+  /* Gentle movement belongs to decorative artwork, never the text being read. */
+  .kk-hero::after,.info-story-note::after,.info-final-cta::after { animation:onz-accent-drift 10s ease-in-out 2; }
+  .info-contact-art > i:nth-child(2) { animation:onz-accent-drift 8s ease-in-out 2; }
+  .onz-motion-paused *,.onz-motion-paused *::before,.onz-motion-paused *::after { animation-play-state:paused!important; }
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  .btn:not(:disabled):hover { translate:0 -2px; }
+  .points-summary:hover,.info-links a:hover,.hep-shortcut:hover { translate:0 -3px;box-shadow:0 7px 16px -10px #2420ff50; }
+  .info-join-card a:hover > .ic,.info-story-note a:hover > .ic,.event-showcase-heading a:hover > .ic,
+  .info-button:hover > .ic { translate:3px 0; }
+  .tabbar a:hover > .ic,.tabbar a:hover .bubble > .ic { translate:0 -2px; }
+}
+@keyframes onz-nav-settle {
+  0% { translate:0 3px; }
+  55% { translate:0 -2px; }
+  100% { translate:0 0; }
+}
+@keyframes onz-accent-drift {
+  0%,100% { translate:0 0; }
+  50% { translate:0 -6px; }
+}
+@media print {
+  *,*::before,*::after { animation:none!important;transition:none!important; }
+}

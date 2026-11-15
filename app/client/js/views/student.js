@@ -1,3 +1,6 @@
+import { POINT_LEVELS, earnedPoints, livePointEarningOn } from '../points-policy.js';
+import { pointsSummaryHTML } from '../points-guide.js';
+import { INFORMATION_ROUTES, informationLinks } from '../information.js';
 // Student app: +Onz hub, Overview directory, rewards, events, community,
 // cashless guide (Bayar Kita), learning, avatar and profile.
 import * as D from '../data.js';
@@ -14,7 +17,7 @@ import { hereNowSection, mountHereNow } from '../herenow.js';
 import { closeRender, closeMount } from './close.js';
 import { feedbackRender, feedbackMount } from '../feedback.js';
 import * as Guide from '../guide.js';
-import { safeImg, $, $$, esc, icon, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
+import { safeImg, $, $$, esc, icon, n, rm, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, fmtTime, timeAgo,
   confetti, pointsFx, fxOn, setFx, renderQR, colorFor, initials, countUp } from '../ui.js';
 
 export const defaultRoute = 'home';
@@ -23,14 +26,14 @@ const toMs = D.toMs;
 const IDEA_SEGMENT = 'Temporary student entrepreneur';
 
 // ------------------------------------------------------------- derived student facts
-export const LEVELS = [[0, 'Starter'], [200, 'Regular'], [600, 'Explorer'], [1500, 'Campus champion'], [4000, 'Legend']];
+export const LEVELS = POINT_LEVELS;
 const LEVEL_NAMES = LEVELS.map((l) => l[1]);
 function levelOf(earned) {
   let i = 0; while (i + 1 < LEVELS.length && earned >= LEVELS[i + 1][0]) i++;
   const next = LEVELS[i + 1];
   return { name: LEVELS[i][1], next: next ? next[1] : null, pct: next ? Math.round(((earned - LEVELS[i][0]) / (next[0] - LEVELS[i][0])) * 100) : 100, toNext: next ? next[0] - earned : 0 };
 }
-const earnedTotal = (ledger) => ledger.filter((l) => l.delta > 0 && l.type !== 'welfare').reduce((s, l) => s + l.delta, 0);
+const earnedTotal = earnedPoints;
 const firstName = (p) => (p?.name || '').split(' ')[0];
 export const myAvatar = (app) => app.profile?.avatar || AV.defaultFor(app.ctx?.uid);
 export const merchantLogo = (m, cls = 'logo') => (safeImg(m.logo) ? `<img class="${cls}" src="${safeImg(m.logo)}" alt="">`
@@ -42,7 +45,7 @@ const PILLARS = [
   ['explore', 'Overview', 'shops', 'Find stalls that take QR.'],
   ['community', 'Community', 'community', 'Friends, league & welfare.'],
   ['explore/deals', 'Live deals', 'deals', 'Find offers around campus.'],
-  ['learn', 'Learn & Earn', 'lessons', 'Learn more. Earn more.'],
+  ['learn', 'Learn & Earn', 'lessons', 'Three lessons. One-time points.'],
 ];
 async function homeRender(app) {
   const p = app.profile; const lvl = levelOf(earnedTotal(app.ledger));
@@ -70,7 +73,6 @@ async function homeRender(app) {
     const content = `<span class="onz-art-frame">${directoryArt(art)}</span><h3>${t}</h3><p>${d}</p>`;
     return enabled ? `<a href="#/${h}" class="kk-pillar">${content}</a>` : `<div class="kk-pillar is-unavailable" aria-disabled="true">${content}<span class="badge">Coming soon</span></div>`;
   }).join('')}</nav>
-  <section class="section card row flow-paused"><span class="tile-icon">${icon('trophy')}</span><h2>Weekly missions</h2><span class="badge">Coming soon</span></section>
 `;
 }
 function homeMount(root, app) {
@@ -96,7 +98,9 @@ function homeMount(root, app) {
       <div class="points-guide-choices">${choices.map((choice) => `<a href="#/${choice.route}" class="points-guide-choice" data-close>
         <span class="tile-icon">${icon(choice.glyph)}</span><div><h3>${esc(choice.title)}</h3><p>${esc(choice.detail)}</p></div>
         <span class="points-guide-reward">${choice.points}<small>pts</small></span>${icon('chevron-right')}</a>`).join('')}</div>
-      <p class="faint points-guide-note">Levels follow total points earned. Redeeming rewards keeps your level progress.</p>
+      ${!choices.length?'<p class="points-finished-note">Your one-time learning bonuses are complete. Higher levels need Admin awards, or live deals when enabled.</p>':''}
+      ${livePointEarningOn(app.rules)?`<a class="points-guide-deals" href="#/explore/deals" data-close>${icon('qr-code')} Live deals <b>+${n(app.rules.liveDealPoints)} <span>pts per eligible deal</span></b>${icon('chevron-right')}</a>`:''}
+      <p class="faint points-guide-note">Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.</p><a class="points-policy-link" href="#/points" data-close>${icon('info')} Full points guide ${icon('arrow-right')}</a>
     </div>`);
   };
   return mountEventCarousel(root, app);
@@ -329,7 +333,7 @@ function appStreakSection(app) {
     return `<li class="${completed ? 'checked' : ''} ${day === today ? 'today' : ''}" aria-label="${day}: ${completed ? 'App opened' : 'No app activity'}"><span>${label}</span><span class="streak-day" aria-hidden="true">${icon(completed ? 'check' : day === today ? 'flame' : 'circle-check')}</span></li>`;
   }).join('');
   return `<section class="section card rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading"><div class="streak-heading"><span class="streak-emblem" aria-hidden="true">${icon('flame')}</span><div><h2 id="app-streak-heading">Daily check-in streak</h2><p><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</p></div><span class="badge">${todayDone ? 'Today counted' : 'Ready for today'}</span></div>
-    <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul><div class="streak-footer"><p class="streak-guidance">Open +Onz each day to keep your streak.</p><span class="badge">Automatic</span></div></section>`;
+    <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul><div class="streak-footer"><p class="streak-guidance">Open +Onz each day to keep your streak. Streaks do not award points.</p><span class="badge">Automatic</span></div></section>`;
 }
 
 // ------------------------------------------------------------- rewards, vouchers and learning streaks
@@ -343,12 +347,14 @@ async function rewardsRender(app) {
     <p>Available points</p><div class="rewards-balance">${icon('sparkles')}<strong data-bind="points">${n(p.points)}</strong><span>pts</span></div>
     <button class="btn go" type="button" id="browse-rewards">Swap points ${icon('chevron-right')}</button></div>
     <div class="rewards-hero-art" aria-hidden="true"><span class="rewards-orbit orbit-one">${icon('star')}</span><span class="rewards-gift">${icon('gift')}</span><span class="rewards-orbit orbit-two">${icon('sparkles')}</span></div></div>
+    ${pointsSummaryHTML(app)}
+    <div class="points-reward-context"><span>${icon('info')}</span><p>Default reward pricing: 100 points ≈ RM1 in voucher value. Each reward sets its own points price; points are not cash.</p><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
     ${appStreakSection(app)}
     <section class="rewards-shelf" id="reward-shelf" tabindex="-1"><div class="rewards-section-heading"><h2>${icon('gift')} Swap points</h2></div>
       <div class="reward-grid">${rewards.filter((r) => r.active).map((r, index) => {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
         return `<article class="card reward-prize prize-colour-${index % 3} ${left <= 0 ? 'sold-out' : ''}"><div class="reward-prize-art"><span class="reward-prize-icon" aria-hidden="true">${icon(r.icon || 'gift')}</span><span class="reward-stock">${left > 0 ? `${left} left` : 'All claimed'}</span></div>
-          <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
+          <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-face-value">${rm(r.valueCents)} <span>voucher value</span></p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
           <div class="reward-prize-footer"><span class="reward-price">${icon('sparkles')}<strong>${n(r.cost)}</strong><span>pts</span></span>
           <button class="btn small ${can ? 'primary' : ''}" data-redeem="${esc(r.id)}" ${can ? '' : 'disabled'}>${left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`}</button></div></div></article>`;
       }).join('') || `<div class="card empty">${icon('gift')}<p>The Admin team hasn’t added rewards yet.</p></div>`}</div></section>
@@ -381,7 +387,7 @@ function rewardsMount(root, app, [section] = []) {
     b.onclick = async () => {
       const r = (await D.listRewards(app.ctx)).find((x) => x.id === b.dataset.redeem);
       if (!(await confirmSheet(`Swap ${n(r.cost)} points for ${r.title}?`, `You’ll have ${n(app.profile.points - r.cost)} points left. The voucher is valid for ${r.validDays || 30} days.`, 'Swap points'))) return;
-      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it at the counter.'); await app.render(); showVoucher(app, vid, [{ id: vid, title: r.title, merchantId: r.merchantId, status: 'issued' }]); }
+      try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it to the Admin team for redemption.'); await app.render(); showVoucher(app, vid, [{ id: vid, title: r.title, merchantId: r.merchantId, status: 'issued' }]); }
       catch (e) { toast(errText(e), true); }
     };
   });
@@ -389,7 +395,7 @@ function rewardsMount(root, app, [section] = []) {
     const el = $('#vouchers', root); if (!el) return;
     vs.sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
     el.innerHTML = vs.map((v) => `<button class="ticket ${v.status === 'used' ? 'used' : ''}" data-voucher="${esc(v.id)}" style="text-align:left;cursor:pointer;width:100%;font:inherit;padding:0">
-      <span class="stub">${icon('ticket')}</span><span class="body"><h3>${esc(v.title)}</h3><p class="faint">${v.status === 'used' ? `Used ${fmtDate(v.usedAt)}` : `Code ${esc(v.code)} · tap to show`}</p></span></button>`).join('')
+      <span class="stub">${icon('ticket')}</span><span class="body"><h3>${esc(v.title)}</h3><p class="faint">${v.status === 'used' ? `Used ${fmtDate(v.usedAt)}` : `${D.voucherExpired(v)?'Expired':`Code ${esc(v.code)} · tap to show`}`}</p></span></button>`).join('')
       || `<div class="card empty">${icon('ticket')}<p>Vouchers you swap points for appear here.</p></div>`;
     $$('[data-voucher]', el).forEach((b) => { b.onclick = () => showVoucher(app, b.dataset.voucher, vs); });
   }, () => {});
@@ -398,8 +404,8 @@ function rewardsMount(root, app, [section] = []) {
 function showVoucher(app, vid, list) {
   const v = list ? list.find((x) => x.id === vid) : null;
   const el = sheet(`<div class="qr-stage"><h2>${esc(v ? v.title : 'Your voucher')}</h2>
-    <p class="muted">${v && v.status === 'used' ? 'This voucher has been used.' : 'Show this voucher to the Admin team for redemption.'}</p>
-    <div class="qr-frame ${v && v.status === 'used' ? 'dead' : ''}"><div id="vqr"></div></div><p>Code <span class="code-text">${esc(vid.slice(0, 8).toUpperCase())}</span></p></div>`);
+    <p class="muted">${v?.status==='used'?'This voucher has been used.':v&&D.voucherExpired(v)?'This voucher has expired.':'Show this voucher to the Admin team for redemption.'}</p>
+    <div class="qr-frame ${v&&(v.status==='used'||D.voucherExpired(v))?'dead':''}"><div id="vqr"></div></div><p>Code <span class="code-text">${esc(vid.slice(0, 8).toUpperCase())}</span></p></div>`);
   renderQR($('#vqr', el), 'UMV1:' + vid, 240);
 }
 
@@ -437,7 +443,7 @@ async function learnRender(app) {
     <div class="stack">${D.LESSONS.map((l, i) => `<div class="card row" style="gap:14px"><span class="tile-icon ${done.has('lesson' + i) ? 'mint' : ''}">${icon(done.has('lesson' + i) ? 'circle-check' : l.icon)}</span>
       <div style="flex:1"><h3>${esc(l.title)}</h3><p class="faint">${done.has('lesson' + i) ? 'Completed' : `1 question · +${app.rules.lessonBonus} points`}</p></div>
       <button class="btn small ${done.has('lesson' + i) ? '' : 'primary'}" data-lesson="${i}">${done.has('lesson' + i) ? 'Practise' : 'Start'}</button></div>`).join('')}</div>
-    <p class="faint learning-practice-note">Practice is always available. Lesson points are earned once.</p>
+    <p class="faint learning-practice-note">Practice is always available. Lesson points are earned once.</p>${pointsSummaryHTML(app)}
     <div class="card row" style="margin-top:16px"><span class="tile-icon orange">${icon('target')}</span><div style="flex:1"><h3>Money check</h3><p class="faint">See where you stand on payment safety and budgeting.</p></div><a class="btn small" href="#/survey">Open</a></div>`;
 }
 function learnMount(root, app) {
@@ -449,7 +455,7 @@ function learnMount(root, app) {
         a.onclick = () => busy(a, async () => {
           const practice = app.ledger.some((entry) => entry.id === 'lesson' + i);
           const r = await (practice ? D.practiceLesson : D.answerLesson)(app.ctx, i, +a.dataset.a, app.rules).catch((e) => { toast(errText(e), true); return null; });
-          if (r === 'correct') { closeSheet(); confetti(); pointsFx(); toast(`Correct. +${app.rules.lessonBonus} points`); app.render(); }
+          if (r === 'correct') { closeSheet(); confetti(); pointsFx(); toast('Correct. Points added to your balance.'); app.render(); }
           else if (r === 'done') { closeSheet(); toast('You’ve already earned points for this lesson.'); }
           else if (r === 'practised') { closeSheet(); confetti(); toast('Correct practice. No repeat points.'); app.render(); }
           else if (r === 'wrong') { a.classList.add('warn'); $('#fb', el).textContent = 'Not quite. Think about what keeps your money safe, then try again.'; }
@@ -472,8 +478,8 @@ export function surveyHTML(role, existing) {
 }
 export function surveyResultText(role, r) {
   const st = { A: 'Confident and ready', B: 'Nearly there', C: 'Some support will help', D: 'Start with the basics' }[r.grade];
-  const tip = role === 'student' ? (r.knowledge < 75 ? 'Try the Learn & Earn lessons next.' : 'You’re set. Find a merchant and start earning.')
-    : (r.digital < 70 ? 'Ask an ambassador to help set up your business QR and train staff.' : 'Finish the staff checklist and create a quiet-hour deal.');
+  const tip = role === 'student' ? (r.knowledge < 75 ? 'Try the Learn & Earn lessons next.' : 'Keep learning with Learn & Earn. Your survey bonus is awarded once.')
+    : (r.digital < 70 ? 'Ask an ambassador to help set up your business QR and train staff.' : 'Review your shop readiness. Live deals are available only when enabled by the Admin team.');
   return { title: `${r.grade}: ${st}`, tip };
 }
 async function surveyRender(app) {
@@ -527,7 +533,7 @@ async function leaguesRender(app) {
       <a href="#/leagues/kk">${icon('trophy')} KK League</a><a href="#/leagues/faculty">${icon('graduation-cap')} Faculty League</a><a href="#/leagues/referrals">${icon('user-plus')} Top referrers</a></nav>
     <div class="leagues-grid">
     ${leagueBoard({ id: 'league-kk', title: 'KK League', iconName: 'trophy', mine: D.COLLEGES.find(([k]) => k === p.college)?.[1], mineLabel: 'No residential college', unit: 'KK points',
-    hint: 'All the points you collect add to your KK’s total. The KK with the most points wins prizes!',
+    hint: 'Positive earned points count for your KK, excluding welfare grants. Spending or donating never lowers the score. Deleted accounts no longer contribute.',
     help: ` <button type="button" class="league-help" id="league-help" aria-label="How the KK League works" title="How the KK League works">${icon('info')}</button>` })}
     ${leagueBoard({ id: 'league-faculty', title: 'Faculty League', iconName: 'graduation-cap', mine: p.faculty, mineLabel: 'No faculty set', unit: 'Faculty points',
     hint: 'Your earned points also count for your faculty, whichever college you live in.' })}
@@ -578,7 +584,7 @@ async function communityRender(app) {
       <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
       <div class="community-welfare-total">${icon('sparkles')}<strong id="welfare">—</strong></div><span class="community-welfare-caption">points available</span>
       <button class="btn go" id="donate">${icon('hand-heart')} Give points ${icon('chevron-right')}</button></section>
-    <section class="card community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask the Admin team for pooled welfare points.</p>
+    <section class="card community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask the Admin team for up to 1,000 pooled points per request. Grants do not count for levels or leagues.</p>
       <button class="btn primary" type="button" id="request-welfare">${icon('plus')} Request points ${icon('chevron-right')}</button>
       <details class="welfare-history"><summary>My requests <span id="welfare-request-count">0</span>${icon('chevron-right')}</summary><div id="welfare-requests"><p class="faint">Loading requests…</p></div></details>
     </section></div></div>
@@ -632,7 +638,7 @@ function communityMount(root, app, [section] = []) {
 
 // ------------------------------------------------------------- avatar editor
 async function avatarRender(app) {
-  return `<a class="back" href="#/me">${icon('arrow-left')} Me</a><div class="page-title"><h1>Your avatar</h1><p>Build your look. Earn points to unlock hats.</p></div>
+  return `<a class="back" href="#/me">${icon('arrow-left')} Me</a><div class="page-title"><h1>Your avatar</h1><p>Hats unlock with earned levels. Spending points never takes them away.</p></div>
     <div class="av-editor"><div class="av-stage card"><div class="av-stage-meta"><span>Live preview</span><span id="av-level"></span></div><div id="av-prev"></div>
       <div class="row" style="justify-content:center;gap:8px;margin-top:10px"><button class="btn small" id="av-rand">${icon('dices')} Shuffle</button><button class="btn small ghost" id="av-reset">${icon('rotate-ccw')} Undo changes</button></div></div>
       <div class="av-panel card" id="av-panel"></div></div>`;
@@ -722,7 +728,7 @@ async function meRender(app) {
         <button class="btn small" type="button" id="copy-referral" aria-label="Copy referral code">Copy</button>
         <button class="btn primary" id="share">${icon('share-2')} Share</button>
       </div>
-      <p class="faint">Friends enter your code when they sign up. It also sends you a friend request.</p>
+      <p class="faint">Friends enter your code when they sign up. It sends a friend request, not a points bonus.</p>
       <div class="invite-count"><strong>${n(refs.length)}</strong><span>${refs.length === 1 ? 'person has' : 'people have'} joined with your code</span><a class="btn small ghost" href="#/leagues/referrals">${icon('trophy')} Top referrers</a></div>
       ${refs.length ? `<details class="invite-activity"><summary>Who joined with your code <span class="badge">${n(refs.length)}</span></summary><div class="list">${refs.map((r) => `<div class="item"><span class="tile-icon">${icon('user-plus')}</span><div class="grow"><h3>${esc(r.friendName)}</h3><p>Friend request sent</p></div></div>`).join('')}</div></details>` : ''}
       ${p.inviterCode ? `<p class="faint" style="margin-top:12px">You joined with code ${esc(p.inviterCode)}.</p>` : ''}
@@ -747,6 +753,8 @@ async function meRender(app) {
     </section>
     <section class="section"><div class="card row" style="flex-direction:row;flex-wrap:nowrap;align-items:center;gap:12px"><span class="tile-icon">${icon('bell')}</span><div class="grow" style="flex:1;min-width:0"><h3>Sound and vibration</h3><p class="faint">Play a chime and buzz when you earn points.</p></div>
       <label class="switch"><input type="checkbox" id="fx" ${fxOn() ? 'checked' : ''} aria-label="Sound and vibration when you earn points"><span></span></label></div></section>
+    ${pointsSummaryHTML(app)}
+    ${informationLinks()}
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="out">${icon('log-out')} Sign out</button>
@@ -801,6 +809,7 @@ const live = (fn) => (root, app, params) => {
   return () => { off(); clearTimeout(t); c1 && c1(); };
 };
 export const routes = {
+  ...INFORMATION_ROUTES,
   'claim-deal': { title: 'Claim a live deal', render: studentDealClaimRender, mount: studentDealClaimMount, tab: 'home', feature: ['overview', 'merchantTools', 'dealsAndPay'] },
   home: { title: 'Home', render: homeRender, mount: live(homeMount) },
   explore: { title: 'Overview', render: directoryRender, mount: directoryMount, tab: 'home', feature: 'overview' },
