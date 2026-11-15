@@ -590,7 +590,7 @@ async function communityRender(app) {
     </section></div></div>
     ${overviewOn ? `<section class="section community-ventures"><div class="community-section-heading"><h2>${icon('store')} Student Ventures</h2><a href="#/explore/idea">See all ${icon('chevron-right')}</a></div>
       <div class="mgrid">${ventures.slice(0, 4).map((m) => merchantCard(m)).join('') || `<div class="card empty">${icon('lightbulb')}<p>Running a stall or small business? Ask the Admin team about joining as a student entrepreneur.</p></div>`}</div></section>` : ''}
-    <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('user-plus')}</span><div><h3>Invite friends</h3><p>Share your referral code with friends who haven’t signed up yet.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
+    <a class="community-invite" href="#/me"><span class="community-invite-icon">${icon('ticket')}</span><div><h3>Refer a friend</h3><p>Share your referral code with people who haven’t joined +Onz yet.</p></div><span class="community-invite-arrow">${icon('chevron-right')}</span></a></div>`;
 }
 function communityMount(root, app, [section] = []) {
   const stopFriends = friendsMount(root, app);
@@ -722,7 +722,7 @@ async function meRender(app) {
       <p class="row" style="gap:6px;margin-top:6px"><span class="badge ok">${icon('medal')}${esc(lvl.name)}</span></p>
       <a class="btn small primary" href="#/avatar" style="margin-top:10px">${icon('palette')} Customise avatar</a></div></section>
     <section class="section card invite-card" id="referral-card">
-      <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Referral code</h2></div>
+      <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Refer a friend</h2></div>
       <div class="invite-code">
         <div><span class="faint">Your referral code</span><strong class="code-text" data-no-i18n>${esc(p.referralCode)}</strong></div>
         <button class="btn small" type="button" id="copy-referral" aria-label="Copy referral code">Copy</button>
@@ -784,7 +784,7 @@ function pointsHistoryRow(entry) {
 function ledgerLabel(l) {
   if (l.type === 'checkin') return 'Archived attendance credit';
   if (l.type === 'liveDeal') return 'Live-deal scan reward';
-  return { purchase: 'Cashless purchase', survey: 'Money check completed', lesson: 'Lesson completed', friend: 'Referral welcome bonus', inviter: 'Friend joined with your code',
+  return { purchase: 'Cashless purchase', survey: 'Money check completed', lesson: 'Lesson completed', friend: 'Referral welcome bonus', inviter: 'Someone joined with your code',
     offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by the Admin team' }[l.type] || l.type;
 }
 function meMount(root, app) {
@@ -803,7 +803,7 @@ function meMount(root, app) {
   };
   $('#share', root).onclick = async () => {
     const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Enter my referral code ${app.profile.referralCode} when you sign up: ${location.origin}${location.pathname}`);
-    try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it to a friend.'); } } catch { /* cancelled */ }
+    try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Referral message copied. Paste it to a friend.'); } } catch { /* cancelled */ }
   };
   $('#prof', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
