@@ -2444,4 +2444,5 @@ Sign-in could not finish. Cancel and start again from the app.|Log masuk tidak d
 Google opens Safari. Match the code on both screens, confirm in Safari, then return here to finish sign-in.|Google membuka Safari. Padankan kod pada kedua-dua skrin, sahkan dalam Safari, kemudian kembali ke sini untuk menyelesaikan log masuk.
 Sign in here, compare the matching code with your home-screen app, then return to the app and finish sign-in.|Log masuk di sini, padankan kod dengan aplikasi skrin utama anda, kemudian kembali ke aplikasi untuk menyelesaikan log masuk.
 Everything in one plus.|Segalanya dalam satu plus.
+event|acara
 `;
