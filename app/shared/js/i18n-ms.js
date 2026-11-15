@@ -65,7 +65,11 @@ voucher value|nilai baucar
 Voucher added. Show it to the Admin team for redemption.|Baucar ditambah. Tunjukkannya kepada pasukan Admin untuk penebusan.
 Correct. Points added to your balance.|Betul. Mata ditambah kepada baki anda.
 Positive earned points count for your KK, excluding welfare grants. Spending or donating never lowers the score. Deleted accounts no longer contribute.|Mata positif yang dikumpul menyumbang kepada KK anda, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata tidak mengurangkan skor. Akaun yang dipadam tidak lagi menyumbang.
-Friends enter your code when they sign up. It sends a friend request, not a points bonus.|Rakan memasukkan kod anda semasa mendaftar. Ini menghantar permintaan rakan, bukannya memberikan bonus mata.
+For people who haven’t joined +Onz yet. They enter your code once, when they sign up, and it counts towards your total below. It can’t be used after sign-up.|Untuk mereka yang belum menyertai +Onz. Mereka memasukkan kod anda sekali, semasa mendaftar, dan ia dikira dalam jumlah anda di bawah. Ia tidak boleh digunakan selepas mendaftar.
+For friends already on +Onz. Search for their username, or give them yours. You can add friends any time.|Untuk rakan yang sudah menggunakan +Onz. Cari nama pengguna mereka, atau berikan nama pengguna anda. Anda boleh menambah rakan pada bila-bila masa.
+For friends already on +Onz. Choose a username first, then add friends by theirs any time.|Untuk rakan yang sudah menggunakan +Onz. Pilih nama pengguna dahulu, kemudian tambah rakan melalui nama pengguna mereka pada bila-bila masa.
+Choose a username|Pilih nama pengguna
+Username copied.|Nama pengguna disalin.
 Ask the Admin team for up to 1,000 pooled points per request. Grants do not count for levels or leagues.|Mohon sehingga 1,000 mata tabung bersama bagi setiap permohonan daripada pasukan Admin. Bantuan tidak dikira untuk tahap atau liga.
 Hats unlock with earned levels. Spending points never takes them away.|Topi dibuka mengikut tahap mata yang dikumpul. Penggunaan mata tidak menarik balik topi yang telah dibuka.
 points once per student, per deal, per day after a successful QR scan.|mata sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari selepas imbasan QR yang berjaya.
@@ -125,7 +129,7 @@ Partner with us|Jalin kerjasama dengan kami
 KK / event organiser|KK / penganjur acara
 Bring your college, club or event into the picture. Share your plans, activities and stall layouts with us.|Libatkan kolej kediaman, kelab atau acara anda. Kongsikan rancangan, aktiviti dan susun atur gerai anda dengan kami.
 Plan a collaboration|Rancang kerjasama
-Discover, learn, earn and invite friends. Share your ideas or ask how to help with the campaign.|Teroka, belajar, kumpul mata dan jemput rakan. Kongsikan idea anda atau tanyakan cara untuk membantu kempen ini.
+Discover, learn, earn and refer friends. Share your ideas or ask how to help with the campaign.|Teroka, belajar, kumpul mata dan rujuk rakan. Kongsikan idea anda atau tanyakan cara untuk membantu kempen ini.
 Join the journey|Sertai perjalanan ini
 Participation that counts|Penyertaan yang bermakna
 How the points work.|Cara sistem mata berfungsi.
@@ -746,14 +750,14 @@ Cashless purchase|Pembelian tanpa tunai
 Money check completed|Semakan kewangan selesai
 Lesson completed|Pelajaran selesai
 Referral welcome bonus|Bonus alu-aluan rujukan
-Friend joined with your code|Rakan menyertai dengan kod anda
+Someone joined with your code|Seseorang menyertai dengan kod anda
 Swapped for a voucher|Ditukar dengan baucar
 Given to the welfare fund|Diberi kepada tabung kebajikan
 Adjustment by the Admin team|Pelarasan oleh pasukan Admin
 Pilot tester welcome bonus|Bonus alu-aluan penguji perintis
-Invite friends|Jemput rakan
+Refer a friend|Rujuk rakan
 When a friend signs up with your code and makes their first cashless purchase, you get 100 points and they get 100.|Apabila rakan mendaftar dengan kod anda dan membuat pembelian tanpa tunai pertama, anda dapat 100 mata dan mereka juga dapat 100.
-Invite copied. Paste it to a friend.|Jemputan disalin. Tampal dan hantar kepada rakan.
+Referral message copied. Paste it to a friend.|Mesej rujukan disalin. Tampal dan hantar kepada rakan.
 Code added. Your bonus arrives after your first purchase.|Kod ditambah. Bonus anda akan diterima selepas pembelian pertama.
 That referral code does not exist.|Kod rujukan itu tidak wujud.
 You cannot use your own code.|Anda tidak boleh menggunakan kod sendiri.
@@ -2371,7 +2375,7 @@ No points earned yet. Get your faculty started.|Belum ada mata diperoleh. Mulaka
 No one has joined with a referral code yet.|Belum ada sesiapa yang mendaftar dengan kod rujukan.
 The board is temporarily unavailable.|Papan ini tidak tersedia buat sementara waktu.
 See how your KK and your faculty rank, and the top referrers.|Lihat kedudukan KK dan fakulti anda, serta perujuk teratas.
-Share your referral code with friends who haven’t signed up yet.|Kongsi kod rujukan anda dengan rakan yang belum mendaftar.
+Share your referral code with people who haven’t joined +Onz yet.|Kongsi kod rujukan anda dengan mereka yang belum menyertai +Onz.
 Friends enter your code when they sign up. It also sends you a friend request.|Rakan memasukkan kod anda semasa mendaftar. Ia juga menghantar permintaan rakan kepada anda.
 people have joined with your code|orang telah mendaftar dengan kod anda
 person has joined with your code|orang telah mendaftar dengan kod anda
