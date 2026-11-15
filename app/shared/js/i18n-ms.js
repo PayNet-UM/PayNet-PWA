@@ -65,7 +65,11 @@ voucher value|nilai baucar
 Voucher added. Show it to the Admin team for redemption.|Baucar ditambah. Tunjukkannya kepada pasukan Admin untuk penebusan.
 Correct. Points added to your balance.|Betul. Mata ditambah kepada baki anda.
 Positive earned points count for your KK, excluding welfare grants. Spending or donating never lowers the score. Deleted accounts no longer contribute.|Mata positif yang dikumpul menyumbang kepada KK anda, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata tidak mengurangkan skor. Akaun yang dipadam tidak lagi menyumbang.
-Friends enter your code when they sign up. It sends a friend request, not a points bonus.|Rakan memasukkan kod anda semasa mendaftar. Ini menghantar permintaan rakan, bukannya memberikan bonus mata.
+For people who haven’t joined +Onz yet. They enter your code once, when they sign up, and it counts towards your total below. It can’t be used after sign-up.|Untuk mereka yang belum menyertai +Onz. Mereka memasukkan kod anda sekali, semasa mendaftar, dan ia dikira dalam jumlah anda di bawah. Ia tidak boleh digunakan selepas mendaftar.
+For friends already on +Onz. Search for their username, or give them yours. You can add friends any time.|Untuk rakan yang sudah menggunakan +Onz. Cari nama pengguna mereka, atau berikan nama pengguna anda. Anda boleh menambah rakan pada bila-bila masa.
+For friends already on +Onz. Choose a username first, then add friends by theirs any time.|Untuk rakan yang sudah menggunakan +Onz. Pilih nama pengguna dahulu, kemudian tambah rakan melalui nama pengguna mereka pada bila-bila masa.
+Choose a username|Pilih nama pengguna
+Username copied.|Nama pengguna disalin.
 Ask the Admin team for up to 1,000 pooled points per request. Grants do not count for levels or leagues.|Mohon sehingga 1,000 mata tabung bersama bagi setiap permohonan daripada pasukan Admin. Bantuan tidak dikira untuk tahap atau liga.
 Hats unlock with earned levels. Spending points never takes them away.|Topi dibuka mengikut tahap mata yang dikumpul. Penggunaan mata tidak menarik balik topi yang telah dibuka.
 points once per student, per deal, per day after a successful QR scan.|mata sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari selepas imbasan QR yang berjaya.

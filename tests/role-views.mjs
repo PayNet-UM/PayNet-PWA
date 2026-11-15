@@ -74,6 +74,7 @@ for (const [role, mod, app, routes] of [
       assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Leagues should have one page heading');
     }
     if (role === 'Student' && route === 'me') assert.ok(!html.includes('id="inv"'), 'Referral codes can only be entered at sign-up');
+    if (role === 'Student' && route === 'me') assert.ok(html.includes('id="referral-card"') && html.includes('id="add-friends-card"') && html.indexOf('>Referral code<') < html.indexOf('>Add friends<'), 'Me separates the sign-up referral code from adding friends by username');
     console.log(`  ✓ ${role} ${route} renders without an attendance dependency`); passed++;
   }
 }

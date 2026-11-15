@@ -721,17 +721,28 @@ async function meRender(app) {
       <div><h1 style="font-size:24px">${esc(p.name)}</h1><p class="muted">${esc(D.COLLEGES.find(([k]) => k === p.college)?.[1] || '')}</p>
       <p class="row" style="gap:6px;margin-top:6px"><span class="badge ok">${icon('medal')}${esc(lvl.name)}</span></p>
       <a class="btn small primary" href="#/avatar" style="margin-top:10px">${icon('palette')} Customise avatar</a></div></section>
-    <section class="section card invite-card">
-      <div class="row invite-heading"><span class="tile-icon">${icon('user-plus')}</span><h2>Invite friends</h2></div>
+    <section class="section card invite-card" id="referral-card">
+      <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Referral code</h2></div>
       <div class="invite-code">
         <div><span class="faint">Your referral code</span><strong class="code-text" data-no-i18n>${esc(p.referralCode)}</strong></div>
         <button class="btn small" type="button" id="copy-referral" aria-label="Copy referral code">Copy</button>
         <button class="btn primary" id="share">${icon('share-2')} Share</button>
       </div>
-      <p class="faint">Friends enter your code when they sign up. It sends a friend request, not a points bonus.</p>
+      <p class="faint">For people who haven’t joined +Onz yet. They enter your code once, when they sign up, and it counts towards your total below. It can’t be used after sign-up.</p>
       <div class="invite-count"><strong>${n(refs.length)}</strong><span>${refs.length === 1 ? 'person has' : 'people have'} joined with your code</span><a class="btn small ghost" href="#/leagues/referrals">${icon('trophy')} Top referrers</a></div>
       ${refs.length ? `<details class="invite-activity"><summary>Who joined with your code <span class="badge">${n(refs.length)}</span></summary><div class="list">${refs.map((r) => `<div class="item"><span class="tile-icon">${icon('user-plus')}</span><div class="grow"><h3>${esc(r.friendName)}</h3><p>Friend request sent</p></div></div>`).join('')}</div></details>` : ''}
       ${p.inviterCode ? `<p class="faint" style="margin-top:12px">You joined with code ${esc(p.inviterCode)}.</p>` : ''}
+    </section>
+    <section class="section card invite-card" id="add-friends-card">
+      <div class="row invite-heading"><span class="tile-icon">${icon('user-plus')}</span><h2>Add friends</h2></div>
+      ${p.username ? `<div class="invite-code">
+        <div><span class="faint">Your username</span><strong class="code-text" data-no-i18n>@${esc(p.username)}</strong></div>
+        <button class="btn small" type="button" id="copy-username" aria-label="Copy username">Copy</button>
+        <a class="btn primary" href="#/community/add">${icon('user-plus')} Add</a>
+      </div>
+      <p class="faint">For friends already on +Onz. Search for their username, or give them yours. You can add friends any time.</p>`
+    : `<p class="faint">For friends already on +Onz. Choose a username first, then add friends by theirs any time.</p>
+      <a class="btn primary" href="#/community/add">${icon('user')} Choose a username</a>`}
     </section>
     <section class="section"><div class="head"><h2>Profile</h2></div><form id="prof" class="card stack">
       <label class="field">Name<input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}"></label>
@@ -784,6 +795,11 @@ function meMount(root, app) {
     } catch {
       toast('Couldn’t copy. Select the referral code to copy it manually.', true);
     }
+  };
+  const copyUsername = $('#copy-username', root);
+  if (copyUsername) copyUsername.onclick = async () => {
+    try { await navigator.clipboard.writeText('@' + app.profile.username); toast('Username copied.'); }
+    catch { toast('Couldn’t copy. Select your username to copy it manually.', true); }
   };
   $('#share', root).onclick = async () => {
     const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Enter my referral code ${app.profile.referralCode} when you sign up: ${location.origin}${location.pathname}`);
