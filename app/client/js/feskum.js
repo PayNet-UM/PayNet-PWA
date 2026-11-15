@@ -1,5 +1,6 @@
 // Public-area reference: UM Convocation 2025 directory. Booth allocations are illustrative.
 import { $, $$, esc, icon, rm } from './ui.js';
+import { kpsBooth, kpsMapHTML, kpsDetailsHTML, mountKpsZoom } from './feskum-kps.js';
 export const FESKUM_SOURCE = 'https://umconvo.um.edu.my/CONVO%202025/PPOG/Directory%20Map%20low.pdf';
 export const FESKUM_ZONES = [
   { id:'food', name:'Food Fest', area:'FESKUM Bazaar · Area 10', color:'peach', symbol:'🍜', desc:'Meals, sweet treats & refreshing drinks', landmark:'Dining tent', entry:'Bazaar entrance' },
@@ -32,16 +33,17 @@ export function matchingBooths(query='', category='All') {
 const zoneFor = id => FESKUM_ZONES.find(z=>z.id===id);
 const range = b => `${rm(Math.min(...b.items.map(i=>i.cents)))}–${rm(Math.max(...b.items.map(i=>i.cents)))}`;
 export function feskumCard() {
-  return `<a class="festival-entry" href="#/feskum"><div><span class="festival-eyebrow">CAMPUS SPOTLIGHT · 2026 PREVIEW</span><h2>FESKUM <em>2026</em></h2><p>Find your booth. Discover your next favourite.</p><div class="festival-entry-meta"><span>${icon('store')} 16 sample vendors</span><span>${icon('map-pin')} 3 event areas</span></div><span class="festival-entry-cta">Explore the festival ${icon('arrow-right')}</span></div><span class="festival-entry-art" aria-hidden="true">${icon('store')}<span>FOOD / FLOWERS / FINDS</span></span></a>`;
+  return `<a class="festival-entry" href="#/feskum"><div><span class="festival-eyebrow">CAMPUS SPOTLIGHT · 2026 PREVIEW</span><h2>FESKUM <em>2026</em></h2><p>Find your booth. Discover your next favourite.</p><div class="festival-entry-meta"><span>${icon('store')} 70 numbered booths</span><span>${icon('map-pin')} Tapak KPS</span></div><span class="festival-entry-cta">Explore the festival ${icon('arrow-right')}</span></div><span class="festival-entry-art" aria-hidden="true">${icon('store')}<span>TAPAK KPS</span></span></a>`;
 }
 export function feskumRender() {
   return `<div class="festival-page festival-simple festival-canvas-page"><a class="back" href="#/events">${icon('arrow-left')} Events</a>
-    <header class="festival-page-header festival-identity"><img class="festival-identity-art" src="assets/feskum-2026/identity-01.jpg" width="1600" height="710" alt="FESKUM 2026 butterfly identity with colourful bunting and paper artwork"><div class="festival-identity-caption"><h1>FESKUM <em>2026</em></h1><p>Tap a booth.</p></div></header>
-    <section class="festival-map-column" aria-label="Interactive booth map"><div id="festival-map"></div><div id="festival-vendor-dropdown" class="festival-vendor-dropdown" role="dialog" aria-modal="false" aria-label="Vendor details" tabindex="-1" hidden></div><p id="festival-selection-status" class="sr" role="status"></p></section>
-    <p class="festival-simple-note">Sample vendors, items & prices. 2026 layout pending. <a href="${FESKUM_SOURCE}" target="_blank" rel="noopener">2025 map reference ${icon('external-link')}</a></p></div>`;
+    <header class="festival-page-header festival-identity"><img class="festival-identity-art" src="assets/feskum-2026/identity-01.jpg" width="1600" height="710" alt="FESKUM 2026 butterfly identity with colourful bunting and paper artwork"><div class="festival-identity-caption"><h1>FESKUM <em>2026</em></h1><p>Explore stalls</p></div></header>
+    <section class="festival-map-column" aria-label="Interactive booth map">${kpsMapHTML()}<details class="festival-other-areas"><summary><span>Other areas (demo)</span>${icon('chevron-right')}</summary><div id="festival-map"></div></details><div id="festival-vendor-dropdown" class="festival-vendor-dropdown" role="dialog" aria-modal="false" aria-label="Explore stalls" tabindex="-1" hidden></div><p id="festival-selection-status" class="sr" role="status"></p></section>
+    </div>`;
 }
 export function feskumMount(root) {
   let selected=null;
+  const explored=new Set();
   function overview() {
     const positions = [
       [70,190],[170,190],[270,190],[70,345],[170,345],[270,345],
@@ -49,7 +51,7 @@ export function feskumMount(root) {
       [70,640],[180,640],[290,640],[400,640],
     ];
     return `<div class="event-plan-shell"><div class="event-plan-toolbar"><div><b>Booth map</b><span>16 booths</span></div><span class="event-plan-preview">SAMPLE LAYOUT</span></div>
-      <div class="event-plan-scroll" role="region" aria-label="FESKUM booth map. Select a booth for vendor details."><div class="event-site-plan">
+      <div class="event-plan-scroll" role="region" aria-label="FESKUM booth map. Select a booth to explore."><div class="event-site-plan">
       <svg class="event-plan-drawing" viewBox="0 0 800 840" aria-hidden="true">
         <defs><pattern id="plan-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#202e55" stroke-opacity=".045"/></pattern><pattern id="plan-service" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V8" stroke="#202e55" stroke-opacity=".08" stroke-width="3"/></pattern></defs>
         <rect width="800" height="840" fill="#f8f9f6"/><rect width="800" height="840" fill="url(#plan-grid)"/>
@@ -82,6 +84,7 @@ export function feskumMount(root) {
       </div></div><div class="event-plan-foot"><span>Tap a booth</span><span>Not to scale</span></div></div>`;
   }
   function details() {
+    if (kpsBooth(selected)) return kpsDetailsHTML(selected);
     const b=FESKUM_BOOTHS.find(b=>b.id===selected);
     if(!b) return '';
     const z=zoneFor(b.zone);
@@ -89,7 +92,7 @@ export function feskumMount(root) {
     const row=b.zone==='creative'?1:Math.floor(index/3)+1;
     const aisle=b.zone==='food'?'A':b.zone==='flowers'?'B':'C';
     const position=b.zone==='creative'?index+1:index%3+1;
-    return `<button class="festival-dropdown-close" data-close-vendor aria-label="Close vendor details">${icon('x')}</button><div class="festival-detail-heading ${z.color}"><span class="festival-vendor-emoji" aria-hidden="true">${b.emoji}</span><span class="badge">Booth ${b.id}</span><h3>${esc(b.name)}</h3><p>${esc(b.category)}</p></div><div class="festival-detail-body"><ul class="festival-menu">${b.items.map(i=>`<li><span>${esc(i.name)}</span><b>${rm(i.cents)}</b></li>`).join('')}</ul><div class="festival-vendor-tags">${b.tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div><div class="festival-vendor-location">${icon('map-pin')}<div><b>${esc(z.name)} · Row ${row}</b><span>Position ${position} · Aisle ${aisle}</span></div></div></div>`;
+    return `<button class="festival-dropdown-close" data-close-vendor aria-label="Close stall">${icon('x')}</button><div class="festival-detail-heading ${z.color}"><span class="festival-vendor-emoji" aria-hidden="true">${b.emoji}</span><span class="badge">Booth ${b.id}</span><h3>${esc(b.name)}</h3><p>${esc(b.category)}</p></div><div class="festival-detail-body"><ul class="festival-menu">${b.items.map(i=>`<li><span>${esc(i.name)}</span><b>${rm(i.cents)}</b></li>`).join('')}</ul><div class="festival-vendor-tags">${b.tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div><div class="festival-vendor-location">${icon('map-pin')}<div><b>${esc(z.name)} · Row ${row}</b><span>Position ${position} · Aisle ${aisle}</span></div></div></div>`;
   }
   $('#festival-map',root).innerHTML=overview();
   const dropdown=$('#festival-vendor-dropdown',root);
@@ -116,16 +119,20 @@ export function feskumMount(root) {
     selected=id;
     booths.forEach(b=>{const on=b.dataset.booth===id;b.classList.toggle('selected',on);b.setAttribute('aria-expanded',String(on));});
     dropdown.innerHTML=details();dropdown.hidden=false;
-    dropdown.setAttribute('aria-label',`${FESKUM_BOOTHS.find(b=>b.id===id).name}, booth ${id}`);
+    const kps=kpsBooth(id);
+    if(kps){explored.add(id);$(`[data-booth="${id}"]`,root).classList.add('is-explored');$('#kps-explored-count',root).textContent=explored.size;const progress=$('#kps-explore-progress',root);progress.setAttribute('aria-valuenow',String(explored.size));progress.style.setProperty('--explored', `${explored.size/76*100}%`);}
+    dropdown.setAttribute('aria-label', kps ? `Tapak KPS, ${kps.number ? 'Booth ' + kps.label : kps.label}, ${kps.vendor?.name || kps.category}` : `${FESKUM_BOOTHS.find(b=>b.id===id).name}, booth ${id}`);
     $('[data-close-vendor]',dropdown).onclick=()=>closeVendor(true);
     positionVendor();dropdown.focus({preventScroll:true});
     dropdown.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth',block:'nearest'});
-    $('#festival-selection-status',root).textContent=`Booth ${id} details opened.`;
+    $('#festival-selection-status',root).textContent=`Exploring stall ${kps?.label || id}`;
   }
-  booths.forEach(b=>{b.onclick=()=>openVendor(b.dataset.booth);});
+  booths.forEach(b=>{b.onclick=()=>openVendor(b.dataset.booth);if(b.hasAttribute('data-kps-booth'))b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openVendor(b.dataset.booth);}};});
+  const zoomCleanup=mountKpsZoom(root,()=>{if(selected&&kpsBooth(selected))closeVendor();});
+  root.addEventListener('scroll',positionVendor,true);
   const outside=e=>{if(!dropdown.hidden&&!dropdown.contains(e.target)&&!e.target.closest('[data-booth]'))closeVendor();};
   const escape=e=>{if(e.key==='Escape'&&!dropdown.hidden){e.preventDefault();closeVendor(true);}};
   document.addEventListener('click',outside);dropdown.addEventListener('keydown',escape);
   window.addEventListener('resize',positionVendor);
-  return ()=>{document.removeEventListener('click',outside);window.removeEventListener('resize',positionVendor);};
+  return ()=>{zoomCleanup();root.removeEventListener('scroll',positionVendor,true);document.removeEventListener('click',outside);dropdown.removeEventListener('keydown',escape);window.removeEventListener('resize',positionVendor);};
 }

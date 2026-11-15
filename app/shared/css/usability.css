@@ -1,0 +1,83 @@
+/* Shared finishing rules: readable guidance, clear controls and comfortable touch targets.
+   Layouts, programme data and feature permissions stay in their role-specific modules. */
+#view { overflow-wrap:break-word; }
+#view .btn,.sheet .btn { min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4;text-align:center; }
+#view .btn .ic,.sheet .btn .ic { flex-shrink:0; }
+#view input,#view select,#view textarea { max-width:100%; }
+#view :is(.row,.field,.stack) > :is(input,select,textarea) { min-width:0; }
+.points-summary { border-bottom:4px solid #d7d1fa;background:#f6f4ff;padding:19px; }
+.points-summary > span { width:42px;height:42px;flex-basis:42px;border-radius:14px;background:#e7e2ff;color:#2420d7; }
+.points-summary b { font-size:15px;color:#242054; }
+.points-summary small { font-size:12px;color:#555f7c; }
+.points-summary > strong { font-size:20px;background:#eaff00;color:#242054;padding:9px 12px; }
+.points-summary > strong small { font-size:11px;color:inherit; }
+.points-summary > .ic:last-child { color:#4540c5; }
+.points-reward-context p { font-size:13px;color:#535f7d; }
+.points-reward-context a { font-size:12px;color:#302fa0; }
+.points-reward-context > span .ic { color:#4642b0; }
+.points-finished-note,.points-records p { color:#535e7b; }
+.points-budget-scenario p,.points-admin-summary p { font-size:12px;color:#53617b; }
+.points-budget-scenario h2 small { color:#596b86; }
+.reward-face-value span { font-size:12px;color:#5b657e; }
+.merchant-page .mer-action p { font-size:13px;color:#535d78; }
+.merchant-page .mer-page-head p { font-size:14px;color:#555d7a; }
+.merchant-page .mer-metric .k { font-size:12px;color:#535b77; }
+.merchant-home-status .badge { font-size:11px; }
+.merchant-page .mer-hero-location { font-size:12px; }
+.mpp .hep-page-head p { font-size:14px;color:#535d7a; }
+.mpp .hep-metric .k { font-size:12px;color:#535777; }
+.mpp .hep-metric .s { font-size:12px;color:#585e7b; }
+.mpp .card h2 + p,.mpp .item p { font-size:13px; }
+.mpp table.data { font-size:13px; }
+.mpp table.data th { font-size:11px;color:#4d4c6c; }
+.mpp .hep-feature-grid .check .faint { font-size:12px;color:#555d79; }
+.mpp .table-wrap { max-width:100%;overscroll-behavior-x:contain; }
+.mpp .hep-feature-grid .check > span { min-width:0; }
+.mpp .hep-feature-grid .check b { white-space:normal; }
+.mpp .hep-feature-grid .check .faint { display:block; }
+/* Disabled actions stay legible and visually separate from enabled, high-contrast actions. */
+#view .btn:disabled { opacity:1;background:#eff0f6;color:#71778c;border-color:#d8dbe7;box-shadow:none; }
+#view .btn:disabled .ic { color:inherit; }
+@media (max-width:1023px) {
+  #view input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+  #view select,#view textarea,.sheet input:not([type=checkbox]):not([type=radio]),.sheet select,.sheet textarea { font-size:16px; }
+}
+@media (pointer:coarse), (max-width:650px) {
+  #view .btn,#view .btn.small,.sheet .btn,.sheet .btn.small,
+  #view .chips button,#view .av-categories button,.mpp .rail .menu-toggle { min-height:44px; }
+  .event-slide-buttons button,.event-home-play { width:44px;height:44px; }
+  .event-slide-dots button { min-width:24px;min-height:32px; }
+  .event-slide-dots { max-width:100%; }
+  .event-slide-controls { flex-wrap:wrap;gap:10px; }
+  .event-slide-controls .event-slide-dots { order:3;flex:1 0 100%; }
+  .event-slide-count { margin-left:auto; }
+  #view .av-stage > .row { flex-wrap:wrap; }
+}
+@media(max-width:650px) {
+  .points-summary { padding:16px 14px;gap:11px; }
+  .points-summary b { font-size:14px; }
+  .points-summary small { font-size:12px; }
+  .points-summary > strong { font-size:18px;padding:9px; }
+  .points-summary > strong small { font-size:10px; }
+  .points-reward-context p { min-width:0;font-size:13px; }
+  .points-reward-context a { font-size:12px;min-height:30px; }
+  .merchant-page .mer-action p { font-size:12px;line-height:1.6; }
+  .mpp .hep-account-actions .btn { min-height:44px; }
+  .mpp .hep-period select { min-height:44px; }
+}
+@media(max-width:520px) {
+  .invite-code { grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px; }
+  .invite-code > div { grid-column:1/-1; }
+  .invite-code .code-text { font-size:20px;letter-spacing:1px;word-break:normal; }
+  .invite-code > .btn { width:100%; }
+}
+@media(max-width:380px) {
+  .mpp .onz-hep-header { min-width:0;padding-inline:12px;gap:8px; }
+  .mpp .onz-hep-header .brand img.onz-brand-logo { width:128px; }
+}
+@media(min-width:1024px) {
+  .tabbar { overflow-y:auto;overscroll-behavior-y:contain; }
+}
+@media(max-height:600px) and (min-width:760px) {
+  .av-editor .av-stage { position:static; }
+}

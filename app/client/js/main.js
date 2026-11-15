@@ -10,17 +10,19 @@ import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
 import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
+import { INFORMATION_ROUTES } from './information.js';
+import { mountPageMotion } from './motion.js';
 initI18n();
 
 const app = {
   site: 'client', backend: null, ctx: null, user: null, profile: null, isMpp: false, rules: D.DEFAULT_RULES, role: null,
-  merchant: null, visits: [], ledger: [], appDays: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
+  merchant: null, visits: [], ledger: [], ledgerLoaded: false, appDays: [], watchers: [], viewCleanup: null, routes: {}, shellRole: null,
 };
 window.__umc = app; // handy for debugging in the console
 
 const nav = {
-  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house', true], ['promote', 'Promote live deals', 'megaphone'], ['insights', 'Insights', 'chart-column']],
+  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['promote', 'Promote live deals', 'megaphone'], ['insights', 'Insights', 'chart-column']],
 };
 
 // A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
@@ -50,14 +52,15 @@ async function boot() {
 }
 
 async function onUser(user) {
+  if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   stopWatchers(); closeSheet();
-  app.user = user; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.appDays = []; app.shellRole = null;
+  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
-  if (!user) return Auth.renderSignIn(app);
+  if (!user) return informationRoute()?renderPublicInformation():Auth.renderSignIn(app);
   Auth.googleWorked();
   // Ask the browser to keep this site's storage (and so the sign-in) instead of clearing it when space runs low.
   try { navigator.storage?.persist?.().catch(() => {}); } catch { /* not supported */ }
-  if (mode === 'live' && !user.emailVerified) return Auth.renderVerify(app);
+  if (mode === 'live' && !user.emailVerified) return informationRoute()?renderPublicInformation():Auth.renderVerify(app);
   // Opened from the iPhone home-screen app to sign in: hand the sign-in back instead of opening the app here.
   const hoHash = mode === 'live' ? Auth.handoffHash() : null;
   if (hoHash) return Auth.renderHandoffDone(app, user, hoHash, await D.isMppUser({ sdk, db, uid: user.uid, email: user.email }));
@@ -65,6 +68,7 @@ async function onUser(user) {
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
   try { app.rules = await D.getRules(app.ctx); } catch { app.rules = D.DEFAULT_RULES; }
+  if(informationRoute()&&(!profile||profile.disabled||D.needsTerms(profile)||(profile.role==='merchant'&&!D.featureOn(app.rules,'merchantSignup')&&!D.featureOn(app.rules,'merchantTools'))))return renderPublicInformation();
   if (profile?.disabled) return Auth.renderBlocked(app);
   if (profile?.role === 'merchant' && !D.featureOn(app.rules, 'merchantSignup') && !D.featureOn(app.rules, 'merchantTools')) return Auth.renderComingSoon(app);
   if (isMpp && !profile) return Auth.renderAdminElsewhere(app, () => Auth.renderOnboarding(app, onboarded));
@@ -87,7 +91,7 @@ function startRole(role) {
   }, () => {}));
   if (role === 'student') {
 
-    app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.emit && app.emit('ledger'); }, () => {}));
+    app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.ledgerLoaded = true; app.emit && app.emit('ledger'); }, () => {}));
     app.watchers.push(D.watchAppDays(app.ctx, (days) => { app.appDays = days; app.emit && app.emit('app-activity'); }, () => {}));
     app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
   }
@@ -135,7 +139,7 @@ function shell(role, routes) {
       </header>
       <main class="view" id="view"></main>
       <nav class="tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, center]) =>
-        `<a href="#/${k}" data-tab="${k}" class="${center ? 'center' : ''}">${center ? `<span class="bubble">${icon(ic)}</span>` : icon(ic)}<span>${label}</span></a>`).join('')}</nav>
+        `<a href="#/${k}" data-tab="${k}" class="${center ? 'center' : ''}${k==='about'&&role==='merchant'?' nav-desktop-only':''}">${center ? `<span class="bubble">${icon(ic)}</span>` : icon(ic)}<span>${label}</span></a>`).join('')}</nav>
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
@@ -158,6 +162,8 @@ function accountSheet() {
       ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
       ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
       ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the Admin dashboard</a>` : ''}
+      <a class="btn block" href="#/about" data-close>${icon('info')} About us</a><a class="btn block" href="#/contact" data-close>${icon('mail')} Contact us</a>
+      <a class="btn block" href="#/points" data-close>${icon('sparkles')} Points guide</a>
       <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
       <button class="btn block" id="install">Install the app on this device</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
@@ -192,8 +198,36 @@ function addDemoRibbon() {
 }
 app.addDemoRibbon = addDemoRibbon;
 
+const informationRoute=()=>{
+  const parts=location.hash.replace(/^#\/?/,'').split('/');
+  return Object.hasOwn(INFORMATION_ROUTES,parts[0])?{page:parts[0],args:parts.slice(1)}:null;
+};
+async function renderPublicInformation() {
+  const requested=informationRoute();if(!requested)return;
+  const token=Symbol();render.token=token;
+  if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
+  closeSheet();app.shellRole=null;
+  const route=INFORMATION_ROUTES[requested.page];
+  document.body.classList.remove('mpp-mode');
+  document.body.innerHTML=`<div class="info-public-shell"><header class="info-public-header"><a href="#/home" aria-label="+Onz home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"></a><span class="spacer"></span>${langToggleHTML()}<a class="info-public-open" href="#/home">${app.user?'Open app':'Sign in'} ${icon('arrow-right')}</a></header><main class="info-public-main" id="view"></main></div>`;
+  document.title=route.title+' · +Onz';
+  const view=$('#view');
+  const html=await route.render(app,requested.args);
+  if(render.token!==token)return;
+  view.innerHTML=html;window.scrollTo(0,0);
+  const cleanup=route.mount?.(view,app,requested.args);
+  const stopMotion=mountPageMotion(view);
+  app.viewCleanup=()=>{stopMotion();cleanup?.();};
+}
 async function render() {
-  if (!app.role || !app.user) return;
+  if(informationRoute()&&!(app.user&&app.profile&&!app.profile.disabled&&!D.needsTerms(app.profile)&&app.role===app.profile.role))return renderPublicInformation();
+  if(!app.user){if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}return Auth.renderSignIn(app);}
+  if(!app.role||!app.profile)return onUser(app.user);
+  try {
+    const next=await D.getRules(app.ctx);
+    if(JSON.stringify(next.features)!==JSON.stringify(app.rules.features))app.shellRole=null;
+    app.rules=next;
+  } catch { /* use the last loaded rules while offline */ }
   const mod = await loadRoleModule(app.role);
   shell(app.role, mod.routes);
   const requestedPath = location.hash.replace(/^#\/?/, '') || mod.defaultRoute;
@@ -204,7 +238,11 @@ async function render() {
   const r = mod.routes[route];
   if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }
   if (sheetOpen()) closeSheet();
-  $$('.tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.tab === (r.tab || route)));
+  $$('.tabbar a').forEach((a) => {
+    const active=a.dataset.tab===(r.tab||route);
+    a.classList.toggle('on',active);
+    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
   view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
@@ -217,7 +255,8 @@ async function render() {
     window.scrollTo(0, 0);
     const cleanup = r.mount ? await r.mount(view, app, parts.slice(1)) : null;
     if (render.token !== token) { cleanup && cleanup(); return; }
-    app.viewCleanup = cleanup || null;
+    const stopMotion=mountPageMotion(view);
+    app.viewCleanup = ()=>{stopMotion();cleanup?.();};
     $$('[data-bind=points]', view).forEach((el) => { el.dataset.v = app.profile?.points || 0; });
   } catch (e) {
     console.error(e);

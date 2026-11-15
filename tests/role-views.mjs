@@ -30,9 +30,9 @@ const makeApp = async (ctx) => ({ ctx, user: { uid: ctx.uid, email: ctx.email },
   merchant: { id: 'merchant', name: 'Test Shop', status: 'verified', ready: true, lat: 3.12, lng: 101.65 } });
 let passed = 0;
 for (const [role, mod, app, routes] of [
-  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'explore', 'delete-account']],
-  ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account']],
-  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings']],
+  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'explore', 'delete-account', 'about', 'contact', 'points']],
+  ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account', 'about', 'contact', 'points']],
+  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings', 'points']],
 ]) {
   for (const route of routes) {
     const html = await mod.routes[route].render(app, []);
@@ -141,4 +141,12 @@ const migrated = sdk._rawDocs().get('config/rules');
 assert.equal(migrated.features.overview, false); assert.equal(migrated.features.dealsAndPay, false);
 assert.equal(migrated.features.merchantTools, true);
 console.log('  ✓ Saved demos gain missing settings without resetting explicit HEP choices or student data'); passed++;
+
+const pausedDealsApp=await makeApp(merchant);
+pausedDealsApp.rules={...pausedDealsApp.rules,features:{...pausedDealsApp.rules.features,dealsAndPay:false}};
+const pausedHome=await M.routes.home.render(pausedDealsApp,[]);
+assert.ok(!pausedHome.includes('href="#/scan"')&&!pausedHome.includes('href="#/promote"'),'Merchant Home advertises inactive live-deal earning');
+assert.ok(pausedHome.includes('href="#/points"'),'Merchants need access to the point rules');
+for(const route of ['scan','promote'])assert.ok(M.routes[route].feature.includes('dealsAndPay'),'Inactive live deals must not expose '+route);
+console.log('  ✓ Disabled live deals hide merchant claim/promotion actions while keeping the points guide available'); passed++;
 console.log(`\n${passed} passed, 0 failed`);

@@ -1,5 +1,262 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Three lessons. One-time points.|Tiga pelajaran. Mata diberikan sekali sahaja.
+Current programme settings|Tetapan program semasa
+Default programme settings|Tetapan program lalai
+Keep learning with Learn & Earn. Your survey bonus is awarded once.|Teruskan pembelajaran melalui Belajar & Dapat Mata. Bonus tinjauan anda diberikan sekali sahaja.
+Review your shop readiness. Live deals are available only when enabled by the Admin team.|Semak kesediaan kedai anda. Tawaran aktif hanya tersedia apabila diaktifkan oleh pasukan Admin.
+Positive awards count for levels and leagues; welfare support must be approved from the pooled fund.|Anugerah mata positif dikira untuk tahap dan liga; bantuan kebajikan mesti diluluskan daripada tabung bersama.
+Points guide|Panduan mata
+Student points explained|Penjelasan mata pelajar
+Vouchers are fulfilled by the Admin team.|Baucar ditunaikan oleh pasukan Admin.
+How points work|Cara mata berfungsi
+Three lessons + Money check. Each paid once.|Tiga pelajaran + Semakan kewangan. Mata diberikan sekali sahaja.
+Your points, clearly explained|Penjelasan tentang mata anda
+Learn. Earn. Make them count.|Belajar. Kumpul mata. Jadikannya bermakna.
+Points are an in-app balance with no cash value. They are used for programme vouchers or donated to student welfare.|Mata ialah baki dalam aplikasi tanpa nilai tunai. Mata digunakan untuk baucar program atau disumbangkan kepada kebajikan pelajar.
+one-time learning points|mata pembelajaran sekali sahaja
+Default guide: 200 points ≈ RM2 in voucher value.|Panduan lalai: 200 mata ≈ RM2 nilai baucar.
+Three lessons at 50 points plus the 50-point Money check. The Admin team can change future bonuses and each reward’s price.|Tiga pelajaran bernilai 50 mata setiap satu serta 50 mata untuk Semakan kewangan. Pasukan Admin boleh mengubah bonus akan datang dan harga setiap ganjaran.
+Available balance|Baki yang tersedia
+Earned for levels & leagues|Mata terkumpul untuk tahap & liga
+Learning points still available|Mata pembelajaran yang masih boleh dikumpul
+Five ways points reach a student|Lima cara pelajar menerima mata
+Three lessons. Earn the bonus on the first correct answer for each lesson; practice gives no extra points.|Tiga pelajaran. Bonus diberikan untuk jawapan betul pertama bagi setiap pelajaran; latihan tidak memberikan mata tambahan.
+Complete the knowledge and confidence survey once to earn its bonus.|Lengkapkan tinjauan pengetahuan dan keyakinan sekali untuk menerima bonusnya.
+Admin awards & corrections|Anugerah & pembetulan Admin
+The Admin team can award event points or correct a balance. Every adjustment needs a written reason.|Pasukan Admin boleh memberikan mata acara atau membetulkan baki. Setiap pelarasan memerlukan sebab bertulis.
+Admin only|Admin sahaja
+Welfare grants|Bantuan kebajikan
+Request up to 1,000 points at a time. Approval moves existing points from the shared fund into your balance; it creates no new points and does not count for levels or leagues.|Mohon sehingga 1,000 mata pada satu-satu masa. Kelulusan memindahkan mata sedia ada daripada tabung bersama ke baki anda; tiada mata baharu diwujudkan dan bantuan ini tidak dikira untuk tahap atau liga.
+Pool transfer|Pindahan tabung
+Enabled in this demo|Diaktifkan dalam demo ini
+Currently enabled|Sedang diaktifkan
+Currently off|Sedang dinyahaktifkan
+Off by default|Dinyahaktifkan secara lalai
+When enabled, a valid merchant QR claim earns points once per student, per deal, per day.|Apabila diaktifkan, tuntutan QR peniaga yang sah memberikan mata sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari.
+Live deals are off by default in production. The Admin team controls this feature.|Tawaran aktif dinyahaktifkan secara lalai dalam versi produksi. Pasukan Admin mengawal ciri ini.
+These do not award points|Aktiviti ini tidak memberikan mata
+Daily app streaks, referrals and browsing the campus map. Campus attendance and weekly missions are retired; only the Admin team can settle archived mission claims.|Rentetan penggunaan harian, rujukan rakan dan melihat peta kampus tidak memberikan mata. Sistem kehadiran kampus dan misi mingguan telah ditamatkan; hanya pasukan Admin boleh menyelesaikan tuntutan misi lama.
+Two ways to use your balance|Dua cara menggunakan baki anda
+Swap for a voucher|Tukar kepada baucar
+Points leave your balance when you swap. You receive an 8-character voucher code to show to the Admin team, who honour it and mark it used once.|Mata ditolak daripada baki apabila anda menukarnya. Anda menerima kod baucar 8 aksara untuk ditunjukkan kepada pasukan Admin, yang menunaikannya dan menandakan baucar sebagai telah digunakan sekali.
+Rewards must be active and in stock. Check the voucher’s expiry date. Deleting your account removes unused vouchers.|Ganjaran mestilah aktif dan masih tersedia. Semak tarikh luput baucar. Pemadaman akaun membatalkan baucar yang belum digunakan.
+Donate to student welfare|Sumbang kepada kebajikan pelajar
+Give points from your balance to the pooled fund. Students can request support privately; only the student and the Admin team see the request.|Sumbangkan mata daripada baki anda kepada tabung bersama. Pelajar boleh memohon bantuan secara peribadi; hanya pelajar berkenaan dan pasukan Admin boleh melihat permohonan itu.
+Donations and grants move existing points. They do not create new value.|Sumbangan dan bantuan memindahkan mata sedia ada. Tiada nilai baharu diwujudkan.
+Reference pricing, not cash|Harga rujukan, bukan wang tunai
+100 points ≈ RM1 of voucher value|100 mata ≈ RM1 nilai baucar
+Default rewards use 1 point per sen. Each reward has its own points price and RM value, so its actual rate may differ. Points cannot be sold or exchanged for cash.|Ganjaran lalai menggunakan kadar 1 mata bagi setiap sen. Setiap ganjaran mempunyai harga mata dan nilai RM tersendiri, jadi kadar sebenar mungkin berbeza. Mata tidak boleh dijual atau ditukar kepada wang tunai.
+Levels, hats and your KK|Tahap, topi dan KK anda
+earned points|mata yang dikumpul
+Levels and the KK and Faculty Leagues count positive points earned, excluding welfare grants. Spending or donating does not reduce these totals. Hats unlock with levels; they are not bought with points.|Tahap serta Liga KK dan Fakulti mengira mata positif yang dikumpul, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata tidak mengurangkan jumlah ini. Topi dibuka mengikut tahap, bukannya dibeli dengan mata.
+At default settings, self-directed learning reaches Regular at 200 points. Explorer and higher need Admin awards, or live deals if enabled. Deleting an account removes its contribution from the league totals.|Dengan tetapan lalai, pembelajaran kendiri mencapai tahap Pengguna tetap pada 200 mata. Tahap Penjelajah dan ke atas memerlukan anugerah Admin atau tawaran aktif jika diaktifkan. Pemadaman akaun mengeluarkan sumbangannya daripada jumlah liga.
+How the balance is protected|Cara baki dilindungi
+Each balance change and its points-history entry are saved together. The history cannot be edited or deleted. The rules prevent repeat lesson bonuses, duplicate daily deal claims and negative balances.|Setiap perubahan baki dan catatan sejarah matanya disimpan bersama. Sejarah itu tidak boleh disunting atau dipadam. Peraturan menghalang bonus pelajaran berulang, tuntutan tawaran harian berganda dan baki negatif.
+Changing a bonus affects future awards only. Past points remain unchanged. The Admin team can correct mistakes with a recorded reason.|Perubahan bonus hanya mempengaruhi anugerah akan datang. Mata terdahulu kekal tidak berubah. Pasukan Admin boleh membetulkan kesilapan dengan sebab yang direkodkan.
+Earn, use and understand your +Onz points.|Kumpul, gunakan dan fahami mata +Onz anda.
+Your one-time learning bonuses are complete. Higher levels need Admin awards, or live deals when enabled.|Anda telah melengkapkan bonus pembelajaran sekali sahaja. Tahap yang lebih tinggi memerlukan anugerah Admin atau tawaran aktif apabila diaktifkan.
+pts per eligible deal|mata bagi setiap tawaran yang layak
+Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.|Tahap mengira mata positif yang dikumpul, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata mengekalkan kemajuan dan topi yang telah dibuka.
+Full points guide|Panduan mata lengkap
+Open +Onz each day to keep your streak. Streaks do not award points.|Buka +Onz setiap hari untuk mengekalkan rentetan anda. Rentetan tidak memberikan mata.
+Default reward pricing: 100 points ≈ RM1 in voucher value. Each reward sets its own points price; points are not cash.|Harga ganjaran lalai: 100 mata ≈ RM1 nilai baucar. Setiap ganjaran menetapkan harga matanya sendiri; mata bukan wang tunai.
+voucher value|nilai baucar
+Voucher added. Show it to the Admin team for redemption.|Baucar ditambah. Tunjukkannya kepada pasukan Admin untuk penebusan.
+Correct. Points added to your balance.|Betul. Mata ditambah kepada baki anda.
+Positive earned points count for your KK, excluding welfare grants. Spending or donating never lowers the score. Deleted accounts no longer contribute.|Mata positif yang dikumpul menyumbang kepada KK anda, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata tidak mengurangkan skor. Akaun yang dipadam tidak lagi menyumbang.
+Friends enter your code when they sign up. It sends a friend request, not a points bonus.|Rakan memasukkan kod anda semasa mendaftar. Ini menghantar permintaan rakan, bukannya memberikan bonus mata.
+Ask the Admin team for up to 1,000 pooled points per request. Grants do not count for levels or leagues.|Mohon sehingga 1,000 mata tabung bersama bagi setiap permohonan daripada pasukan Admin. Bantuan tidak dikira untuk tahap atau liga.
+Hats unlock with earned levels. Spending points never takes them away.|Topi dibuka mengikut tahap mata yang dikumpul. Penggunaan mata tidak menarik balik topi yang telah dibuka.
+points once per student, per deal, per day after a successful QR scan.|mata sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari selepas imbasan QR yang berjaya.
+Unspent-point scenario|Senario mata belum digunakan
+at default voucher prices|pada harga baucar lalai
+student points|mata pelajar
+pooled welfare points|mata tabung kebajikan bersama
+This is a planning estimate at 1 point per sen, assuming enough reward stock. It is not paid out or committed; each reward can use a different rate.|Ini ialah anggaran perancangan pada kadar 1 mata bagi setiap sen, dengan andaian stok ganjaran mencukupi. Jumlah ini belum dibayar atau dijanjikan; setiap ganjaran boleh menggunakan kadar berbeza.
+Default pricing is 100 points per RM1 of voucher value. Each reward has its own price; this is not a fixed cash exchange rate.|Harga lalai ialah 100 mata bagi setiap RM1 nilai baucar. Setiap ganjaran mempunyai harga tersendiri; ini bukan kadar pertukaran wang tunai yang tetap.
+Only the Admin team fulfils reward vouchers. Mark each voucher used after honouring it. Expired unused vouchers are excluded from promised value.|Hanya pasukan Admin menunaikan baucar ganjaran. Tandakan baucar sebagai telah digunakan selepas menunaikannya. Baucar belum digunakan yang telah luput dikecualikan daripada nilai yang dijanjikan.
+Points move from the welfare pool to the student’s balance. They do not count towards levels or leagues.|Mata dipindahkan daripada tabung kebajikan ke baki pelajar. Mata ini tidak dikira untuk tahap atau liga.
+Set points needed and voucher value independently. The default guide is 1 point per sen.|Tetapkan mata yang diperlukan dan nilai baucar secara berasingan. Panduan lalai ialah 1 mata bagi setiap sen.
+Three lesson bonuses plus one Money check. Daily streaks and referrals do not award points.|Tiga bonus pelajaran serta satu Semakan kewangan. Rentetan harian dan rujukan rakan tidak memberikan mata.
+Only when live deals are enabled. Once per student, per deal, per day.|Hanya apabila tawaran aktif diaktifkan. Sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari.
+Your available balance is for vouchers or welfare donations. Points have no cash value.|Baki tersedia anda adalah untuk baucar atau sumbangan kebajikan. Mata tidak mempunyai nilai tunai.
+Swap points for Admin-fulfilled vouchers. Streaks track app visits and do not award points.|Tukarkan mata kepada baucar yang ditunaikan oleh Admin. Rentetan merekodkan penggunaan aplikasi dan tidak memberikan mata.
+This is your college, its rank and its total points. Positive earned points add to it; welfare grants do not.|Ini ialah kolej anda, kedudukannya dan jumlah matanya. Mata positif yang dikumpul menyumbang kepadanya; bantuan kebajikan tidak dikira.
+About us|Tentang kami
+About|Tentang
+About and contact|Maklumat dan hubungan
+Information pages|Halaman maklumat
+Back to app|Kembali ke aplikasi
+Student-led. Campus-connected.|Diterajui pelajar. Menghubungkan warga kampus.
+Campus life, with a little extra.|Kehidupan kampus dengan nilai tambah.
+Discover campus businesses and events, build money confidence, and make everyday participation more rewarding.|Terokai perniagaan dan acara kampus, bina keyakinan mengurus wang dan jadikan penyertaan harian lebih bermakna.
+Be part of the journey|Sertai perjalanan ini
+The +Onz journey|Perjalanan +Onz
+Discover|Teroka
+Find your campus favourites.|Temui pilihan kegemaran anda di kampus.
+Learn|Belajar
+Build confidence with money.|Bina keyakinan mengurus wang.
+Earn|Kumpul mata
+Turn eligible actions into rewards.|Tukarkan aktiviti yang layak kepada ganjaran.
+Give back|Menyumbang
+Support your campus community.|Sokong komuniti kampus anda.
+Our story|Kisah kami
+What is +Onz?|Apakah +Onz?
++Onz is a student-led platform connecting Universiti Malaya’s students, campus businesses and events. We bring discovery, financial learning and rewards together in one campus experience.|+Onz ialah platform yang diterajui pelajar untuk menghubungkan pelajar Universiti Malaya dengan perniagaan dan acara kampus. Kami menggabungkan penerokaan kampus, pembelajaran kewangan dan ganjaran dalam satu pengalaman.
+We are a UM student team building this initiative as part of our PayNet Digital Campus campaign. Our focus is practical: help local businesses get noticed, encourage confident digital-payment habits, and bring the campus community closer.|Kami ialah pasukan pelajar UM yang membangunkan inisiatif ini sebagai sebahagian daripada kempen PayNet Digital Campus kami. Tumpuan kami ialah membantu perniagaan setempat dikenali, memupuk keyakinan menggunakan pembayaran digital dan mengeratkan hubungan komuniti kampus.
+Built with you, for campus.|Dibina bersama anda, untuk kampus.
+Your participation, ideas and feedback help shape what +Onz becomes.|Penyertaan, idea dan maklum balas anda membantu membentuk masa depan +Onz.
+Talk to the team|Hubungi pasukan kami
+Why we are doing this|Mengapa kami melakukannya
+Small actions. Shared impact.|Tindakan kecil. Impak bersama.
+More visibility|Lebih dikenali
+Help campus businesses and student ventures reach the people around them.|Bantu perniagaan kampus dan usaha niaga pelajar menjangkau komuniti di sekeliling mereka.
+More confidence|Lebih yakin
+Make financial learning useful, approachable and part of student life.|Jadikan pembelajaran kewangan berguna, mudah difahami dan sebahagian daripada kehidupan pelajar.
+More connection|Lebih terhubung
+Bring students, businesses, colleges and event organisers into the same journey.|Satukan pelajar, perniagaan, kolej kediaman dan penganjur acara dalam perjalanan yang sama.
+You are part of it|Anda sebahagian daripadanya
+Choose your way in.|Pilih cara anda untuk turut serta.
+There is more than one way to add something to campus life.|Terdapat pelbagai cara untuk menyumbang kepada kehidupan kampus.
+Merchant / business owner|Peniaga / pemilik perniagaan
+Put your business on the campus radar. Connect with students and explore live-deal collaborations.|Perkenalkan perniagaan anda kepada warga kampus. Berhubung dengan pelajar dan terokai kerjasama tawaran langsung.
+Partner with us|Jalin kerjasama dengan kami
+KK / event organiser|KK / penganjur acara
+Bring your college, club or event into the picture. Share your plans, activities and stall layouts with us.|Libatkan kolej kediaman, kelab atau acara anda. Kongsikan rancangan, aktiviti dan susun atur gerai anda dengan kami.
+Plan a collaboration|Rancang kerjasama
+Discover, learn, earn and invite friends. Share your ideas or ask how to help with the campaign.|Teroka, belajar, kumpul mata dan jemput rakan. Kongsikan idea anda atau tanyakan cara untuk membantu kempen ini.
+Join the journey|Sertai perjalanan ini
+Participation that counts|Penyertaan yang bermakna
+How the points work.|Cara sistem mata berfungsi.
+Earn through eligible activities, then choose how to use your points.|Kumpul mata melalui aktiviti yang layak, kemudian pilih cara untuk menggunakannya.
+Answer a lesson quiz correctly for the first time.|Jawab kuiz pelajaran dengan betul buat kali pertama.
+Complete your financial knowledge and confidence survey for the first time.|Lengkapkan tinjauan pengetahuan dan keyakinan kewangan anda buat kali pertama.
+Scan a merchant’s live-deal QR and complete an eligible claim.|Imbas QR tawaran langsung peniaga dan lengkapkan tuntutan yang layak.
+Each activity in the app shows its current point value and eligibility rules.|Setiap aktiviti dalam aplikasi memaparkan jumlah mata semasa dan syarat kelayakannya.
+From points to impact|Daripada mata kepada impak
+Earn points|Kumpul mata
+Eligible learning and live deals|Pembelajaran dan tawaran langsung yang layak
+Choose your reward|Pilih ganjaran anda
+Use available points in Rewards|Gunakan mata yang tersedia dalam Ganjaran
+Grow your team’s score|Tingkatkan mata pasukan anda
+Earned points count for your KK and faculty|Mata yang dikumpul menyumbang kepada KK dan fakulti anda
+Rewards for you|Ganjaran untuk anda
+Swap available points for rewards listed in the app. The Admin team validates voucher redemption; merchant discounts are claimed separately through Live Deals.|Tukarkan mata yang tersedia kepada ganjaran yang disenaraikan dalam aplikasi. Pasukan Pentadbir mengesahkan penebusan baucar; diskaun peniaga dituntut secara berasingan melalui Tawaran Langsung.
+A reason to rally your KK|Semangat untuk menggerakkan KK anda
+Every student’s earned points contribute to their residential college and faculty. Spending or donating points does not reduce these league totals.|Mata yang dikumpul oleh setiap pelajar menyumbang kepada kolej kediaman dan fakultinya. Penggunaan atau sumbangan mata tidak mengurangkan jumlah mata liga ini.
+Support someone else|Bantu orang lain
+Donate points to the pooled student welfare fund. Students can request support, which the Admin team reviews.|Sumbangkan mata kepada tabung kebajikan pelajar bersama. Pelajar boleh memohon bantuan yang akan disemak oleh Pasukan Pentadbir.
+Something to work towards.|Sesuatu untuk diusahakan bersama.
+Programme prizes and KK League prize details will be announced here once confirmed.|Butiran hadiah program dan Liga KK akan diumumkan di sini setelah disahkan.
+Do app visits and map browsing earn points?|Adakah membuka aplikasi dan melihat peta memberikan mata?
+Opening the app builds your daily app streak. Browsing the map does not award transaction points. Points come from eligible activities shown in the app.|Membuka aplikasi membina rentetan penggunaan harian anda. Melihat peta tidak memberikan mata transaksi. Mata diperoleh melalui aktiviti yang layak dalam aplikasi.
+How do referral codes fit in?|Apakah peranan kod rujukan?
+Friends enter your referral code when they sign up. It sends a friend request and counts towards the top-referrer leaderboard.|Rakan memasukkan kod rujukan anda semasa mendaftar. Tindakan ini menghantar permintaan rakan dan dikira dalam papan kedudukan perujuk teratas.
+Are points the same as money?|Adakah mata sama seperti wang?
+Points have no cash value. Rewards depend on availability, and vouchers follow the terms and expiry date shown in the app.|Mata tidak mempunyai nilai tunai. Ganjaran tertakluk kepada ketersediaan, manakala baucar mengikut syarat dan tarikh luput yang dipaparkan dalam aplikasi.
+Who is behind the app|Siapa di sebalik aplikasi ini
+Meet the people adding the extra.|Kenali pasukan yang memberikan nilai tambah.
+A team of UM students bringing different skills to one campus initiative.|Pasukan pelajar UM yang menggabungkan pelbagai kemahiran dalam satu inisiatif kampus.
+Financial Ecosystem Solutions|Penyelesaian Ekosistem Kewangan
+University & Student Relations|Perhubungan Universiti dan Pelajar
+Digital Ecosystem Solutions|Penyelesaian Ekosistem Digital
+BSc Economics · Year 4|BSc Ekonomi · Tahun 4
+BAcc Accounting · Year 4|BAcc Perakaunan · Tahun 4
+Business Administration · Year 3|Pentadbiran Perniagaan · Tahun 3
+BSc Economics · Year 3|BSc Ekonomi · Tahun 3
+BSc Arts, Anthropology & Sociology · Year 3|BSc Sastera, Antropologi dan Sosiologi · Tahun 3
+BSc Electrical Engineering · Year 3|BSc Kejuruteraan Elektrik · Tahun 3
+BSc Computer Science · Year 2|BSc Sains Komputer · Tahun 2
+Team Lead & Campaign Director|Ketua Pasukan dan Pengarah Kempen
+Finance & Impact Measurement|Kewangan dan Pengukuran Impak
+Your campus. Your contribution.|Kampus anda. Sumbangan anda.
+Let’s add something good.|Mari menyumbang sesuatu yang baik.
+A business, an event, an idea or a question — we would love to hear from you.|Perniagaan, acara, idea atau soalan — kami ingin mendengar daripada anda.
+Contact us|Hubungi kami
+Let’s connect|Mari berhubung
+A partnership, an event, an idea or a question.|Kerjasama, acara, idea atau soalan.
+Let’s start a conversation.|Mari mulakan perbualan.
+Say hello.|Sapa kami.
+For partnerships, collaborations and general enquiries.|Untuk perkongsian, kerjasama dan pertanyaan umum.
+Copy email address|Salin alamat e-mel
+Follow the journey.|Ikuti perkembangan kami.
+Campus updates, new collaborations and what’s next.|Perkembangan kampus, kerjasama baharu dan aktiviti akan datang.
+Opens in a new tab|Dibuka dalam tab baharu
+Prefer to message inside the app?|Lebih suka menghantar mesej dalam aplikasi?
+What’s on your mind?|Apa yang ingin anda kongsikan?
+Prepare your query below, then send it from your email app.|Sediakan pertanyaan anda di bawah, kemudian hantar melalui aplikasi e-mel anda.
+Your name|Nama anda
+Your email|E-mel anda
+I’m getting in touch about|Saya ingin menghubungi tentang
+Merchant / business partnership|Kerjasama peniaga / perniagaan
+KK / event collaboration|Kerjasama KK / acara
+Student participation|Penyertaan pelajar
+App support|Bantuan aplikasi
+General enquiry|Pertanyaan umum
+Tell us a little about your question or idea.|Kongsikan sedikit tentang soalan atau idea anda.
+This form prepares an email draft. Your message is only sent when you send it in your email app.|Borang ini menyediakan draf e-mel. Mesej anda hanya dihantar apabila anda menghantarnya melalui aplikasi e-mel anda.
+Prepare email|Sediakan e-mel
+Your draft is ready. Open it in your email app to send.|Draf anda sudah siap. Buka dalam aplikasi e-mel anda untuk menghantarnya.
+Open email draft|Buka draf e-mel
+Copy message|Salin mesej
+Preview your email|Pratonton e-mel anda
+No email app? Copy the message and send it to partnerships@addonz.my.|Tiada aplikasi e-mel? Salin mesej dan hantarkannya ke partnerships@addonz.my.
+Copied to clipboard.|Disalin ke papan klip.
+Copy is unavailable here. Select the email or preview text to copy it.|Fungsi salin tidak tersedia di sini. Pilih e-mel atau teks pratonton untuk menyalinnya.
+Please add your name and a message of at least 10 characters.|Sila masukkan nama anda dan mesej sekurang-kurangnya 10 aksara.
+Compact view · Not to scale|Paparan ringkas · Tidak mengikut skala
+Back to overview|Kembali ke gambaran keseluruhan
+Choose a stall group|Pilih kumpulan gerai
+Tap a group on the map to get closer.|Ketik kumpulan di peta untuk melihat dengan lebih dekat.
+Tap a numbered stall|Ketik gerai bernombor
+See its vendor, items and prices.|Lihat peniaga, barangan dan harganya.
+Stall groups|Kumpulan gerai
+Stalls|Gerai
+Food & student vendors|Makanan & peniaga pelajar
+14 stalls|14 gerai
+30 stalls|30 gerai
+UM merchandise too|Termasuk barangan UM
+Explore stalls 54–70|Teroka gerai 54–70
+Explore stalls 10–23|Teroka gerai 10–23
+Explore stalls 24–53|Teroka gerai 24–53
+Explore stalls 1–9|Teroka gerai 1–9
+Explore stalls|Teroka gerai
+Whole map|Seluruh peta
+Magnify|Besarkan
+Stalls explored this visit|Gerai diteroka pada lawatan ini
+explored|diteroka
+Drag to move · Tap a stall|Seret untuk bergerak · Ketik gerai
+Tapak KPS floor plan. Drag to move and select a stall.|Pelan Tapak KPS. Seret untuk bergerak dan pilih gerai.
+Stall info coming soon|Maklumat gerai akan datang
+Close stall|Tutup gerai
+FESKUM booth map. Select a booth to explore.|Peta gerai FESKUM. Pilih gerai untuk diteroka.
+Tapak KPS|Tapak KPS
+Tapak Parking KPS|Tapak Parkir KPS
+Adapted layout · Not to scale|Susun atur diubah suai · Bukan mengikut skala
+Source plan|Pelan asal
+numbered booths|gerai bernombor
+Map zoom|Zum peta
+Fit map|Muatkan peta
+Tapak KPS floor plan. Zoom in to select a booth.|Pelan tapak KPS. Zum masuk untuk memilih gerai.
+Interactive Tapak KPS booth map|Peta gerai Tapak KPS interaktif
+Map legend|Petunjuk peta
+Student vendor|Peniaga pelajar
+UM merchandise|Barangan UM
+Mini stage|Pentas mini
+Dining area|Ruang makan
+Vendor names, menus and photos will be added as supplied.|Nama peniaga, menu dan gambar akan ditambah apabila diterima.
+SV1–SV5 and UM are app labels for unnumbered spaces.|SV1–SV5 dan UM ialah label aplikasi bagi ruang tanpa nombor.
+Other areas (demo)|Kawasan lain (demo)
+Booth|Gerai
+Vendor details coming soon|Maklumat peniaga akan datang
+Menu & prices coming soon|Menu dan harga akan datang
+Items, prices and photos will appear here.|Barangan, harga dan gambar akan dipaparkan di sini.
+Unnumbered in source plan|Tanpa nombor dalam pelan asal
+Price pending|Harga belum diterima
+MINI STAGE / DINING|PENTAS MINI / RUANG MAKAN
+DINING|RUANG MAKAN
+70 numbered booths|70 gerai bernombor
 Campus management|Pengurusan kampus
 Campus workspace|Ruang kerja kampus
 Admin team|Pasukan Admin
