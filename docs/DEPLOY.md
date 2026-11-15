@@ -185,8 +185,8 @@ Deploy the rules and both sites together. There is no attendance enable switch.
 
 Home links to a compact Daily check-in streak card in Rewards (`#/rewards/streak`).
 Opening, resuming or using the signed-in student app records one Malaysia calendar
-date in `users/{uid}/appDays/{YYYY-MM-DD}`. No manual button, lesson, location or
-extra point award is required. Reopening the app on the same day does not change
+date in `users/{uid}/appDays/{YYYY-MM-DD}`. No manual button, lesson or location
+is required. Reopening the app on the same day does not change
 the record. A hidden background app does not count a new day. The first foreground
 interaction after midnight can count if the app was left open. Sign-out removes
 the activity listeners.
@@ -195,9 +195,24 @@ Rules restrict each record to the authenticated student, today's MYT date and a
 server timestamp. Records cannot be rewritten, backfilled or future-dated. Only
 the student and HEP may read them. A missed calendar day resets the streak; the
 day after the last app use remains available to continue it. App-use records are
-separate from learning completions and legacy attendance, and never increase the
-point balance or KK League score. Existing learning history is not recast as app
-opens. Completed lessons can still be practised without repeated points.
+separate from learning completions and legacy attendance. Existing learning
+history is not recast as app opens. Completed lessons can still be practised
+without repeated points.
+
+The `appStreakPoints` server trigger awards `streakBonus` (default **5 points**,
+HEP-adjustable from 1–1,000) at **7, 14, 21… consecutive app days**. A missed MYT
+calendar day starts a new run. Awards create an immutable `appStreak` ledger
+entry named `appStreak_{milestone-date}` and update the wallet in one transaction.
+Retries, concurrent tabs and out-of-order deliveries cannot duplicate an award.
+These earned points also count towards levels and KK/Faculty Leagues.
+
+Counters on app-day records are server-written. Clients cannot forge counters,
+backdate days or create streak credits. The server can derive counters from old
+app-day records, without fabricating missed opens. Existing records are not
+retroactively rewarded by deployment; new milestone days trigger rewards.
+Deploy **functions together with rules and both sites**; static hosting alone will
+not enable live rewards. Demo mode emulates the same server award locally. The
+wallet and streak card update when the server credit arrives.
 
 ## Custom domain (e.g. addonz.my)
 

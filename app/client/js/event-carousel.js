@@ -1,19 +1,9 @@
 // Original event artwork: user-supplied Feskum Intsa Feed.pdf, pages 3–13.
 // Artwork and programme descriptions are kept separate from reward and check-in rules.
 import { $, $$, esc, icon, sheet } from './ui.js';
-export const EVENT_SLIDES = [
-  {page:3,title:'Majlis Pelancaran FESKUM',tag:'Festival launch',when:'11 November 2026 · 7:30–10:00 pm',where:'Marquee Tent, beside HIR',note:'Dress code: gold & cream.'},
-  {page:4,title:'Gerai Jualan · Fasa 1',tag:'Food & shopping',when:'4–14 November 2026 · 10:00 am–11:00 pm',where:'HIR & KPS parking areas',note:'Booth positions on the map are samples.'},
-  {page:5,title:'Pre-FESKUM calendar',tag:'Tentative programme',when:'November 2026',where:'Universiti Malaya',note:'Dates may change.'},
-  {page:6,title:'Melody Run',tag:'Run to the rhythm',when:'14 November 2026 · 8:00 pm',where:'Marquee Tent HIR & around UM',note:''},
-  {page:7,title:'Unity Fest · Atelier Social',tag:'Connect & celebrate',when:'15–16 November',where:'Varsity Lake, Universiti Malaya',note:'Art, community and celebration.'},
-  {page:8,title:'Mind Swap',tag:'Discover something new',when:'13–14 November 2026 · 9:00 am–5:00 pm',where:'Marquee Tent',note:''},
-  {page:9,title:'Battle of the Bands',tag:'Registration poster',when:'Registration until 7 November 2026 · 11:59 pm',where:'FESKUM 2026',note:'NusaRock band registration. Scan the original poster’s QR or check with the organiser for current availability.'},
-  {page:10,title:'Open Stage',tag:'Registration poster',when:'Registration: 1–6 November 2026',where:'Performances: 4–6 & 11–14 November 2026',note:'Performance and registration details are reproduced from the supplied poster.'},
-  {page:11,title:'Join the secretariat',tag:'Poster archive',when:'Poster deadline: 7 October 2026 · 11:59 pm',where:'FESKUM organising team',note:'Recruitment has closed.'},
-  {page:12,title:'What is FESKUM?',tag:'Meet the festival',when:'Festival Konvokesyen Universiti Malaya',where:'Universiti Malaya',note:'Get to know the celebration behind the campus festival.'},
-  {page:13,title:'Pencarian Pengacara',tag:'Poster archive',when:'Poster deadline: 15 October 2026 · 11:59 pm',where:'FESKUM 2026',note:'Recruitment has closed.'},
-];
+import {EVENT_SLIDES} from './event-catalog.js';
+export {EVENT_SLIDES};
+
 const controlPaths = {
   pause:'<path d="M9 5v14M15 5v14"/>',
   play:'<path d="m8 5 11 7-11 7Z"/>',

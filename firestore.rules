@@ -159,7 +159,8 @@ service cloud.firestore {
                   && loggedBy(D().get('adminLogId', null)))))
         );
 
-      // Daily app use is independent of lessons, locations, attendance and points.
+      // A server trigger awards every seventh consecutive app day. Clients may
+      // create today's use record, but cannot set counters or award streak points.
       match /appDays/{day} {
         allow read: if signedIn() && (uid() == u || isMpp());
         allow create: if isStudent() && uid() == u
@@ -564,6 +565,42 @@ service cloud.firestore {
       allow read: if signedIn() && (resource.data.uid == uid() || isMpp());
       allow create: if false;
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
+    }
+
+    // Student event proposals stay private until HEP publishes a separate public record.
+    match /eventSubmissions/{id} {
+      function validEvent() {
+        return D().keys().hasOnly(['uid','status','submittedAt','name','description','category','start','end','time','location','organiser','contactEmail','posterImage'])
+          && D().uid == uid() && D().status == 'pending' && D().submittedAt == request.time
+          && D().name is string && D().name.size() > 0 && D().name.size() <= 120
+          && D().description is string && D().description.size() > 0 && D().description.size() <= 1500
+          && D().location is string && D().location.size() > 0 && D().location.size() <= 160
+          && D().organiser is string && D().organiser.size() > 0 && D().organiser.size() <= 120
+          && D().contactEmail is string && D().contactEmail.size() <= 254 && D().contactEmail.matches('^[^ @]+@[^ @]+[.][^ @]+$')
+          && D().category in ['talks','seminars','competitions','bazaars','summits','festivals','music','sports','other']
+          && D().start is string && D().start.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+          && D().end is string && D().end.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$') && D().end >= D().start
+          && D().time is string && D().time.size() <= 80
+          && D().posterImage is string && D().posterImage.size() <= 600000
+          && (D().posterImage == '' || D().posterImage.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'));
+      }
+      function published() {
+        let event = getAfter(/databases/$(database)/documents/campaigns/$('student-' + id)).data;
+        return event.submissionId == id && event.name == resource.data.name
+          && event.description == resource.data.description && event.category == resource.data.category
+          && event.start == resource.data.start && event.end == resource.data.end && event.time == resource.data.time
+          && event.location == resource.data.location && event.organiser == resource.data.organiser
+          && event.posterImage == resource.data.posterImage && event.budgetCents == 0
+          && !event.keys().hasAny(['contactEmail','uid']);
+      }
+      allow read: if isMpp() || (isStudent() && resource.data.uid == uid());
+      allow create: if isStudent() && validEvent();
+      allow update: if isMpp() && resource.data.status == 'pending'
+        && changed().hasOnly(['status','response','reviewedBy','reviewedAt'])
+        && D().status in ['approved','rejected'] && D().reviewedBy == email() && D().reviewedAt == request.time
+        && D().response is string && D().response.size() <= 500
+        && (D().status == 'approved' ? published() : D().response.size() > 0);
+      allow delete: if false;
     }
 
     // ---------- HEP-only programme records ----------

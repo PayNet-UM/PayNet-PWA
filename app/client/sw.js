@@ -3,7 +3,8 @@
    service worker; on the dev server it lives at /admin/ on this address, so this worker leaves it alone. */
 const VERSION = 'umc-__VERSION__';
 const SHELL = [
-  'css/event-gallery.css?v=__VERSION__','js/event-gallery.js','js/event-categories.js',
+  'css/event-submissions.css?v=__VERSION__','js/event-submissions-data.js','js/event-submissions-ui.js',
+  'css/event-gallery.css?v=__VERSION__','js/event-gallery.js','js/event-categories.js','js/event-catalog.js',
   'css/motion.css?v=__VERSION__', 'js/motion.js',
   'css/usability.css?v=__VERSION__',
   './', 'index.html', 'offline.html', 'manifest.webmanifest', 'firestore.rules',

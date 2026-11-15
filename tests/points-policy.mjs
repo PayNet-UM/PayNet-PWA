@@ -18,7 +18,7 @@ await check('default self-directed learning is exactly 200 points, with live dea
  for(let i=0;i<3;i++)assert.equal(await D.answerLesson(a,i,D.LESSON_KEYS['lesson'+i],D.DEFAULT_RULES),'correct');
  assert.equal(await D.submitSurvey(a,survey,D.DEFAULT_RULES),50);assert.equal(await balance(a),200);assert.equal(P.earnedPoints(await ledger(a)),200);assert.equal(P.learningPlan(D.DEFAULT_RULES,await ledger(a)).remaining,0);
 });
-await check('repeated lessons, surveys, app streaks and referrals give no extra points',async()=>{
+await check('repeated lessons, surveys, single app opens and referrals give no extra points',async()=>{
  for(let i=0;i<3;i++)assert.equal(await D.practiceLesson(a,i,D.LESSON_KEYS['lesson'+i],D.DEFAULT_RULES),'practised');
  assert.equal(await D.submitSurvey(a,survey,D.DEFAULT_RULES),0);await D.recordAppDay(a);await D.applyInviterCode(a,b.profile.referralCode);
  assert.equal(await balance(a),200);assert.equal((await ledger(a)).length,4);await assert.rejects(issueDealQR(a,'disabled-deal'),/currently unavailable/);

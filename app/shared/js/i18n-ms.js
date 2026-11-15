@@ -1,5 +1,104 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Review, edit and publish events.|Semak, sunting dan terbitkan acara.
+Event gallery|Galeri acara
+New event|Acara baharu
+Edit event|Sunting acara
+Save event|Simpan acara
+Cover photo|Foto muka depan
+Shown on the event card.|Dipaparkan pada kad acara.
+Upload cover|Muat naik foto muka depan
+Remove cover|Buang foto muka depan
+Use original poster|Gunakan poster asal
+Cover preview|Pratonton foto muka depan
+More photos|Foto tambahan
+Up to 3 photos inside the event.|Sehingga 3 foto dalam butiran acara.
+Add photos|Tambah foto
+JPG, PNG or WebP. Up to 10 MB each.|JPG, PNG atau WebP. Sehingga 10 MB setiap satu.
+Show in event gallery|Paparkan dalam galeri acara
+Preparing photos…|Menyediakan foto…
+Delete event|Padam acara
+Delete event?|Padam acara?
+This deletes the event and its photos.|Acara ini dan fotonya akan dipadamkan.
+Restore original event|Pulihkan acara asal
+Restore original event?|Pulihkan acara asal?
+Restore the supplied poster and original event details?|Pulihkan poster yang dibekalkan dan butiran acara asal?
+Original event restored.|Acara asal telah dipulihkan.
+Restore|Pulihkan
+Event saved.|Acara telah disimpan.
+Event deleted.|Acara telah dipadamkan.
+Hidden|Disembunyikan
+Enter an event name.|Masukkan nama acara.
+Choose smaller event photos.|Pilih foto acara yang lebih kecil.
+Enter a valid event budget.|Masukkan bajet acara yang sah.
+Unknown original poster.|Poster asal tidak dikenali.
+Choose a JPG, PNG or WebP photo under 10 MB.|Pilih foto JPG, PNG atau WebP di bawah 10 MB.
+We couldn’t read this photo. Try a JPG, PNG or WebP image.|Foto ini tidak dapat dibaca. Cuba imej JPG, PNG atau WebP.
+Add up to 3 extra photos.|Tambah sehingga 3 foto tambahan.
+
+Keep your UM friends in one place.|Himpunkan rakan UM anda di satu tempat.
+Search a username and send a request. Once accepted, they appear in Friends.|Cari nama pengguna dan hantar permintaan. Setelah diterima, mereka akan muncul dalam senarai Rakan.
+This removes the connection for both of you.|Hubungan ini akan dipadamkan untuk anda berdua.
+Open daily. Earn points every 7 days.|Buka aplikasi setiap hari. Dapat mata setiap 7 hari.
+A missed day starts a new streak.|Jika terlepas sehari, rentetan bermula semula.
+Day|Hari
+Next bonus|Bonus seterusnya
+Days towards the next streak bonus|Bilangan hari menuju bonus rentetan seterusnya
+pts earned|mata diperoleh
+Bonus on the way|Bonus sedang diproses
+App streak bonus|Bonus rentetan aplikasi
+Learning bonuses are paid once. Streak bonuses repeat every 7 days.|Bonus pembelajaran diberikan sekali. Bonus rentetan diberikan setiap 7 hari.
+7-day streak bonus|Bonus rentetan 7 hari
+Awarded at 7, 14, 21 consecutive app days and so on.|Diberikan pada hari penggunaan aplikasi ke-7, ke-14, ke-21 dan seterusnya secara berturut-turut.
+Ways to earn points|Cara mengumpul mata
+Referrals and browsing the campus map do not award points.|Rujukan rakan dan melihat peta kampus tidak memberikan mata.
+Keep earning through streak milestones, Admin awards and live deals when enabled.|Terus kumpul mata melalui pencapaian rentetan, anugerah Admin dan tawaran aktif apabila diaktifkan.
+
+We couldn’t read this poster. Try a JPG, PNG or WebP image.|Poster ini tidak dapat dibaca. Cuba imej JPG, PNG atau WebP.
+Submit an event|Hantar acara
+HEP reviews it. Approved events appear in the gallery.|HEP menyemaknya. Acara yang diluluskan akan dipaparkan dalam galeri.
+Event name|Nama acara
+Category|Kategori
+Choose a category|Pilih kategori
+Time (optional)|Masa (pilihan)
+e.g. 10 am – 4 pm|cth. 10 pagi – 4 petang
+Venue|Lokasi
+Organiser|Penganjur
+Contact email|E-mel untuk dihubungi
+Only you and HEP can see this.|Hanya anda dan HEP boleh melihat maklumat ini.
+About the event|Tentang acara
+Poster (optional)|Poster (pilihan)
+JPG, PNG or WebP. Up to 10 MB.|JPG, PNG atau WebP. Sehingga 10 MB.
+Poster preview|Pratonton poster
+Submit for approval|Hantar untuk kelulusan
+Event submitted|Acara telah dihantar
+Waiting for HEP approval. Once approved, it appears in the gallery automatically.|Menunggu kelulusan HEP. Setelah diluluskan, acara akan dipaparkan dalam galeri secara automatik.
+My submissions|Acara yang saya hantar
+Back to events|Kembali ke acara
+Loading submissions…|Memuatkan acara yang dihantar…
+Pending review|Menunggu semakan
+Approved|Diluluskan
+Not approved|Tidak diluluskan
+No submissions yet.|Belum ada acara yang dihantar.
+View event gallery|Lihat galeri acara
+Student events|Acara pelajar
+No events waiting for review.|Tiada acara yang menunggu semakan.
+Review event|Semak acara
+Add a reason if you decline.|Nyatakan sebab jika anda menolak acara ini.
+Approve & publish|Luluskan & terbitkan
+Event published.|Acara telah diterbitkan.
+Event declined.|Acara telah ditolak.
+Review student events and manage the gallery.|Semak acara pelajar dan urus galeri.
+Complete the required event details.|Lengkapkan butiran acara yang diperlukan.
+An event field is too long.|Salah satu butiran acara terlalu panjang.
+Enter a valid contact email.|Masukkan e-mel yang sah untuk dihubungi.
+Choose an event category.|Pilih kategori acara.
+Choose valid event dates.|Pilih tarikh acara yang sah.
+Choose a smaller JPG, PNG or WebP poster.|Pilih poster JPG, PNG atau WebP yang lebih kecil.
+Choose a JPG, PNG or WebP poster under 10 MB.|Pilih poster JPG, PNG atau WebP di bawah 10 MB.
+Add a short reason for the student.|Nyatakan sebab ringkas untuk pelajar.
+This event has already been reviewed.|Acara ini telah disemak.
+
 Three lessons. One-time points.|Tiga pelajaran. Mata diberikan sekali sahaja.
 Current programme settings|Tetapan program semasa
 Default programme settings|Tetapan program lalai
@@ -10,7 +109,7 @@ Points guide|Panduan mata
 Student points explained|Penjelasan mata pelajar
 Vouchers are fulfilled by the Admin team.|Baucar ditunaikan oleh pasukan Admin.
 How points work|Cara mata berfungsi
-Three lessons + Money check. Each paid once.|Tiga pelajaran + Semakan kewangan. Mata diberikan sekali sahaja.
+Explore, Earn, Redeem|Teroka, Kumpul Mata, Tebus
 Your points, clearly explained|Penjelasan tentang mata anda
 Learn. Earn. Make them count.|Belajar. Kumpul mata. Jadikannya bermakna.
 Points are an in-app balance with no cash value. They are used for programme vouchers or donated to student welfare.|Mata ialah baki dalam aplikasi tanpa nilai tunai. Mata digunakan untuk baucar program atau disumbangkan kepada kebajikan pelajar.
@@ -20,7 +119,6 @@ Three lessons at 50 points plus the 50-point Money check. The Admin team can cha
 Available balance|Baki yang tersedia
 Earned for levels & leagues|Mata terkumpul untuk tahap & liga
 Learning points still available|Mata pembelajaran yang masih boleh dikumpul
-Five ways points reach a student|Lima cara pelajar menerima mata
 Three lessons. Earn the bonus on the first correct answer for each lesson; practice gives no extra points.|Tiga pelajaran. Bonus diberikan untuk jawapan betul pertama bagi setiap pelajaran; latihan tidak memberikan mata tambahan.
 Complete the knowledge and confidence survey once to earn its bonus.|Lengkapkan tinjauan pengetahuan dan keyakinan sekali untuk menerima bonusnya.
 Admin awards & corrections|Anugerah & pembetulan Admin
@@ -55,12 +153,10 @@ How the balance is protected|Cara baki dilindungi
 Each balance change and its points-history entry are saved together. The history cannot be edited or deleted. The rules prevent repeat lesson bonuses, duplicate daily deal claims and negative balances.|Setiap perubahan baki dan catatan sejarah matanya disimpan bersama. Sejarah itu tidak boleh disunting atau dipadam. Peraturan menghalang bonus pelajaran berulang, tuntutan tawaran harian berganda dan baki negatif.
 Changing a bonus affects future awards only. Past points remain unchanged. The Admin team can correct mistakes with a recorded reason.|Perubahan bonus hanya mempengaruhi anugerah akan datang. Mata terdahulu kekal tidak berubah. Pasukan Admin boleh membetulkan kesilapan dengan sebab yang direkodkan.
 Earn, use and understand your +Onz points.|Kumpul, gunakan dan fahami mata +Onz anda.
-Your one-time learning bonuses are complete. Higher levels need Admin awards, or live deals when enabled.|Anda telah melengkapkan bonus pembelajaran sekali sahaja. Tahap yang lebih tinggi memerlukan anugerah Admin atau tawaran aktif apabila diaktifkan.
 pts per eligible deal|mata bagi setiap tawaran yang layak
 Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.|Tahap mengira mata positif yang dikumpul, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata mengekalkan kemajuan dan topi yang telah dibuka.
 Full points guide|Panduan mata lengkap
-Open +Onz each day to keep your streak. Streaks do not award points.|Buka +Onz setiap hari untuk mengekalkan rentetan anda. Rentetan tidak memberikan mata.
-Default reward pricing: 100 points ≈ RM1 in voucher value. Each reward sets its own points price; points are not cash.|Harga ganjaran lalai: 100 mata ≈ RM1 nilai baucar. Setiap ganjaran menetapkan harga matanya sendiri; mata bukan wang tunai.
+Find out how to gain points.|Ketahui cara mengumpul mata.
 voucher value|nilai baucar
 Voucher added. Show it to the Admin team for redemption.|Baucar ditambah. Tunjukkannya kepada pasukan Admin untuk penebusan.
 Correct. Points added to your balance.|Betul. Mata ditambah kepada baki anda.
@@ -82,7 +178,6 @@ Default pricing is 100 points per RM1 of voucher value. Each reward has its own 
 Only the Admin team fulfils reward vouchers. Mark each voucher used after honouring it. Expired unused vouchers are excluded from promised value.|Hanya pasukan Admin menunaikan baucar ganjaran. Tandakan baucar sebagai telah digunakan selepas menunaikannya. Baucar belum digunakan yang telah luput dikecualikan daripada nilai yang dijanjikan.
 Points move from the welfare pool to the student’s balance. They do not count towards levels or leagues.|Mata dipindahkan daripada tabung kebajikan ke baki pelajar. Mata ini tidak dikira untuk tahap atau liga.
 Set points needed and voucher value independently. The default guide is 1 point per sen.|Tetapkan mata yang diperlukan dan nilai baucar secara berasingan. Panduan lalai ialah 1 mata bagi setiap sen.
-Three lesson bonuses plus one Money check. Daily streaks and referrals do not award points.|Tiga bonus pelajaran serta satu Semakan kewangan. Rentetan harian dan rujukan rakan tidak memberikan mata.
 Only when live deals are enabled. Once per student, per deal, per day.|Hanya apabila tawaran aktif diaktifkan. Sekali bagi setiap pelajar, bagi setiap tawaran, setiap hari.
 Your available balance is for vouchers or welfare donations. Points have no cash value.|Baki tersedia anda adalah untuk baucar atau sumbangan kebajikan. Mata tidak mempunyai nilai tunai.
 Swap points for Admin-fulfilled vouchers. Streaks track app visits and do not award points.|Tukarkan mata kepada baucar yang ditunaikan oleh Admin. Rentetan merekodkan penggunaan aplikasi dan tidak memberikan mata.
