@@ -2,7 +2,7 @@
 // The Admin dashboard is a separate website (app/admin), linked from the account menu for Admin team members.
 import { initBackend } from './backend.js';
 import * as D from './data.js';
-import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText } from './ui.js';
+import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
 import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
@@ -52,6 +52,7 @@ async function boot() {
 }
 
 async function onUser(user) {
+  render.token=Symbol();
   if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   stopWatchers(); closeSheet();
   app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
@@ -64,6 +65,7 @@ async function onUser(user) {
   // Opened from the iPhone home-screen app to sign in: hand the sign-in back instead of opening the app here.
   const hoHash = mode === 'live' ? Auth.handoffHash() : null;
   if (hoHash) return Auth.renderHandoffDone(app, user, hoHash, await D.isMppUser({ sdk, db, uid: user.uid, email: user.email }));
+  Auth.discardPendingHandoff();
   app.ctx = { sdk, db, uid: user.uid, email: user.email, profile: null };
   const [isMpp, profile] = await Promise.all([D.isMppUser(app.ctx), D.getProfile(app.ctx).catch(() => null)]);
   app.isMpp = isMpp; app.profile = profile; app.ctx.profile = profile;
@@ -223,45 +225,41 @@ async function render() {
   if(informationRoute()&&!(app.user&&app.profile&&!app.profile.disabled&&!D.needsTerms(app.profile)&&app.role===app.profile.role))return renderPublicInformation();
   if(!app.user){if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}return Auth.renderSignIn(app);}
   if(!app.role||!app.profile)return onUser(app.user);
+  const token=Symbol();render.token=token;
+  if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
+  if(sheetOpen())closeSheet();
+  const requestedPath=location.hash.replace(/^#\/?/,'')||'home';
+  const previousView=$('#view');
+  if(previousView){previousView.setAttribute('aria-busy','true');previousView.innerHTML=routeLoadingHTML(requestedPath);}
+  $$('.tabbar a').forEach(a=>a.classList.toggle('pending',a.dataset.tab===requestedPath.split('/')[0]));
+  let view=previousView;
   try {
-    const next=await D.getRules(app.ctx);
+    // Fetch in parallel, and ignore any request superseded by a later tap or sign-in change.
+    const [next,mod]=await Promise.all([D.getRules(app.ctx).catch(()=>app.rules),loadRoleModule(app.role)]);
+    if(render.token!==token)return;
     if(JSON.stringify(next.features)!==JSON.stringify(app.rules.features))app.shellRole=null;
-    app.rules=next;
-  } catch { /* use the last loaded rules while offline */ }
-  const mod = await loadRoleModule(app.role);
-  shell(app.role, mod.routes);
-  const requestedPath = location.hash.replace(/^#\/?/, '') || mod.defaultRoute;
-  const canonical = mod.canonicalPath ? mod.canonicalPath(requestedPath) : requestedPath;
-  if (canonical !== requestedPath) history.replaceState(null, '', '#/' + canonical);
-  const parts = canonical.split('/');
-  const route = mod.routes[parts[0]] && routeOn(mod.routes[parts[0]]) ? parts[0] : mod.defaultRoute;
-  const r = mod.routes[route];
-  if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }
-  if (sheetOpen()) closeSheet();
-  $$('.tabbar a').forEach((a) => {
-    const active=a.dataset.tab===(r.tab||route);
-    a.classList.toggle('on',active);
-    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
-  });
-  const view = $('#view');
-  view.className = 'view' + (r.wide ? ' wide' : '');
-  view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
-  document.title = `${r.title} · +Onz ${app.role === 'student' ? 'Student' : 'Merchant'}`;
-  const token = Symbol(); render.token = token;
-  try {
-    const html = await r.render(app, parts.slice(1));
-    if (render.token !== token) return;
-    view.innerHTML = html;
-    window.scrollTo(0, 0);
-    const cleanup = r.mount ? await r.mount(view, app, parts.slice(1)) : null;
-    if (render.token !== token) { cleanup && cleanup(); return; }
-    const stopMotion=mountPageMotion(view);
-    app.viewCleanup = ()=>{stopMotion();cleanup?.();};
-    $$('[data-bind=points]', view).forEach((el) => { el.dataset.v = app.profile?.points || 0; });
-  } catch (e) {
-    console.error(e);
-    view.innerHTML = `<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p>
-      <button class="btn" style="margin-top:12px" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
+    app.rules=next;shell(app.role,mod.routes);
+    const canonical=mod.canonicalPath?mod.canonicalPath(requestedPath):requestedPath;
+    if(canonical!==requestedPath)history.replaceState(null,'','#/'+canonical);
+    const parts=canonical.split('/');
+    const route=mod.routes[parts[0]]&&routeOn(mod.routes[parts[0]])?parts[0]:mod.defaultRoute;
+    const r=mod.routes[route];
+    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route);a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    view=$('#view');view.className='view'+(r.wide?' wide':'');view.setAttribute('aria-busy','true');
+    view.innerHTML=routeLoadingHTML(route);
+    document.title=`${r.title} · +Onz ${app.role==='student'?'Student':'Merchant'}`;
+    const html=await r.render(app,parts.slice(1));
+    if(render.token!==token)return;
+    view.innerHTML=html;window.scrollTo(0,0);
+    const cleanup=r.mount?await r.mount(view,app,parts.slice(1)):null;
+    if(render.token!==token){cleanup?.();return;}
+    const stopMotion=mountPageMotion(view);app.viewCleanup=()=>{stopMotion();cleanup?.();};
+    view.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
+    $$('[data-bind=points]',view).forEach(el=>{el.dataset.v=app.profile?.points||0;});
+  }catch(e){
+    if(render.token!==token)return;
+    console.error(e);view?.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
+    if(view)view.innerHTML=`<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p><button class="btn" style="margin-top:12px" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
   }
 }
 app.render = render;

@@ -127,8 +127,7 @@ export function mountEventCarousel(root) {
   function details() {
     // If a reader opens a poster mid-fade, show that exact incoming poster.
     if(transition){const current=transition;current.commit();current.animation.cancel();}
-    const s=EVENT_SLIDES[index];
-    sheet(`<div class="event-poster-dialog"><span class="event-slide-tag">${esc(s.tag)}</span><h2>${esc(s.title)}</h2><p>${esc(s.when)}</p><p class="muted">${esc(s.where)}</p><a href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>${s.note?`<p>${esc(s.note)}</p>`:''}<p class="faint">Confirm current details with the organiser.</p><a class="btn primary" href="#/feskum" data-close>${icon('map-pin')} Explore stalls</a></div>`,{wide:true});
+    openEventPoster(EVENT_SLIDES[index]);
   }
   poster.onclick=()=>{if(performance.now()>ignoreUntil)details();};
   poster.onpointerdown=e=>{start={x:e.clientX,y:e.clientY};};
@@ -159,4 +158,9 @@ export function mountEventCarousel(root) {
     if(prev)prev.onclick=null;if(next)next.onclick=null;
     $$('[data-slide]',box).forEach(b=>b.onclick=null);
   };
+}
+
+// Gallery and slideshow open the same original artwork and organiser details.
+export function openEventPoster(s) {
+  sheet(`<div class="event-poster-dialog"><span class="event-slide-tag">${esc(s.tag)}</span><h2>${esc(s.title)}</h2><p>${esc(s.when)}</p><p class="muted">${esc(s.where)}</p><a href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>${s.note?`<p>${esc(s.note)}</p>`:''}<p class="faint">Confirm current details with the organiser.</p><a class="btn primary" href="#/feskum" data-close>${icon('map-pin')} Explore stalls</a></div>`,{wide:true});
 }

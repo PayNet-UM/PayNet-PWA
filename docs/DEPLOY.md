@@ -136,9 +136,11 @@ An app added to the iPhone home screen opens Google's sign-in in a separate Safa
 session back. So the app uses a small server hand-off (`functions/`, deployed with the rest):
 
 1. In the home-screen app, "Continue with Google" makes a random secret, keeps it, and opens Safari with only its hash.
-2. The student signs in with Google in Safari; that page registers the hash with the server (`/api/handoff/create`).
-3. Back in the app, it trades the secret for a one-time sign-in token (`/api/handoff/redeem`) and is signed in.
+2. The student signs in with Google in Safari and compares the matching code with the one shown in the installed app. Safari requires an explicit code-match acknowledgement before registering the hash with the server (`/api/handoff/create`).
+3. Back in the app, the student taps **I matched the codes. Finish sign-in**. Only then does the app trade its secret for a one-time sign-in token (`/api/handoff/redeem`). Closing the waiting dialog stops polling.
    Codes work once and expire after 3 minutes. Android, computers and Safari itself keep the normal Google sign-in.
+
+The short matching code is shown on both screens; it is not an email OTP and is not typed anywhere. This is confirmation of a Google sign-in transfer, not an additional authentication factor. Adding a home-screen shortcut while already signed in can retain the existing session and does not itself require a code.
 
 Needs the **Blaze** plan. Once per Firebase project (staging and production):
 

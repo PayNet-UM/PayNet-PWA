@@ -1,5 +1,6 @@
 import { learningPlan, unspentPointExposure } from '../points-policy.js';
 import { pointsPageRender } from '../points-guide.js';
+import { EVENT_CATEGORIES, eventCategory } from '../event-categories.js';
 // Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
@@ -341,18 +342,19 @@ function rewardsMount(root, app) {
 // ------------------------------------------------------------- campaigns
 async function campaignsRender(app) {
   const camps = (await D.listCampaigns(app.ctx)).sort((a, b) => String(b.start).localeCompare(String(a.start))); app._cp = camps;
-  return `${hepHeading('Campaigns and events', 'Shown to students on the Community page. Set aside budget for each so the fund balance stays honest.', 'calendar', `<button class="btn primary" id="new">${icon('plus')} New campaign</button>`)}
+  return `${hepHeading('Campaigns and events', 'Shown to students in Campus Events. Set aside budget for each so the fund balance stays honest.', 'calendar', `<button class="btn primary" id="new">${icon('plus')} New campaign</button>`)}
     <div class="hep-campaign-grid">${camps.map((c) => `<article class="card hep-campaign"><div class="hep-campaign-top">${hepEmblem('calendar', true)}<button class="btn small" data-c="${esc(c.id)}">${icon('pencil')} Edit</button></div><h2>${esc(c.name)}</h2>${c.description ? `<p>${esc(c.description)}</p>` : ''}<div class="hep-campaign-details"><span>${icon('calendar')} ${esc(c.start || '—')} – ${esc(c.end || '—')}</span><span>${icon('map-pin')} ${esc(c.location || '—')}</span></div><div class="hep-campaign-bottom"><span>Campaign budget<strong class="num">${rm(c.budgetCents)}</strong></span><span aria-hidden="true">${icon('sparkles')}</span></div></article>`).join('') || hepEmpty('No campaigns yet.', 'calendar')}</div>`;
 }
 function campaignsMount(root, app) {
   const edit = (c) => {
     const el = sheet(`<h2>${c ? 'Edit campaign' : 'New campaign'}</h2><form id="cf" class="stack" style="margin-top:12px"><label class="field">Name<input name="name" required value="${esc(c?.name || '')}"></label>
       <label class="field">Short description for students<input name="description" value="${esc(c?.description || '')}"></label>
+      <label class="field">Event category<select name="category">${EVENT_CATEGORIES.map(([id,label])=>`<option value="${id}" ${id===eventCategory(c||{})?'selected':''}>${label}</option>`).join('')}</select></label>
       <div class="grid-2"><label class="field">Starts<input name="start" type="date" required value="${esc(c?.start || '')}"></label><label class="field">Ends<input name="end" type="date" required value="${esc(c?.end || '')}"></label></div>
       <div class="grid-2"><label class="field">Location<input name="location" value="${esc(c?.location || '')}"></label><label class="field">Budget (RM)<input name="budget" type="number" min="0" step="1" value="${(c?.budgetCents || 0) / 100}"></label></div>
       <div class="row end">${c ? '<button type="button" class="btn warn" id="del">Delete</button>' : ''}<button class="btn primary">Save</button></div></form>`);
     $('#cf', el).onsubmit = (e) => { e.preventDefault(); const f = e.target; if (f.end.value < f.start.value) return toast('End date must be after the start date.', true);
-      busy($('button.primary', el), async () => { await D.saveCampaign(app.ctx, c?.id, { name: f.name.value.trim(), description: f.description.value.trim(), start: f.start.value, end: f.end.value, location: f.location.value.trim(), budgetCents: Math.round(+f.budget.value * 100) }); closeSheet(); app.render(); }); };
+      busy($('button.primary', el), async () => { await D.saveCampaign(app.ctx, c?.id, { name: f.name.value.trim(), description: f.description.value.trim(), category:f.category.value, start: f.start.value, end: f.end.value, location: f.location.value.trim(), budgetCents: Math.round(+f.budget.value * 100) }); closeSheet(); app.render(); }); };
     if ($('#del', el)) $('#del', el).onclick = async () => { await D.deleteCampaign(app.ctx, c.id); closeSheet(); app.render(); };
   };
   $('#new', root).onclick = () => edit(null);

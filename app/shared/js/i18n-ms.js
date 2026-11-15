@@ -2394,4 +2394,54 @@ This is your college, its rank and its total points. All the points you collect 
 The leaderboard|Papan kedudukan
 See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
 How the KK League works|Cara Liga KK berfungsi
+Your campus perks are on the way…|Manfaat kampus anda sedang disediakan…
+A little more campus life, coming up…|Lebih banyak pengalaman kampus menanti anda…
+Events loading…|Memuatkan acara…
+Your campus rewards are on the way…|Ganjaran kampus anda sedang disediakan…
+Your campus, happening.|Kampus anda, penuh aktiviti.
+Find your next campus experience.|Temui pengalaman kampus anda yang seterusnya.
+Have an event to promote?|Ada acara untuk dipromosikan?
+Submit it here.|Hantarkan di sini.
+Explore events|Terokai acara
+Browse campus events|Layari acara kampus
+Filter events|Tapis acara
+Talks|Ceramah
+Seminars|Seminar
+Competitions|Pertandingan
+Bazaars|Bazar
+Summits|Sidang kemuncak
+Festivals|Festival
+Music|Muzik
+Sports|Sukan
+Other|Lain-lain
+events|acara
+Poster archive|Arkib poster
+Past event|Acara lepas
+Explore event|Terokai acara
+No events in this category yet.|Belum ada acara dalam kategori ini.
+Try another category or tell us about your event.|Cuba kategori lain atau maklumkan acara anda kepada kami.
+See all events|Lihat semua acara
+Explore the stalls and floor map.|Terokai gerai dan pelan tapak.
+Venue to be announced|Tempat akan diumumkan
+Date to be announced|Tarikh akan diumumkan
+Ask about this event|Tanya tentang acara ini
+Event category|Kategori acara
+Shown to students in Campus Events. Set aside budget for each so the fund balance stays honest.|Dipaparkan kepada pelajar dalam Acara Kampus. Peruntukkan bajet bagi setiap acara supaya baki dana tepat.
+Match your app and Safari|Padankan aplikasi anda dengan Safari
+This matching code connects Safari to the +Onz app on this phone. It is not an email code, and you do not need to type it anywhere.|Kod padanan ini menghubungkan Safari dengan aplikasi +Onz pada telefon ini. Kod ini bukan kod e-mel dan tidak perlu ditaip di mana-mana.
+Matching code|Kod padanan
+Look for the same code on the Safari confirmation screen.|Cari kod yang sama pada skrin pengesahan Safari.
+Open Safari and sign in with Google.|Buka Safari dan log masuk melalui Google.
+Check that both screens show the same code, then confirm in Safari.|Pastikan kedua-dua skrin memaparkan kod yang sama, kemudian sahkan dalam Safari.
+Return to this app and tap the button below.|Kembali ke aplikasi ini dan tekan butang di bawah.
+Waiting for you to confirm in Safari.|Menunggu pengesahan anda dalam Safari.
+I matched the codes. Finish sign-in|Kod sepadan. Selesaikan log masuk
+Checking Safari confirmation…|Menyemak pengesahan Safari…
+Waiting for Safari to confirm your sign-in.|Menunggu pengesahan log masuk daripada Safari.
+I started this sign-in and the code matches the one in my +Onz app.|Saya memulakan log masuk ini dan kod ini sepadan dengan kod dalam aplikasi +Onz saya.
+Confirm matching code|Sahkan kod padanan
+Sign-in could not finish. Cancel and start again from the app.|Log masuk tidak dapat diselesaikan. Batalkan dan mulakan semula dari aplikasi.
+Google opens Safari. Match the code on both screens, confirm in Safari, then return here to finish sign-in.|Google membuka Safari. Padankan kod pada kedua-dua skrin, sahkan dalam Safari, kemudian kembali ke sini untuk menyelesaikan log masuk.
+Sign in here, compare the matching code with your home-screen app, then return to the app and finish sign-in.|Log masuk di sini, padankan kod dengan aplikasi skrin utama anda, kemudian kembali ke aplikasi untuk menyelesaikan log masuk.
+Everything in one plus.|Segalanya dalam satu plus.
 `;

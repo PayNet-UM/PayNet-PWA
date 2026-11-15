@@ -10,6 +10,7 @@ import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
 import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
+import { eventGalleryRender, eventGalleryMount } from '../event-gallery.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
@@ -113,24 +114,6 @@ function merchantCard(m, { nav = false, dist = null } = {}) {
     ${isIdea(m) ? `<div class="offer idea">${icon('lightbulb')}Student venture</div>` : ''}</div></a>`;
   if (!nav || !hasPin(m)) return card;
   return `<div class="mcard-wrap">${card}<a class="mnav" href="${directionsUrl(m)}" target="_blank" rel="noopener" aria-label="Navigate to ${esc(m.name)}" title="Navigate">${icon('navigation')}</a></div>`;
-}
-function eventCard(c, index = 0) {
-  const today = D.dayKey();
-  const date = c.start ? Date.parse(c.start) : NaN;
-  const hasDate = Number.isFinite(date);
-  const status = c.start > today ? 'Upcoming' : c.start && c.start <= today && (c.end || c.start) >= today ? 'Happening now' : 'Campus event';
-  return `<details class="card campus-event-card event-colour-${index % 3}">
-    <summary>
-      <span class="campus-event-date" ${hasDate ? `aria-label="${esc(fmtDate(date))}"` : ''}>
-        ${hasDate ? `<strong>${esc(fmtDate(date, { day: 'numeric' }))}</strong><span>${esc(fmtDate(date, { month: 'short' }))}</span>` : icon('calendar')}
-      </span>
-      <div class="campus-event-copy"><span class="campus-event-status">${status}</span><h3>${esc(c.name)}</h3>
-        ${c.location ? `<p class="campus-event-location">${icon('map-pin')}<span>${esc(c.location)}</span></p>` : ''}
-        ${hasDate ? `<p class="campus-event-range">${esc(fmtDate(date))}${c.end && c.end !== c.start ? ' – ' + esc(fmtDate(Date.parse(c.end))) : ''}</p>` : ''}</div>
-      <span class="campus-event-toggle" aria-hidden="true">${icon('chevron-right')}</span>
-    </summary>
-    <div class="campus-event-description">${esc(c.description || 'More details soon.')}</div>
-  </details>`;
 }
 
 async function merchantRender(app, [id]) {
@@ -413,9 +396,7 @@ function showVoucher(app, vid, list) {
 
 // ------------------------------------------------------------- Aktiviti Kita
 async function eventsRender(app) {
-  const camps = (await D.listCampaigns(app.ctx).catch(() => [])).filter((c) => !c.end || c.end >= D.dayKey()).sort((a, b) => String(a.start).localeCompare(String(b.start)));
-  return `${eventCarousel({page:true})}<section class="other-campus-events" aria-labelledby="other-events-heading"><div class="head"><h2 id="other-events-heading">${icon('sparkles')} Other events</h2><span class="other-events-count" aria-label="Event count">${camps.length}</span></div>
-    <div class="other-events-grid">${camps.map(eventCard).join('') || `<div class="card empty">${icon('calendar')}<p>No events listed right now.</p></div>`}</div></section>`;
+  return eventGalleryRender(app);
 }
 
 // ------------------------------------------------------------- Bayar Kita: how to pay cashless (no tracking)
@@ -832,7 +813,7 @@ export const routes = {
   merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'home', feature: 'overview' },
   rewards: { title: 'Rewards', render: rewardsRender, mount: live(rewardsMount) },
   feskum: { title: 'FESKUM 2026', render: feskumRender, mount: feskumMount, tab: 'events', wide: true },
-  events: { title: 'Campus Events', render: eventsRender, mount: mountEventCarousel, tab: 'events' },
+  events: { title: 'Campus Events', render: eventsRender, mount: eventGalleryMount, tab: 'events', wide:true },
   bayar: { title: 'Pay Cashless', render: bayarRender, tab: 'home', feature: 'dealsAndPay' },
   learn: { title: 'Learn & Earn', render: learnRender, mount: learnMount, tab: 'home' },
   survey: { title: 'Money check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'student', 'home'), tab: 'home' },
