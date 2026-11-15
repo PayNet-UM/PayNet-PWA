@@ -140,7 +140,7 @@ export function handoffHash() {
   } catch { return null; }
 }
 const handoffCode = (hash) => hash.slice(0, 6).toUpperCase();
-let polling = null;
+let polling = null, pollRevision = 0;
 // The browser page must be on a DIFFERENT address from the installed app: iPhone pulls a link to the app's own
 // address back into the app (where Google sign-in can't finish). Firebase Hosting serves the site on two
 // addresses (<project>.web.app and <project>.firebaseapp.com), so the hand-off page uses the other one.
@@ -174,9 +174,10 @@ function handoffWait(app) {
   $('#ho-cancel', el).onclick = () => { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); };
   $('#ho-finish', el).onclick=()=>{const button=$('#ho-finish',el);button.disabled=true;button.innerHTML='<span class="spin" aria-hidden="true"></span> '+tr('Checking Safari confirmation…');$('#ho-status',el).textContent=tr('Waiting for Safari to confirm your sign-in.');startPoll(app);};
 }
-function stopPoll() { if (polling) { clearInterval(polling.timer); removeEventListener('visibilitychange', polling.vis); removeEventListener('focus', polling.vis); polling = null; } }
+function stopPoll() { pollRevision++;if (polling) { clearInterval(polling.timer); removeEventListener('visibilitychange', polling.vis); removeEventListener('focus', polling.vis); polling = null; } }
 function startPoll(app) {
   stopPoll();
+  const revision=pollRevision;
   let busyNow = false;
   const tick = async () => {
     const h = handoffPending();
@@ -185,12 +186,14 @@ function startPoll(app) {
     busyNow = true;
     try {
       const r = await api('redeem', { secret: h.secret });
+      if(revision!==pollRevision||!handoffPending())return;
       if (r.status === 'ready') {
         ls.del(HANDOFF_KEY); stopPoll();
         await app.backend.sdk.signInWithCustomToken(app.backend.auth, r.token);
         closeSheet(); toast(r.email ? `Signed in as ${r.email}` : 'Signed in.');
       }
     } catch (e) {
+      if(revision!==pollRevision)return;
       const st = document.getElementById('ho-status');
       if (e.code === 'expired' || e.status === 404) { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); toast(e.status === 404 ? 'The sign-in server isn’t set up yet. Use email and password for now.' : e.message, true); }
       else if (e.code === 'setup') { stopPoll(); if (st) st.textContent = e.message; }
