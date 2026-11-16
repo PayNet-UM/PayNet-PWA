@@ -30,7 +30,7 @@ const makeApp = async (ctx) => ({ ctx, user: { uid: ctx.uid, email: ctx.email },
   merchant: { id: 'merchant', name: 'Test Shop', status: 'verified', ready: true, lat: 3.12, lng: 101.65 } });
 let passed = 0;
 for (const [role, mod, app, routes] of [
-  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'explore', 'delete-account', 'about', 'contact', 'points']],
+  ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'events', 'explore', 'delete-account', 'about', 'contact', 'points']],
   ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account', 'about', 'contact', 'points']],
   ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings', 'points']],
 ]) {

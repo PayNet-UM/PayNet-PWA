@@ -1,4 +1,4 @@
-import { POINT_LEVELS, earnedPoints, livePointEarningOn } from '../points-policy.js';
+import { POINT_LEVELS, earnedPoints, livePointEarningOn, pointsRules } from '../points-policy.js';
 import { pointsSummaryHTML } from '../points-guide.js';
 import { INFORMATION_ROUTES, informationLinks } from '../information.js';
 // Student app: +Onz hub, Overview directory, rewards, events, community,
@@ -10,6 +10,7 @@ import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
 import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
+import { eventGalleryRender, eventGalleryMount } from '../event-gallery.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
 import * as AV from '../avatar.js';
@@ -82,6 +83,7 @@ function homeMount(root, app) {
     const claimed = new Set(app.ledger.map((entry) => entry.id));
     const remaining = D.LESSONS.filter((_, index) => !claimed.has('lesson' + index)).length;
     const choices = [
+      {route:'rewards/streak',glyph:'flame',title:'Daily check-in streak',points:'+'+n(pointsRules(r).streakBonus),detail:'Open daily. Earn points every 7 days.'},
       ...(!claimed.has('survey') ? [{
         route: 'survey', glyph: 'target', title: 'Money check', points: '+' + n(r.surveyBonus),
         detail: 'One-time survey bonus.',
@@ -98,7 +100,6 @@ function homeMount(root, app) {
       <div class="points-guide-choices">${choices.map((choice) => `<a href="#/${choice.route}" class="points-guide-choice" data-close>
         <span class="tile-icon">${icon(choice.glyph)}</span><div><h3>${esc(choice.title)}</h3><p>${esc(choice.detail)}</p></div>
         <span class="points-guide-reward">${choice.points}<small>pts</small></span>${icon('chevron-right')}</a>`).join('')}</div>
-      ${!choices.length?'<p class="points-finished-note">Your one-time learning bonuses are complete. Higher levels need Admin awards, or live deals when enabled.</p>':''}
       ${livePointEarningOn(app.rules)?`<a class="points-guide-deals" href="#/explore/deals" data-close>${icon('qr-code')} Live deals <b>+${n(app.rules.liveDealPoints)} <span>pts per eligible deal</span></b>${icon('chevron-right')}</a>`:''}
       <p class="faint points-guide-note">Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.</p><a class="points-policy-link" href="#/points" data-close>${icon('info')} Full points guide ${icon('arrow-right')}</a>
     </div>`);
@@ -113,24 +114,6 @@ function merchantCard(m, { nav = false, dist = null } = {}) {
     ${isIdea(m) ? `<div class="offer idea">${icon('lightbulb')}Student venture</div>` : ''}</div></a>`;
   if (!nav || !hasPin(m)) return card;
   return `<div class="mcard-wrap">${card}<a class="mnav" href="${directionsUrl(m)}" target="_blank" rel="noopener" aria-label="Navigate to ${esc(m.name)}" title="Navigate">${icon('navigation')}</a></div>`;
-}
-function eventCard(c, index = 0) {
-  const today = D.dayKey();
-  const date = c.start ? Date.parse(c.start) : NaN;
-  const hasDate = Number.isFinite(date);
-  const status = c.start > today ? 'Upcoming' : c.start && c.start <= today && (c.end || c.start) >= today ? 'Happening now' : 'Campus event';
-  return `<details class="card campus-event-card event-colour-${index % 3}">
-    <summary>
-      <span class="campus-event-date" ${hasDate ? `aria-label="${esc(fmtDate(date))}"` : ''}>
-        ${hasDate ? `<strong>${esc(fmtDate(date, { day: 'numeric' }))}</strong><span>${esc(fmtDate(date, { month: 'short' }))}</span>` : icon('calendar')}
-      </span>
-      <div class="campus-event-copy"><span class="campus-event-status">${status}</span><h3>${esc(c.name)}</h3>
-        ${c.location ? `<p class="campus-event-location">${icon('map-pin')}<span>${esc(c.location)}</span></p>` : ''}
-        ${hasDate ? `<p class="campus-event-range">${esc(fmtDate(date))}${c.end && c.end !== c.start ? ' – ' + esc(fmtDate(Date.parse(c.end))) : ''}</p>` : ''}</div>
-      <span class="campus-event-toggle" aria-hidden="true">${icon('chevron-right')}</span>
-    </summary>
-    <div class="campus-event-description">${esc(c.description || 'More details soon.')}</div>
-  </details>`;
 }
 
 async function merchantRender(app, [id]) {
@@ -327,13 +310,16 @@ function directoryMount(root, app, [mode] = []) {
 function appStreakSection(app) {
   const now = Date.now(), today = D.dayKey(now);
   const { current, todayDone, days } = D.dailyStreak(app.appDays, now);
+  const bonus=pointsRules(app.rules).streakBonus,credited=app.ledger.find(e=>e.type==='appStreak'&&e.day===today);
+  const pending=todayDone&&current>0&&current%7===0&&!credited;
+  const next=pending?current:(Math.floor(current/7)+1)*7,progress=pending?7:current%7;
   const recent = Array.from({ length: 7 }, (_, i) => {
     const time = now - (6 - i) * 86400000, day = D.dayKey(time), completed = days.has(day);
     const label = new Date(time).toLocaleDateString('en-MY', { weekday: 'short', timeZone: 'Asia/Kuala_Lumpur' });
     return `<li class="${completed ? 'checked' : ''} ${day === today ? 'today' : ''}" aria-label="${day}: ${completed ? 'App opened' : 'No app activity'}"><span>${label}</span><span class="streak-day" aria-hidden="true">${icon(completed ? 'check' : day === today ? 'flame' : 'circle-check')}</span></li>`;
   }).join('');
-  return `<section class="section card rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading"><div class="streak-heading"><span class="streak-emblem" aria-hidden="true">${icon('flame')}</span><div><h2 id="app-streak-heading">Daily check-in streak</h2><p><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</p></div><span class="badge">${todayDone ? 'Today counted' : 'Ready for today'}</span></div>
-    <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul><div class="streak-footer"><p class="streak-guidance">Open +Onz each day to keep your streak. Streaks do not award points.</p><span class="badge">Automatic</span></div></section>`;
+  return `<section class="section card rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading"><div class="streak-heading"><span class="streak-emblem" aria-hidden="true">${icon('flame')}</span><div><h2 id="app-streak-heading">Daily check-in streak</h2><p><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</p></div><span class="badge">${credited?`+${n(credited.delta)} <span>pts earned</span>`:pending?'Bonus on the way':todayDone?'Today counted':'Ready for today'}</span></div>
+    <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul><div class="streak-footer"><p class="streak-guidance"><span>Next bonus</span> · <span>Day</span> <strong>${next}</strong></p><span class="streak-bonus">${icon('sparkles')} +${n(bonus)} <span>pts</span></span></div><div class="streak-bonus-progress" role="progressbar" aria-label="Days towards the next streak bonus" aria-valuemin="0" aria-valuemax="7" aria-valuenow="${progress}"><span style="width:${progress/7*100}%"></span></div></section>`;
 }
 
 // ------------------------------------------------------------- rewards, vouchers and learning streaks
@@ -348,7 +334,7 @@ async function rewardsRender(app) {
     <button class="btn go" type="button" id="browse-rewards">Swap points ${icon('chevron-right')}</button></div>
     <div class="rewards-hero-art" aria-hidden="true"><span class="rewards-orbit orbit-one">${icon('star')}</span><span class="rewards-gift">${icon('gift')}</span><span class="rewards-orbit orbit-two">${icon('sparkles')}</span></div></div>
     ${pointsSummaryHTML(app)}
-    <div class="points-reward-context"><span>${icon('info')}</span><p>Default reward pricing: 100 points ≈ RM1 in voucher value. Each reward sets its own points price; points are not cash.</p><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
+    <div class="points-reward-context"><span>${icon('info')}</span><p>Find out how to gain points.</p><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
     ${appStreakSection(app)}
     <section class="rewards-shelf" id="reward-shelf" tabindex="-1"><div class="rewards-section-heading"><h2>${icon('gift')} Swap points</h2></div>
       <div class="reward-grid">${rewards.filter((r) => r.active).map((r, index) => {
@@ -413,9 +399,7 @@ function showVoucher(app, vid, list) {
 
 // ------------------------------------------------------------- Aktiviti Kita
 async function eventsRender(app) {
-  const camps = (await D.listCampaigns(app.ctx).catch(() => [])).filter((c) => !c.end || c.end >= D.dayKey()).sort((a, b) => String(a.start).localeCompare(String(b.start)));
-  return `${eventCarousel({page:true})}<section class="other-campus-events" aria-labelledby="other-events-heading"><div class="head"><h2 id="other-events-heading">${icon('sparkles')} Other events</h2><span class="other-events-count" aria-label="Event count">${camps.length}</span></div>
-    <div class="other-events-grid">${camps.map(eventCard).join('') || `<div class="card empty">${icon('calendar')}<p>No events listed right now.</p></div>`}</div></section>`;
+  return eventGalleryRender(app);
 }
 
 // ------------------------------------------------------------- Bayar Kita: how to pay cashless (no tracking)
@@ -773,7 +757,7 @@ async function meRender(app) {
 }
 function pointsHistoryRow(entry) {
   const glyph = { checkin: 'map-pin-check', purchase: 'wallet', survey: 'target', lesson: 'book-open',
-    friend: 'user-plus', inviter: 'user-plus', offpeak: 'clock', redeem: 'ticket', donate: 'hand-heart', welfare: 'hand-heart' }[entry.type] || 'sparkles';
+    appStreak: 'flame', friend: 'user-plus', inviter: 'user-plus', offpeak: 'clock', redeem: 'ticket', donate: 'hand-heart', welfare: 'hand-heart' }[entry.type] || 'sparkles';
   const earned = entry.delta > 0;
   return `<div class="points-history-row">
     <span class="points-history-icon" aria-hidden="true">${icon(glyph)}</span>
@@ -783,6 +767,7 @@ function pointsHistoryRow(entry) {
 }
 function ledgerLabel(l) {
   if (l.type === 'checkin') return 'Archived attendance credit';
+  if (l.type === 'appStreak') return 'App streak bonus';
   if (l.type === 'liveDeal') return 'Live-deal scan reward';
   return { purchase: 'Cashless purchase', survey: 'Money check completed', lesson: 'Lesson completed', friend: 'Referral welcome bonus', inviter: 'Someone joined with your code',
     offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by the Admin team' }[l.type] || l.type;
@@ -832,7 +817,7 @@ export const routes = {
   merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'home', feature: 'overview' },
   rewards: { title: 'Rewards', render: rewardsRender, mount: live(rewardsMount) },
   feskum: { title: 'FESKUM 2026', render: feskumRender, mount: feskumMount, tab: 'events', wide: true },
-  events: { title: 'Campus Events', render: eventsRender, mount: mountEventCarousel, tab: 'events' },
+  events: { title: 'Campus Events', render: eventsRender, mount: eventGalleryMount, tab: 'events', wide:true },
   bayar: { title: 'Pay Cashless', render: bayarRender, tab: 'home', feature: 'dealsAndPay' },
   learn: { title: 'Learn & Earn', render: learnRender, mount: learnMount, tab: 'home' },
   survey: { title: 'Money check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'student', 'home'), tab: 'home' },

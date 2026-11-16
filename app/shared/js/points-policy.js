@@ -1,10 +1,10 @@
 // Programme point accounting. Reference voucher value is not cash or a fixed redemption rate.
-export const DEFAULT_POINT_RULES = Object.freeze({surveyBonus:50,lessonBonus:50,liveDealPoints:10});
+export const DEFAULT_POINT_RULES = Object.freeze({surveyBonus:50,lessonBonus:50,liveDealPoints:10,streakBonus:5});
 export const SELF_LESSON_COUNT=3;
 export const POINT_LEVELS=[[0,'Starter'],[200,'Regular'],[600,'Explorer'],[1500,'Campus champion'],[4000,'Legend']];
 export function pointsRules(rules={}) {
   const valid=(key)=>Number.isSafeInteger(rules[key])&&rules[key]>=0?rules[key]:DEFAULT_POINT_RULES[key];
-  return {surveyBonus:valid('surveyBonus'),lessonBonus:valid('lessonBonus'),liveDealPoints:Number.isSafeInteger(rules.liveDealPoints)&&rules.liveDealPoints>=1&&rules.liveDealPoints<=1000?rules.liveDealPoints:DEFAULT_POINT_RULES.liveDealPoints};
+  return {surveyBonus:valid('surveyBonus'),lessonBonus:valid('lessonBonus'),liveDealPoints:Number.isSafeInteger(rules.liveDealPoints)&&rules.liveDealPoints>=1&&rules.liveDealPoints<=1000?rules.liveDealPoints:DEFAULT_POINT_RULES.liveDealPoints,streakBonus:Number.isSafeInteger(rules.streakBonus)&&rules.streakBonus>=1&&rules.streakBonus<=1000?rules.streakBonus:DEFAULT_POINT_RULES.streakBonus};
 }
 export function earnedPoints(ledger=[]) {
   return ledger.reduce((sum,e)=>sum+(e.type!=='welfare'&&Number.isSafeInteger(e.delta)&&e.delta>0?e.delta:0),0);

@@ -81,8 +81,8 @@ export function confirmSheet(title, body, okLabel = 'Confirm', danger = false) {
 // busy-state wrapper for buttons/forms
 export async function busy(btn, fn) {
   if (!btn) return fn();
-  const label = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>' + label;
-  try { return await fn(); } finally { btn.disabled = false; btn.innerHTML = label; }
+  const label = btn.innerHTML,wasDisabled=btn.disabled,previousBusy=btn.getAttribute('aria-busy'); btn.disabled = true; btn.setAttribute('aria-busy','true');btn.innerHTML = '<span class="spin" aria-hidden="true"></span>' + label;
+  try { return await fn(); } finally { btn.disabled = wasDisabled;btn.innerHTML = label;if(previousBusy===null)btn.removeAttribute('aria-busy');else btn.setAttribute('aria-busy',previousBusy); }
 }
 
 // ------------------------------------------------------------- count-up for points
@@ -247,3 +247,10 @@ export function barChart(values, labels, { highlight = -1, fmt = (v) => v } = {}
 export const chevron = (stroke = '#fff', w = 18, extra = '') => `<svg class="chev" ${extra} viewBox="0 0 300 300" fill="none" aria-hidden="true">
   <path d="M40 30 H170 Q190 30 203 46 L262 132 Q274 150 262 168 L203 254 Q190 270 170 270 H40" stroke="${stroke}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
   <path d="M10 70 H140 Q155 70 165 82 L208 140 Q216 150 208 160 L165 218 Q155 230 140 230 H10" stroke="${stroke}" stroke-width="${w * 0.6}" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/></svg>`;
+
+// Immediate feedback while the next route retrieves its data.
+export function routeLoadingHTML(path=""){
+  const route=path.split("/")[0];
+  const label=route==="events"?"Events loading…":route==="rewards"?"Your campus rewards are on the way…":"A little more campus life, coming up…";
+  return `<div class="route-loading" role="status">${icon("sparkles")}<p>${label}</p></div>`;
+}

@@ -3,7 +3,7 @@
 // account can read and change; this page only decides what to show.
 import { initBackend } from './backend.js';
 import * as D from './data.js';
-import { $, esc, icon, toast, closeSheet, sheetOpen, errText } from './ui.js';
+import { $, esc, icon, toast, closeSheet, sheetOpen, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
 import * as Hep from './views/mpp.js';
 import { initI18n } from './i18n.js';
@@ -66,6 +66,7 @@ async function boot() {
 }
 
 async function onUser(user) {
+  render.token=Symbol();
   if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   closeSheet();
   app.user = user; app.profile = null; app.isMpp = false; app.role = null; app.shellRole = null;
@@ -102,6 +103,8 @@ app.addDemoRibbon = addDemoRibbon;
 
 async function render() {
   if (app.role !== 'mpp' || !app.user) return;
+  const token=Symbol();render.token=token;
+  const pendingView=$('#view');if(pendingView){pendingView.setAttribute('aria-busy','true');pendingView.innerHTML=routeLoadingHTML(location.hash.slice(2));}
   shell();
   const parts = (location.hash.replace(/^#\/?/, '') || Hep.defaultRoute).split('/');
   const route = Hep.routes[parts[0]] ? parts[0] : Hep.defaultRoute;
@@ -109,11 +112,11 @@ async function render() {
   if (app.viewCleanup) { try { app.viewCleanup(); } catch { /* */ } app.viewCleanup = null; }
   if (sheetOpen()) closeSheet();
   await Hep.renderShell(app, route);
+  if(render.token!==token)return;
   const view = $('#view');
   view.className = 'view' + (r.wide ? ' wide' : '');
-  view.innerHTML = '<div class="skeleton" style="height:180px;margin-top:16px"></div><div class="skeleton" style="height:90px;margin-top:12px"></div>';
+  view.setAttribute('aria-busy','true');view.innerHTML=routeLoadingHTML(route);
   document.title = `${r.title} · +Onz Admin`;
-  const token = Symbol(); render.token = token;
   try {
     const html = await r.render(app, parts.slice(1));
     if (render.token !== token) return;
@@ -121,9 +124,11 @@ async function render() {
     window.scrollTo(0, 0);
     const cleanup = r.mount ? await r.mount(view, app, parts.slice(1)) : null;
     if (render.token !== token) { cleanup && cleanup(); return; }
+    view.removeAttribute('aria-busy');
     const stopMotion=mountPageMotion(view);
     app.viewCleanup = ()=>{stopMotion();cleanup?.();};
   } catch (e) {
+    if(render.token!==token)return;view.removeAttribute('aria-busy');
     console.error(e);
     view.innerHTML = `<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p>
       <button class="btn" style="margin-top:12px" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;

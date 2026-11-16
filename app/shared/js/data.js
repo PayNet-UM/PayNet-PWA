@@ -1,4 +1,6 @@
 import { DEFAULT_POINT_RULES } from './points-policy.js';
+import {adminEventDraft} from './event-catalog.js';
+export {submitEvent,listEventSubmissions,watchEventSubmissions,watchCampaigns,reviewEvent} from './event-submissions-data.js';
 // Kampus Kita+ data layer. Every write here is shaped to pass firestore.rules,
 // and the same functions run in the app and in the test suite.
 
@@ -134,7 +136,7 @@ function configLog(name, data) {
     return ['features', 'Feature switches', on.length ? 'On: ' + on.join(', ') : 'All off'];
   }
   if (name === 'rules' && data.merchantReadinessUpdate) return ['merchant-readiness', 'Readiness update', String(data.merchantReadinessUpdate.message || '')];
-  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
+  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal'], ['streakBonus', '7-day streak']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
   return ['points-rules', 'Points rules', parts.join(', ')];
 }
 export async function getProfile(ctx, u = ctx.uid) { return one(ctx, R(ctx).user(u)); }
@@ -718,6 +720,10 @@ export async function listCampaigns(ctx) { return list(ctx, 'campaigns'); }
 export async function saveCampaign(ctx, id, data) {
   const ref = id ? ctx.sdk.doc(ctx.db, 'campaigns', id) : ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'campaigns'));
   await ctx.sdk.setDoc(ref, data, { merge: true });
+}
+export async function saveGalleryEvent(ctx,id,input){
+  const data=adminEventDraft(input,{allowUndated:!!id});
+  return saveCampaign(ctx,data.sourcePosterPage?'poster-'+data.sourcePosterPage:id,data);
 }
 export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
