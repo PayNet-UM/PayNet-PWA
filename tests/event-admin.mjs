@@ -1,8 +1,9 @@
+import {fileURLToPath} from 'node:url';
 // Real Demo UI: admin image editing -> live student gallery. No production writes.
 import assert from 'node:assert/strict';import fs from 'node:fs';import {chromium} from 'playwright';
 const BASE=process.env.BASE||'http://localhost:5173/?mode=demo',ADMIN=process.env.ADMIN||new URL('admin/?mode=demo',BASE).href;
 const SHOTS=process.env.SHOTS||'/tmp/e2e/event-admin';fs.mkdirSync(SHOTS,{recursive:true});
-const poster=page=>new URL(`../app/client/assets/feskum-2026/feed-${page}.jpg`,import.meta.url).pathname;
+const poster=page=>fileURLToPath(new URL(`../app/client/assets/feskum-2026/feed-${page}.jpg`,import.meta.url));
 const browser=await chromium.launch(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{}),errors=[];
 try{
  const ctx=await browser.newContext({viewport:{width:1360,height:960},reducedMotion:'reduce'}),student=await ctx.newPage();student.on('pageerror',e=>errors.push(e.message));

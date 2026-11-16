@@ -778,6 +778,17 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('HEP can edit approved event details and add gallery photos',async()=>{await D.saveGalleryEvent(mpp,'student-'+eventId,{...eventInput,name:'Updated student summit',photos:['data:image/jpeg;base64,AAAA']});const row=(await D.listCampaigns(stuA)).find(e=>e.submissionId===eventId);eq(row.name,'Updated student summit');eq(row.photos.length,1);eq('contactEmail' in row,false);});
   await denied('students cannot replace event photos or edit the gallery',()=>D.saveGalleryEvent(stuA,'student-'+eventId,{...eventInput,photos:['data:image/jpeg;base64,BBBB']}));
   await denied('students cannot hide an original FESKUM poster',()=>D.saveGalleryEvent(stuA,'poster-4',{...eventInput,sourcePosterPage:4,published:false}));
+  await ok('a third event the same day is accepted',()=>D.submitEvent(stuA,{...eventInput,name:'Third event'}));
+  await ok('a fourth event the same day is refused by the app',async()=>{let message='';try{await D.submitEvent(stuA,{...eventInput,name:'Fourth event'});}catch(e){message=e.message;}eq(message.startsWith('You can submit up to 3 events a day'),true,message);});
+  await denied('a fourth event cannot get round the limit with its own ID',()=>stuA.sdk.setDoc(eventRef(stuA,'stuA_extra'),rawEvent(stuA)));
+  await denied('a submitted event cannot be overwritten with a new one',()=>stuA.sdk.setDoc(eventRef(stuA,eventId),{...rawEvent(stuA),name:'Replaced'}));
+  await ok('event changes are in the activity log',async()=>{const actions=new Set((await D.listAdminLog(mpp)).map(e=>e.action));for(const a of ['event','event-review'])eq(actions.has(a),true,a);});
+  await denied('an event change without its activity-log entry is refused',()=>mpp.sdk.setDoc(mpp.sdk.doc(mpp.db,'campaigns','student-'+eventId),{name:'Sneaky edit'},{merge:true}));
+  const staleEventAdmin=await makeCtx({uid:'mpp1',email:adminEmail,signedInHoursAgo:13});
+  await denied('an admin who signed in 13 hours ago cannot edit a public event',()=>D.saveGalleryEvent(staleEventAdmin,'student-'+eventId,{...eventInput,name:'Old session edit'}));
+  await denied('an admin who signed in 13 hours ago cannot delete a public event',()=>D.deleteCampaign(staleEventAdmin,'student-'+eventId));
+  await denied('an admin who signed in 13 hours ago cannot delete an event directly either',()=>staleEventAdmin.sdk.deleteDoc(staleEventAdmin.sdk.doc(staleEventAdmin.db,'campaigns','student-'+eventId)));
+  await ok('HEP can delete an event, and the deletion is logged',async()=>{await D.deleteCampaign(mpp,'student-'+eventId);eq((await D.listCampaigns(stuA)).some(c=>c.submissionId===eventId),false);eq((await D.listAdminLog(mpp)).some(e=>e.action==='event-delete'),true);});
 
   log(`\n${passed} passed, ${failed} failed`);
   return { passed, failed, results };

@@ -114,7 +114,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -719,13 +719,22 @@ export function watchStats(ctx, name, cb, err) { return ctx.sdk.onSnapshot(R(ctx
 export async function listCampaigns(ctx) { return list(ctx, 'campaigns'); }
 export async function saveCampaign(ctx, id, data) {
   const ref = id ? ctx.sdk.doc(ctx.db, 'campaigns', id) : ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'campaigns'));
-  await ctx.sdk.setDoc(ref, data, { merge: true });
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, 'event', data.name || ref.id, data.published === false ? 'Hidden from the gallery' : [data.start, data.location].filter(Boolean).join(', '));
+  b.set(ref, { ...data, logId }, { merge: true });
+  await b.commit();
 }
 export async function saveGalleryEvent(ctx,id,input){
   const data=adminEventDraft(input,{allowUndated:!!id});
   return saveCampaign(ctx,data.sourcePosterPage?'poster-'+data.sourcePosterPage:id,data);
 }
-export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
+export async function deleteCampaign(ctx, id) {
+  const ref = ctx.sdk.doc(ctx.db, 'campaigns', id), current = await one(ctx, ref);
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'event-delete', current?.name || id);
+  b.delete(ref);
+  await b.commit();
+}
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
 export async function saveConfig(ctx, name, data) {
   const b = ctx.sdk.writeBatch(ctx.db);
