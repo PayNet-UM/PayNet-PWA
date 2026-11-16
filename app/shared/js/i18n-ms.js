@@ -2347,6 +2347,10 @@ Adjusted points|Melaraskan mata
 Released a matric number|Melepaskan nombor matrik
 Merchant review|Semakan peniaga
 Welfare request|Permohonan kebajikan
+Campus event|Acara kampus
+Deleted an event|Memadam acara
+Event submission|Penyerahan acara
+You can submit up to 3 events a day. Try again tomorrow.|Anda boleh menghantar sehingga 3 acara sehari. Cuba lagi esok.
 You were signed out after 30 minutes without activity.|Anda telah dilog keluar selepas 30 minit tanpa aktiviti.
 For your safety, please sign in again. Admin sign-ins last 12 hours.|Demi keselamatan anda, sila log masuk semula. Log masuk pasukan Admin sah selama 12 jam.
 Welcome to +Onz!|Selamat datang ke +Onz!

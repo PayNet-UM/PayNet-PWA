@@ -75,7 +75,8 @@ service cloud.firestore {
         && D().keys().hasOnly(['at', 'by', 'action', 'target', 'summary'])
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
-                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty']
+                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
+                          'event', 'event-delete', 'event-review']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -594,8 +595,10 @@ service cloud.firestore {
           && !event.keys().hasAny(['contactEmail','uid']);
       }
       allow read: if isMpp() || (isStudent() && resource.data.uid == uid());
-      allow create: if isStudent() && validEvent();
-      allow update: if isMpp() && resource.data.status == 'pending'
+      // The ID is the student, the day and 1 to 3, so each student can send up to 3 events a day and can't overwrite one.
+      allow create: if isStudent() && validEvent()
+        && id in [uid() + '_' + dayKey(request.time) + '_1', uid() + '_' + dayKey(request.time) + '_2', uid() + '_' + dayKey(request.time) + '_3'];
+      allow update: if adminChange() && resource.data.status == 'pending'
         && changed().hasOnly(['status','response','reviewedBy','reviewedAt'])
         && D().status in ['approved','rejected'] && D().reviewedBy == email() && D().reviewedAt == request.time
         && D().response is string && D().response.size() <= 500
@@ -604,9 +607,11 @@ service cloud.firestore {
     }
 
     // ---------- HEP-only programme records ----------
+    // Public events: changes need a recent sign-in, and saves must write their activity-log entry in the same batch.
     match /campaigns/{id} {
       allow read: if signedIn();
-      allow write: if isMpp();
+      allow create, update: if adminChange() && loggedBy(D().get('logId', null));
+      allow delete: if adminChange();
     }
     match /manualVolumes/{id} {
       allow read, write: if isMpp();

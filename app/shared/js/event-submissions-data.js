@@ -1,4 +1,5 @@
 import {EVENT_CATEGORIES} from './event-categories.js';
+import {dayKey,clock,logAdmin} from './data.js';
 
 const limits={name:120,description:1500,location:160,organiser:120,contactEmail:254,time:80};
 export function eventDraft(input){
@@ -27,9 +28,14 @@ export function publishedEvent(submission,id){
 }
 const rows=s=>s.docs.map(d=>({id:d.id,...d.data()}));
 const submissions=(ctx,own)=>own?ctx.sdk.query(ctx.sdk.collection(ctx.db,'eventSubmissions'),ctx.sdk.where('uid','==',ctx.uid)):ctx.sdk.query(ctx.sdk.collection(ctx.db,'eventSubmissions'),ctx.sdk.where('status','==','pending'));
+// Up to 3 a day: the rules accept only the IDs <student>_<day>_1 to _3, and a taken ID can't be overwritten.
+export const EVENTS_PER_DAY=3;
 export async function submitEvent(ctx,input){
-  const ref=ctx.sdk.doc(ctx.sdk.collection(ctx.db,'eventSubmissions'));
-  await ctx.sdk.setDoc(ref,{...eventDraft(input),uid:ctx.uid,status:'pending',submittedAt:ctx.sdk.serverTimestamp()});
+  const draft=eventDraft(input),day=dayKey(clock(ctx)),mine=await listEventSubmissions(ctx,true);
+  const id=Array.from({length:EVENTS_PER_DAY},(_,i)=>ctx.uid+'_'+day+'_'+(i+1)).find(key=>!mine.some(e=>e.id===key));
+  if(!id)throw new Error('You can submit up to 3 events a day. Try again tomorrow.');
+  const ref=ctx.sdk.doc(ctx.db,'eventSubmissions',id);
+  await ctx.sdk.setDoc(ref,{...draft,uid:ctx.uid,status:'pending',submittedAt:ctx.sdk.serverTimestamp()});
   return ref.id;
 }
 export async function listEventSubmissions(ctx,own=false){return rows(await ctx.sdk.getDocs(submissions(ctx,own)));}
@@ -43,7 +49,8 @@ export async function reviewEvent(ctx,id,approve,response=''){
   // The rules require the stored review to still be pending at commit time.
   // A competing reviewer therefore cannot overwrite an accepted decision.
   const batch=ctx.sdk.writeBatch(ctx.db);
-  if(approve)batch.set(ctx.sdk.doc(ctx.db,'campaigns','student-'+id),publishedEvent(snap.data(),id));
+  const logId=logAdmin(ctx,batch,'event-review',snap.data().name,approve?'Approved and published':'Declined: '+response);
+  if(approve)batch.set(ctx.sdk.doc(ctx.db,'campaigns','student-'+id),{...publishedEvent(snap.data(),id),logId});
   batch.update(ref,{status:approve?'approved':'rejected',response,reviewedBy:ctx.email,reviewedAt:ctx.sdk.serverTimestamp()});
   await batch.commit();
 }

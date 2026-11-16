@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 // Student -> HEP -> student gallery, through the real Demo UI and rules.
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ try{
   await form.locator('[name=start]').fill('2026-12-12');await form.locator('[name=end]').fill('2026-12-12');
   await form.locator('[name=time]').fill('10 am – 4 pm');await form.locator('[name=location]').fill('Dewan Tunku Canselor');
   await form.locator('[name=organiser]').fill('UM Robotics Society');await form.locator('[name=description]').fill('Meet student builders and explore their robotics projects.');
-  await form.locator('[name=poster]').setInputFiles(new URL('../app/client/assets/feskum-2026/feed-03.jpg',import.meta.url).pathname);
+  await form.locator('[name=poster]').setInputFiles(fileURLToPath(new URL('../app/client/assets/feskum-2026/feed-03.jpg',import.meta.url)));
   await student.waitForSelector('#event-poster-preview:not([hidden])');
   await student.screenshot({path:SHOTS+'/student-form.png',fullPage:true});
   await form.locator('button[type=submit]').click();await student.waitForSelector('#view-my-events');await student.click('#view-my-events');
