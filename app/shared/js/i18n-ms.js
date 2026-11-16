@@ -2394,4 +2394,35 @@ This is your college, its rank and its total points. All the points you collect 
 The leaderboard|Papan kedudukan
 See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
 How the KK League works|Cara Liga KK berfungsi
+Stall survey|Tinjauan kedai
+About 3 minutes|Kira-kira 3 minit
+Send your shop details first, then tell us about your stall.|Hantar butiran kedai anda dahulu, kemudian ceritakan tentang kedai anda.
+Send shop details|Hantar butiran kedai
+10 quick questions about your stall. Find out your stall type and what the team can set up for you, free.|10 soalan pantas tentang kedai anda. Ketahui jenis kedai anda dan apa yang pasukan boleh bantu, percuma.
+Done. See your stall type or edit your answers.|Selesai. Lihat jenis kedai anda atau ubah jawapan.
+10 quick questions. Find your stall type.|10 soalan pantas. Ketahui jenis kedai anda.
+Sent to the Admin team. Next, a quick survey about your stall.|Dihantar kepada pasukan Admin. Seterusnya, tinjauan ringkas tentang kedai anda.
+Sent to the Admin team. You haven’t done the stall survey yet.|Dihantar kepada pasukan Admin. Anda belum menjawab tinjauan kedai.
+What merchants told us after sending their shop details: stall type, payments, barriers and what would help.|Apa yang peniaga beritahu selepas menghantar butiran kedai: jenis kedai, bayaran, halangan dan apa yang membantu.
+Export to Excel|Eksport ke Excel
+Responses CSV|CSV jawapan
+Analysis CSV|CSV analisis
+No stall surveys yet. Merchants are asked to fill it in right after they send their shop details.|Belum ada tinjauan kedai. Peniaga diminta mengisinya sejurus selepas menghantar butiran kedai.
+Responses|Jawapan
+QR-ready stalls|Kedai sedia QR
+Business QR or card machine|Business QR atau mesin kad
+Happy to be listed|Sudi disenaraikan
+Need bank help|Perlukan bantuan bank
+For an SME or business account|Untuk akaun SME atau perniagaan
+Stall types|Jenis kedai
+10-minute peak counts|Kiraan 10 minit waktu puncak
+Payments counted in a busy 10 minutes, across stalls that answered.|Bayaran dikira dalam 10 minit yang sibuk, merentas kedai yang menjawab.
+Stall|Kedai
+Stall type|Jenis kedai
+Area|Kawasan
+Listing|Penyenaraian
+Bank help|Bantuan bank
+WhatsApp|WhatsApp
+Submitted|Dihantar
+Stall survey exported.|Tinjauan kedai dieksport.
 `;

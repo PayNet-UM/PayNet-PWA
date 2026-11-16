@@ -1,4 +1,5 @@
 import { DEFAULT_POINT_RULES } from './points-policy.js';
+import { cleanStallAnswers, stallType, STALL_SURVEY_VERSION } from './stall-survey.js';
 // Kampus Kita+ data layer. Every write here is shaped to pass firestore.rules,
 // and the same functions run in the app and in the test suite.
 
@@ -444,6 +445,18 @@ export async function submitSurvey(ctx, result, _rules) {
   return current.surveyBonus;
 }
 export async function getSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'surveys', u)); }
+
+// Stall survey (app/shared/js/stall-survey.js): one per merchant account, retaken by overwriting. Only the merchant and
+// the Admin team can read it, because it can hold a WhatsApp number.
+export async function getStallSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'stallSurveys', u)); }
+export async function submitStallSurvey(ctx, raw, lang = 'en') {
+  const { answers, errors } = cleanStallAnswers(raw);
+  if (errors.length) { const e = new Error('Answer every question marked *.'); e.fields = errors; throw e; }
+  const doc = { v: STALL_SURVEY_VERSION, lang: lang === 'ms' ? 'ms' : 'en', answers, stallType: stallType(answers), at: ctx.sdk.serverTimestamp() };
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'stallSurveys', ctx.uid), doc);
+  return { ...doc, at: Date.now() };
+}
+export async function listStallSurveys(ctx) { return list(ctx, 'stallSurveys'); }
 function addLearningDay(ctx, batch, lesson, answer) {
   const day = dayKey(clock(ctx));
   batch.set(ctx.sdk.doc(ctx.db, 'users', ctx.uid, 'activityDays', day), {

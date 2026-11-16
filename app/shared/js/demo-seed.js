@@ -72,6 +72,26 @@ function retireDemoAttendance(sdk) {
   });
 }
 
+// Sample stall survey answers for four demo merchants, so the Admin team's Stall survey page has something to show.
+// Roti by Hana is left out: sign in as her to try the survey. Added once, also to demo campuses made before it existed.
+const DEMO_STALL_SURVEYS = {
+  'kopikolej@demo.my': { lang: 'ms', answers: { area: 'KK3', peakQr: 9, peakCash: 6, peakCard: 0, sell: 'coffee', customers: '100to200', style: 'businessQr', payments: ['cash', 'businessQr', 'ewallet'], bank: 'maybank', barriers: ['internet'], help: ['students', 'socials'], trade: 'semester', listing: 'yes', bankHelp: 'no' } },
+  'dailybowl@demo.my': { lang: 'en', answers: { area: 'other', areaOther: 'Kompleks Perdanasiswa', peakQr: 7, peakCash: 12, peakCard: 2, sell: 'food', customers: 'o200', style: 'card', payments: ['cash', 'businessQr', 'card'], bank: 'cimb', barriers: ['none'], help: ['students'], trade: 'daily', listing: 'yes', bankHelp: 'no' } },
+  'print@demo.my': { lang: 'en', answers: { area: 'FS', peakQr: 2, peakCash: 8, sell: 'printing', customers: '50to100', style: 'personalQr', payments: ['cash', 'personalQr'], bank: 'publicbank', barriers: ['fees', 'tax'], help: ['qrSetup', 'records'], trade: 'weekdays', listing: 'maybe', bankHelp: 'yes' } },
+  'laundry@demo.my': { lang: 'ms', answers: { area: 'outside', peakCash: 5, sell: 'services', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['cashCustomers', 'dontKnow'], help: ['qrSetup', 'zeroFees'], trade: 'daily', listing: 'yes', bankHelp: 'yes', whatsapp: '012-345 6789' } },
+};
+function seedDemoStallSurveys(sdk) {
+  if (!sdk._rawUpdate) return;
+  sdk._rawUpdate((docs, Timestamp) => {
+    if (docs.has('stats/demoStallSurveys')) return;
+    for (const [path, p] of docs) {
+      const seed = /^users\/[^/]+$/.test(path) && DEMO_STALL_SURVEYS[p.email];
+      if (seed) docs.set('stallSurveys/' + path.split('/')[1], { v: 1, ...seed, stallType: seed.answers.style, at: Timestamp.now() });
+    }
+    docs.set('stats/demoStallSurveys', { version: 1 });
+  });
+}
+
 // Add social fixtures once, including to demo campuses created before Friends existed.
 // These records stay editable, so accepted or removed requests survive page reloads.
 function seedDemoFriends(sdk) {
@@ -138,7 +158,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
         ...Object.fromEntries(D.FEATURES.map(([key]) => [key, typeof rules.features?.[key] === 'boolean' ? rules.features[key] : true])),
       } }));
     }
-    retireDemoAttendance(sdk); seedDemoFriends(sdk); return;
+    retireDemoAttendance(sdk); seedDemoFriends(sdk); seedDemoStallSurveys(sdk); return;
   }
   progress('Setting up the demo campus…');
   const as = async (email) => {
@@ -186,7 +206,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
     }
     const admin = await as(MPP_EMAIL);
     await D.adjustPoints(admin, aina.uid, 300, 'Pilot tester welcome bonus');
-    seedDemoFriends(sdk);
+    seedDemoFriends(sdk); seedDemoStallSurveys(sdk);
   } catch (e) {
     console.error('Demo setup failed', e);
     toast('Demo setup hit a problem: ' + e.message, true);
