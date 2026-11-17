@@ -31,8 +31,8 @@ const makeApp = async (ctx) => ({ ctx, user: { uid: ctx.uid, email: ctx.email },
 let passed = 0;
 for (const [role, mod, app, routes] of [
   ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'events', 'explore', 'delete-account', 'about', 'contact', 'points']],
-  ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'delete-account', 'about', 'contact', 'points']],
-  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'closures', 'activity', 'settings', 'points']],
+  ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'stall-survey', 'delete-account', 'about', 'contact', 'points']],
+  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'stall-survey', 'people', 'closures', 'activity', 'settings', 'points']],
 ]) {
   for (const route of routes) {
     const html = await mod.routes[route].render(app, []);
@@ -150,4 +150,15 @@ assert.ok(!pausedHome.includes('href="#/scan"')&&!pausedHome.includes('href="#/p
 assert.ok(pausedHome.includes('href="#/points"'),'Merchants need access to the point rules');
 for(const route of ['scan','promote'])assert.ok(M.routes[route].feature.includes('dealsAndPay'),'Inactive live deals must not expose '+route);
 console.log('  ✓ Disabled live deals hide merchant claim/promotion actions while keeping the points guide available'); passed++;
+// Stall survey: the form first, then the stall type once answered; the Admin team sees it in the analysis.
+const stallApp = await makeApp(merchant);
+const stallForm = await M.routes['stall-survey'].render(stallApp, []);
+assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Kedai anda jenis apa?'), 'Merchants get the bilingual stall survey form');
+assert.ok((await M.routes.home.render(stallApp, [])).includes('href="#/stall-survey"'), 'Merchant home links to the stall survey');
+await D.submitStallSurvey(merchant, { area: 'KK3', sell: 'food', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['dontKnow'], help: ['qrSetup'], trade: 'daily', listing: 'yes', bankHelp: 'yes' }, 'ms');
+const stallResult = await M.routes['stall-survey'].render(stallApp, []);
+assert.ok(stallResult.includes('id="ss-result"') && stallResult.includes('Cash Classic') && stallResult.includes('Klasik Tunai') && !stallResult.includes('id="stall-survey"'), 'Answered surveys show the stall type');
+const stallAdmin = await H.routes['stall-survey'].render(await makeApp(hep), []);
+assert.ok(stallAdmin.includes('id="ss-xlsx"') && stallAdmin.includes('id="ss-csv"') && stallAdmin.includes('Cash Classic') && stallAdmin.includes('All responses (1)'), 'Admin team sees the analysis with exports');
+console.log('  ✓ Stall survey: bilingual form, stall type result, and the Admin team analysis with exports'); passed++;
 console.log(`\n${passed} passed, 0 failed`);

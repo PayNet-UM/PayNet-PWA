@@ -12,6 +12,7 @@ import { surveyHTML, surveyMount, merchantLogo } from './student.js';
 import { avatarSVG, defaultFor } from '../avatar.js';
 import { merchantHeading, merchantMetric, merchantEmpty, merchantSetup, merchantAction } from '../merchant-ui.js';
 import { closeRender, closeMount } from './close.js';
+import { stallSurveyRender, stallSurveyMount } from '../stall-survey-view.js';
 
 export const defaultRoute = 'home';
 const toMs = D.toMs;
@@ -33,8 +34,10 @@ async function homeRender(app) {
   const liveOn=livePointEarningOn(app.rules);
   const verified = m?.status === 'verified'; const toolsOn = D.featureOn(app.rules, 'merchantTools');
   const readiness = merchantSetup(m, hasPin, app.rules);
+  const stall = m ? await D.getStallSurvey(app.ctx).catch(() => null) : null;
   const shortcuts = [
     ['shop', 'store', 'My shop', 'Manage your shop details'],
+    ...(m ? [['stall-survey', 'list-checks', 'Stall survey', stall ? 'Done. See your stall type or edit your answers.' : '10 quick questions. Find your stall type.']] : []),
     ...(verified && liveOn ? [
       ['scan', 'qr-code', 'Deal QR', 'Show a QR for students to claim'],
       ['promote', 'badge-percent', 'Promote live deals', 'Manage live deals and offers'],
@@ -209,6 +212,10 @@ function shopMount(root, app, [section] = []) {
         await D.submitApplication(app.ctx, { name: f.name.value, accountName: f.accountName.value, type: f.type.value, segment: f.segment.value,
           location: f.location.value, zone: f.zone.value, phone: f.phone.value, ambassadorId: f.ambassadorId.value,
           eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage, logo, ...pin });
+        // First time: go straight on to the stall survey while they're here.
+        const firstTime = !app.merchant;
+        const doneSurvey = await D.getStallSurvey(app.ctx).catch(() => null);
+        if (!doneSurvey) { toast(firstTime ? 'Sent to the Admin team. Next, a quick survey about your stall.' : 'Sent to the Admin team. You haven’t done the stall survey yet.'); setTimeout(() => { location.hash = '#/stall-survey'; }, 300); return; }
         toast('Sent to the Admin team. You’ll see the status here.'); setTimeout(() => app.render(), 300);
       } catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });
@@ -333,6 +340,7 @@ export const routes = {
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
   promote: { title: 'Promote live deals', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
+  'stall-survey': { title: 'Stall survey', render: stallSurveyRender, mount: stallSurveyMount, tab: 'home', wide: true },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools', wide: true },
   'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },
 };
