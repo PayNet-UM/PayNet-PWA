@@ -10,7 +10,8 @@ export const COLLEGES = [
   ['KK4', 'Kolej Kediaman Keempat (KK4)'], ['KK5', 'Kolej Kediaman Kelima (KK5)'], ['KK6', 'Kolej Kediaman Keenam (KK6)'],
   ['KK7', 'Kolej Kediaman Ketujuh (KK7)'], ['KK8', 'Kolej Kediaman Kelapan (KK8)'], ['KK9', 'Kolej Kediaman Kesembilan (KK9)'],
   ['KK10', 'Kolej Kediaman Kesepuluh (KK10)'], ['KK11', 'Kolej Kediaman Kesebelas (KK11)'], ['KK12', 'Kolej Kediaman Kedua Belas (KK12)'],
-  ['KK13', 'Kolej Kediaman Ketiga Belas (KK13)'], ['OFF', 'Off campus'],
+  ['KK13', 'Kolej Kediaman Ketiga Belas (KK13)'],
+  ['IHAJ', 'International House Apartment Jepun (IHAJ)'], ['OFF', 'Off campus'],
 ];
 export const FACULTIES = ['Faculty of Science', 'Faculty of Engineering', 'Faculty of Business and Economics',
   'Faculty of Arts and Social Sciences', 'Faculty of Computer Science and Information Technology', 'Faculty of Medicine',

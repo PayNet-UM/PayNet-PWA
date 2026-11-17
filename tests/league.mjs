@@ -55,6 +55,14 @@ await check('merchants, off-campus accounts and invalid credit amounts do not in
   assert.deepEqual(leagueContribution({ role: 'student', college: 'OFF', faculty: 'Faculty of Law' }, [{ delta: 500 }]), { college: '', faculty: 'Faculty of Law', earned: 500 });
   assert.equal(leagueContribution({ role: 'student', college: 'KK1' }, [{ delta: '100' }, { delta: -10 }, { delta: 5 }]).earned, 5);
 });
+await check('International House Apartment Jepun (IHAJ) counts in the KK League like a KK', async () => {
+  assert.deepEqual(leagueContribution({ role: 'student', college: 'IHAJ' }, [{ delta: 70 }]), { college: 'IHAJ', faculty: '', earned: 70 });
+  docs.set('users/j', { role: 'student', college: 'IHAJ', points: 0 }); docs.set('users/j/ledger/0', { delta: 70 });
+  await syncLeagueStudent(db, 'j');
+  assert.equal(docs.get('stats/league').colleges.IHAJ, 70);
+  docs.delete('users/j'); await syncLeagueStudent(db, 'j');
+  assert.ok(!('IHAJ' in docs.get('stats/league').colleges));
+});
 await check('Faculty League: earned points count for the faculty, and move with a faculty change', async () => {
   docs.set('users/f', { role: 'student', college: 'KK4', faculty: 'Faculty of Science', points: 0 });
   docs.set('users/f/ledger/0', { delta: 120 }); docs.set('users/f/ledger/1', { type: 'welfare', delta: 500 });
@@ -129,6 +137,15 @@ await check('a student without a faculty can choose one once, then only the Admi
   await D.setFaculty(admin, 'a', 'Faculty of Law', 'Picked the wrong faculty');
   const after = await faculties();
   assert.equal(after['Faculty of Law'], 1000); assert.ok(!after['Faculty of Science']);
+});
+await check('a student can sign up in IHAJ, and their earned points show on the demo KK League', async () => {
+  const j = context('jepun', 'jepun@siswa.um.edu.my');
+  await D.createProfile(j, { role: 'student', name: 'Student Jepun', matric: 'TESTIHAJ1', college: 'IHAJ', faculty: 'Faculty of Engineering' });
+  assert.equal((await D.getProfile(j)).college, 'IHAJ');
+  await D.adjustPoints(admin, 'jepun', 40, 'Demo earned points');
+  assert.equal((await league()).IHAJ, 40);
+  await assert.rejects(D.createProfile(context('nokk', 'nokk@siswa.um.edu.my'), { role: 'student', name: 'Student X', matric: 'TESTKK14', college: 'KK14' }));
+  assert.equal(D.collegeName('IHAJ'), 'International House Apartment Jepun (IHAJ)');
 });
 await check('clients cannot forge league totals or inspect private contribution records', async () => {
   await assert.rejects(sdk.setDoc(sdk.doc(a.db, 'stats', 'league'), { colleges: { KK3: 999999 } }), { code: 'permission-denied' });
