@@ -7,6 +7,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
+import { awardAppStreak } from './streaks.js';
 import { rebuildReferralBoard } from './referrals.js';
 import { closeAccount, patchFor } from './account.js';
 
@@ -15,6 +16,10 @@ const db = getFirestore();
 const auth = getAuth();
 
 const leagueOptions = { region: 'asia-southeast1', retry: true, maxInstances: 5 };
+export const appStreakPoints = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}/appDays/{day}' },event=>{
+  if(event.data?.before.exists||!event.data?.after.exists)return;
+  return awardAppStreak(db,event.params.uid,event.params.day);
+});
 export const kkLeaguePoints = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}/ledger/{entry}' },
   (event) => syncLeagueStudent(db, event.params.uid));
 export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: 'users/{uid}' }, async (event) => {

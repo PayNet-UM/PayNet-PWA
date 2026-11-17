@@ -36,6 +36,6 @@ export function merchantSetup(m, hasPin, rules) {
 }
 
 export const merchantAction = (route, glyph, label, description, index) => `<a class="mer-action" data-tone="${['violet', 'lime', 'peach', 'sky'][index % 4]}" href="#/${esc(route)}">
-  <span class="mer-action-top"><span class="onz-art-frame mer-action-art">${directoryArt({ store: 'shops', 'qr-code': 'qr', 'badge-percent': 'deals', target: 'lessons' }[glyph] || 'shops')}</span><span class="mer-action-arrow">${icon('arrow-right')}</span></span>
+  <span class="mer-action-top"><span class="onz-art-frame mer-action-art">${directoryArt({ store: 'shops', 'qr-code': 'qr', 'badge-percent': 'deals', target: 'lessons', 'list-checks': 'lessons' }[glyph] || 'shops')}</span><span class="mer-action-arrow">${icon('arrow-right')}</span></span>
   <h3>${label}</h3><p>${description}</p>
 </a>`;

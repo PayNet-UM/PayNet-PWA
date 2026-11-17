@@ -140,7 +140,7 @@ export function handoffHash() {
   } catch { return null; }
 }
 const handoffCode = (hash) => hash.slice(0, 6).toUpperCase();
-let polling = null;
+let polling = null, pollRevision = 0;
 // The browser page must be on a DIFFERENT address from the installed app: iPhone pulls a link to the app's own
 // address back into the app (where Google sign-in can't finish). Firebase Hosting serves the site on two
 // addresses (<project>.web.app and <project>.firebaseapp.com), so the hand-off page uses the other one.
@@ -157,26 +157,27 @@ function handoffStart(app) {
   if (!h) { const secret = b64url(crypto.getRandomValues(new Uint8Array(32))); h = { secret, hash: sha256hex(secret), at: Date.now() }; ls.set(HANDOFF_KEY, JSON.stringify(h)); }
   const hash = h.hash;
   // From a home-screen app, iPhone opens a new window in Safari, where Google sign-in works.
-  try { window.open(handoffUrl(hash), '_blank', 'noopener'); } catch { /* blocked: the sheet has a link */ }
   handoffWait(app);
+  try { window.open(handoffUrl(hash), '_blank', 'noopener'); } catch { /* blocked: the sheet has a link */ }
 }
 function handoffPending() {
   try { const h = JSON.parse(ls.get(HANDOFF_KEY) || 'null'); return h && h.hash && Date.now() - h.at < HANDOFF_MAX_MS ? h : null; } catch { return null; }
 }
 function handoffWait(app) {
   const h = handoffPending(); if (!h) return;
-  const el = sheet(`<h2>Finish signing in in Safari</h2>
-    <p class="muted">Sign in with Google in Safari. Then come back to this app: you’ll be signed in automatically.</p>
-    <div class="row" style="margin-top:14px;gap:10px;align-items:center"><span class="spinner" aria-hidden="true"></span><span class="faint" id="ho-status">Waiting for Safari…</span></div>
-    <p style="margin-top:12px">Your code: <span class="code-text">${esc(handoffCode(h.hash))}</span></p>
-    <div class="stack" style="margin-top:14px"><a class="btn primary block" id="ho-open" href="${esc(handoffUrl(h.hash))}" target="_blank" rel="noopener">Open Safari</a><button class="btn ghost block" id="ho-cancel">Cancel</button></div>
-    <p class="faint" style="margin-top:10px">Safari didn’t open? Tap “Open Safari”.</p>`);
+  const el = sheet(`<h2>Match your app and Safari</h2>
+    <p class="muted">This matching code connects Safari to the +Onz app on this phone. It is not an email code, and you do not need to type it anywhere.</p>
+    <div class="handoff-match-code"><small>Matching code</small><strong class="code-text" data-no-i18n>${esc(handoffCode(h.hash))}</strong><small>Look for the same code on the Safari confirmation screen.</small></div>
+    <ol class="handoff-steps"><li>Open Safari and sign in with Google.</li><li>Check that both screens show the same code, then confirm in Safari.</li><li>Return to this app and tap the button below.</li></ol>
+    <p class="faint" id="ho-status" role="status">Waiting for you to confirm in Safari.</p>
+    <div class="stack" style="margin-top:18px"><button class="btn primary block" id="ho-finish">I matched the codes. Finish sign-in</button><a class="btn block" id="ho-open" href="${esc(handoffUrl(h.hash))}" target="_blank" rel="noopener">Open Safari</a><button class="btn ghost block" id="ho-cancel">Cancel</button></div>`,{onClose:stopPoll});
   $('#ho-cancel', el).onclick = () => { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); };
-  startPoll(app);
+  $('#ho-finish', el).onclick=()=>{const button=$('#ho-finish',el);button.disabled=true;button.innerHTML='<span class="spin" aria-hidden="true"></span> '+tr('Checking Safari confirmation…');$('#ho-status',el).textContent=tr('Waiting for Safari to confirm your sign-in.');startPoll(app);};
 }
-function stopPoll() { if (polling) { clearInterval(polling.timer); removeEventListener('visibilitychange', polling.vis); removeEventListener('focus', polling.vis); polling = null; } }
+function stopPoll() { pollRevision++;if (polling) { clearInterval(polling.timer); removeEventListener('visibilitychange', polling.vis); removeEventListener('focus', polling.vis); polling = null; } }
 function startPoll(app) {
   stopPoll();
+  const revision=pollRevision;
   let busyNow = false;
   const tick = async () => {
     const h = handoffPending();
@@ -185,17 +186,19 @@ function startPoll(app) {
     busyNow = true;
     try {
       const r = await api('redeem', { secret: h.secret });
+      if(revision!==pollRevision||!handoffPending())return;
       if (r.status === 'ready') {
         ls.del(HANDOFF_KEY); stopPoll();
         await app.backend.sdk.signInWithCustomToken(app.backend.auth, r.token);
         closeSheet(); toast(r.email ? `Signed in as ${r.email}` : 'Signed in.');
       }
     } catch (e) {
+      if(revision!==pollRevision)return;
       const st = document.getElementById('ho-status');
       if (e.code === 'expired' || e.status === 404) { ls.del(HANDOFF_KEY); stopPoll(); closeSheet(); toast(e.status === 404 ? 'The sign-in server isn’t set up yet. Use email and password for now.' : e.message, true); }
       else if (e.code === 'setup') { stopPoll(); if (st) st.textContent = e.message; }
       else if (e.status) { if (st) st.textContent = `${e.message} Retrying…`; }
-      else if (e.code && String(e.code).startsWith('auth/')) { if (st) st.textContent = `Couldn’t finish signing in (${e.code}). Retrying…`; }
+      else if (e.code && String(e.code).startsWith('auth/')) { ls.del(HANDOFF_KEY);stopPoll();if(st)st.textContent=tr('Sign-in could not finish. Cancel and start again from the app.'); }
       else if (st) st.textContent = 'Can’t reach the server. Retrying…';
     } finally { busyNow = false; }
   };
@@ -209,6 +212,7 @@ export function resumeHandoff(app) {
   if (app.backend.mode !== 'live' || !handoffPending() || app.backend.auth.currentUser) return;
   handoffWait(app);
 }
+export function discardPendingHandoff(){ls.del(HANDOFF_KEY);stopPoll();}
 // In the browser, once signed in: register the hash so the home-screen app can collect the sign-in.
 export async function renderHandoffDone(app, user, hash, isAdmin = false) {
   const leave = () => { try { sessionStorage.removeItem(HANDOFF_KEY + '-hash'); sessionStorage.removeItem(HANDOFF_KEY + '-at'); } catch { /* */ } history.replaceState(null, '', location.pathname); location.reload(); };
@@ -226,10 +230,12 @@ export async function renderHandoffDone(app, user, hash, isAdmin = false) {
       <p class="lede">You're signed in as <b>${esc(user.email || 'this account')}</b>. Continue only if you just tapped Continue with Google in the +Onz app on this phone, and it shows this code:</p>
       <p style="margin:14px 0;text-align:center"><span class="code-text">${esc(handoffCode(hash))}</span></p>
       <p class="faint">If you didn't start this, or someone sent you this link, tap "This wasn't me". Otherwise they could get into your account.</p>
-      <button class="btn primary block" id="ho-yes" style="margin-top:14px">Yes, sign in to the app</button>
+      <label class="check handoff-confirm"><input type="checkbox" id="ho-match">I started this sign-in and the code matches the one in my +Onz app.</label>
+      <button class="btn primary block" id="ho-yes" style="margin-top:14px" disabled>Confirm matching code</button>
       <button class="btn ghost block" id="ho-no" style="margin-top:8px">This wasn't me</button></div>`);
   $('#ho-no').onclick = leave;
-  await new Promise((resolve) => { $('#ho-yes').onclick = resolve; });
+  $('#ho-match').onchange=()=>{$('#ho-yes').disabled=!$('#ho-match').checked;};
+  await new Promise((resolve) => { $('#ho-yes').onclick=()=>{if($('#ho-match').checked)resolve();}; });
   frame(app, `<div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
     <div id="ho-box"><h1>Finishing sign-in…</h1><p class="lede">One moment.</p></div>`);
   const box = $('#ho-box');
@@ -352,8 +358,8 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
     <div><h1>${admin ? 'Sign in to the Admin dashboard' : 'Sign in to +Onz'}</h1>
       <p class="lede">${admin ? 'For the Admin team only. Use the email the Admin team gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
-    ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google sign-in opens Safari for a moment. Sign in there, then come back to this app and you’re in.</span></div>` : ''}
-    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here (no need to switch to the Safari app), then go back to the app.</span></div>` : ''}
+    ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google opens Safari. Match the code on both screens, confirm in Safari, then return here to finish sign-in.</span></div>` : ''}
+    ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here, compare the matching code with your home-screen app, then return to the app and finish sign-in.</span></div>` : ''}
     <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
     <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
       <div class="stack" style="margin-top:14px">

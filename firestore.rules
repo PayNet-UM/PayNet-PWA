@@ -75,7 +75,8 @@ service cloud.firestore {
         && D().keys().hasOnly(['at', 'by', 'action', 'target', 'summary'])
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
-                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty']
+                          'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
+                          'event', 'event-delete', 'event-review']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -159,7 +160,8 @@ service cloud.firestore {
                   && loggedBy(D().get('adminLogId', null)))))
         );
 
-      // Daily app use is independent of lessons, locations, attendance and points.
+      // A server trigger awards every seventh consecutive app day. Clients may
+      // create today's use record, but cannot set counters or award streak points.
       match /appDays/{day} {
         allow read: if signedIn() && (uid() == u || isMpp());
         allow create: if isStudent() && uid() == u
@@ -560,16 +562,76 @@ service cloud.firestore {
         && D().knowledge is int && D().digital is int && D().at == request.time;
     }
 
+    // Stall survey (app/shared/js/stall-survey.js): merchants answer about their own stall; only they and the Admin
+    // team can read it (it may hold a WhatsApp number). Nobody else can write it, and it can't be deleted from the app.
+    match /stallSurveys/{u} {
+      allow read: if signedIn() && (uid() == u || isMpp());
+      allow create, update: if isMerchantRole() && uid() == u
+        && D().keys().hasOnly(['v', 'lang', 'answers', 'stallType', 'at'])
+        && D().v == 1 && D().lang in ['en', 'ms'] && D().at == request.time
+        && D().stallType in ['cash', 'personalQr', 'businessQr', 'card']
+        && D().answers is map && D().answers.size() <= 25
+        && D().answers.keys().hasOnly(['area', 'areaOther', 'mid', 'peakQr', 'peakCash', 'peakCard', 'sell', 'sellOther', 'customers', 'style',
+          'payments', 'bank', 'bankOther', 'barriers', 'help', 'helpOther', 'trade', 'listing', 'bankHelp', 'whatsapp'])
+        && D().answers.keys().hasAll(['area', 'sell', 'customers', 'style', 'payments', 'bank', 'barriers', 'help', 'trade', 'listing', 'bankHelp'])
+        && D().answers.style == D().stallType
+        && D().answers.payments is list && D().answers.payments.size() <= 6
+        && D().answers.barriers is list && D().answers.barriers.size() <= 7
+        && D().answers.help is list && D().answers.help.size() >= 1 && D().answers.help.size() <= 2
+        && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20))
+        && (!('mid' in D().answers) || (D().answers.mid is string && D().answers.mid.size() <= 40));
+    }
+
     match /missionClaims/{id} {
       allow read: if signedIn() && (resource.data.uid == uid() || isMpp());
       allow create: if false;
       allow update: if isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']);
     }
 
+    // Student event proposals stay private until HEP publishes a separate public record.
+    match /eventSubmissions/{id} {
+      function validEvent() {
+        return D().keys().hasOnly(['uid','status','submittedAt','name','description','category','start','end','time','location','organiser','contactEmail','posterImage'])
+          && D().uid == uid() && D().status == 'pending' && D().submittedAt == request.time
+          && D().name is string && D().name.size() > 0 && D().name.size() <= 120
+          && D().description is string && D().description.size() > 0 && D().description.size() <= 1500
+          && D().location is string && D().location.size() > 0 && D().location.size() <= 160
+          && D().organiser is string && D().organiser.size() > 0 && D().organiser.size() <= 120
+          && D().contactEmail is string && D().contactEmail.size() <= 254 && D().contactEmail.matches('^[^ @]+@[^ @]+[.][^ @]+$')
+          && D().category in ['talks','seminars','competitions','bazaars','summits','festivals','music','sports','other']
+          && D().start is string && D().start.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+          && D().end is string && D().end.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$') && D().end >= D().start
+          && D().time is string && D().time.size() <= 80
+          && D().posterImage is string && D().posterImage.size() <= 600000
+          && (D().posterImage == '' || D().posterImage.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'));
+      }
+      function published() {
+        let event = getAfter(/databases/$(database)/documents/campaigns/$('student-' + id)).data;
+        return event.submissionId == id && event.name == resource.data.name
+          && event.description == resource.data.description && event.category == resource.data.category
+          && event.start == resource.data.start && event.end == resource.data.end && event.time == resource.data.time
+          && event.location == resource.data.location && event.organiser == resource.data.organiser
+          && event.posterImage == resource.data.posterImage && event.budgetCents == 0
+          && !event.keys().hasAny(['contactEmail','uid']);
+      }
+      allow read: if isMpp() || (isStudent() && resource.data.uid == uid());
+      // The ID is the student, the day and 1 to 3, so each student can send up to 3 events a day and can't overwrite one.
+      allow create: if isStudent() && validEvent()
+        && id in [uid() + '_' + dayKey(request.time) + '_1', uid() + '_' + dayKey(request.time) + '_2', uid() + '_' + dayKey(request.time) + '_3'];
+      allow update: if adminChange() && resource.data.status == 'pending'
+        && changed().hasOnly(['status','response','reviewedBy','reviewedAt'])
+        && D().status in ['approved','rejected'] && D().reviewedBy == email() && D().reviewedAt == request.time
+        && D().response is string && D().response.size() <= 500
+        && (D().status == 'approved' ? published() : D().response.size() > 0);
+      allow delete: if false;
+    }
+
     // ---------- HEP-only programme records ----------
+    // Public events: changes need a recent sign-in, and saves must write their activity-log entry in the same batch.
     match /campaigns/{id} {
       allow read: if signedIn();
-      allow write: if isMpp();
+      allow create, update: if adminChange() && loggedBy(D().get('logId', null));
+      allow delete: if adminChange();
     }
     match /manualVolumes/{id} {
       allow read, write: if isMpp();

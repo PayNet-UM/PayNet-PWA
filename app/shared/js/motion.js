@@ -1,6 +1,6 @@
 // Small, once-per-view entrances. Content remains visible if motion or observers are unavailable.
 const TARGETS = [
-  '.page-title','.kk-hero','.student-welcome','.kk-pillar','.section > .head',
+  '.page-title','.kk-hero','.student-welcome','.kk-pillar','.section > .head','.event-gallery-hero','.event-gallery-card',
   '.campus-event-showcase','.festival-entry','.reward-prize','.reward-extra','.community-invite',
   '.info-hero','.contact-heading','.info-story','.info-impact-card','.info-join-card',
   '.info-team-group','.info-final-cta','.info-contact-options > *','.info-query-card',

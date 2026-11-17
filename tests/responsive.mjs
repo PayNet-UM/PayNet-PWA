@@ -35,7 +35,7 @@ try {
         await page.setViewportSize(viewport);
         for(const route of routes){
           await page.goto(base+'#/'+route);
-          await page.waitForFunction(()=>document.querySelector('#view')?.children.length&&!document.querySelector('#view > .skeleton'),null,{timeout:30000});
+          await page.waitForFunction(()=>document.querySelector('#view')?.children.length&&!document.querySelector('#view > .skeleton')&&!document.querySelector('#view[aria-busy="true"]'),null,{timeout:30000});
           await page.evaluate(async lang=>(await import('./js/i18n.js')).setLang(lang),language);
           await page.waitForTimeout(100);
           if(await page.locator('.guide [data-skip]').count())await page.locator('.guide [data-skip]').click();
