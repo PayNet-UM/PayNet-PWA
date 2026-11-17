@@ -59,8 +59,8 @@ service cloud.firestore {
         && request.time.toMillis() < request.auth.token.auth_time * 1000 + 43200000;
     }
     function adminChange() { return isMpp() && recentSignIn(); }
-    // Residential colleges KK1 to KK13, or off campus (the list in data.js COLLEGES).
-    function validCollege(c) { return c is string && c.matches('^(KK([1-9]|1[0-3])|OFF)$'); }
+    // Residential colleges KK1 to KK13, International House Apartment Jepun (IHAJ), or off campus (the list in data.js COLLEGES).
+    function validCollege(c) { return c is string && c.matches('^(KK([1-9]|1[0-3])|IHAJ|OFF)$'); }
     // A logged change names its activity-log entry, which must be written by this admin in the same batch.
     function loggedBy(logId) {
       return logId is string

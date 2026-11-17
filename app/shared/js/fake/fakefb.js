@@ -90,7 +90,7 @@ function rebuildDemoLeague(docs) {
     if (!match || profile.role !== 'student') continue;
     const points = earned.get(match[1]) || 0;
     if (!points) continue;
-    if (/^KK(?:[1-9]|1[0-3])$/.test(profile.college || '')) colleges[profile.college] = (colleges[profile.college] || 0) + points;
+    if (/^(?:KK(?:[1-9]|1[0-3])|IHAJ)$/.test(profile.college || '')) colleges[profile.college] = (colleges[profile.college] || 0) + points;
     const faculty = typeof profile.faculty === 'string' ? profile.faculty.trim() : '';
     if (faculty.length > 1 && faculty.length <= 100) faculties[faculty] = (faculties[faculty] || 0) + points;
   }

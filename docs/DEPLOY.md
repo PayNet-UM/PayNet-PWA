@@ -292,7 +292,7 @@ the replacement transaction-points flow is intentionally deferred.
 ## KK League totals
 
 KK League uses the sum of positive ledger credits for students currently in each
-KK (KK1–KK13), including lessons, surveys and HEP awards. Previously earned
+KK (KK1–KK13, or International House Apartment Jepun), including lessons, surveys and HEP awards. Previously earned
 legacy credits remain part of the historical cumulative total. Redemptions, donations and other
 negative entries do not reduce the score. Welfare support is a transfer rather than
 earned points, so it is excluded from KK League and level progress. A college change moves that student's
