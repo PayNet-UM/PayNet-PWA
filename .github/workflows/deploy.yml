@@ -44,6 +44,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      # The streak checks in test:emulator load the server code, so install its packages first (as ci.yml does).
+      - if: github.ref_name == 'main'
+        run: npm ci --prefix functions --no-audit --no-fund
       - if: github.ref_name == 'main'
         run: npm run test:emulator
 
