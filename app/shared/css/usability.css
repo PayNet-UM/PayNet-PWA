@@ -81,3 +81,14 @@
 @media(max-height:600px) and (min-width:760px) {
   .av-editor .av-stage { position:static; }
 }
+/* The installed-app matching code is distinct from email verification and is shown on both screens. */
+.handoff-match-code { display:grid;justify-items:center;gap:12px;text-align:center;margin:22px 0;padding:23px;border-radius:20px;border:1px solid #cfc9f2;background:#eeebff;color:#25245f; }
+.handoff-match-code .code-text { font-size:30px;letter-spacing:5px;padding:10px 15px;background:#fff;border-radius:12px; }
+.handoff-match-code small { font-size:13px;line-height:1.6; }
+.handoff-steps { padding-left:24px;display:grid;gap:12px;font-size:14px;line-height:1.7;color:#515b7c;margin-bottom:20px; }
+.handoff-confirm { background:#f2f7d9;border:1px solid #d8e5a4;border-radius:13px;padding:15px;margin-top:18px;line-height:1.6; }
+.route-loading { padding:38px 20px;display:grid;justify-items:center;text-align:center;gap:15px;min-height:180px;color:#302e8a; }
+.route-loading>.ic { width:38px;height:38px;padding:8px;box-sizing:content-box;border-radius:18px;background:#eaff00; }
+.route-loading p { font-size:16px;line-height:1.6; }
+.tabbar a.pending { background:#ffffff24; }
+.boot small { display:block;margin-top:9px;font-size:13px;color:#555d7b; }

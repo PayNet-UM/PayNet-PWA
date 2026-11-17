@@ -1,5 +1,6 @@
 import { learningPlan, unspentPointExposure } from '../points-policy.js';
 import { pointsPageRender } from '../points-guide.js';
+import {eventAdminRender,eventAdminMount} from '../event-admin.js';
 // Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
@@ -16,7 +17,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campaigns', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Stall survey', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Stall survey', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -45,12 +46,13 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w, x, fb] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
-      D.listFeedback(app.ctx).catch(() => [])]);
+    const [m, c, w, x, fb, events] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
+      D.listFeedback(app.ctx).catch(() => []),D.listEventSubmissions(app.ctx).catch(()=>[])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
     set('feedback', fb.filter((f) => f.status === 'new').length);
+    set('campaigns',events.length);
   } catch { /* not initialised yet */ }
 }
 
@@ -340,25 +342,8 @@ function rewardsMount(root, app) {
 }
 
 // ------------------------------------------------------------- campaigns
-async function campaignsRender(app) {
-  const camps = (await D.listCampaigns(app.ctx)).sort((a, b) => String(b.start).localeCompare(String(a.start))); app._cp = camps;
-  return `${hepHeading('Campaigns and events', 'Shown to students on the Community page. Set aside budget for each so the fund balance stays honest.', 'calendar', `<button class="btn primary" id="new">${icon('plus')} New campaign</button>`)}
-    <div class="hep-campaign-grid">${camps.map((c) => `<article class="card hep-campaign"><div class="hep-campaign-top">${hepEmblem('calendar', true)}<button class="btn small" data-c="${esc(c.id)}">${icon('pencil')} Edit</button></div><h2>${esc(c.name)}</h2>${c.description ? `<p>${esc(c.description)}</p>` : ''}<div class="hep-campaign-details"><span>${icon('calendar')} ${esc(c.start || '—')} – ${esc(c.end || '—')}</span><span>${icon('map-pin')} ${esc(c.location || '—')}</span></div><div class="hep-campaign-bottom"><span>Campaign budget<strong class="num">${rm(c.budgetCents)}</strong></span><span aria-hidden="true">${icon('sparkles')}</span></div></article>`).join('') || hepEmpty('No campaigns yet.', 'calendar')}</div>`;
-}
-function campaignsMount(root, app) {
-  const edit = (c) => {
-    const el = sheet(`<h2>${c ? 'Edit campaign' : 'New campaign'}</h2><form id="cf" class="stack" style="margin-top:12px"><label class="field">Name<input name="name" required value="${esc(c?.name || '')}"></label>
-      <label class="field">Short description for students<input name="description" value="${esc(c?.description || '')}"></label>
-      <div class="grid-2"><label class="field">Starts<input name="start" type="date" required value="${esc(c?.start || '')}"></label><label class="field">Ends<input name="end" type="date" required value="${esc(c?.end || '')}"></label></div>
-      <div class="grid-2"><label class="field">Location<input name="location" value="${esc(c?.location || '')}"></label><label class="field">Budget (RM)<input name="budget" type="number" min="0" step="1" value="${(c?.budgetCents || 0) / 100}"></label></div>
-      <div class="row end">${c ? '<button type="button" class="btn warn" id="del">Delete</button>' : ''}<button class="btn primary">Save</button></div></form>`);
-    $('#cf', el).onsubmit = (e) => { e.preventDefault(); const f = e.target; if (f.end.value < f.start.value) return toast('End date must be after the start date.', true);
-      busy($('button.primary', el), async () => { await D.saveCampaign(app.ctx, c?.id, { name: f.name.value.trim(), description: f.description.value.trim(), start: f.start.value, end: f.end.value, location: f.location.value.trim(), budgetCents: Math.round(+f.budget.value * 100) }); closeSheet(); app.render(); }); };
-    if ($('#del', el)) $('#del', el).onclick = async () => { await D.deleteCampaign(app.ctx, c.id); closeSheet(); app.render(); };
-  };
-  $('#new', root).onclick = () => edit(null);
-  $$('[data-c]', root).forEach((b) => { b.onclick = () => edit(app._cp.find((c) => c.id === b.dataset.c)); });
-}
+const campaignsRender=eventAdminRender;
+const campaignsMount=eventAdminMount;
 
 // ------------------------------------------------------------- KPIs and surveys
 async function kpisRender(app) {
@@ -598,9 +583,9 @@ async function settingsRender(app) {
       <label class="field">Update for merchants<textarea name="message" required minlength="10" maxlength="1000" rows="3" placeholder="What should merchants review or complete?">${esc(rules.merchantReadinessUpdate?.message || '')}</textarea></label>
       ${rules.merchantReadinessUpdate?.publishedAt ? `<p class="faint">Last published ${fmtDate(rules.merchantReadinessUpdate.publishedAt)}</p>` : ''}
       <button class="btn primary">${icon('megaphone')} Publish readiness update</button></form>
-    <div class="points-admin-summary"><span>${icon('sparkles')}</span><div><b>${n(learningPlan(rules).total)} <span>one-time learning points</span></b><p>Three lesson bonuses plus one Money check. Daily streaks and referrals do not award points.</p></div><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
+    <div class="points-admin-summary"><span>${icon('sparkles')}</span><div><b>${n(learningPlan(rules).total)} <span>one-time learning points</span></b><p>Learning bonuses are paid once. Streak bonuses repeat every 7 days.</p></div><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
     <div class="cols two"><form id="rules" class="card pad-lg stack"><h2>Points rules</h2>
-      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}${field('liveDealPoints', 'Points per live-deal scan', 'Only when live deals are enabled. Once per student, per deal, per day.', 1, 1000)}</div>
+      <div class="grid-2">${field('surveyBonus', 'Money check bonus', 'Once per student')}${field('lessonBonus', 'Bonus per lesson', 'Once per lesson')}${field('liveDealPoints', 'Points per live-deal scan', 'Only when live deals are enabled. Once per student, per deal, per day.', 1, 1000)}${field('streakBonus', '7-day streak bonus', 'Awarded at 7, 14, 21 consecutive app days and so on.', 1, 1000)}</div>
       <button class="btn primary">Save rules</button></form>
     <form id="access" class="card pad-lg stack"><h2>Who can use the app</h2>
       <label class="field">Student email domains<textarea name="studentDomains">${list('studentDomains')}</textarea><small>One per line, e.g. siswa.um.edu.my</small></label>
@@ -617,7 +602,7 @@ function settingsMount(root, app) {
   };
   $('#rules', root).onsubmit = (e) => {
     e.preventDefault(); const f = e.target; const v = (k) => Math.floor(+f[k].value);
-    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), liveDealPoints: v('liveDealPoints') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); app.render(); } catch (err) { toast(errText(err), true); } });
+    busy($('button', f), async () => { try { await D.saveConfig(app.ctx, 'rules', { surveyBonus: v('surveyBonus'), lessonBonus: v('lessonBonus'), liveDealPoints: v('liveDealPoints'), streakBonus: v('streakBonus') }); app.rules = await D.getRules(app.ctx); toast('Rules saved.'); app.render(); } catch (err) { toast(errText(err), true); } });
   };
   $('#readiness-update', root).onsubmit = (e) => {
     e.preventDefault(); const form = e.target;
@@ -640,7 +625,7 @@ export const routes = {
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },
   recon: { title: 'Reconciliation', render: reconRender, mount: reconMount },
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
-  campaigns: { title: 'Campaigns', render: campaignsRender, mount: campaignsMount },
+  campaigns: { title: 'Campus events', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
   'stall-survey': { title: 'Stall survey', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
   feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
