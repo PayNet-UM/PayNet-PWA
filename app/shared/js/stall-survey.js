@@ -8,6 +8,7 @@ const o = (code, en, ms = en) => ({ code, en, ms });
 
 const AREAS = [
   ...Array.from({ length: 13 }, (_, i) => o('KK' + (i + 1), 'KK' + (i + 1))),
+  o('IHAJ', 'International House Apartment Jepun'),
   o('FBL', 'Faculty of Languages and Linguistics', 'Fakulti Bahasa dan Linguistik'),
   o('FAB', 'Faculty of Built Environment', 'Fakulti Alam Bina'),
   o('FPE', 'Faculty of Business and Economics', 'Fakulti Perniagaan dan Ekonomi'),
