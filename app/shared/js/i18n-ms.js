@@ -2394,4 +2394,108 @@ This is your college, its rank and its total points. All the points you collect 
 The leaderboard|Papan kedudukan
 See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
 How the KK League works|Cara Liga KK berfungsi
+How live deals work|Cara tawaran aktif berfungsi
+A live deal is a discount students can claim at your counter during your quiet hours.|Tawaran aktif ialah diskaun yang boleh dituntut pelajar di kaunter anda pada waktu lengang.
+Create a deal|Cipta tawaran
+Choose the discount, the hours it runs and how full your café can be. It goes live straight away, with no approval needed.|Pilih diskaun, waktu tawaran berjalan dan tahap kepenuhan kafe anda. Tawaran terus aktif tanpa perlu kelulusan.
+Students see it|Pelajar melihatnya
+Your deal shows under Live deals in the student app, but only during its hours and while your café is less full than your limit.|Tawaran anda dipaparkan di bawah Tawaran aktif dalam aplikasi pelajar, tetapi hanya dalam waktunya dan semasa kafe anda kurang penuh daripada had anda.
+They scan your QR|Mereka mengimbas QR anda
+At the counter, tap Show deal QR. The student scans it with +Onz.|Di kaunter, ketik Paparkan QR tawaran. Pelajar mengimbasnya dengan +Onz.
+You apply the discount|Anda memberikan diskaun
+Their claim appears on your screen. Tap Apply discount, give them the discount and take payment as usual.|Tuntutan mereka dipaparkan pada skrin anda. Ketik Berikan diskaun, beri diskaun dan terima bayaran seperti biasa.
+Good to know|Perlu tahu
+Each student can claim each deal once a day.|Setiap pelajar boleh menuntut setiap tawaran sekali sehari.
+A claim is valid for 15 minutes after scanning.|Tuntutan sah selama 15 minit selepas imbasan.
+The QR changes every 90 seconds, so a screenshot won’t work.|QR bertukar setiap 90 saat, jadi tangkap layar tidak akan berfungsi.
+Keep your seats up to date. A deal won’t show until you set your seat count.|Kemas kini tempat duduk anda. Tawaran tidak akan dipaparkan sehingga anda menetapkan bilangan tempat duduk.
+You set the discount and give it at your counter. +Onz records the claim, not the payment.|Anda menetapkan diskaun dan memberikannya di kaunter. +Onz merekodkan tuntutan, bukan bayaran.
+Pause or resume a deal at any time.|Jeda atau sambung semula tawaran pada bila-bila masa.
+Voucher program|Program baucar
+Students collect +Onz points around campus and swap them for vouchers in the Rewards tab. Join the voucher program and your shop’s voucher could be one of them, bringing students to your counter.|Pelajar mengumpul mata +Onz di sekitar kampus dan menukarnya dengan baucar dalam tab Ganjaran. Sertai program baucar dan baucar kedai anda boleh menjadi salah satu daripadanya, sekali gus membawa pelajar ke kaunter anda.
+Tell us your voucher idea|Kongsi idea baucar anda
+What students get, its value and how many you can honour a month.|Apa yang pelajar dapat, nilainya dan berapa banyak yang boleh anda tunaikan sebulan.
+The Admin team reviews it|Pasukan Admin menyemaknya
+We contact you to agree the details with you.|Kami akan menghubungi anda untuk bersetuju tentang butirannya.
+Students swap points for it|Pelajar menukar mata dengannya
+Once it’s set up, your voucher appears in Rewards.|Setelah disediakan, baucar anda dipaparkan dalam Ganjaran.
+Applying is free and doesn’t commit you to anything. We’ll agree all the details with you before your voucher goes live.|Permohonan adalah percuma dan tidak mengikat anda. Kami akan bersetuju tentang semua butiran dengan anda sebelum baucar anda dilancarkan.
+Your application|Permohonan anda
+Not this time|Belum kali ini
+a month|sebulan
+Note from the Admin team:|Nota daripada pasukan Admin:
+The Admin team will contact you to set up your voucher.|Pasukan Admin akan menghubungi anda untuk menyediakan baucar anda.
+We’ll contact you within a few working days.|Kami akan menghubungi anda dalam beberapa hari bekerja.
+Apply to join|Mohon untuk menyertai
+Edit application|Sunting permohonan
+Apply again|Mohon semula
+Voucher value (RM)|Nilai baucar (RM)
+Vouchers you can honour a month|Baucar yang boleh anda tunaikan sebulan
+Conditions (optional)|Syarat (pilihan)
+Contact person|Orang untuk dihubungi
+Send updated application|Hantar permohonan yang dikemas kini
+Send application|Hantar permohonan
+Application sent. The Admin team will be in touch.|Permohonan dihantar. Pasukan Admin akan menghubungi anda.
+e.g. RM5 off any meal|cth. Diskaun RM5 untuk sebarang hidangan
+e.g. 5|cth. 5
+e.g. 50|cth. 50
+e.g. Minimum spend RM10. Weekdays only, 2–5 pm.|cth. Belanja minimum RM10. Hari bekerja sahaja, 2–5 petang.
+e.g. 012-345 6789|cth. 012-345 6789
+Describe your voucher in 3 to 160 characters.|Terangkan baucar anda dalam 3 hingga 160 aksara.
+Voucher value must be between RM0.50 and RM1,000.|Nilai baucar mesti antara RM0.50 dan RM1,000.
+Enter how many vouchers you can honour each month.|Masukkan bilangan baucar yang boleh anda tunaikan setiap bulan.
+Keep the conditions under 500 characters.|Pastikan syarat kurang daripada 500 aksara.
+Enter a contact name.|Masukkan nama untuk dihubungi.
+Enter a contact phone number.|Masukkan nombor telefon untuk dihubungi.
+Merchants who want to offer a voucher that students can swap points for. Approving only records your decision. Agree the details with the merchant first, then add the voucher in Rewards and budget.|Peniaga yang ingin menawarkan baucar yang boleh ditukar pelajar dengan mata. Kelulusan hanya merekodkan keputusan anda. Bersetuju tentang butiran dengan peniaga dahulu, kemudian tambah baucar dalam Ganjaran dan bajet.
+Conditions:|Syarat:
+Your note|Nota anda
+No applications waiting.|Tiada permohonan yang menunggu.
+Note to the merchant (optional)|Nota kepada peniaga (pilihan)
+The merchant sees this on their Promote live deals page.|Peniaga melihat nota ini pada halaman Promosikan tawaran aktif mereka.
+Approve application|Luluskan permohonan
+Decline application|Tolak permohonan
+Application approved.|Permohonan diluluskan.
+Application declined.|Permohonan ditolak.
+Approved|Diluluskan
+e.g. We’ll call you this week to agree the details.|cth. Kami akan menghubungi anda minggu ini untuk bersetuju tentang butirannya.
+e.g. We’re not adding new vouchers this semester.|cth. Kami tidak menambah baucar baharu semester ini.
+Today|Hari ini
+See insights|Lihat analisis
+Waiting at the counter|Menunggu di kaunter
+How full are you?|Berapa penuh kedai anda?
+of|daripada
+One fewer seat taken|Kurang satu tempat duduk diambil
+One more seat taken|Tambah satu tempat duduk diambil
+Tap − or + as people come and go.|Ketik − atau + apabila pelanggan datang dan pergi.
+Change total seats|Tukar jumlah tempat duduk
+Set how many seats you have. Live deals only show while you have free seats.|Tetapkan bilangan tempat duduk anda. Tawaran aktif hanya dipaparkan semasa ada tempat duduk kosong.
+Set my seats|Tetapkan tempat duduk saya
+Saving…|Menyimpan…
+Saved just now|Baru sahaja disimpan
+Your seats|Tempat duduk anda
+Save seats|Simpan tempat duduk
+See your application and shop details.|Lihat permohonan dan butiran kedai anda.
+Apply to join +Onz.|Mohon untuk menyertai +Onz.
+7 questions about the help your shop needs.|7 soalan tentang bantuan yang diperlukan kedai anda.
+How student points work|Cara mata pelajar berfungsi
+What students earn, and how vouchers are paid.|Apa yang pelajar peroleh, dan cara baucar dibayar.
+More|Lagi
+More for your shop|Lagi untuk kedai anda
+Your live deals|Tawaran aktif anda
+paused|dijeda
+Publish instantly, with no approval needed.|Terbitkan serta-merta, tanpa perlu kelulusan.
+Tap New deal to fill your quiet hours. “How live deals work” below explains each step.|Ketik Tawaran baharu untuk mengisi waktu lengang anda. “Cara tawaran aktif berfungsi” di bawah menerangkan setiap langkah.
+Students swap their +Onz points for vouchers in Rewards. Offer one for your shop and bring more students to your counter.|Pelajar menukar mata +Onz mereka dengan baucar dalam Ganjaran. Tawarkan baucar untuk kedai anda dan bawa lebih ramai pelajar ke kaunter anda.
+How it works|Cara ia berfungsi
+When students claim your live deals, and how many become sales.|Bila pelajar menuntut tawaran aktif anda, dan berapa banyak yang menjadi jualan.
+7 days|7 hari
+30 days|30 hari
+Period|Tempoh
+Claims used at the counter|Tuntutan digunakan di kaunter
+Claims in the last 7 days|Tuntutan dalam 7 hari lepas
+No claims in the last 7 days yet.|Belum ada tuntutan dalam 7 hari lepas.
+Busiest times|Waktu paling sibuk
+No deal claims in this period.|Tiada tuntutan tawaran dalam tempoh ini.
+Expired|Tamat tempoh
 `;

@@ -220,7 +220,24 @@ await mer.fill('#df [name=title]', 'Campus study break'); await mer.fill('#df [n
 await mer.waitForFunction(() => document.querySelector('#deal-preview-title')?.textContent === 'Campus study break' && document.querySelector('#deal-preview-threshold')?.textContent === '45%');
 await mer.screenshot({ path: `${shots}/m-deal-builder.png`, fullPage: true });
 await mer.click('#sheet [data-close]');
+// Promote explains live deals and lets the merchant apply to the voucher program.
+if (!/once a day/.test(await mer.textContent('#how-live-deals'))) throw new Error('Promote should explain how live deals work');
+await mer.click('#how-live-deals summary'); if (!(await mer.evaluate(() => document.querySelector('#how-live-deals').open))) throw new Error('How live deals work should open');
+await mer.screenshot({ path: `${shots}/m-promote-how.png`, fullPage: true });
+await mer.click('#voucher-apply'); await mer.waitForSelector('#vf');
+await mer.fill('#vf [name=offer]', 'RM5 off any meal'); await mer.fill('#vf [name=value]', '5'); await mer.fill('#vf [name=perMonth]', '40');
+await mer.fill('#vf [name=contactPhone]', '012-345 6789'); await mer.click('#vf button');
+await mer.waitForSelector('.mer-voucher-status.is-pending', { timeout: 20000 });
+await mer.screenshot({ path: `${shots}/m-voucher-pending.png`, fullPage: true });
+ok('Promote explains how live deals work, and the merchant applied to the voucher program');
+// Insights switches period and shows the week as a chart.
+await mer.goto(BASE + '#/insights'); await mer.waitForSelector('.mer-chart .bars');
+await mer.click('[data-period="today"]'); await mer.waitForSelector('[data-period="today"][aria-pressed="true"]');
+await mer.click('[data-period="month"]'); await mer.screenshot({ path: `${shots}/m-insights-month.png`, fullPage: true });
+ok('Insights switches between today, 7 and 30 days and charts claims per day');
 await mer.goto(BASE + '#/home'); await mer.setViewportSize({ width: 1360, height: 900 }); await mer.waitForSelector('.mer-actions');
+const sideOrder = await mer.evaluate(() => [...document.querySelectorAll('.tabbar a')].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map((a) => a.dataset.tab));
+if (sideOrder[0] !== 'home' || sideOrder.at(-1) !== 'about') throw new Error('merchant sidebar should start with Home and end with About us: ' + sideOrder.join(', '));
 await mer.screenshot({ path: `${shots}/m-home-desktop.png`, fullPage: true });
 await mer.setViewportSize({ width: 390, height: 844 });
 if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
@@ -337,7 +354,16 @@ if (await mpp.locator('script[src*="views/student"], .tabbar').count() !== 0) th
 await mpp.goto(ADMIN + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
 await mpp.waitForSelector('#toast.show'); ok('HEP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
-for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings']) {
+// HEP approves the voucher program application; the merchant sees it on Promote.
+await mpp.goto(ADMIN + '#/vouchers'); await mpp.waitForSelector('.hep-va');
+if ((await mpp.textContent('[data-count="vouchers"]')).trim() !== '1') throw new Error('Voucher program menu should count 1 waiting application');
+await mpp.screenshot({ path: `${shots}/p-vouchers.png`, fullPage: true });
+await mpp.click('[data-va][data-st="approved"]'); await mpp.fill('#vaf [name=note]', 'We’ll call you this week.'); await mpp.click('#vaf button');
+await mpp.waitForSelector('text=No applications waiting.');
+await mer.goto(BASE + '#/promote'); await mer.waitForSelector('.mer-voucher-status.is-approved');
+if (!/We’ll call you this week/.test(await mer.textContent('.mer-voucher-status'))) throw new Error('merchant should see the Admin note');
+ok('HEP approved the voucher application with a note, and the merchant sees it');
+for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
   await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }

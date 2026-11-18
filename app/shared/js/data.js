@@ -616,6 +616,34 @@ export async function markFeedbackDone(ctx, id) {
   await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'done', repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
 }
 
+// ------------------------------------------------------------- voucher program: verified merchants apply to offer a voucher
+// One application per merchant, named after the merchant. They can edit it while it's waiting or after a "not this time".
+// Approving it only records the decision: the Admin team agrees the details with the merchant before anything is listed.
+export const VOUCHER_APP_STATUS = { pending: 'The Admin team is reviewing', approved: 'Approved', declined: 'Not this time' };
+export async function applyVoucherProgram(ctx, form) {
+  const t = (v) => String(v ?? '').trim();
+  const a = { offer: t(form.offer), conditions: t(form.conditions), contactName: t(form.contactName), contactPhone: t(form.contactPhone),
+    valueCents: Math.round(Number(form.value) * 100), perMonth: Math.floor(Number(form.perMonth)) };
+  if (a.offer.length < 3 || a.offer.length > 160) throw new Error('Describe your voucher in 3 to 160 characters.');
+  if (!Number.isSafeInteger(a.valueCents) || a.valueCents < 50 || a.valueCents > 100000) throw new Error('Voucher value must be between RM0.50 and RM1,000.');
+  if (!Number.isSafeInteger(a.perMonth) || a.perMonth < 1 || a.perMonth > 10000) throw new Error('Enter how many vouchers you can honour each month.');
+  if (a.conditions.length > 500) throw new Error('Keep the conditions under 500 characters.');
+  if (a.contactName.length < 2 || a.contactName.length > 80) throw new Error('Enter a contact name.');
+  if (!/^\+?[0-9 -]{8,20}$/.test(a.contactPhone)) throw new Error('Enter a contact phone number.');
+  const m = await getMerchant(ctx, ctx.uid);
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'voucherApplications', ctx.uid), { ...a, merchantId: ctx.uid, merchantName: m?.name || '',
+    status: 'pending', submittedAt: ctx.sdk.serverTimestamp() });
+}
+export async function myVoucherApplication(ctx) { return one(ctx, ctx.sdk.doc(ctx.db, 'voucherApplications', ctx.uid)); }
+export async function listVoucherApplications(ctx) {
+  return (await list(ctx, 'voucherApplications')).sort((a, b) => (toMs(b.submittedAt) || 0) - (toMs(a.submittedAt) || 0));
+}
+export async function reviewVoucherApplication(ctx, id, status, note = '') {
+  if (!['approved', 'declined'].includes(status)) throw new Error('Choose approve or decline.');
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'voucherApplications', id), { status, reviewNote: String(note || '').trim().slice(0, 500),
+    reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+}
+
 export function watchMyWelfareRequests(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'welfareRequests'), eq(ctx, 'studentUid', ctx.uid)),
     (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);

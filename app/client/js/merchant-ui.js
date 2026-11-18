@@ -3,9 +3,10 @@ import { esc, icon, n } from './ui.js';
 import { merchantReadinessCurrent } from './data.js';
 import { directoryArt } from './directory-art.js';
 
-export const merchantHeading = (title, description, glyph, kicker = 'Merchant tools') => `<header class="mer-page-head">
-  <div><span class="mer-eyebrow">${kicker}</span><h1>${title}</h1><p>${description}</p></div>
-  <span class="mer-heading-art" aria-hidden="true">${icon(glyph)}<i>${icon('sparkles')}</i></span>
+// Title and one line of help. (The old fourth argument, a small uppercase kicker, is no longer shown.)
+export const merchantHeading = (title, description, glyph) => `<header class="mer-page-head">
+  <div><h1>${title}</h1><p>${description}</p></div>
+  <span class="mer-heading-art" aria-hidden="true">${icon(glyph)}</span>
 </header>`;
 
 export const merchantMetric = (label, value, glyph, tone = 'violet') => `<div class="stat mer-metric" data-tone="${tone}">
