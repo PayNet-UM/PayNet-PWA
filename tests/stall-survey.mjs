@@ -7,68 +7,99 @@ import * as D from '../app/shared/js/data.js';
 let passed = 0;
 async function check(label, fn) { await fn(); passed++; console.log('  ✓ ' + label); }
 
-const full = { area: 'KK3', peakQr: '4', peakCash: '10', peakCard: '', sell: 'food', customers: 'u50', style: 'personalQr', payments: ['cash', 'personalQr'],
-  bank: 'maybank', barriers: ['fees'], help: ['qrSetup', 'students'], trade: 'daily', listing: 'yes', bankHelp: 'maybe', whatsapp: ' 012-345 6789 ', mid: '' };
+const full = { name: ' Kopi Kolej ', location: 'KK3', type: 'coffee', age: '1to3y', registered: 'no', payments: ['cash', 'personalQr'], banks: ['maybank', 'tng'],
+  bizAccount: 'personal', records: 'manual', customers: '50to100', challenges: ['traffic', 'cashflow'], financing: 'looking', financingPurpose: ['working'], financingAmount: 'u5k',
+  priorities: ['sales', 'digital'], support: ['qr', 'bookkeeping', 'financing'], listing: 'yes', ownerName: 'Hafiz Rahman', whatsapp: ' 012-345 6789 ', consentContact: true, consentPartners: true };
 
-await check('every question and answer has English and Malay text, and codes are unique', () => {
-  for (const q of S.STALL_QUESTIONS) {
-    assert.ok(q.en && q.ms, q.id);
-    if (q.hint) assert.ok(q.hint.en && q.hint.ms, q.id + ' hint');
-    if (q.options) {
-      assert.equal(new Set(q.options.map((x) => x.code)).size, q.options.length, q.id);
-      for (const x of q.options) assert.ok(x.en && x.ms, `${q.id}.${x.code}`);
-    }
+await check('the questions follow the assessment (sections A–D, 15 numbered questions), in English and Malay', () => {
+  assert.deepEqual(S.STALL_SECTIONS.map((x) => x.id), ['profile', 'readiness', 'growth', 'consent']);
+  assert.deepEqual([...new Set(S.STALL_QUESTIONS.map((q) => q.n))], Array.from({ length: 15 }, (_, i) => i + 1));
+  const ids = (sec) => S.STALL_QUESTIONS.filter((q) => q.section === sec).map((q) => q.id);
+  assert.deepEqual(ids('profile'), ['name', 'location', 'type', 'age', 'registered']);
+  assert.deepEqual(ids('readiness'), ['payments', 'banks', 'bizAccount', 'records', 'customers', 'challenges']);
+  assert.deepEqual(ids('growth'), ['financing', 'financingPurpose', 'financingAmount', 'priorities', 'support']);
+  assert.deepEqual(ids('consent'), ['listing', 'ownerName', 'whatsapp', 'consentContact', 'consentPartners']);
+  const q = (id) => S.STALL_QUESTIONS.find((x) => x.id === id);
+  assert.equal(q('type').options.length + 1, 8, 'business types plus Other');
+  assert.equal(q('banks').options.length, 10); assert.ok(q('banks').other && q('banks').type === 'multi');
+  assert.equal(q('challenges').max, 3); assert.equal(q('priorities').max, 2); assert.equal(q('support').max, 3);
+  assert.equal(q('support').options.length + 1, 10);
+  for (const x of S.STALL_QUESTIONS) {
+    assert.ok(x.en && x.ms, x.id);
+    if (x.hint) assert.ok(x.hint.en && x.hint.ms, x.id + ' hint');
+    if (x.options) { assert.equal(new Set(x.options.map((y) => y.code)).size, x.options.length, x.id); for (const y of x.options) assert.ok(y.en && y.ms, `${x.id}.${y.code}`); }
   }
   for (const t of Object.values(S.STALL_TYPES)) assert.ok(t.en && t.ms && t.about.en && t.about.ms);
-  assert.equal(S.STALL_QUIZ_COUNT, 10);
+  for (const t of Object.values(S.STALL_INTRO)) assert.ok(t.en && t.ms);
 });
-await check('answers are cleaned to codes and numbers; blanks are dropped', () => {
+await check('answers are cleaned to codes; text is trimmed and consents are true or false', () => {
   const { answers, errors } = S.cleanStallAnswers(full);
   assert.deepEqual(errors, []);
-  assert.equal(answers.peakQr, 4); assert.equal(answers.peakCash, 10); assert.ok(!('peakCard' in answers)); assert.ok(!('mid' in answers));
-  assert.equal(answers.whatsapp, '012-345 6789');
+  assert.equal(answers.name, 'Kopi Kolej'); assert.equal(answers.whatsapp, '012-345 6789');
+  assert.equal(answers.consentPartners, true);
+  assert.equal(S.cleanStallAnswers({ ...full, consentPartners: undefined }).answers.consentPartners, false, 'an unticked box is saved as No');
   assert.equal(S.stallType(answers), 'personalQr');
 });
-await check('required questions, “Other” text and the 2-pick limit are enforced', () => {
-  assert.deepEqual(S.cleanStallAnswers({ ...full, customers: '' }).errors, ['customers']);
-  assert.deepEqual(S.cleanStallAnswers({ ...full, sell: 'other' }).errors, ['sellOther']);
-  assert.equal(S.cleanStallAnswers({ ...full, sell: 'other', sellOther: 'Kuih' }).answers.sellOther, 'Kuih');
-  assert.deepEqual(S.cleanStallAnswers({ ...full, help: ['qrSetup', 'students', 'records'] }).errors, ['help']);
+await check('the financing follow-ups are only asked, and only kept, when the merchant is interested', () => {
+  const no = S.cleanStallAnswers({ ...full, financing: 'no' });
+  assert.deepEqual(no.errors, []); assert.ok(!('financingPurpose' in no.answers) && !('financingAmount' in no.answers));
+  assert.deepEqual(S.cleanStallAnswers({ ...full, financing: 'later', financingPurpose: [] }).errors, ['financingPurpose']);
+  assert.deepEqual(S.cleanStallAnswers({ ...full, financingAmount: '' }).errors, [], 'the amount is optional');
+});
+await check('required answers, “Other” text and the “up to” limits are enforced', () => {
+  assert.deepEqual(S.cleanStallAnswers({ ...full, age: '' }).errors, ['age']);
+  assert.deepEqual(S.cleanStallAnswers({ ...full, ownerName: ' ' }).errors, ['ownerName']);
+  assert.deepEqual(S.cleanStallAnswers({ ...full, type: 'other' }).errors, ['typeOther']);
+  assert.equal(S.cleanStallAnswers({ ...full, banks: ['other'], banksOther: 'Agrobank' }).answers.banksOther, 'Agrobank');
+  assert.deepEqual(S.cleanStallAnswers({ ...full, challenges: ['traffic', 'costs', 'cashflow', 'labour'] }).errors, ['challenges']);
+  assert.deepEqual(S.cleanStallAnswers({ ...full, priorities: ['sales', 'costs', 'online'] }).errors, ['priorities']);
+  assert.deepEqual(S.cleanStallAnswers({ ...full, support: ['qr', 'literacy', 'bookkeeping', 'marketing'] }).errors, ['support']);
   assert.deepEqual(S.cleanStallAnswers({ ...full, payments: [] }).errors, ['payments']);
-  assert.deepEqual(S.cleanStallAnswers({ ...full, peakQr: '-3' }).errors, ['peakQr']);
-  assert.deepEqual(S.cleanStallAnswers({ ...full, style: 'barter' }).errors, ['style']);
-  assert.deepEqual(S.cleanStallAnswers({ ...full, barriers: ['none', 'fees'] }).answers.barriers, ['fees'], '“Nothing, I’m fine” can’t sit with a barrier');
 });
-await check('the free setup list follows the answers and never promises fees or cash', () => {
+await check('stall type comes from the most digital payment method', () => {
+  const t = (payments) => S.stallType({ payments });
+  assert.equal(t(['cash']), 'cash'); assert.equal(t(['cash', 'ewallet']), 'personalQr'); assert.equal(t(['personalQr', 'businessQr']), 'businessQr');
+  assert.equal(t(['cash', 'businessQr', 'card']), 'card'); assert.equal(t(['card']), 'personalQr');
+});
+await check('“How +Onz can help” follows the answers, and partner introductions only appear with consent', () => {
   const text = (a) => S.stallSetup(S.cleanStallAnswers(a).answers).map((x) => x.en).join(' | ');
-  assert.match(text(full), /Business DuitNow QR/); assert.match(text(full), /SME or business account/); assert.match(text(full), /campus map/);
-  const ready = text({ ...full, style: 'card', listing: 'no', bankHelp: 'no', help: ['zeroFees', 'cashBonus'] });
-  assert.doesNotMatch(ready, /DuitNow QR at your stall|campus map|bank/); assert.match(ready, /Live deals/);
-  for (const a of [full, { ...full, help: ['zeroFees', 'cashBonus'] }]) assert.doesNotMatch(text(a), /fee|bonus|loan approved/i);
+  assert.match(text(full), /Business DuitNow QR/); assert.match(text(full), /business account/); assert.match(text(full), /financing partners/);
+  assert.match(text(full), /registering your business/); assert.match(text(full), /sales records/);
+  const noConsent = text({ ...full, consentPartners: false });
+  assert.doesNotMatch(noConsent, /bank that can help|financing partners/);
+  assert.doesNotMatch(text(full), /zero fee|bonus|guarantee|approved/i);
 });
-await check('analysis counts stall types, shares and “Other” answers, in either language', () => {
-  const rs = [full, { ...full, style: 'card', listing: 'no', bankHelp: 'yes', sell: 'other', sellOther: 'Kuih', payments: ['cash', 'card', 'ewallet'], peakQr: '6', peakCash: '0', peakCard: '4' },
-    { ...full, style: 'cash', payments: ['cash'], peakQr: '', peakCash: '20' }].map((a) => { const c = S.cleanStallAnswers(a).answers; return { answers: c, stallType: S.stallType(c) }; });
+await check('answers to the earlier version carry over where they match', () => {
+  const p = S.stallPrefillFromV1({ area: 'KK3', sell: 'groceries', customers: '100to200', payments: ['cash', 'online'], bank: 'bankrakyat', listing: 'maybe', whatsapp: '011' });
+  assert.deepEqual(p, { location: 'KK3', type: 'retail', payments: ['cash', 'banking'], banks: ['other'], banksOther: 'Bank Rakyat', customers: '101to200', listing: 'maybe', whatsapp: '011' });
+  assert.deepEqual(S.stallPrefillFromV1({ area: 'PPUM', sell: 'events' }), { type: 'onlineEvent' });
+  assert.equal(S.isCurrentStallSurvey({ v: 1 }), false); assert.equal(S.isCurrentStallSurvey({ v: 2 }), true);
+});
+await check('analysis counts types, follow-ups and consents among the merchants asked', () => {
+  const rs = [full, { ...full, financing: 'no', consentPartners: false, payments: ['cash', 'businessQr', 'card'], bizAccount: 'yes', type: 'other', typeOther: 'Kuih' },
+    { ...full, payments: ['cash'], listing: 'no' }].map((a) => { const c = S.cleanStallAnswers(a).answers; return { answers: c, stallType: S.stallType(c) }; });
   const a = S.stallAnalysis(rs);
   assert.equal(a.total, 3);
   assert.deepEqual(a.types.map((t) => [t.code, t.count]), [['cash', 1], ['personalQr', 1], ['businessQr', 0], ['card', 1]]);
-  assert.equal(a.headline.qrReady, 33); assert.equal(a.headline.listYes, 67); assert.equal(a.headline.bankHelpYes, 33);
-  const pay = a.questions.find((q) => q.id === 'payments');
-  assert.equal(pay.rows.find((r) => r.code === 'cash').pct, 100, 'multi: share of stalls that ticked it');
-  assert.deepEqual(a.questions.find((q) => q.id === 'sell').others, ['Kuih']);
-  assert.deepEqual(a.peak.map((p) => [p.stalls, p.total]), [[2, 10], [3, 30], [1, 4]]);
+  assert.equal(a.headline.qrReady, 33); assert.equal(a.headline.noBizAccount, 67); assert.equal(a.headline.financing, 67); assert.equal(a.headline.partners, 67); assert.equal(a.headline.listYes, 67);
+  assert.equal(a.questions.find((q) => q.id === 'financingPurpose').answered, 2, 'only merchants interested in financing were asked the purpose');
+  assert.deepEqual(a.questions.find((q) => q.id === 'consentPartners').rows.map((r) => r.count), [2, 1]);
+  assert.deepEqual(a.questions.find((q) => q.id === 'type').others, ['Kuih']);
   assert.equal(S.stallAnalysis(rs, 'ms').types[0].label, 'Klasik Tunai');
 });
-await check('exports: one English row per stall, with every question as a column', () => {
-  const c = S.cleanStallAnswers({ ...full, area: 'other', areaOther: 'Jalan Pantai' }).answers;
-  const [head, row] = S.stallResponseRows([{ answers: c, stallType: 'personalQr', merchantName: 'Kopi Kolej', merchantStatus: 'verified', lang: 'ms', at: Date.UTC(2026, 10, 16, 2, 30) }]);
+await check('exports: one English row per merchant with every numbered question, and old answers in their own format', () => {
+  const c = S.cleanStallAnswers({ ...full, location: 'other', locationOther: 'Jalan Pantai' }).answers;
+  const [head, row] = S.stallResponseRows([{ answers: c, stallType: 'personalQr', merchantName: 'Kopi Kolej Enterprise', merchantStatus: 'verified', lang: 'ms', at: Date.UTC(2026, 10, 16, 2, 30) }]);
   assert.equal(head.length, row.length);
   const col = (t) => row[head.indexOf(t)];
-  assert.equal(col('Stall name'), 'Kopi Kolej'); assert.equal(col('Language used'), 'Bahasa Melayu'); assert.equal(col('Stall type'), 'QR Starter');
-  assert.equal(col('Area'), 'Other'); assert.equal(col('Area (other)'), 'Jalan Pantai');
-  assert.equal(col('Any other ways you take payment?'), 'Cash; Personal QR');
-  const rows = S.stallAnalysisRows(S.stallAnalysis([{ answers: c, stallType: 'personalQr' }]));
-  assert.deepEqual(rows[1], ['Responses', 1]);
+  assert.equal(col('Stall name (shop details)'), 'Kopi Kolej Enterprise'); assert.equal(col('1. Business or stall name'), 'Kopi Kolej');
+  assert.equal(col('1. Location'), 'Other'); assert.equal(col('1. Location (other)'), 'Jalan Pantai');
+  assert.equal(col('5. Which payment methods do you currently accept?'), 'Cash; Personal DuitNow QR');
+  assert.equal(col('15. I agree to be contacted by +Onz regarding merchant onboarding and business development programmes.'), 'Yes');
+  assert.equal(col('Language used'), 'Bahasa Melayu');
+  assert.deepEqual(S.stallAnalysisRows(S.stallAnalysis([{ answers: c, stallType: 'personalQr' }]))[1], ['Responses', 1]);
+  const [h1, r1] = S.stallResponseRowsV1([{ answers: { area: 'KK3', style: 'cash', payments: ['cash'] }, stallType: 'cash', v: 1 }]);
+  assert.equal(r1[h1.indexOf('Which one sounds most like you?')], 'Mostly cash');
 });
 
 // ---------------------------------------------------------------- rules (the real firestore.rules)
@@ -83,12 +114,12 @@ const shopA = context('shopA', 'shop.a@shop.my'), shopB = context('shopB', 'shop
 for (const m of [shopA, shopB]) { await D.createProfile(m, { role: 'merchant', name: 'Owner ' + m.uid }); m.profile = await D.getProfile(m); }
 await D.createProfile(stu, { role: 'student', name: 'Student', matric: 'S1234567', college: 'KK3', faculty: 'Faculty of Science' }); stu.profile = await D.getProfile(stu);
 const ref = (ctx, u) => sdk.doc(ctx.db, 'stallSurveys', u);
-const good = () => ({ v: 1, lang: 'en', answers: S.cleanStallAnswers(full).answers, stallType: 'personalQr', at: sdk.serverTimestamp() });
+const good = () => ({ v: 2, lang: 'en', answers: S.cleanStallAnswers(full).answers, stallType: 'personalQr', at: sdk.serverTimestamp() });
 
 await check('a merchant saves their own survey and can retake it', async () => {
   const res = await D.submitStallSurvey(shopA, full, 'ms');
   assert.equal(res.stallType, 'personalQr');
-  await D.submitStallSurvey(shopA, { ...full, style: 'businessQr' }, 'en');
+  await D.submitStallSurvey(shopA, { ...full, payments: ['businessQr'] }, 'en');
   const saved = await D.getStallSurvey(shopA);
   assert.equal(saved.stallType, 'businessQr'); assert.equal(saved.lang, 'en');
 });
@@ -102,13 +133,18 @@ await check('students and other merchants can’t write or read someone’s surv
   await assert.rejects(sdk.getDoc(ref(shopB, 'shopA')), { code: 'permission-denied' });
   await assert.rejects(sdk.getDoc(ref(stu, 'shopA')), { code: 'permission-denied' });
 });
-await check('the rules refuse a forged stall type, extra fields, 3 “help” picks or a long WhatsApp field', async () => {
+await check('the rules refuse the old version, extra fields, missing consents, too many picks or a long WhatsApp field', async () => {
+  const ans = good().answers; const without = (k) => { const x = { ...ans }; delete x[k]; return x; };
   const bad = [
-    { ...good(), stallType: 'card' },
+    { ...good(), v: 1 },
     { ...good(), score: 100 },
-    { ...good(), answers: { ...good().answers, help: ['qrSetup', 'students', 'records'] } },
-    { ...good(), answers: { ...good().answers, whatsapp: '0'.repeat(30) } },
-    { ...good(), answers: { ...good().answers, ic: '900101-14-1234' } },
+    { ...good(), answers: without('consentPartners') },
+    { ...good(), answers: { ...ans, consentContact: 'yes' } },
+    { ...good(), answers: { ...ans, priorities: ['sales', 'costs', 'online'] } },
+    { ...good(), answers: { ...ans, challenges: ['traffic', 'costs', 'cashflow', 'labour'] } },
+    { ...good(), answers: { ...ans, whatsapp: '0'.repeat(30) } },
+    { ...good(), answers: { ...ans, ic: '900101-14-1234' } },
+    { ...good(), answers: without('ownerName') },
     { ...good(), at: new Date() },
   ];
   for (const doc of bad) await assert.rejects(sdk.setDoc(ref(shopB, 'shopB'), doc), { code: 'permission-denied' });

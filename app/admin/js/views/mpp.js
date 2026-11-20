@@ -8,7 +8,7 @@ import { hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML, tr, getLang } from '../i18n.js';
-import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallAnalysisRows } from '../stall-survey.js';
+import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallResponseRowsV1, stallAnalysisRows, isCurrentStallSurvey } from '../stall-survey.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
 
@@ -17,7 +17,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Stall survey', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -377,7 +377,7 @@ function kpisMount(root, app) {
     ...app._sv.surveys.map((s) => [s.role, app._sv.users.find((u) => u.id === s.id)?.name || '', s.grade, s.score, s.knowledge, s.digital, s.at ? new Date(toMs(s.at)).toISOString() : ''])]);
 }
 
-// ------------------------------------------------------------- stall survey (merchants, app/shared/js/stall-survey.js)
+// ------------------------------------------------------------- merchant assessment, the "stall survey" (app/shared/js/stall-survey.js)
 async function stallSurveyData(app) {
   const [surveys, merchants] = await Promise.all([D.listStallSurveys(app.ctx), D.listMerchantsAll(app.ctx)]);
   return surveys.map((s) => { const m = merchants.find((x) => x.id === s.id);
@@ -386,34 +386,37 @@ async function stallSurveyData(app) {
 }
 const hbars = (rows) => `<ul class="ss-hbars">${rows.map((r) => `<li><span data-no-i18n>${esc(r.label)}</span><span class="num">${n(r.count)} · ${r.pct}%</span><span class="bar"><i style="width:${r.pct}%"></i></span></li>`).join('')}</ul>`;
 async function stallSurveyAdminRender(app) {
-  const rows = await stallSurveyData(app); app._ss = rows;
+  const all = await stallSurveyData(app);
+  const rows = all.filter(isCurrentStallSurvey); const older = all.filter((r) => !isCurrentStallSurvey(r));
+  app._ss = rows; app._ssOld = older;
   const lang = getLang() === 'ms' ? 'ms' : 'en'; const a = stallAnalysis(rows, lang);
-  const head = hepHeading('Stall survey', 'What merchants told us after sending their shop details: stall type, payments, barriers and what would help.', 'target',
-    rows.length ? `<div class="row"><button class="btn small" id="ss-xlsx">${icon('file-spreadsheet')} Export to Excel</button><button class="btn small" id="ss-csv">${icon('download')} Responses CSV</button><button class="btn small" id="ss-acsv">${icon('download')} Analysis CSV</button></div>` : '');
-  if (!rows.length) return head + hepEmpty('No stall surveys yet. Merchants are asked to fill it in right after they send their shop details.', 'target');
-  return `${head}
-    <div class="stats" style="margin-bottom:6px">${hepMetric('Responses', n(a.total), 'target', 'violet')}${hepMetric('QR-ready stalls', a.headline.qrReady + '%', 'qr-code', 'lime', 'Business QR or card machine')}${hepMetric('Happy to be listed', a.headline.listYes + '%', 'store', 'peach')}${hepMetric('Need bank help', a.headline.bankHelpYes + '%', 'landmark', 'sky', 'For an SME or business account')}</div>
+  const head = hepHeading('Merchant assessment', 'The +Onz Merchant Assessment (digital and financial readiness), answered by merchants after sending their shop details.', 'target',
+    all.length ? `<div class="row"><button class="btn small" id="ss-xlsx">${icon('file-spreadsheet')} Export to Excel</button><button class="btn small" id="ss-csv">${icon('download')} Responses CSV</button><button class="btn small" id="ss-acsv">${icon('download')} Analysis CSV</button></div>` : '');
+  const olderNote = older.length ? `<p class="notice" style="margin-bottom:12px">${icon('info')} <span>${n(older.length)} ${older.length === 1 ? 'merchant' : 'merchants'} answered the earlier stall survey and will be asked the new questions. Their old answers are in the Excel export (Earlier version sheet).</span></p>` : '';
+  if (!rows.length) return head + olderNote + hepEmpty('No merchant assessments yet. Merchants are asked to fill it in right after they send their shop details.', 'target');
+  const label = (x, id) => { const q = STALL_QUESTIONS.find((y) => y.id === id); return x[id] === 'other' ? x[id + 'Other'] || '' : x[id] ? stallLabel(q, x[id], lang) : '—'; };
+  const yes = (v) => (v === true ? `${icon('check')} Yes` : 'No');
+  return `${head}${olderNote}
+    <div class="stats" style="margin-bottom:6px">${hepMetric('Responses', n(a.total), 'target', 'violet')}${hepMetric('Take Business QR or card', a.headline.qrReady + '%', 'qr-code', 'lime')}${hepMetric('No business bank account', a.headline.noBizAccount + '%', 'landmark', 'sky', 'Personal account, opening one or not sure')}${hepMetric('Interested in financing', a.headline.financing + '%', 'wallet', 'peach')}${hepMetric('Partner introductions OK', a.headline.partners + '%', 'handshake', 'violet', `Contact OK: ${a.headline.contact}%`)}</div>
     <div class="ss-admin-grid">
-      <section class="card pad-lg"><h2>Stall types</h2>${hbars(a.types)}</section>
-      <section class="card pad-lg"><h2>10-minute peak counts</h2><p class="faint">Payments counted in a busy 10 minutes, across stalls that answered.</p>
-        ${hbars(a.peak.map((p) => ({ label: `${p.label} (${n(p.stalls)} stalls)`, count: p.total, pct: p.share })))}</section>
-      ${a.questions.map((q) => `<section class="card pad-lg"><h2 data-no-i18n>${esc(q.title)}</h2><p class="faint">${n(q.answered)} answered${q.type === 'multi' ? ' · could pick more than one' : ''}</p>${hbars(q.rows.length > 10 ? q.rows.filter((r) => r.count) : q.rows)}
+      <section class="card pad-lg"><h2>Stall types</h2><p class="faint">From the most digital way each stall takes payment.</p>${hbars(a.types)}</section>
+      ${a.questions.map((q) => `<section class="card pad-lg"><h2 data-no-i18n>${q.n}. ${esc(q.title)}</h2><p class="faint">${n(q.answered)} answered${q.type === 'multi' ? ' · could pick more than one' : ''}</p>${hbars(q.rows.length > 10 ? q.rows.filter((r) => r.count) : q.rows)}
         ${q.others.length ? `<p class="faint ss-others" data-no-i18n><b>${lang === 'ms' ? 'Lain-lain' : 'Other'}:</b> ${esc(q.others.join(' · '))}</p>` : ''}</section>`).join('')}
     </div>
     <section class="card" style="margin-top:16px"><div class="row between" style="padding:12px 16px"><h2 style="margin:0">All responses (${n(rows.length)})</h2></div>
-      <div class="table-wrap"><table class="data"><thead><tr><th>Stall</th><th>Stall type</th><th>Area</th><th>Listing</th><th>Bank help</th><th>WhatsApp</th><th>Submitted</th></tr></thead><tbody>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Business</th><th>Owner</th><th>Stall type</th><th>Location</th><th>Business account</th><th>Financing</th><th>Listing</th><th>Contact OK</th><th>Partners OK</th><th>WhatsApp</th><th>Submitted</th></tr></thead><tbody>
       ${rows.map((r) => { const x = r.answers || {};
-        const label = (id) => { const q = STALL_QUESTIONS.find((y) => y.id === id); return x[id] === 'other' ? x[id + 'Other'] || '' : x[id] ? stallLabel(q, x[id], lang) : '—'; };
-        return `<tr><td data-no-i18n>${esc(r.merchantName)}</td><td data-no-i18n>${esc(STALL_TYPES[r.stallType]?.[lang] || '')}</td><td data-no-i18n>${esc(label('area'))}</td>
-          <td data-no-i18n>${esc(label('listing'))}</td><td data-no-i18n>${esc(label('bankHelp'))}</td>
+        return `<tr><td data-no-i18n>${esc(x.name || r.merchantName)}${x.name && x.name !== r.merchantName ? `<br><span class="faint">${esc(r.merchantName)}</span>` : ''}</td><td data-no-i18n>${esc(x.ownerName || '')}</td>
+          <td data-no-i18n>${esc(STALL_TYPES[r.stallType]?.[lang] || '')}</td><td data-no-i18n>${esc(label(x, 'location'))}</td><td data-no-i18n>${esc(label(x, 'bizAccount'))}</td>
+          <td data-no-i18n>${esc(label(x, 'financing'))}</td><td data-no-i18n>${esc(label(x, 'listing'))}</td><td>${yes(x.consentContact)}</td><td>${yes(x.consentPartners)}</td>
           <td data-no-i18n>${x.whatsapp ? `<a href="https://wa.me/${esc(x.whatsapp.replace(/\D/g, '').replace(/^0/, '60'))}" target="_blank" rel="noopener">${esc(x.whatsapp)}</a>` : '—'}</td><td>${r.at ? fmtDate(r.at) : ''}</td></tr>`; }).join('')}
       </tbody></table></div></section>`;
 }
 function stallSurveyAdminMount(root, app) {
   if (!$('#ss-csv', root)) return;
   const stamp = new Date().toISOString().slice(0, 10);
-  $('#ss-csv', root).onclick = () => downloadCSV(`Stall-survey-responses-${stamp}.csv`, stallResponseRows(app._ss));
-  $('#ss-acsv', root).onclick = () => downloadCSV(`Stall-survey-analysis-${stamp}.csv`, stallAnalysisRows(stallAnalysis(app._ss)));
+  $('#ss-csv', root).onclick = () => downloadCSV(`Merchant-assessment-responses-${stamp}.csv`, stallResponseRows(app._ss));
+  $('#ss-acsv', root).onclick = () => downloadCSV(`Merchant-assessment-analysis-${stamp}.csv`, stallAnalysisRows(stallAnalysis(app._ss)));
   $('#ss-xlsx', root).onclick = (e) => busy(e.currentTarget, async () => {
     try {
       const ExcelJS = await loadExcel(); const wb = new ExcelJS.Workbook();
@@ -422,8 +425,9 @@ function stallSurveyAdminMount(root, app) {
       const resp = add('Responses', stallResponseRows(app._ss), [18, 26, 14, 14, 16, 24]); resp.views = [{ state: 'frozen', xSplit: 2, ySplit: 1 }];
       const an = add('Analysis', stallAnalysisRows(stallAnalysis(app._ss)), [58, 14, 18]);
       an.eachRow((row) => { if (row.cellCount >= 3 && typeof row.getCell(2).value === 'string' && !/^\d/.test(row.getCell(2).value)) row.font = { bold: true }; });
-      downloadBlob(`Stall-survey-${stamp}.xlsx`, new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-      toast('Stall survey exported.');
+      if (app._ssOld?.length) add('Earlier version', stallResponseRowsV1(app._ssOld), [18, 26, 14, 14, 16, 24]);
+      downloadBlob(`Merchant-assessment-${stamp}.xlsx`, new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      toast('Merchant assessment exported.');
     } catch (err) { toast(errText(err), true); }
   });
 }
@@ -627,7 +631,7 @@ export const routes = {
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
   campaigns: { title: 'Campus events', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
-  'stall-survey': { title: 'Stall survey', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
+  'stall-survey': { title: 'Merchant assessment', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
   feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
