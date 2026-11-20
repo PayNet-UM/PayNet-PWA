@@ -15,6 +15,18 @@ import { closeRender, closeMount } from './close.js';
 import { stallSurveyRender, stallSurveyMount } from '../stall-survey-view.js';
 
 export const defaultRoute = 'home';
+
+// The stall survey is required. Once a merchant has sent their shop details, every page except these leads back to
+// the survey until it's answered (so clicking away, or reopening the app, brings them back to it).
+const OPEN_BEFORE_SURVEY = new Set(['stall-survey', 'shop', 'delete-account']);
+export async function gateRoute(app, route) {
+  if (!app.merchant || app.stallSurveyDone) return null;
+  // If the survey can't be read (e.g. offline), don't lock the merchant out of their own app.
+  if (app.stallSurveyDone === undefined) app.stallSurveyDone = !!(await D.getStallSurvey(app.ctx).catch(() => ({ unreadable: true })));
+  if (app.stallSurveyDone || OPEN_BEFORE_SURVEY.has(route)) return null;
+  return 'stall-survey';
+}
+export const gateMessage = 'Finish the stall survey first. It takes about 3 minutes.';
 const toMs = D.toMs;
 const statusBadge = (m) => !m ? '<span class="badge grey">Not applied</span>'
   : m.status === 'verified' ? `<span class="badge ok">${icon('badge-check')}Verified</span>`

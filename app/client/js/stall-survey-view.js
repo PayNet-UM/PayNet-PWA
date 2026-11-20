@@ -5,6 +5,7 @@ import { STALL_SECTIONS, STALL_QUESTIONS, STALL_TYPES, STALL_QUIZ_COUNT, stallSe
 import { getLang, setLang as setAppLang } from './i18n.js';
 import { $, $$, esc, icon, toast, busy, confetti } from './ui.js';
 import { merchantHeading } from './merchant-ui.js';
+import * as Guide from './guide.js';
 
 let surveyLang = null; // remembered while the app is open
 let editing = false;
@@ -52,13 +53,17 @@ export async function stallSurveyRender(app) {
       <a class="btn primary" href="#/shop">Send shop details</a></div>`;
   }
   const saved = await D.getStallSurvey(app.ctx).catch(() => null);
+  app.stallSurveyDone = !!saved;
   const showResult = saved && !editing;
-  const sections = STALL_SECTIONS.map((sec) => `<section class="ss-section"><div class="mer-section-head"><h2>${bi(sec)}</h2></div>
+  const sections = STALL_SECTIONS.map((sec) => `<section class="ss-section" data-sec="${sec.id}"><div class="mer-section-head"><h2>${bi(sec)}</h2></div>
       <p class="faint">${bi(sec.note)}</p>${STALL_QUESTIONS.filter((q) => q.section === sec.id).map((q) => questionHTML(q, saved?.answers)).join('')}</section>`).join('');
-  return `<div class="merchant-page mer-survey stall-survey">${back}
+  // Until it's answered the survey is a required step: no way "back", and a note saying why.
+  const required = !saved ? `<div class="notice ss-required" role="note">${icon('lock')}<div><b>${bi({ en: 'One last step before you start', ms: 'Satu langkah terakhir sebelum anda mula' })}</b>
+      <p>${bi({ en: 'Finish this survey to use +Onz for Business. It takes about 3 minutes, and you can change your answers later.', ms: 'Lengkapkan tinjauan ini untuk menggunakan +Onz for Business. Ia mengambil masa kira-kira 3 minit, dan anda boleh ubah jawapan kemudian.' })}</p></div></div>` : '';
+  return `<div class="merchant-page mer-survey stall-survey">${saved ? back : ''}
     ${merchantHeading('Stall survey', `${STALL_QUIZ_COUNT} quick questions about your stall. Find out your stall type and what the team can set up for you, free.`, 'list-checks', 'About 3 minutes')}
-    <div class="ss" data-ss="${surveyLang}" data-no-i18n>
-      <div class="ss-lang card"><span>${bi({ en: 'Answer in', ms: 'Jawab dalam' })}</span>
+    <div class="ss" data-ss="${surveyLang}" data-no-i18n>${required}
+      <div class="ss-lang card"><span>${bi({ en: 'Answer in', ms: 'Jawab dalam' })}${showResult ? '' : ` <button type="button" class="league-help" id="ss-help" aria-label="How the stall survey works / Cara tinjauan ini berfungsi" title="How the stall survey works">${icon('info')}</button>`}</span>
         <div class="chips" role="group" aria-label="Survey language / Bahasa tinjauan"><button type="button" data-ss-lang="en" lang="en" aria-pressed="${surveyLang === 'en'}">English</button><button type="button" data-ss-lang="ms" lang="ms" aria-pressed="${surveyLang === 'ms'}">Bahasa Melayu</button></div></div>
       <p class="faint ss-privacy">${icon('shield-check')} ${bi({ en: 'We never ask for IC numbers. Only you and the Admin team see your answers.', ms: 'Kami tidak meminta nombor IC. Hanya anda dan pasukan Admin melihat jawapan anda.' })}</p>
       ${showResult ? resultHTML(saved) : `<form id="stall-survey" class="stack" novalidate>${sections}
@@ -78,6 +83,9 @@ export function stallSurveyMount(root, app) {
   $$('[data-ss-lang]', box).forEach((b) => { b.onclick = () => setLang(b.dataset.ssLang); });
   const edit = $('#ss-edit', box); if (edit) edit.onclick = () => { editing = true; app.render(); };
   const f = $('#stall-survey', box); if (!f) return null;
+  // First visit: a short screen guide, like the Leagues page. The (i) button shows it again.
+  $('#ss-help', box).onclick = () => Guide.startPageTour(app, 'stall-survey', { replay: true });
+  const tour = setTimeout(() => { if (root.isConnected) Guide.startPageTour(app, 'stall-survey'); }, 350);
 
   // "Other" boxes, "Nothing, I'm fine" on its own, and at most 2 picks where asked.
   $$('fieldset.ss-q', f).forEach((fs) => {
@@ -109,8 +117,10 @@ export function stallSurveyMount(root, app) {
     busy($('button[type=submit]', f), async () => {
       try {
         const res = await D.submitStallSurvey(app.ctx, raw, surveyLang);
-        editing = false; confetti();
-        toast(say('Thanks! Here’s your stall type.', 'Terima kasih! Ini jenis kedai anda.'));
+        const firstTime = !app.stallSurveyDone;
+        editing = false; app.stallSurveyDone = true; confetti();
+        toast(firstTime ? say('All done! Here’s your stall type, and the rest of +Onz for Business is now open.', 'Selesai! Ini jenis kedai anda, dan bahagian lain +Onz for Business kini dibuka.')
+          : say('Thanks! Here’s your stall type.', 'Terima kasih! Ini jenis kedai anda.'));
         await app.render(); root.querySelector('#ss-result')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
         return res;
       } catch (err) {
@@ -123,5 +133,5 @@ export function stallSurveyMount(root, app) {
       }
     });
   };
-  return null;
+  return () => clearTimeout(tour);
 }

@@ -212,6 +212,13 @@ export const PAGE_TOURS = {
     { target: '#league-kk .community-league-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. Positive earned points add to it; welfare grants do not.' },
     { target: '#league-kk [data-board]', icon: 'chart-column', title: 'The leaderboard', body: 'See how your KK compares with the others. The KK with the most points wins prizes!' },
   ],
+  // Merchants, the first time they open the (required) stall survey.
+  'stall-survey': () => [
+    { target: '.ss-lang', icon: 'user', title: 'Pick your language', body: 'Answer in English or Bahasa Melayu. You can switch any time and keep your answers.' },
+    { target: '.ss-section[data-sec="about"]', icon: 'store', title: 'About your stall', body: 'Where you trade, and your Merchant or Terminal ID if you have one. The peak counts are optional.' },
+    { target: '.ss-section[data-sec="quiz"]', icon: 'list-checks', title: '10 quick questions', body: 'How you sell and get paid. Questions marked * need an answer.' },
+    { target: '#stall-survey button[type=submit]', icon: 'sparkles', title: 'Get your stall type', body: 'Send your answers to see your stall type and what the team can set up for you, free. Finish this to open the rest of +Onz for Business.' },
+  ],
 };
 export const pageTourSeen = (uid, page) => store.get(PAGE_KEY(uid, page)) === 'done';
 /** Shows a page's tour (replay: always; otherwise only the first time, and never on top of another tour). */

@@ -2575,4 +2575,13 @@ Bank help|Bantuan bank
 WhatsApp|WhatsApp
 Submitted|Dihantar
 Stall survey exported.|Tinjauan kedai dieksport.
+Pick your language|Pilih bahasa anda
+Answer in English or Bahasa Melayu. You can switch any time and keep your answers.|Jawab dalam Bahasa Inggeris atau Bahasa Melayu. Anda boleh tukar bila-bila masa dan jawapan anda kekal.
+About your stall|Tentang kedai anda
+Where you trade, and your Merchant or Terminal ID if you have one. The peak counts are optional.|Di mana anda berniaga, dan Merchant ID atau Terminal ID jika ada. Kiraan waktu puncak adalah pilihan.
+10 quick questions|10 soalan pantas
+How you sell and get paid. Questions marked * need an answer.|Cara anda berniaga dan menerima bayaran. Soalan bertanda * perlu dijawab.
+Get your stall type|Dapatkan jenis kedai anda
+Send your answers to see your stall type and what the team can set up for you, free. Finish this to open the rest of +Onz for Business.|Hantar jawapan anda untuk melihat jenis kedai anda dan apa yang pasukan boleh bantu, percuma. Lengkapkan ini untuk membuka bahagian lain +Onz for Business.
+Finish the stall survey first. It takes about 3 minutes.|Lengkapkan tinjauan kedai dahulu. Ia mengambil masa kira-kira 3 minit.
 `;
