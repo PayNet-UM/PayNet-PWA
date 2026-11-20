@@ -47,7 +47,7 @@ export function stepsFor(app, { first = true, has = (sel) => !!document.querySel
     tab('home', 'house', 'Home', 'Your shop at a glance: its status, live-deal activity and updates from the Admin team.'),
     tab('shop', 'store', 'My shop', 'Set up your business here: its details, logo and exact map pin. The Admin team checks them before students can see you.'),
     tab('scan', 'qr-code', 'Deal QR', 'Show this QR to students so they can claim your live deals.'),
-    tab('promote', 'megaphone', 'Promote live deals', 'Create off-peak deals to bring students in when it’s quiet.'),
+    tab('promote', 'megaphone', 'Promote your shop', 'Live deals and the voucher program: two ways to bring students in.'),
     tab('insights', 'chart-column', 'Insights', 'See how students are responding to your deals.'),
   ];
   const shared = [

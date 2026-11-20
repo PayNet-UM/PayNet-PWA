@@ -2452,7 +2452,7 @@ Conditions:|Syarat:
 Your note|Nota anda
 No applications waiting.|Tiada permohonan yang menunggu.
 Note to the merchant (optional)|Nota kepada peniaga (pilihan)
-The merchant sees this on their Promote live deals page.|Peniaga melihat nota ini pada halaman Promosikan tawaran aktif mereka.
+The merchant sees this on their Promote your shop page.|Peniaga melihat nota ini pada halaman Promosikan kedai mereka.
 Approve application|Luluskan permohonan
 Decline application|Tolak permohonan
 Application approved.|Permohonan diluluskan.
@@ -2498,4 +2498,57 @@ No claims in the last 7 days yet.|Belum ada tuntutan dalam 7 hari lepas.
 Busiest times|Waktu paling sibuk
 No deal claims in this period.|Tiada tuntutan tawaran dalam tempoh ini.
 Expired|Tamat tempoh
+Start here|Mula di sini
+Get your shop ready for students|Sediakan kedai anda untuk pelajar
+Follow these steps in order. Each one ticks off when it’s done.|Ikut langkah ini mengikut urutan. Setiap langkah ditandakan apabila selesai.
+Apply and get verified|Mohon dan dapatkan pengesahan
+Send your shop details. The Admin team checks them in 1–2 working days.|Hantar butiran kedai anda. Pasukan Admin akan menyemaknya dalam 1–2 hari bekerja.
+Wait for the Admin team to verify you|Tunggu pasukan Admin mengesahkan anda
+You’ve applied. We check your details in 1–2 working days.|Anda telah memohon. Kami akan menyemak butiran anda dalam 1–2 hari bekerja.
+Update your application|Kemas kini permohonan anda
+The Admin team asked for changes. Fix them and send it again.|Pasukan Admin meminta beberapa perubahan. Betulkan dan hantar semula.
+Add your logo and map pin|Tambah logo dan pin peta anda
+So students can recognise your shop and walk straight to it.|Supaya pelajar mengenali kedai anda dan boleh terus berjalan ke sana.
+Get your staff ready|Sediakan kakitangan anda
+A short checklist so everyone at the counter knows what to do.|Senarai semak ringkas supaya semua orang di kaunter tahu apa yang perlu dilakukan.
+Create your first live deal|Cipta tawaran aktif pertama anda
+A discount for your quiet hours. It goes live straight away.|Diskaun untuk waktu lengang anda. Ia terus aktif.
+Show your deal QR at the counter|Paparkan QR tawaran anda di kaunter
+Students scan it to claim the discount. You’ll see the claim on your screen.|Pelajar mengimbasnya untuk menuntut diskaun. Anda akan melihat tuntutan itu pada skrin anda.
+Everything for your shop. You can also find these in the menu.|Semua untuk kedai anda. Anda juga boleh menemuinya dalam menu.
+Your shop details, logo, map pin and counter poster.|Butiran kedai, logo, pin peta dan poster kaunter anda.
+Show this at your counter. Students scan it to claim your deal.|Paparkan ini di kaunter anda. Pelajar mengimbasnya untuk menuntut tawaran anda.
+Create discounts for quiet hours, and join the voucher program.|Cipta diskaun untuk waktu lengang, dan sertai program baucar.
+7 quick questions so we know how to help your shop.|7 soalan ringkas supaya kami tahu cara membantu kedai anda.
+What has happened with your live deals so far.|Apa yang telah berlaku dengan tawaran aktif anda setakat ini.
+Students who scanned your deal QR.|Pelajar yang mengimbas QR tawaran anda.
+Claims you gave the discount for.|Tuntutan yang telah anda berikan diskaun.
+Open Deal QR and tap Apply discount.|Buka QR tawaran dan ketik Berikan diskaun.
+Students waiting for their discount right now.|Pelajar yang sedang menunggu diskaun mereka.
+No claims yet. Create a live deal, then show its QR at your counter.|Belum ada tuntutan. Cipta tawaran aktif, kemudian paparkan QR-nya di kaunter anda.
+Two ways to bring students to your shop|Dua cara untuk membawa pelajar ke kedai anda
+Live deal|Tawaran aktif
+earn|kumpul
+spend|belanja
+A discount you give at your counter during your quiet hours.|Diskaun yang anda berikan di kaunter semasa waktu lengang.
+You set it up yourself. It goes live straight away.|Anda sediakan sendiri. Ia terus aktif.
+Students scan your deal QR.|Pelajar mengimbas QR tawaran anda.
+You give the discount at your counter.|Anda memberikan diskaun di kaunter anda.
+Create another deal|Cipta tawaran lain
+A voucher for your shop that students swap their points for in Rewards.|Baucar untuk kedai anda yang ditukar oleh pelajar dengan mata mereka dalam Ganjaran.
+You apply. The Admin team agrees the details with you.|Anda memohon. Pasukan Admin akan bersetuju tentang butirannya dengan anda.
+Students spend their points to get your voucher.|Pelajar membelanjakan mata mereka untuk mendapatkan baucar anda.
+Applying is free and doesn’t commit you to anything.|Permohonan adalah percuma dan tidak mengikat anda.
+Tap Create a deal at the top to fill your quiet hours.|Ketik Cipta tawaran di atas untuk mengisi waktu lengang anda.
+A live deal only shows while your café is less full than the deal’s limit.|Tawaran aktif hanya dipaparkan semasa kafe anda kurang penuh daripada had tawaran.
+Set how many seats you have. A live deal only shows while your café is less full than the deal’s limit.|Tetapkan bilangan tempat duduk anda. Tawaran aktif hanya dipaparkan semasa kafe anda kurang penuh daripada had tawaran.
+A claim lasts 15 minutes. Apply the discount before then.|Tuntutan sah selama 15 minit. Berikan diskaun sebelum itu.
+Live deals, where students earn points, and the voucher program, where they spend them.|Tawaran aktif, tempat pelajar mengumpul mata, dan program baucar, tempat mereka membelanjakannya.
+Promote your shop|Promosikan kedai anda
+Two ways to bring students to your counter.|Dua cara untuk membawa pelajar ke kaunter anda.
+Ways to promote your shop|Cara mempromosikan kedai anda
+Students earn points|Pelajar mengumpul mata
+Students spend points|Pelajar membelanjakan mata
+Open the Live deals tab above and tap Create a deal.|Buka tab Tawaran aktif di atas dan ketik Cipta tawaran.
+Live deals and the voucher program: two ways to bring students in.|Tawaran aktif dan program baucar: dua cara untuk membawa pelajar.
 `;

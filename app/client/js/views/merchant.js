@@ -28,58 +28,108 @@ function needVerified(app) {
 }
 
 // ------------------------------------------------------------- home
+// New merchants don't know the app yet, so Home says what each part is for and what to do next:
+// a "Start here" path until the shop is fully set up, clearer tiles, and numbers that explain themselves.
+function startSteps(app, m, deals, liveOn) {
+  return [
+    m && m.status === 'pending'
+      ? ['clock', 'Wait for the Admin team to verify you', 'You’ve applied. We check your details in 1–2 working days.', 'shop', false]
+      : ['store', m?.status === 'rejected' ? 'Update your application' : 'Apply and get verified', m?.status === 'rejected' ? 'The Admin team asked for changes. Fix them and send it again.' : 'Send your shop details. The Admin team checks them in 1–2 working days.', 'shop', m?.status === 'verified'],
+    ['map-pin', 'Add your logo and map pin', 'So students can recognise your shop and walk straight to it.', 'shop', !!(m?.logo && hasPin(m))],
+    ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules)],
+    ...(liveOn ? [
+      ['badge-percent', 'Create your first live deal', 'A discount for your quiet hours. It goes live straight away.', 'promote', deals > 0],
+      ['qr-code', 'Show your deal QR at the counter', 'Students scan it to claim the discount. You’ll see the claim on your screen.', 'scan', 'claims'],
+    ] : []),
+  ];
+}
+// Once a merchant has finished every step on this device, the banner stays away (no flash while claims load).
+const START_DONE = (uid) => `onz-merchant-start-done:${uid}`;
+const startDone = (uid) => { try { return localStorage.getItem(START_DONE(uid)) === '1'; } catch { return false; } };
+const markStartDone = (uid) => { try { localStorage.setItem(START_DONE(uid), '1'); } catch { /* private mode */ } };
+function startHereHTML(steps) {
+  // The last step ("claims") can only be ticked once the claims load, in homeMount.
+  const next = steps.find(([, , , , done]) => done !== true);
+  if (!next) return '';
+  const doneCount = steps.filter(([, , , , done]) => done === true).length;
+  return `<section class="section mer-start" id="start-here"><div class="mer-voucher-card mer-start-card">
+    <div class="mer-voucher-head"><span class="mer-voucher-new">Start here</span><h2>Get your shop ready for students</h2></div>
+    <p class="mer-start-lead">Follow these steps in order. Each one ticks off when it’s done. <b data-start-count>${doneCount} of ${steps.length} done</b></p>
+    <ol class="mer-start-steps">${steps.map(([, title, desc, route, done], i) => `<li class="${done === true ? 'is-done' : next[1] === title ? 'is-next' : ''}" ${done === 'claims' ? 'data-step-claims' : ''}><a href="#/${route}">
+        <span class="mer-start-num" aria-hidden="true">${done === true ? icon('check') : i + 1}</span>
+        <span><b>${title}</b><small>${desc}</small></span>${icon('chevron-right')}</a></li>`).join('')}</ol>
+    <div><a class="btn mer-voucher-cta" href="#/${next[3]}">${icon(next[0])} Next: ${next[1]} ${icon('arrow-right')}</a></div>
+  </div></section>`;
+}
 async function homeRender(app) {
   const m = app.merchant; const name = m ? m.name : app.profile.name;
   const liveOn=livePointEarningOn(app.rules);
   const verified = m?.status === 'verified'; const toolsOn = D.featureOn(app.rules, 'merchantTools');
-  const readiness = merchantSetup(m, hasPin, app.rules);
+  const deals = verified && liveOn ? (await D.myDeals(app.ctx).catch(() => [])).length : 0;
+  // A new readiness update from the Admin team for a shop that was already set up shows the readiness card
+  // (with the Admin team's message), not the whole "Start here" path again.
+  const updated = !!m?.ready && !D.merchantReadinessCurrent(m, app.rules);
+  const start = updated || startDone(app.ctx.uid) ? '' : startHereHTML(startSteps(app, m, deals, liveOn));
+  const readiness = start ? '' : merchantSetup(m, hasPin, app.rules);
   const shortcuts = [
-    ['shop', 'store', 'My shop', 'Manage your shop details'],
+    ['shop', 'store', 'My shop', 'Your shop details, logo, map pin and counter poster.'],
     ...(verified && liveOn ? [
-      ['scan', 'qr-code', 'Deal QR', 'Show a QR for students to claim'],
-      ['promote', 'badge-percent', 'Promote live deals', 'Manage live deals and offers'],
+      ['scan', 'qr-code', 'Deal QR', 'Show this at your counter. Students scan it to claim your deal.'],
+      ['promote', 'badge-percent', 'Promote your shop', 'Live deals, where students earn points, and the voucher program, where they spend them.'],
     ] : []),
-    ...(toolsOn ? [['survey', 'target', 'Cashless readiness check', '7 questions to identify support needs.']] : []),
+    ...(toolsOn ? [['survey', 'target', 'Cashless readiness check', '7 quick questions so we know how to help your shop.']] : []),
   ];
   return `<div class="merchant-page mer-home"><section class="kk-hero merchant-home-hero">
       <div class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</div>
       <div class="mer-home-copy"><span class="mer-eyebrow">Your merchant hub</span><h1>${esc(name)}</h1>${m?.location ? `<p class="mer-hero-location">${icon('map-pin')} ${esc(m.location)}</p>` : ''}<div class="row merchant-home-status">${statusBadge(m)}${D.merchantReadinessCurrent(m, app.rules) ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div></div>
       <div class="mer-hero-art" aria-hidden="true"><span>${icon('store')}</span><i>${icon('star')}</i><b>+</b></div>
     </section>
-    ${m && m.status === 'verified' && !hasPin(m) ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
+    ${start}
+    ${verified && !hasPin(m) && !start ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
     <div class="mer-home-grid ${readiness ? '' : 'is-ready'}"><section class="mer-quick-section"><div class="mer-section-head"><h2>Explore</h2><span class="mer-eyebrow">Let's go</span></div>
+      <p class="mer-section-lead">Everything for your shop. You can also find these in the menu.</p>
       <nav class="mer-actions" aria-label="Merchant shortcuts">${shortcuts.map((args, index) => merchantAction(...args, index)).join('')}</nav></section>
       ${readiness}</div>
     ${pointsSummaryHTML(app)}
     ${verified ? `
-      <section class="section"><div class="mer-section-head"><h2>Live-deal activity</h2>${toolsOn ? `<a href="#/insights">Insights ${icon('arrow-right')}</a>` : ''}</div><div class="stats mer-stats" id="merchant-wallet"><div class="skeleton" style="height:130px"></div></div></section>` : ''}</div>`;
+      <section class="section"><div class="mer-section-head"><h2>Live-deal activity</h2>${toolsOn ? `<a href="#/insights">Insights ${icon('arrow-right')}</a>` : ''}</div>
+      <p class="mer-section-lead">What has happened with your live deals so far.</p>
+      <div class="stats mer-stats" id="merchant-wallet"><div class="skeleton" style="height:130px"></div></div><div id="merchant-wallet-empty"></div></section>` : ''}</div>`;
 }
 function homeMount(root, app) {
   const off = app.on((topic) => { if (topic === 'merchant' || topic === 'merchant-readiness') app.render(); });
   const stop = $('#merchant-wallet', root) ? L.watchMerchantClaims(app.ctx, (claims) => {
-    $('#merchant-wallet', root).innerHTML = merchantMetric('Deal claims', n(claims.length), 'qr-code')
-      + merchantMetric('Discounts applied', n(claims.filter((c) => c.status === 'applied').length), 'badge-percent', 'lime')
-      + merchantMetric('Awaiting discount', n(claims.filter((c) => c.status === 'claimed' && !L.claimExpired(c)).length), 'clock', 'sky');
+    const waiting = claims.filter((c) => c.status === 'claimed' && !L.claimExpired(c)).length;
+    $('#merchant-wallet', root).innerHTML = merchantMetric('Deal claims', n(claims.length), 'qr-code', 'violet', 'Students who scanned your deal QR.')
+      + merchantMetric('Discounts applied', n(claims.filter((c) => c.status === 'applied').length), 'badge-percent', 'lime', 'Claims you gave the discount for.')
+      + merchantMetric('Awaiting discount', n(waiting), 'clock', 'sky', waiting ? 'Open Deal QR and tap Apply discount.' : 'Students waiting for their discount right now.');
+    $('#merchant-wallet-empty', root).innerHTML = claims.length ? '' : `<div class="mer-empty-hint">${icon('info')}<span>No claims yet. Create a live deal, then show its QR at your counter.</span><a class="btn small primary" href="#/promote">Create a deal</a></div>`;
+    // The last "Start here" step ticks off once a student has claimed a deal.
+    const li = $('[data-step-claims]', root);
+    if (li && claims.length) { li.classList.remove('is-next'); li.classList.add('is-done'); $('.mer-start-num', li).innerHTML = icon('check'); }
+    // Every step done: the banner goes away for good.
+    const banner = $('#start-here', root);
+    if (banner && !$('#start-here li:not(.is-done)', root)) { markStartDone(app.ctx.uid); banner.remove(); }
   }, () => {}) : () => {};
   return () => { off(); stop(); };
 }
-
 const miniStat = (label, value, ic, alert = false) => `<div class="mer-mini ${alert && value ? 'is-alert' : ''}"><span aria-hidden="true">${icon(ic)}</span><b class="num">${typeof value === 'number' ? n(value) : esc(value)}</b><small>${label}</small></div>`;
 
-// ------------------------------------------------------------- seats: how full the café is right now
+// ------------------------------------------------------------- café occupancy: how full the café is right now
 // Big − and + buttons for the counter. Each tap shows straight away; the change is saved once tapping stops.
 function seatsWidget(m) {
   const seats = Math.max(0, Number(m?.seats) || 0), occupied = Math.min(seats, Math.max(0, Number(m?.occupied) || 0));
   const pct = seats ? Math.round(occupied / seats * 100) : 0;
   return `<section class="card mer-seats" id="seats" data-seats="${seats}" data-occupied="${occupied}">
-    <div class="mer-section-head"><h2>${icon('coffee')} How full are you?</h2>${seats ? `<span class="mer-count" data-free>${n(seats - occupied)} seats free</span>` : ''}</div>
+    <div class="mer-section-head"><h2>${icon('coffee')} Café occupancy</h2>${seats ? `<span class="mer-count" data-free>${n(seats - occupied)} seats free</span>` : ''}</div>
     ${seats ? `<div class="mer-stepper">
         <button type="button" class="mer-step" data-step="-1" aria-label="One fewer seat taken" ${occupied ? '' : 'disabled'}>−</button>
-        <p class="mer-stepper-value" aria-live="polite"><b class="num" data-occupied>${n(occupied)}</b> <span>of <span class="num">${n(seats)}</span> seats taken</span></p>
+        <div class="mer-stepper-value"><div class="mer-progress-ring" data-ring style="--progress:${pct}%" aria-hidden="true"><span><b data-pct>${pct}</b><small>%</small></span></div>
+          <p aria-live="polite"><b class="num" data-occupied>${n(occupied)}</b> <span>of <span class="num">${n(seats)}</span> seats taken</span></p></div>
         <button type="button" class="mer-step" data-step="1" aria-label="One more seat taken" ${occupied < seats ? '' : 'disabled'}>+</button></div>
-      <div class="mer-seats-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
       <div class="mer-seats-foot"><span data-saved>${m.occupancyAt ? `Updated ${timeAgo(m.occupancyAt)}` : 'Tap − or + as people come and go.'}</span><button type="button" class="btn small ghost" data-edit-seats>${icon('pencil')} Change total seats</button></div>`
-    : `<p class="mer-seats-empty">Set how many seats you have. Live deals only show while you have free seats.</p><button type="button" class="btn primary" data-edit-seats>${icon('coffee')} Set my seats</button>`}
+    : `<p class="mer-seats-empty">Set how many seats you have. A live deal only shows while your café is less full than the deal’s limit.</p><button type="button" class="btn primary" data-edit-seats>${icon('coffee')} Set my seats</button>`}
+    ${seats ? '<p class="mer-seats-note">A live deal only shows while your café is less full than the deal’s limit.</p>' : ''}
   </section>`;
 }
 function seatsMount(root, app) {
@@ -88,7 +138,8 @@ function seatsMount(root, app) {
   const draw = () => {
     $('[data-occupied]', box).textContent = n(occupied);
     $('[data-free]', box).textContent = `${n(seats - occupied)} seats free`;
-    $('.mer-seats-bar i', box).style.width = `${seats ? Math.round(occupied / seats * 100) : 0}%`;
+    const pct = seats ? Math.round(occupied / seats * 100) : 0;
+    $('[data-ring]', box).style.setProperty('--progress', `${pct}%`); $('[data-pct]', box).textContent = pct;
     $('[data-step="-1"]', box).disabled = occupied <= 0; $('[data-step="1"]', box).disabled = occupied >= seats;
   };
   const save = async () => {
@@ -291,19 +342,25 @@ function posterMount(root, app) {
 }
 
 // ------------------------------------------------------------- promote: voucher program, live deals, seats
-async function promoteRender(app) {
+async function promoteRender(app, [section] = []) {
   const block = needVerified(app); if (block) return block;
+  const vouchers = section === 'vouchers';
   const [deals, shop, vapp] = await Promise.all([D.myDeals(app.ctx), D.getMerchant(app.ctx, app.ctx.uid), D.myVoucherApplication(app.ctx).catch(() => null)]);
   const m = shop || app.merchant;
   app._voucherApp = vapp;
+  // The two tabs only swap the banner; your deals and café occupancy stay below either way.
+  // The subtitles keep the difference (earn vs spend) visible. #/promote/vouchers opens on the voucher banner.
+  const tabs = `<div class="mer-seg" role="group" aria-label="Ways to promote your shop">
+    <button type="button" data-way="deal" class="is-deal ${vouchers ? '' : 'on'}" aria-pressed="${!vouchers}" aria-controls="way-deal"><span class="mer-seg-icon" aria-hidden="true">${icon('badge-percent')}</span><span><b>Live deals</b><small>Students earn points</small></span></button>
+    <button type="button" data-way="voucher" class="is-voucher ${vouchers ? 'on' : ''}" aria-pressed="${vouchers}" aria-controls="voucher-program"><span class="mer-seg-icon" aria-hidden="true">${icon('ticket')}</span><span><b>Voucher program</b><small>Students spend points</small></span>${vapp ? '' : '<span class="mer-voucher-new">New</span>'}</button></div>`;
   const liveDeals = await D.dealOverview(app.ctx, deals, [m]);
   const liveNow = liveDeals.filter((d) => d.status === 'Available').length, paused = deals.filter((d) => !d.enabled).length;
   const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
-  return `<div class="merchant-page mer-promote">${merchantHeading('Promote live deals', 'Give students a reason to stop by.', 'megaphone')}
-    ${voucherProgramHTML(vapp)}
+  return `<div class="merchant-page mer-promote" id="promote-view">${merchantHeading('Promote your shop', 'Two ways to bring students to your counter.', 'megaphone')}${tabs}
+    <div id="way-deal" ${vouchers ? 'hidden' : ''}>${dealCardHTML(app, deals.length)}</div>
+    <div id="way-voucher" ${vouchers ? '' : 'hidden'}>${voucherCardHTML(vapp)}</div>
     <section class="section mer-deals"><div class="mer-section-head"><div><h2>Your live deals</h2>
-        <p class="mer-deals-summary">${deals.length ? `<span class="num">${n(liveNow)}</span> <span>live now</span> · <span class="num">${n(paused)}</span> <span>paused</span>` : 'Publish instantly, with no approval needed.'}</p></div>
-        <button class="btn primary" id="new-deal">${icon('plus')} New deal</button></div>
+        <p class="mer-deals-summary">${deals.length ? `<span class="num">${n(liveNow)}</span> <span>live now</span> · <span class="num">${n(paused)}</span> <span>paused</span>` : 'Publish instantly, with no approval needed.'}</p></div></div>
       <div class="mer-deal-grid">${liveDeals.map(({ deal: d, status }) => {
         const live = status === 'Available', published = ['approved', 'published'].includes(d.status);
         return `<article class="card mer-deal-card ${live ? 'is-live' : ''}">
@@ -311,31 +368,25 @@ async function promoteRender(app) {
         <h3 data-no-i18n>${esc(d.title)}</h3>${d.benefit && !same(d.benefit, d.title) ? `<p class="deal-benefit" data-no-i18n>${esc(d.benefit)}</p>` : ''}
         <div class="mer-deal-meta"><span>${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)}</span><span>${icon('users')} under ${d.threshold}% full</span></div>
         <div class="mer-deal-actions">${d.status === 'pending' ? `<button class="btn small primary" data-publish-deal="${esc(d.id)}">${icon('megaphone')} Publish deal</button>` : ''}${live ? `<a class="btn small primary" href="#/scan/${esc(d.id)}">${icon('qr-code')} Show deal QR</a>` : ''}${published ? `<button class="btn small ${d.enabled ? '' : 'primary'}" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${icon(d.enabled ? 'moon' : 'zap')} ${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div>
-      </article>`; }).join('') || merchantEmpty('badge-percent', 'No live deals yet.', 'Tap New deal to fill your quiet hours. “How live deals work” below explains each step.')}</div></section>
+      </article>`; }).join('') || merchantEmpty('badge-percent', 'No live deals yet.', 'Open the Live deals tab above and tap Create a deal.')}</div></section>
     ${seatsWidget(m)}
-    ${howLiveDealsWork(app, !deals.length)}
     </div>`;
 }
 
-// What a live deal is and how it works at the counter. Open until the merchant has made their first deal.
-function howLiveDealsWork(app, open) {
+const wayFacts = (list) => `<ul class="mer-way-facts">${list.map(([ic, t]) => `<li>${icon(ic)}<span>${t}</span></li>`).join('')}</ul>`;
+// Live deals: students EARN points at your counter.
+function dealCardHTML(app, dealCount) {
   const pts = Number(app.rules?.liveDealPoints) || 0;
-  const steps = [
-    ['plus', 'Create a deal', 'Choose the discount, the hours it runs and how full your café can be. It goes live straight away, with no approval needed.'],
-    ['smartphone', 'Students see it', 'Your deal shows under Live deals in the student app, but only during its hours and while your café is less full than your limit.'],
-    ['qr-code', 'They scan your QR', `At the counter, tap Show deal QR. The student scans it with +Onz${pts ? ` and earns ${pts} points` : ''}.`],
-    ['badge-percent', 'You apply the discount', 'Their claim appears on your screen. Tap Apply discount, give them the discount and take payment as usual.'],
-  ];
-  const facts = ['Each student can claim each deal once a day.', 'A claim is valid for 15 minutes after scanning.',
-    'The QR changes every 90 seconds, so a screenshot won’t work.', 'Keep your seats up to date. A deal won’t show until you set your seat count.',
-    'You set the discount and give it at your counter. +Onz records the claim, not the payment.', 'Pause or resume a deal at any time.'];
-  return `<section class="section"><details class="card mer-how" id="how-live-deals" ${open ? 'open' : ''}><summary><span class="mer-panel-emblem">${icon('info')}</span><span><b>How live deals work</b><small>A live deal is a discount students can claim at your counter during your quiet hours.</small></span>${icon('chevron-right')}</summary>
-    <ol class="mer-how-steps">${steps.map(([ic, t, d], i) => `<li><span class="mer-how-num">${icon(ic)}<b>${i + 1}</b></span><div><h3>${t}</h3><p>${d}</p></div></li>`).join('')}</ol>
-    <h3 class="mer-how-sub">Good to know</h3><ul class="mer-how-facts">${facts.map((f) => `<li>${icon('check')}<span>${f}</span></li>`).join('')}</ul></details></section>`;
+  return `<section class="section mer-ways"><article class="mer-way is-deal">
+    <div class="mer-way-top"><span class="mer-way-icon" aria-hidden="true">${icon('badge-percent')}</span><span class="mer-way-tag">Live deal</span></div>
+    <h2 class="mer-way-title">Students <em>earn</em> points</h2>
+    <p class="mer-way-lead">A discount you give at your counter during your quiet hours.</p>
+    ${wayFacts([['zap', 'You set it up yourself. It goes live straight away.'], ['qr-code', `Students scan your deal QR${pts ? ` and earn ${pts} points` : ''}.`], ['store', 'You give the discount at your counter.']])}
+    <button type="button" class="btn mer-way-cta" id="new-deal">${icon('plus')} ${dealCount ? 'Create another deal' : 'Create a deal'} ${icon('arrow-right')}</button>
+  </article></section>`;
 }
-
-// Voucher program: explanation, the merchant's application and its status.
-function voucherProgramHTML(a) {
+// Voucher program: students SPEND points on your shop's voucher.
+function voucherCardHTML(a) {
   const status = a ? `<div class="mer-voucher-status is-${esc(a.status)}"><div class="row between"><b>Your application</b><span class="badge ${a.status === 'approved' ? 'ok' : a.status === 'declined' ? 'bad' : 'warn'}">${esc(D.VOUCHER_APP_STATUS[a.status] || 'Sent')}</span></div>
       <p data-no-i18n><b>${esc(a.offer)}</b></p><p class="faint"><span>Value</span> ${rm(a.valueCents)} · <span data-no-i18n>${n(a.perMonth)}</span> <span>a month</span> · <span>Sent</span> ${fmtDate(a.submittedAt)}</p>
       ${a.reviewNote ? `<p class="mer-voucher-note"><b>Note from the Admin team:</b> <span data-no-i18n>${esc(a.reviewNote)}</span></p>` : ''}
@@ -343,15 +394,13 @@ function voucherProgramHTML(a) {
   const button = !a ? `<button class="btn mer-voucher-cta" id="voucher-apply">${icon('ticket')} Apply to join ${icon('arrow-right')}</button>`
     : a.status === 'pending' ? `<button class="btn mer-voucher-ghost" id="voucher-apply">${icon('pencil')} Edit application</button>`
     : a.status === 'declined' ? `<button class="btn mer-voucher-cta" id="voucher-apply">${icon('ticket')} Apply again</button>` : '';
-  return `<section class="section mer-voucher" id="voucher-program"><div class="mer-voucher-card">
-    <span class="mer-voucher-art" aria-hidden="true">${icon('ticket')}</span>
-    <div class="mer-voucher-head">${a ? '' : '<span class="mer-voucher-new">New</span>'}<h2>Voucher program</h2></div>
-    <div class="mer-voucher-intro"><p>Students swap their +Onz points for vouchers in Rewards. Offer one for your shop and bring more students to your counter.</p>
-      <details class="mer-voucher-more"><summary>How it works ${icon('chevron-right')}</summary><ol class="mer-how-steps is-compact">${[['Tell us your voucher idea', 'What students get, its value and how many you can honour a month.'],
-        ['The Admin team reviews it', 'We contact you to agree the details with you.'],
-        ['Students swap points for it', 'Once it’s set up, your voucher appears in Rewards.']].map(([t, d], i) => `<li><span class="mer-how-num"><b>${i + 1}</b></span><div><h3>${t}</h3><p>${d}</p></div></li>`).join('')}</ol></details>
-      <p class="mer-voucher-free">${icon('shield-check')} Applying is free and doesn’t commit you to anything. We’ll agree all the details with you before your voucher goes live.</p></div>
-      ${status}${button ? `<div>${button}</div>` : ''}</div></section>`;
+  return `<section class="section mer-ways" id="voucher-program"><article class="mer-way is-voucher mer-voucher">
+    <div class="mer-way-top"><span class="mer-way-icon" aria-hidden="true">${icon('ticket')}</span><span class="mer-way-tag">Voucher program</span></div>
+    <h2 class="mer-way-title">Students <em>spend</em> points</h2>
+    <p class="mer-way-lead">A voucher for your shop that students swap their points for in Rewards.</p>
+    ${wayFacts([['ticket', 'You apply. The Admin team agrees the details with you.'], ['sparkles', 'Students spend their points to get your voucher.'], ['shield-check', 'Applying is free and doesn’t commit you to anything.']])}
+    ${status}${button ? `<div>${button}</div>` : ''}
+  </article></section>`;
 }
 function voucherForm(app) {
   const a = app._voucherApp; const v = (k, d = '') => esc(a?.[k] ?? d);
@@ -374,9 +423,16 @@ function voucherForm(app) {
   };
 }
 function promoteMount(root, app) {
-  if (!$('#new-deal', root)) return null;
+  if (!$('#promote-view', root)) return null;
   const stopSeats = seatsMount(root, app);
-  $('#new-deal', root).onclick = () => {
+  $$('[data-way]', root).forEach((b) => { b.onclick = () => {
+    const voucher = b.dataset.way === 'voucher';
+    $$('[data-way]', root).forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
+    $('#way-deal', root).hidden = voucher; $('#way-voucher', root).hidden = !voucher;
+    // Keep the address in step (without reloading the page) so Back and shared links land on the same banner.
+    history.replaceState(null, '', voucher ? '#/promote/vouchers' : '#/promote');
+  }; });
+  if ($('#new-deal', root)) $('#new-deal', root).onclick = () => {
     const el = sheet(`<div class="mer-sheet-head"><span class="mer-panel-emblem">${icon('megaphone')}</span><div><span class="mer-eyebrow">Make some noise</span><h2>New live deal</h2></div></div>
       <div class="mer-deal-preview"><span class="mer-eyebrow">Student preview</span><h3 id="deal-preview-title" data-no-i18n></h3><div class="mer-deal-meta"><span>${icon('clock')}<span id="deal-preview-time"></span></span><span>${icon('users')}<span>Occupancy threshold</span><b id="deal-preview-threshold"></b></span></div><span class="badge warn">Publish instantly — no approval needed</span></div>
       <form id="df" class="stack mer-builder" style="margin-top:18px">
@@ -384,6 +440,7 @@ function promoteMount(root, app) {
       <label class="field">Discount details<input name="benefit" required minlength="3" maxlength="160" placeholder="e.g. 20% off any coffee"></label>
       <div class="grid-2"><label class="field">From<input name="start" type="time" required value="14:00"></label><label class="field">Until<input name="end" type="time" required value="17:00"></label></div>
       <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="60"></label></div>
+      <ul class="mer-deal-rules"><li>${icon('users')}<span>Each student can claim each deal once a day.</span></li><li>${icon('clock')}<span>A claim lasts 15 minutes. Apply the discount before then.</span></li></ul>
       <button class="btn primary">${icon('megaphone')} Publish deal</button></form>`);
     const preview = () => {
       const form = $('#df', el);
@@ -475,7 +532,7 @@ export const routes = {
   scan: { title: 'Deal QR', render: merchantDealQRRender, mount: merchantDealQRMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   shop: { title: 'My shop', render: shopRender, mount: shopMount, wide: true },
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
-  promote: { title: 'Promote live deals', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
+  promote: { title: 'Promote your shop', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools', wide: true },
   'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },

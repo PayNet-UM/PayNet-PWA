@@ -167,6 +167,8 @@ ok(`student swapped 300 points for voucher ${vcode}`);
 const fresh = async (pg) => pg.addInitScript(() => { if (sessionStorage.getItem('umc-demo-session') === null) sessionStorage.setItem('umc-demo-session', ''); });
 const mer = await ctx.newPage(); watch(mer, 'merchant'); await fresh(mer);
 await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#merchant-wallet .stat', { timeout: 30000 });
+// A shop with no claims yet sees "Start here" with the deal QR as the next step.
+if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here li.is-next'))) throw new Error('Start here should point to the deal QR next');
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
@@ -220,16 +222,17 @@ await mer.fill('#df [name=title]', 'Campus study break'); await mer.fill('#df [n
 await mer.waitForFunction(() => document.querySelector('#deal-preview-title')?.textContent === 'Campus study break' && document.querySelector('#deal-preview-threshold')?.textContent === '45%');
 await mer.screenshot({ path: `${shots}/m-deal-builder.png`, fullPage: true });
 await mer.click('#sheet [data-close]');
-// Promote explains live deals and lets the merchant apply to the voucher program.
-if (!/once a day/.test(await mer.textContent('#how-live-deals'))) throw new Error('Promote should explain how live deals work');
-await mer.click('#how-live-deals summary'); if (!(await mer.evaluate(() => document.querySelector('#how-live-deals').open))) throw new Error('How live deals work should open');
+// Promote has two tabs: Live deals ("students earn points") and Voucher program ("students spend points").
+if (!/earn/.test(await mer.textContent('.mer-way.is-deal .mer-way-title')) || !/spend/.test(await mer.textContent('.mer-seg .is-voucher'))) throw new Error('Promote should contrast earning and spending points');
+await mer.click('.mer-seg .is-voucher'); await mer.waitForSelector('#voucher-apply', { state: 'visible' });
+if (!(await mer.isVisible('#seats'))) throw new Error('Café occupancy should stay visible on the voucher tab');
 await mer.screenshot({ path: `${shots}/m-promote-how.png`, fullPage: true });
 await mer.click('#voucher-apply'); await mer.waitForSelector('#vf');
 await mer.fill('#vf [name=offer]', 'RM5 off any meal'); await mer.fill('#vf [name=value]', '5'); await mer.fill('#vf [name=perMonth]', '40');
 await mer.fill('#vf [name=contactPhone]', '012-345 6789'); await mer.click('#vf button');
 await mer.waitForSelector('.mer-voucher-status.is-pending', { timeout: 20000 });
 await mer.screenshot({ path: `${shots}/m-voucher-pending.png`, fullPage: true });
-ok('Promote explains how live deals work, and the merchant applied to the voucher program');
+ok('Promote splits live deals and the voucher program into two tabs, and the merchant applied to the voucher program');
 // Insights switches period and shows the week as a chart.
 await mer.goto(BASE + '#/insights'); await mer.waitForSelector('.mer-chart .bars');
 await mer.click('[data-period="today"]'); await mer.waitForSelector('[data-period="today"][aria-pressed="true"]');
@@ -360,7 +363,7 @@ if ((await mpp.textContent('[data-count="vouchers"]')).trim() !== '1') throw new
 await mpp.screenshot({ path: `${shots}/p-vouchers.png`, fullPage: true });
 await mpp.click('[data-va][data-st="approved"]'); await mpp.fill('#vaf [name=note]', 'We’ll call you this week.'); await mpp.click('#vaf button');
 await mpp.waitForSelector('text=No applications waiting.');
-await mer.goto(BASE + '#/promote'); await mer.waitForSelector('.mer-voucher-status.is-approved');
+await mer.goto(BASE + '#/promote/vouchers'); await mer.waitForSelector('.mer-voucher-status.is-approved');
 if (!/We’ll call you this week/.test(await mer.textContent('.mer-voucher-status'))) throw new Error('merchant should see the Admin note');
 ok('HEP approved the voucher application with a note, and the merchant sees it');
 for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
@@ -417,6 +420,8 @@ const off = await ctx.newPage(); watch(off, 'switches'); await fresh(off); await
 await login(off, adminEmail, ADMIN); await off.waitForSelector('#mpp-rail', { timeout: 30000 });
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 await mer.goto(BASE + '#/home'); await mer.waitForSelector('.mer-home-grid.is-ready');
+await mer.waitForSelector('#merchant-wallet .stat'); await mer.waitForTimeout(500);
+if (await mer.locator('#start-here').count()) throw new Error('Start here should go once a student has claimed a deal');
 await off.fill('#readiness-update [name=message]', 'Review the refreshed counter poster with your team.');
 await off.click('#readiness-update button');
 await mer.waitForSelector('.mer-setup');

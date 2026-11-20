@@ -9,8 +9,8 @@ export const merchantHeading = (title, description, glyph) => `<header class="me
   <span class="mer-heading-art" aria-hidden="true">${icon(glyph)}</span>
 </header>`;
 
-export const merchantMetric = (label, value, glyph, tone = 'violet') => `<div class="stat mer-metric" data-tone="${tone}">
-  <span class="mer-metric-icon" aria-hidden="true">${icon(glyph)}</span><div class="k">${label}</div><div class="v num">${value}</div>
+export const merchantMetric = (label, value, glyph, tone = 'violet', hint = '') => `<div class="stat mer-metric" data-tone="${tone}">
+  <span class="mer-metric-icon" aria-hidden="true">${icon(glyph)}</span><div class="k">${label}</div><div class="v num">${value}</div>${hint ? `<small class="mer-metric-hint">${hint}</small>` : ''}
 </div>`;
 
 export const merchantEmpty = (glyph, title, description = '') => `<div class="mer-empty">

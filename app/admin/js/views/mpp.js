@@ -456,7 +456,7 @@ function vouchersMount(root, app) {
       const a = app._va.find((x) => x.id === b.dataset.va), approve = b.dataset.st === 'approved';
       const el = sheet(`<h2>${approve ? 'Approve' : 'Decline'} <span data-no-i18n>${esc(a.merchantName)}</span></h2><p class="muted hep-fb-quote" data-no-i18n>${esc(a.offer)}</p>
         <form id="vaf" class="stack" style="margin-top:12px"><label class="field">Note to the merchant (optional)<textarea name="note" rows="4" maxlength="500" placeholder="${approve ? 'e.g. We’ll call you this week to agree the details.' : 'e.g. We’re not adding new vouchers this semester.'}"></textarea>
-          <small>The merchant sees this on their Promote live deals page.</small></label><button class="btn ${approve ? 'go' : 'primary'}">${approve ? 'Approve application' : 'Decline application'}</button></form>`);
+          <small>The merchant sees this on their Promote your shop page.</small></label><button class="btn ${approve ? 'go' : 'primary'}">${approve ? 'Approve application' : 'Decline application'}</button></form>`);
       $('#vaf', el).onsubmit = (e) => { e.preventDefault();
         busy($('button', el), async () => { try { await D.reviewVoucherApplication(app.ctx, a.id, b.dataset.st, e.target.note.value); closeSheet(); toast(approve ? 'Application approved.' : 'Application declined.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
     };

@@ -502,3 +502,128 @@
 }
 @media (prefers-reduced-motion:reduce) { .mer-step,.mer-seats-bar i,.mer-voucher-more > summary .ic { transition:none; } }
 .mer-stepper { max-width:520px;margin-inline:auto; }
+
+/* Home for new merchants: a "Start here" path, short explanations and helpful empty states. */
+.mer-start { margin:22px 0 0; }
+.mer-start-card { gap:14px; }
+.mer-start-card .mer-voucher-head { padding-right:0; }
+.mer-start-lead { margin:0;color:#dfe2ff;font-size:15px; }
+.mer-start-lead b { display:inline-block;margin-left:4px;padding:2px 10px;border-radius:99px;background:#ffffff26;color:#fff;font-size:13px; }
+.mer-start-steps { list-style:none;margin:0;padding:0;display:grid;gap:8px; }
+.mer-start-steps a { display:flex;align-items:center;gap:14px;min-height:64px;padding:12px 14px;border-radius:16px;border:1px solid #ffffff2e;background:#ffffff12;color:#fff;text-decoration:none; }
+.mer-start-steps a:hover,.mer-start-steps a:focus-visible { background:#ffffff22;text-decoration:none; }
+.mer-start-steps a > span:nth-child(2) { flex:1;display:grid;gap:2px; }
+.mer-start-steps small { color:#cfd3ff;font-size:13px;line-height:1.4; }
+.mer-start-steps a > .ic { width:18px;height:18px;flex:none;opacity:.7; }
+.mer-start-num { display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;border:2px solid #ffffff66;font-weight:800;font-size:15px; }
+.mer-start-num .ic { width:18px;height:18px; }
+.mer-start-steps li.is-done a { opacity:.72; }
+.mer-start-steps li.is-done b { text-decoration:line-through;text-decoration-thickness:1px; }
+.mer-start-steps li.is-done .mer-start-num { background:#3ddc84;border-color:#3ddc84;color:var(--onz-navy); }
+.mer-start-steps li.is-next a { background:#fff;border-color:#fff;color:var(--onz-navy);box-shadow:0 6px 18px -10px #000; }
+.mer-start-steps li.is-next small { color:var(--ink-2); }
+.mer-start-steps li.is-next .mer-start-num { background:var(--onz-lime);border-color:var(--onz-lime);color:var(--onz-navy); }
+.mer-section-lead { margin:-8px 0 14px;font-size:14px;color:var(--ink-2); }
+.mer-metric-hint { display:block;margin-top:6px;font-size:13px;line-height:1.4;color:var(--ink-2); }
+.mer-empty-hint { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:14px 16px;border-radius:16px;background:#fff8e6;border:1px solid #f2d59b;color:#6b4a00;font-size:14px; }
+.mer-empty-hint > .ic { width:20px;height:20px;flex:none; }
+.mer-empty-hint > span { flex:1;min-width:180px; }
+.mer-start .btn.mer-voucher-cta { min-height:48px;padding-inline:20px;background:var(--onz-lime);border-color:var(--onz-lime);color:var(--onz-navy);font-weight:800;box-shadow:0 4px 0 #b7c800; }
+.mer-start .btn.mer-voucher-cta:hover { background:#f3ff66;text-decoration:none; }
+.mer-stats > .mer-metric .mer-metric-hint { grid-column:1/-1; }
+
+/* Promote: live deals and the voucher program side by side ("earn" vs "spend"). */
+.mer-ways { margin:4px 0 22px; }
+.mer-ways-title { font-size:22px;margin:0 0 14px; }
+.mer-ways-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch; }
+.mer-way { display:flex;flex-direction:column;gap:12px;padding:22px;border-radius:24px;border-bottom:5px solid; }
+.mer-way > div:last-child,.mer-way > .btn { margin-top:auto; }
+.mer-way.is-deal { background:radial-gradient(#9cae3325 1px,transparent 1px) 0 0/15px 15px,linear-gradient(130deg,#fbffd8,#edf6af);border:1px solid #d8e288;border-bottom:5px solid #c9d47a;color:var(--onz-navy); }
+.mer-way.is-voucher { position:relative;isolation:isolate;overflow:hidden;color:#fff;background:radial-gradient(#ffffff1c 1px,transparent 1px) 0 0/16px 16px,linear-gradient(130deg,var(--onz-blue,#2420ff),var(--onz-navy,#080d68));border:0;border-bottom:5px solid #0b0880; }
+.mer-way-top { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
+.mer-way-icon { display:grid;place-items:center;width:44px;height:44px;border-radius:14px; }
+.mer-way-icon .ic { width:24px;height:24px; }
+.is-deal .mer-way-icon { background:#fff;color:var(--onz-blue); }
+.is-voucher .mer-way-icon { background:var(--onz-lime);color:var(--onz-navy); }
+.mer-way-tag { font-weight:800;font-size:15px; }
+.mer-way h3 { margin:0;font-size:clamp(24px,3.4vw,30px);line-height:1.15; }
+.mer-way h3 em { font-style:normal;padding:0 6px;border-radius:8px; }
+.is-deal h3 em { background:var(--onz-blue);color:#fff; }
+.is-voucher h3 em { background:var(--onz-lime);color:var(--onz-navy); }
+.mer-way-lead { margin:0;font-size:15px; }
+.is-deal .mer-way-lead { color:#4d5620; }
+.is-voucher .mer-way-lead { color:#dfe2ff; }
+.mer-way-facts { list-style:none;margin:0;padding:0;display:grid;gap:8px; }
+.mer-way-facts li { display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45; }
+.mer-way-facts .ic { width:18px;height:18px;flex:none;margin-top:2px; }
+.is-deal .mer-way-facts li { color:#3f4718; }
+.is-deal .mer-way-facts .ic { color:var(--onz-blue); }
+.is-voucher .mer-way-facts li { color:#e4e6ff; }
+.is-voucher .mer-way-facts .ic { color:var(--onz-lime); }
+.mer-way .btn { min-height:48px;align-self:flex-start; }
+@media (max-width:760px) { .mer-ways-grid { grid-template-columns:1fr; } }
+@media (max-width:520px) { .mer-way { padding:20px 18px; } .mer-way .btn { width:100%; } .mer-ways-title { font-size:20px; } }
+
+/* Live deal card: solid +Onz lime, as strong as the blue voucher card beside it. */
+.mer-way.is-deal { background:radial-gradient(#080d6814 1px,transparent 1px) 0 0/16px 16px,var(--onz-lime,#eaff00);border:0;border-bottom:5px solid #b7c800;color:var(--onz-navy); }
+.is-deal .mer-way-icon { background:var(--onz-blue);color:var(--onz-lime); }
+.is-deal .mer-way-lead { color:#2a3000; }
+.is-deal .mer-way-facts li { color:#2a3000; }
+.is-deal .mer-way-facts .ic { color:var(--onz-blue); }
+.mer-way.is-deal .btn.mer-way-cta { background:var(--onz-blue);border-color:var(--onz-blue);color:#fff;font-weight:800;box-shadow:0 4px 0 #0b0880; }
+.mer-way.is-deal .btn.mer-way-cta:hover { background:#1a16d6;text-decoration:none; }
+
+/* Café occupancy: ring chart between the − and + buttons. */
+.mer-stepper-value { display:grid;justify-items:center;gap:8px; }
+.mer-stepper-value > p { margin:0;text-align:center;font-size:14px;color:var(--ink-2); }
+.mer-stepper-value > p b { font-size:18px;color:var(--onz-navy); }
+.mer-seats .mer-progress-ring { width:112px;height:112px;flex-basis:112px;padding:9px;background:conic-gradient(#5d9b92 var(--progress),#e1f1eb 0);transition:background .2s ease; }
+.mer-seats .mer-progress-ring > span { align-items:center;padding-top:0;color:#356d64;font-size:32px; }
+.mer-seats .mer-progress-ring b { font-weight:800; }
+.mer-seats-foot { margin-top:14px; }
+.mer-seats-note { margin:10px 0 0;font-size:13px;color:var(--ink-2); }
+.mer-deal-rules { list-style:none;margin:0;padding:12px 14px;display:grid;gap:8px;border-radius:14px;background:var(--blue-wash);font-size:14px;color:var(--ink-2); }
+.mer-deal-rules li { display:flex;gap:8px;align-items:flex-start; }
+.mer-deal-rules .ic { width:18px;height:18px;flex:none;margin-top:2px;color:var(--onz-blue); }
+@media (max-width:520px) { .mer-seats .mer-progress-ring { width:96px;height:96px;flex-basis:96px; } .mer-seats .mer-progress-ring > span { font-size:27px; } }
+.mer-stepper-value .mer-progress-ring b { display:inline;font-size:inherit;color:inherit; }
+
+/* Promote tabs: Live deals | Voucher program. Each tab carries its one-line difference. */
+.mer-seg { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 18px; }
+.mer-seg a { position:relative;display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 14px;border-radius:18px;border:2px solid var(--line);background:#fff;color:var(--onz-navy);text-decoration:none; }
+.mer-seg a:hover,.mer-seg a:focus-visible { border-color:var(--onz-blue);text-decoration:none; }
+.mer-seg a > span:nth-child(2) { display:grid;gap:1px; }
+.mer-seg b { font-size:16px; }
+.mer-seg small { font-size:13px;color:var(--ink-2); }
+.mer-seg-icon { display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;background:var(--blue-wash);color:var(--onz-blue); }
+.mer-seg-icon .ic { width:21px;height:21px; }
+.mer-seg .mer-voucher-new { position:absolute;top:-9px;right:10px; }
+.mer-seg a.is-deal.on { background:linear-gradient(135deg,#f1fba6,#dcef62);border-color:#b9cc3a; }
+.mer-seg a.is-deal.on small { color:#3c4410; }
+.mer-seg a.is-deal.on .mer-seg-icon { background:var(--onz-blue);color:#eefa8f; }
+.mer-seg a.is-voucher.on { background:linear-gradient(130deg,var(--onz-blue,#2420ff),var(--onz-navy,#080d68));border-color:var(--onz-navy);color:#fff; }
+.mer-seg a.is-voucher.on small { color:#d6d9ff; }
+.mer-seg a.is-voucher.on .mer-seg-icon { background:var(--onz-lime);color:var(--onz-navy); }
+.mer-way-title { margin:0;font-size:clamp(24px,3.4vw,30px);line-height:1.15; }
+.mer-way-title em { font-style:normal;padding:0 6px;border-radius:8px; }
+.is-deal .mer-way-title em { background:var(--onz-blue);color:#fff; }
+.is-voucher .mer-way-title em { background:var(--onz-lime);color:var(--onz-navy); }
+.mer-way.is-voucher .mer-way-title { color:#fff; }
+.mer-ways .mer-way { max-width:760px; }
+/* Softer lime: a gentle gradient instead of solid neon, still clearly the live-deal colour. */
+.mer-way.is-deal { background:radial-gradient(#080d6810 1px,transparent 1px) 0 0/16px 16px,linear-gradient(135deg,#f1fba6 0%,#dcef62 100%);border-bottom:5px solid #b9cc3a; }
+.is-deal .mer-way-icon { color:#eefa8f; }
+@media (max-width:420px) { .mer-seg a { flex-direction:column;align-items:flex-start;gap:8px;padding:12px; } .mer-seg b { font-size:15px; } }
+
+/* Tabs are buttons now (they only swap the banner). */
+.mer-seg button { position:relative;display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 14px;border-radius:18px;border:2px solid var(--line);background:#fff;color:var(--onz-navy);font:inherit;text-align:left;cursor:pointer; }
+.mer-seg button:hover,.mer-seg button:focus-visible { border-color:var(--onz-blue); }
+.mer-seg button > span:nth-child(2) { display:grid;gap:1px; }
+.mer-seg button.is-deal.on { background:linear-gradient(135deg,#f1fba6,#dcef62);border-color:#b9cc3a; }
+.mer-seg button.is-deal.on small { color:#3c4410; }
+.mer-seg button.is-deal.on .mer-seg-icon { background:var(--onz-blue);color:#eefa8f; }
+.mer-seg button.is-voucher.on { background:linear-gradient(130deg,var(--onz-blue,#2420ff),var(--onz-navy,#080d68));border-color:var(--onz-navy);color:#fff; }
+.mer-seg button.is-voucher.on small { color:#d6d9ff; }
+.mer-seg button.is-voucher.on .mer-seg-icon { background:var(--onz-lime);color:var(--onz-navy); }
+#way-deal[hidden],#way-voucher[hidden] { display:none; }
+@media (max-width:420px) { .mer-seg button { flex-direction:column;align-items:flex-start;gap:8px;padding:12px; } }
