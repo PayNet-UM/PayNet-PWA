@@ -215,9 +215,9 @@ export const PAGE_TOURS = {
   // Merchants, the first time they open the (required) stall survey.
   'stall-survey': () => [
     { target: '.ss-lang', icon: 'user', title: 'Pick your language', body: 'Answer in English or Bahasa Melayu. You can switch any time and keep your answers.' },
-    { target: '.ss-section[data-sec="about"]', icon: 'store', title: 'About your stall', body: 'Where you trade, and your Merchant or Terminal ID if you have one. The peak counts are optional.' },
-    { target: '.ss-section[data-sec="quiz"]', icon: 'list-checks', title: '10 quick questions', body: 'How you sell and get paid. Questions marked * need an answer.' },
-    { target: '#stall-survey button[type=submit]', icon: 'sparkles', title: 'Get your stall type', body: 'Send your answers to see your stall type and what the team can set up for you, free. Finish this to open the rest of +Onz for Business.' },
+    { target: '.ss-section[data-sec="profile"]', icon: 'store', title: 'Four short sections', body: 'Your business profile, how you take payments and keep records, what you need to grow, and how we can contact you. Questions marked * need an answer.' },
+    { target: '.ss-section[data-sec="consent"]', icon: 'shield-check', title: 'You choose', body: 'Tick whether +Onz may contact you, and whether to be introduced to financial partners. Saying no doesn’t affect your merchant registration.' },
+    { target: '#stall-survey button[type=submit]', icon: 'sparkles', title: 'See your stall type', body: 'Send your answers to see your stall type and how +Onz can help. Finish this to open the rest of +Onz for Business.' },
   ],
 };
 export const pageTourSeen = (uid, page) => store.get(PAGE_KEY(uid, page)) === 'done';

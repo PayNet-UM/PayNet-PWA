@@ -562,24 +562,27 @@ service cloud.firestore {
         && D().knowledge is int && D().digital is int && D().at == request.time;
     }
 
-    // Stall survey (app/shared/js/stall-survey.js): merchants answer about their own stall; only they and the Admin
+    // Merchant assessment, the "stall survey" (app/shared/js/stall-survey.js): merchants answer about their own business; only they and the Admin
     // team can read it (it may hold a WhatsApp number). Nobody else can write it, and it can't be deleted from the app.
     match /stallSurveys/{u} {
       allow read: if signedIn() && (uid() == u || isMpp());
       allow create, update: if isMerchantRole() && uid() == u
         && D().keys().hasOnly(['v', 'lang', 'answers', 'stallType', 'at'])
-        && D().v == 1 && D().lang in ['en', 'ms'] && D().at == request.time
+        && D().v == 2 && D().lang in ['en', 'ms'] && D().at == request.time
         && D().stallType in ['cash', 'personalQr', 'businessQr', 'card']
-        && D().answers is map && D().answers.size() <= 25
-        && D().answers.keys().hasOnly(['area', 'areaOther', 'mid', 'peakQr', 'peakCash', 'peakCard', 'sell', 'sellOther', 'customers', 'style',
-          'payments', 'bank', 'bankOther', 'barriers', 'help', 'helpOther', 'trade', 'listing', 'bankHelp', 'whatsapp'])
-        && D().answers.keys().hasAll(['area', 'sell', 'customers', 'style', 'payments', 'bank', 'barriers', 'help', 'trade', 'listing', 'bankHelp'])
-        && D().answers.style == D().stallType
-        && D().answers.payments is list && D().answers.payments.size() <= 6
-        && D().answers.barriers is list && D().answers.barriers.size() <= 7
-        && D().answers.help is list && D().answers.help.size() >= 1 && D().answers.help.size() <= 2
-        && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20))
-        && (!('mid' in D().answers) || (D().answers.mid is string && D().answers.mid.size() <= 40));
+        && D().answers is map && D().answers.size() <= 30
+        && D().answers.keys().hasOnly(['name', 'location', 'locationOther', 'type', 'typeOther', 'age', 'registered', 'payments', 'banks', 'banksOther',
+          'bizAccount', 'records', 'customers', 'challenges', 'challengesOther', 'financing', 'financingPurpose', 'financingPurposeOther', 'financingAmount',
+          'priorities', 'support', 'supportOther', 'listing', 'ownerName', 'whatsapp', 'consentContact', 'consentPartners'])
+        && D().answers.keys().hasAll(['name', 'location', 'type', 'age', 'registered', 'payments', 'banks', 'bizAccount', 'records', 'customers',
+          'challenges', 'financing', 'priorities', 'support', 'listing', 'ownerName', 'consentContact', 'consentPartners'])
+        && D().answers.name is string && D().answers.name.size() <= 80 && D().answers.ownerName is string && D().answers.ownerName.size() <= 80
+        && D().answers.consentContact is bool && D().answers.consentPartners is bool
+        && D().answers.payments is list && D().answers.payments.size() <= 6 && D().answers.banks is list && D().answers.banks.size() <= 11
+        && D().answers.challenges is list && D().answers.challenges.size() <= 3
+        && D().answers.priorities is list && D().answers.priorities.size() <= 2
+        && D().answers.support is list && D().answers.support.size() <= 3
+        && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20));
     }
 
     match /missionClaims/{id} {

@@ -153,14 +153,15 @@ console.log('  ✓ Disabled live deals hide merchant claim/promotion actions whi
 // Stall survey: the form first, then the stall type once answered; the Admin team sees it in the analysis.
 const stallApp = await makeApp(merchant);
 const stallForm = await M.routes['stall-survey'].render(stallApp, []);
-assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Kedai anda jenis apa?'), 'Merchants get the bilingual stall survey form');
+assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Penilaian Peniaga +Onz') && stallForm.includes('value="Test Shop"'), 'Merchants get the bilingual stall survey form');
 assert.ok((await M.routes.home.render(stallApp, [])).includes('href="#/stall-survey"'), 'Merchant home links to the stall survey');
 // Required: until it's answered, every page but the survey, shop details and closing the account leads to the survey.
 for (const r of ['home', 'insights', 'promote', 'scan', 'survey']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), 'stall-survey', `${r} waits for the stall survey`);
 for (const r of ['stall-survey', 'shop', 'delete-account']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), null, `${r} stays open before the survey`);
 assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: null }, 'home'), null, 'merchants who haven’t sent shop details aren’t sent to the survey yet');
 assert.ok(stallForm.includes('ss-required') && !stallForm.includes('class="back"') && stallForm.includes('id="ss-help"'), 'the unanswered survey says it’s required, has no way back, and offers the screen guide');
-await D.submitStallSurvey(merchant, { area: 'KK3', sell: 'food', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['dontKnow'], help: ['qrSetup'], trade: 'daily', listing: 'yes', bankHelp: 'yes' }, 'ms');
+await D.submitStallSurvey(merchant, { name: 'Test Shop', location: 'KK3', type: 'food', age: 'u6m', registered: 'no', payments: ['cash'], banks: ['bsn'], bizAccount: 'personal', records: 'manual',
+  customers: 'u50', challenges: ['traffic'], financing: 'no', priorities: ['sales'], support: ['qr'], listing: 'yes', ownerName: 'Test Owner', consentContact: true, consentPartners: false }, 'ms');
 const stallResult = await M.routes['stall-survey'].render(stallApp, []);
 assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, 'insights'), null, 'answering the survey opens the rest of the app');
 assert.ok(!stallResult.includes('ss-required') && stallResult.includes('class="back"'), 'the answered survey is no longer marked required');
