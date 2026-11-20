@@ -2732,4 +2732,7 @@ Bank help|Bantuan bank
 WhatsApp|WhatsApp
 Submitted|Dihantar
 Stall survey exported.|Tinjauan kedai dieksport.
+Tell us about your stall|Ceritakan tentang kedai anda
+10 quick questions, about 3 minutes. Find your stall type and what we can set up for you, free.|10 soalan ringkas, kira-kira 3 minit. Ketahui jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
+In progress|Sedang diproses
 `;

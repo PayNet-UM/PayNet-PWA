@@ -627,3 +627,8 @@
 .mer-seg button.is-voucher.on .mer-seg-icon { background:var(--onz-lime);color:var(--onz-navy); }
 #way-deal[hidden],#way-voucher[hidden] { display:none; }
 @media (max-width:420px) { .mer-seg button { flex-direction:column;align-items:flex-start;gap:8px;padding:12px; } }
+
+/* "Start here": a step that's with the Admin team (nothing for the merchant to do yet). */
+.mer-start-steps li.is-waiting a { border-style:dashed; }
+.mer-start-steps li.is-waiting .mer-start-num { border-style:dashed; }
+.mer-start-wait { flex:none;padding:3px 10px;border-radius:99px;background:#ffffff26;font-size:12px;font-weight:700;white-space:nowrap; }

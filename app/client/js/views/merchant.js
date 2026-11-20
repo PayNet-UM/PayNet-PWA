@@ -31,16 +31,21 @@ function needVerified(app) {
 // ------------------------------------------------------------- home
 // New merchants don't know the app yet, so Home says what each part is for and what to do next:
 // a "Start here" path until the shop is fully set up, clearer tiles, and numbers that explain themselves.
-function startSteps(app, m, deals, liveOn) {
+// Each step: [icon, title, help, route, done, canDo]. done is true, false, 'waiting' (the Admin team's turn)
+// or 'claims' (ticked in homeMount once claims load). canDo says whether the merchant can act on it right now.
+function startSteps(app, m, deals, liveOn, stall) {
+  const verified = m?.status === 'verified';
   return [
     m && m.status === 'pending'
-      ? ['clock', 'Wait for the Admin team to verify you', 'You’ve applied. We check your details in 1–2 working days.', 'shop', false]
-      : ['store', m?.status === 'rejected' ? 'Update your application' : 'Apply and get verified', m?.status === 'rejected' ? 'The Admin team asked for changes. Fix them and send it again.' : 'Send your shop details. The Admin team checks them in 1–2 working days.', 'shop', m?.status === 'verified'],
-    ['map-pin', 'Add your logo and map pin', 'So students can recognise your shop and walk straight to it.', 'shop', !!(m?.logo && hasPin(m))],
-    ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules)],
+      ? ['clock', 'Wait for the Admin team to verify you', 'You’ve applied. We check your details in 1–2 working days.', 'shop', 'waiting', false]
+      : ['store', m?.status === 'rejected' ? 'Update your application' : 'Apply and get verified', m?.status === 'rejected' ? 'The Admin team asked for changes. Fix them and send it again.' : 'Send your shop details. The Admin team checks them in 1–2 working days.', 'shop', verified, true],
+    // Teammates' stall survey: the app sends new merchants here right after they apply. It can be done while waiting.
+    ['list-checks', 'Tell us about your stall', '10 quick questions, about 3 minutes. Find your stall type and what we can set up for you, free.', 'stall-survey', !!stall, !!m],
+    ['map-pin', 'Add your logo and map pin', 'So students can recognise your shop and walk straight to it.', 'shop', !!(m?.logo && hasPin(m)), true],
+    ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules), !!m && m.status !== 'rejected'],
     ...(liveOn ? [
-      ['badge-percent', 'Create your first live deal', 'A discount for your quiet hours. It goes live straight away.', 'promote', deals > 0],
-      ['qr-code', 'Show your deal QR at the counter', 'Students scan it to claim the discount. You’ll see the claim on your screen.', 'scan', 'claims'],
+      ['badge-percent', 'Create your first live deal', 'A discount for your quiet hours. It goes live straight away.', 'promote', deals > 0, verified],
+      ['qr-code', 'Show your deal QR at the counter', 'Students scan it to claim the discount. You’ll see the claim on your screen.', 'scan', 'claims', verified && deals > 0],
     ] : []),
   ];
 }
@@ -50,15 +55,16 @@ const startDone = (uid) => { try { return localStorage.getItem(START_DONE(uid)) 
 const markStartDone = (uid) => { try { localStorage.setItem(START_DONE(uid), '1'); } catch { /* private mode */ } };
 function startHereHTML(steps) {
   // The last step ("claims") can only be ticked once the claims load, in homeMount.
-  const next = steps.find(([, , , , done]) => done !== true);
-  if (!next) return '';
+  // "Next" is the first step the merchant can actually do; while they wait for the Admin team, that's usually the stall survey.
+  if (!steps.some(([, , , , done]) => done !== true)) return '';
+  const next = steps.find(([, , , , done, canDo]) => done !== true && canDo) || steps.find(([, , , , done]) => done !== true);
   const doneCount = steps.filter(([, , , , done]) => done === true).length;
   return `<section class="section mer-start" id="start-here"><div class="mer-voucher-card mer-start-card">
     <div class="mer-voucher-head"><span class="mer-voucher-new">Start here</span><h2>Get your shop ready for students</h2></div>
     <p class="mer-start-lead">Follow these steps in order. Each one ticks off when it’s done. <b data-start-count>${doneCount} of ${steps.length} done</b></p>
-    <ol class="mer-start-steps">${steps.map(([, title, desc, route, done], i) => `<li class="${done === true ? 'is-done' : next[1] === title ? 'is-next' : ''}" ${done === 'claims' ? 'data-step-claims' : ''}><a href="#/${route}">
+    <ol class="mer-start-steps">${steps.map(([, title, desc, route, done], i) => `<li class="${done === true ? 'is-done' : next[1] === title ? 'is-next' : done === 'waiting' ? 'is-waiting' : ''}" ${done === 'claims' ? 'data-step-claims' : ''}><a href="#/${route}">
         <span class="mer-start-num" aria-hidden="true">${done === true ? icon('check') : i + 1}</span>
-        <span><b>${title}</b><small>${desc}</small></span>${icon('chevron-right')}</a></li>`).join('')}</ol>
+        <span><b>${title}</b><small>${desc}</small></span>${done === 'waiting' ? '<span class="mer-start-wait">In progress</span>' : icon('chevron-right')}</a></li>`).join('')}</ol>
     <div><a class="btn mer-voucher-cta" href="#/${next[3]}">${icon(next[0])} Next: ${next[1]} ${icon('arrow-right')}</a></div>
   </div></section>`;
 }
@@ -70,9 +76,9 @@ async function homeRender(app) {
   // A new readiness update from the Admin team for a shop that was already set up shows the readiness card
   // (with the Admin team's message), not the whole "Start here" path again.
   const updated = !!m?.ready && !D.merchantReadinessCurrent(m, app.rules);
-  const start = updated || startDone(app.ctx.uid) ? '' : startHereHTML(startSteps(app, m, deals, liveOn));
-  const readiness = start ? '' : merchantSetup(m, hasPin, app.rules);
   const stall = m ? await D.getStallSurvey(app.ctx).catch(() => null) : null;
+  const start = updated || startDone(app.ctx.uid) ? '' : startHereHTML(startSteps(app, m, deals, liveOn, stall));
+  const readiness = start ? '' : merchantSetup(m, hasPin, app.rules);
   const shortcuts = [
     ['shop', 'store', 'My shop', 'Your shop details, logo, map pin and counter poster.'],
     ...(m ? [['stall-survey', 'list-checks', 'Stall survey', stall ? 'Done. See your stall type or edit your answers.' : '10 quick questions. Find your stall type.']] : []),

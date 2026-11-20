@@ -96,6 +96,15 @@ readyApp.merchant.readyAt = sdk.Timestamp.fromMillis(2000);
 assert.ok(!(await M.routes.home.render(readyApp, [])).includes('mer-setup-title'), 'Confirming the new update should hide readiness again');
 console.log('  ✓ Completed shop readiness hides, returns for a new HEP update, and hides after confirmation'); passed++;
 
+// While the Admin team reviews the application, "Start here" sends the merchant to the stall survey next.
+const waitingApp = await makeApp(merchant);
+waitingApp.merchant = { ...waitingApp.merchant, status: 'pending', ready: false };
+const waitingHome = await M.routes.home.render(waitingApp, []);
+const nextStep = /<li class="is-next"[^>]*>[\s\S]*?<\/li>/.exec(waitingHome)?.[0] || '';
+assert.ok(nextStep.includes('Tell us about your stall') && nextStep.includes('href="#/stall-survey"'), 'While waiting for approval, the next step should be the stall survey');
+assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In progress') && waitingHome.includes('Next: Tell us about your stall'), 'The approval step should show as in progress, not as the next step');
+console.log('  ✓ While waiting for approval, Start here points to the stall survey'); passed++;
+
 const promotion = await M.routes.promote.render(await makeApp(merchant), []);
 assert.ok(promotion.includes('28 seats free') && promotion.includes('--progress:30%') && promotion.includes('data-step="1"'), 'Café occupancy should use recorded seats');
 assert.ok(promotion.includes('Live now') && promotion.includes('Paused') && promotion.includes('Ready to publish'), 'Deal states should remain distinct');
