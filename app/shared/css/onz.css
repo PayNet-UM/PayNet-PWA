@@ -651,6 +651,7 @@ body:has(.pts-chip) .card.checkout-deal.is-live {
 .friends-hero h1 { color:#fff;font-size:32px;line-height:1.15;margin:5px 0; }
 .friends-hero-copy { min-width:0; }
 .friends-hero-copy p { color:#eeedff;font-size:13px;overflow-wrap:anywhere; }
+.friends-hero .friends-purpose { grid-column:1/-1;margin:0;color:#eeedff;font-size:13px;line-height:1.6; }
 .friends-scoreboard { grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #ffffff35;padding-top:12px; }
 .friends-scoreboard > button { display:grid;gap:2px;text-align:center;border:0;background:transparent;color:inherit;padding:6px;border-radius:10px;cursor:pointer;min-height:48px;transition:background .15s,transform .15s; }
 .friends-scoreboard > button + button { border-left:1px solid #ffffff35; }
@@ -1084,6 +1085,10 @@ button.welcome-tier .ic:last-child { width:12px;height:12px;color:#fff; }
 .app-streak .streak-footer .btn { flex-shrink:0; }
 .app-streak .streak-heading > div { flex:1;min-width:0; }
 .app-streak .streak-heading h2 { font-size:16px;line-height:1.25; }
+.app-streak .streak-bonus { display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:9px;background:#eaff00;color:#242054;font-size:12px;font-weight:800;white-space:nowrap; }
+.app-streak .streak-bonus .ic { width:14px;height:14px; }
+.streak-bonus-progress { height:5px;border-radius:8px;overflow:hidden;background:#e8d9c5;margin-top:9px; }
+.streak-bonus-progress>span { display:block;height:100%;border-radius:inherit;background:#b76822; }
 .learning-practice-note { font-size:12px;margin:12px 0;line-height:1.5; }
 @media (max-width:360px) {
   .streak-calendar { gap:4px; }

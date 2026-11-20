@@ -1,10 +1,10 @@
 // Server-only aggregate. Reconcile from the immutable ledger so retries and
 // out-of-order trigger deliveries cannot award the same points twice.
-// A student's earned points count for their residential college (KK League, KK1–KK13 only) and for their
+// A student's earned points count for their residential college (KK League: KK1–KK13 and International House Apartment Jepun, IHAJ) and for their
 // faculty (Faculty League). Students without a KK still count for their faculty.
 export function leagueContribution(profile, entries) {
   if (profile?.role !== 'student') return { college: '', faculty: '', earned: 0 };
-  const college = /^KK(?:[1-9]|1[0-3])$/.test(profile.college || '') ? profile.college : '';
+  const college = /^(?:KK(?:[1-9]|1[0-3])|IHAJ)$/.test(profile.college || '') ? profile.college : '';
   const faculty = typeof profile.faculty === 'string' && profile.faculty.trim().length > 1 && profile.faculty.length <= 100 ? profile.faculty.trim() : '';
   if (!college && !faculty) return { college: '', faculty: '', earned: 0 };
   return { college, faculty, earned: entries.reduce((sum, entry) =>

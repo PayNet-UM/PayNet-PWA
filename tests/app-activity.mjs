@@ -73,7 +73,7 @@ await test('lesson completion is independent of the app streak and still awards 
   assert.equal((await sdk.getDocs(sdk.collection(b.db, 'users', 'b', 'appDays'))).docs.length, 0);
   assert.equal((await days()).length, before);
 });
-await test('app use writes no merchant attendance, GPS presence or point ledger', async () => {
+await test('short app streaks write no merchant attendance, GPS presence or bonus ledger', async () => {
   assert.equal([...sdk._rawDocs().keys()].some((p) => /^(visits|checkins|presence)\//.test(p)), false);
   assert.equal([...sdk._rawDocs().keys()].some((p) => p.startsWith('users/a/ledger/')), false);
   assert.equal(errors.length, 0);

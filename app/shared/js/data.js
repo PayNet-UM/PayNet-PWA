@@ -1,4 +1,7 @@
 import { DEFAULT_POINT_RULES } from './points-policy.js';
+import { cleanStallAnswers, stallType, STALL_SURVEY_VERSION } from './stall-survey.js';
+import {adminEventDraft} from './event-catalog.js';
+export {submitEvent,listEventSubmissions,watchEventSubmissions,watchCampaigns,reviewEvent} from './event-submissions-data.js';
 // Kampus Kita+ data layer. Every write here is shaped to pass firestore.rules,
 // and the same functions run in the app and in the test suite.
 
@@ -7,7 +10,8 @@ export const COLLEGES = [
   ['KK4', 'Kolej Kediaman Keempat (KK4)'], ['KK5', 'Kolej Kediaman Kelima (KK5)'], ['KK6', 'Kolej Kediaman Keenam (KK6)'],
   ['KK7', 'Kolej Kediaman Ketujuh (KK7)'], ['KK8', 'Kolej Kediaman Kelapan (KK8)'], ['KK9', 'Kolej Kediaman Kesembilan (KK9)'],
   ['KK10', 'Kolej Kediaman Kesepuluh (KK10)'], ['KK11', 'Kolej Kediaman Kesebelas (KK11)'], ['KK12', 'Kolej Kediaman Kedua Belas (KK12)'],
-  ['KK13', 'Kolej Kediaman Ketiga Belas (KK13)'], ['OFF', 'Off campus'],
+  ['KK13', 'Kolej Kediaman Ketiga Belas (KK13)'],
+  ['IHAJ', 'International House Apartment Jepun (IHAJ)'], ['OFF', 'Off campus'],
 ];
 export const FACULTIES = ['Faculty of Science', 'Faculty of Engineering', 'Faculty of Business and Economics',
   'Faculty of Arts and Social Sciences', 'Faculty of Computer Science and Information Technology', 'Faculty of Medicine',
@@ -112,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -134,7 +138,7 @@ function configLog(name, data) {
     return ['features', 'Feature switches', on.length ? 'On: ' + on.join(', ') : 'All off'];
   }
   if (name === 'rules' && data.merchantReadinessUpdate) return ['merchant-readiness', 'Readiness update', String(data.merchantReadinessUpdate.message || '')];
-  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
+  const parts = [['surveyBonus', 'Money check'], ['lessonBonus', 'lesson'], ['liveDealPoints', 'live deal'], ['streakBonus', '7-day streak']].filter(([k]) => k in data).map(([k, l]) => `${l} ${data[k]}`);
   return ['points-rules', 'Points rules', parts.join(', ')];
 }
 export async function getProfile(ctx, u = ctx.uid) { return one(ctx, R(ctx).user(u)); }
@@ -444,6 +448,18 @@ export async function submitSurvey(ctx, result, _rules) {
   return current.surveyBonus;
 }
 export async function getSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'surveys', u)); }
+
+// Stall survey (app/shared/js/stall-survey.js): one per merchant account, retaken by overwriting. Only the merchant and
+// the Admin team can read it, because it can hold a WhatsApp number.
+export async function getStallSurvey(ctx, u = ctx.uid) { return one(ctx, ctx.sdk.doc(ctx.db, 'stallSurveys', u)); }
+export async function submitStallSurvey(ctx, raw, lang = 'en') {
+  const { answers, errors } = cleanStallAnswers(raw);
+  if (errors.length) { const e = new Error('Answer every question marked *.'); e.fields = errors; throw e; }
+  const doc = { v: STALL_SURVEY_VERSION, lang: lang === 'ms' ? 'ms' : 'en', answers, stallType: stallType(answers), at: ctx.sdk.serverTimestamp() };
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'stallSurveys', ctx.uid), doc);
+  return { ...doc, at: Date.now() };
+}
+export async function listStallSurveys(ctx) { return list(ctx, 'stallSurveys'); }
 function addLearningDay(ctx, batch, lesson, answer) {
   const day = dayKey(clock(ctx));
   batch.set(ctx.sdk.doc(ctx.db, 'users', ctx.uid, 'activityDays', day), {
@@ -745,9 +761,22 @@ export function watchStats(ctx, name, cb, err) { return ctx.sdk.onSnapshot(R(ctx
 export async function listCampaigns(ctx) { return list(ctx, 'campaigns'); }
 export async function saveCampaign(ctx, id, data) {
   const ref = id ? ctx.sdk.doc(ctx.db, 'campaigns', id) : ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'campaigns'));
-  await ctx.sdk.setDoc(ref, data, { merge: true });
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, 'event', data.name || ref.id, data.published === false ? 'Hidden from the gallery' : [data.start, data.location].filter(Boolean).join(', '));
+  b.set(ref, { ...data, logId }, { merge: true });
+  await b.commit();
 }
-export async function deleteCampaign(ctx, id) { await ctx.sdk.deleteDoc(ctx.sdk.doc(ctx.db, 'campaigns', id)); }
+export async function saveGalleryEvent(ctx,id,input){
+  const data=adminEventDraft(input,{allowUndated:!!id});
+  return saveCampaign(ctx,data.sourcePosterPage?'poster-'+data.sourcePosterPage:id,data);
+}
+export async function deleteCampaign(ctx, id) {
+  const ref = ctx.sdk.doc(ctx.db, 'campaigns', id), current = await one(ctx, ref);
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'event-delete', current?.name || id);
+  b.delete(ref);
+  await b.commit();
+}
 export async function getConfig(ctx, name) { return one(ctx, R(ctx).config(name)); }
 export async function saveConfig(ctx, name, data) {
   const b = ctx.sdk.writeBatch(ctx.db);

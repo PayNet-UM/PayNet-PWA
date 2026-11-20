@@ -50,6 +50,32 @@ export class FirestoreError extends Error {
 }
 
 // ---------------------------------------------------------------- store
+// Demo equivalent of functions/streaks.js. Runs only after an authorised new
+// app-day write; counter and points writes below represent the trusted server.
+function demoStreakRewards(store,after,plan,time){
+  const get=path=>after.has(path)?after.get(path):store.get(path);
+  const dayBefore=day=>new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10);
+  for(const change of plan){
+    const match=/^users\/([^/]+)\/appDays\/(\d{4}-\d{2}-\d{2})$/.exec(change.path);
+    if(change.method!=='create'||!match)continue;
+    const [,uid,day]=match,userPath='users/'+uid,user=get(userPath),entry=get(change.path);
+    if(user?.role!=='student'||user.disabled)continue;
+    const previous=get(userPath+'/appDays/'+dayBefore(day));let count=1,start=day;
+    if(previous){
+      if(Number.isSafeInteger(previous.streakCount)&&previous.streakCount>0){count=previous.streakCount+1;start=previous.streakStart;}
+      else{
+        const days=new Set([...store.docs,...after].filter(([p])=>p.startsWith(userPath+'/appDays/')).map(([,d])=>d?.day));
+        count=0;let cursor=day;while(days.has(cursor)){count++;start=cursor;cursor=dayBefore(cursor);}
+      }
+    }
+    after.set(change.path,{...entry,streakCount:count,streakStart:start});
+    const id='appStreak_'+day,ledger=userPath+'/ledger/'+id;if(count%7||get(ledger))continue;
+    const value=get('config/rules')?.streakBonus,delta=Number.isSafeInteger(value)&&value>=1&&value<=1000?value:5;
+    after.set(ledger,{type:'appStreak',delta,day,milestone:count,by:'system',createdAt:new Timestamp(time)});
+    after.set(userPath,{...user,points:(user.points||0)+delta,lastTx:id});
+  }
+}
+
 // Demo equivalent of the server KK League reconciliation, including old saved
 // demo accounts. Only positive ledger credits count; balances are never used.
 function rebuildDemoLeague(docs) {
@@ -64,7 +90,7 @@ function rebuildDemoLeague(docs) {
     if (!match || profile.role !== 'student') continue;
     const points = earned.get(match[1]) || 0;
     if (!points) continue;
-    if (/^KK(?:[1-9]|1[0-3])$/.test(profile.college || '')) colleges[profile.college] = (colleges[profile.college] || 0) + points;
+    if (/^(?:KK(?:[1-9]|1[0-3])|IHAJ)$/.test(profile.college || '')) colleges[profile.college] = (colleges[profile.college] || 0) + points;
     const faculty = typeof profile.faculty === 'string' ? profile.faculty.trim() : '';
     if (faculty.length > 1 && faculty.length <= 100) faculties[faculty] = (faculties[faculty] || 0) + points;
   }
@@ -416,6 +442,7 @@ async function commitOps(db, ops) {
   }
   if (env.limits && totalAccess.size > 20) throw new FirestoreError('permission-denied', `Rules access limit exceeded for batch (${totalAccess.size}>20)`);
   if (env.onCommit) env.onCommit({ ops: plan, access: totalAccess.size });
+  demoStreakRewards(st,after,plan,time);
   st.apply([...after.entries()]);
 }
 export async function setDoc(ref, data, opts) { return commitOps(ref.firestore, [{ kind: 'set', ref, data, merge: !!(opts && opts.merge) }]); }
