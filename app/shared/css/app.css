@@ -1008,7 +1008,10 @@ button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; tex
 .ss[data-ss="en"] [lang="ms"]:not([data-ss-lang]), .ss[data-ss="ms"] [lang="en"]:not([data-ss-lang]) { display: none; }
 .ss { display: grid; gap: 14px; margin-top: 16px; }
 .ss-lang { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.ss-lang > span { font-weight: 700; }
+.ss-lang > span { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.ss-required { display: flex; gap: 12px; align-items: flex-start; }
+.ss-required > svg { flex: none; width: 22px; height: 22px; margin-top: 2px; }
+.ss-required p { margin: 4px 0 0; }
 .ss-lang .chips button[aria-pressed="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
 .ss-privacy { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
 .ss-privacy svg { flex: none; width: 18px; height: 18px; color: var(--blue); }
@@ -1035,6 +1038,17 @@ button.hn-zone { display: flex; align-items: center; gap: 12px; width: 100%; tex
 .ss-setup li { display: flex; gap: 10px; align-items: flex-start; }
 .ss-setup svg { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--green, #1b8a3a); }
 .ss-result-actions { justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.ss-intro { display: grid; gap: 6px; }
+.ss-intro h2 { font-size: 22px; margin: 0; }
+.ss-intro p { margin: 0; font-size: 15px; line-height: 1.5; }
+.ss-intro .mer-eyebrow { font-size: 11px; }
+.ss-num { color: var(--blue); }
+.ss-lead { margin: 6px 0 -4px; font-weight: 700; }
+.ss-consent { padding-top: 14px; padding-bottom: 14px; gap: 4px; }
+.ss-consent .check { align-items: flex-start; font-weight: 600; }
+.ss-consent .check input { margin-top: 3px; flex: none; }
+.ss-consent .ss-hint { padding-left: 30px; }
+.ss-thanks { font-weight: 600; max-width: 520px; margin: 4px 0 6px; }
 
 /* Stall survey analysis (admin) */
 .ss-admin-grid { display: grid; gap: 16px; align-items: start; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 16px; }

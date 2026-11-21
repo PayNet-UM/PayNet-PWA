@@ -55,7 +55,7 @@ async function onUser(user) {
   render.token=Symbol();
   if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   stopWatchers(); closeSheet();
-  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
+  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.stallSurveyDone = undefined; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return informationRoute()?renderPublicInformation():Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -241,8 +241,12 @@ async function render() {
     app.rules=next;shell(app.role,mod.routes);
     const canonical=mod.canonicalPath?mod.canonicalPath(requestedPath):requestedPath;
     if(canonical!==requestedPath)history.replaceState(null,'','#/'+canonical);
-    const parts=canonical.split('/');
-    const route=mod.routes[parts[0]]&&routeOn(mod.routes[parts[0]])?parts[0]:mod.defaultRoute;
+    let parts=canonical.split('/');
+    let route=mod.routes[parts[0]]&&routeOn(mod.routes[parts[0]])?parts[0]:mod.defaultRoute;
+    // A role can require a step before anything else (merchants: the stall survey). The view module decides.
+    const gate=mod.gateRoute?await mod.gateRoute(app,route):null;
+    if(render.token!==token)return;
+    if(gate&&gate!==route){history.replaceState(null,'','#/'+gate);route=gate;parts=[gate];if(mod.gateMessage)toast(mod.gateMessage);}
     const r=mod.routes[route];
     $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route);a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
     view=$('#view');view.className='view'+(r.wide?' wide':'');view.setAttribute('aria-busy','true');

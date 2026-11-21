@@ -13,8 +13,22 @@ import { avatarSVG, defaultFor } from '../avatar.js';
 import { merchantHeading, merchantMetric, merchantEmpty, merchantSetup, merchantAction } from '../merchant-ui.js';
 import { closeRender, closeMount } from './close.js';
 import { stallSurveyRender, stallSurveyMount } from '../stall-survey-view.js';
+import { isCurrentStallSurvey } from '../stall-survey.js';
 
 export const defaultRoute = 'home';
+
+// The merchant assessment (the "stall survey") is required. Once a merchant has sent their shop details, every page except these leads back to
+// the survey until it's answered (so clicking away, or reopening the app, brings them back to it).
+const OPEN_BEFORE_SURVEY = new Set(['stall-survey', 'shop', 'delete-account']);
+export async function gateRoute(app, route) {
+  if (!app.merchant || app.stallSurveyDone) return null;
+  // If the survey can't be read (e.g. offline), don't lock the merchant out of their own app.
+  // Answers to an earlier version count as not done, so those merchants are asked the new questions.
+  if (app.stallSurveyDone === undefined) app.stallSurveyDone = await D.getStallSurvey(app.ctx).then(isCurrentStallSurvey).catch(() => true);
+  if (app.stallSurveyDone || OPEN_BEFORE_SURVEY.has(route)) return null;
+  return 'stall-survey';
+}
+export const gateMessage = 'Finish the merchant assessment first. It takes about 5 minutes.';
 const toMs = D.toMs;
 const statusBadge = (m) => !m ? '<span class="badge grey">Not applied</span>'
   : m.status === 'verified' ? `<span class="badge ok">${icon('badge-check')}Verified</span>`
@@ -39,8 +53,8 @@ function startSteps(app, m, deals, liveOn, stall) {
     m && m.status === 'pending'
       ? ['clock', 'Wait for the Admin team to verify you', 'You’ve applied. We check your details in 1–2 working days.', 'shop', 'waiting', false]
       : ['store', m?.status === 'rejected' ? 'Update your application' : 'Apply and get verified', m?.status === 'rejected' ? 'The Admin team asked for changes. Fix them and send it again.' : 'Send your shop details. The Admin team checks them in 1–2 working days.', 'shop', verified, true],
-    // Teammates' stall survey: the app sends new merchants here right after they apply. It can be done while waiting.
-    ['list-checks', 'Tell us about your stall', '10 quick questions, about 3 minutes. Find your stall type and what we can set up for you, free.', 'stall-survey', !!stall, !!m],
+    // The merchant assessment (stall survey) is required once a merchant has applied; it can be done while waiting for approval.
+    ['list-checks', 'Do the merchant assessment', '15 questions about your business, about 5 minutes. See your stall type and what we can set up for you, free.', 'stall-survey', isCurrentStallSurvey(stall), !!m],
     ['map-pin', 'Add your logo and map pin', 'So students can recognise your shop and walk straight to it.', 'shop', !!(m?.logo && hasPin(m)), true],
     ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules), !!m && m.status !== 'rejected'],
     ...(liveOn ? [
@@ -81,7 +95,7 @@ async function homeRender(app) {
   const readiness = start ? '' : merchantSetup(m, hasPin, app.rules);
   const shortcuts = [
     ['shop', 'store', 'My shop', 'Your shop details, logo, map pin and counter poster.'],
-    ...(m ? [['stall-survey', 'list-checks', 'Stall survey', stall ? 'Done. See your stall type or edit your answers.' : '10 quick questions. Find your stall type.']] : []),
+    ...(m ? [['stall-survey', 'list-checks', 'Merchant assessment', isCurrentStallSurvey(stall) ? 'Done. See your stall type or edit your answers.' : '15 questions about your business. See your stall type.']] : []),
     ...(verified && liveOn ? [
       ['scan', 'qr-code', 'Deal QR', 'Show this at your counter. Students scan it to claim your deal.'],
       ['promote', 'badge-percent', 'Promote your shop', 'Live deals, where students earn points, and the voucher program, where they spend them.'],
@@ -323,8 +337,8 @@ function shopMount(root, app, [section] = []) {
           eventName: f.eventName.value, eventEnd: f.eventEnd.value, qrImage, logo, ...pin });
         // First time: go straight on to the stall survey while they're here.
         const firstTime = !app.merchant;
-        const doneSurvey = await D.getStallSurvey(app.ctx).catch(() => null);
-        if (!doneSurvey) { toast(firstTime ? 'Sent to the Admin team. Next, a quick survey about your stall.' : 'Sent to the Admin team. You haven’t done the stall survey yet.'); setTimeout(() => { location.hash = '#/stall-survey'; }, 300); return; }
+        const doneSurvey = await D.getStallSurvey(app.ctx).then(isCurrentStallSurvey).catch(() => true);
+        if (!doneSurvey) { toast(firstTime ? 'Sent to the Admin team. Next, a short assessment about your business.' : 'Sent to the Admin team. You haven’t done the merchant assessment yet.'); setTimeout(() => { location.hash = '#/stall-survey'; }, 300); return; }
         toast('Sent to the Admin team. You’ll see the status here.'); setTimeout(() => app.render(), 300);
       } catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });
@@ -547,7 +561,7 @@ export const routes = {
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
   promote: { title: 'Promote your shop', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
-  'stall-survey': { title: 'Stall survey', render: stallSurveyRender, mount: stallSurveyMount, tab: 'home', wide: true },
+  'stall-survey': { title: 'Merchant assessment', render: stallSurveyRender, mount: stallSurveyMount, tab: 'home', wide: true },
   survey: { title: 'Readiness check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'merchant', 'home'), tab: 'home', feature: 'merchantTools', wide: true },
   'delete-account': { title: 'Close my account', render: closeRender, mount: closeMount, tab: 'home' },
 };

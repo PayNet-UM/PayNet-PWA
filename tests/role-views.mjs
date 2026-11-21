@@ -101,8 +101,8 @@ const waitingApp = await makeApp(merchant);
 waitingApp.merchant = { ...waitingApp.merchant, status: 'pending', ready: false };
 const waitingHome = await M.routes.home.render(waitingApp, []);
 const nextStep = /<li class="is-next"[^>]*>[\s\S]*?<\/li>/.exec(waitingHome)?.[0] || '';
-assert.ok(nextStep.includes('Tell us about your stall') && nextStep.includes('href="#/stall-survey"'), 'While waiting for approval, the next step should be the stall survey');
-assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In progress') && waitingHome.includes('Next: Tell us about your stall'), 'The approval step should show as in progress, not as the next step');
+assert.ok(nextStep.includes('Do the merchant assessment') && nextStep.includes('href="#/stall-survey"'), 'While waiting for approval, the next step should be the stall survey');
+assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In progress') && waitingHome.includes('Next: Do the merchant assessment'), 'The approval step should show as in progress, not as the next step');
 console.log('  ✓ While waiting for approval, Start here points to the stall survey'); passed++;
 
 const promotion = await M.routes.promote.render(await makeApp(merchant), []);
@@ -162,10 +162,18 @@ console.log('  ✓ Disabled live deals hide merchant claim/promotion actions whi
 // Stall survey: the form first, then the stall type once answered; the Admin team sees it in the analysis.
 const stallApp = await makeApp(merchant);
 const stallForm = await M.routes['stall-survey'].render(stallApp, []);
-assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Kedai anda jenis apa?'), 'Merchants get the bilingual stall survey form');
+assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Penilaian Peniaga +Onz') && stallForm.includes('value="Test Shop"'), 'Merchants get the bilingual stall survey form');
 assert.ok((await M.routes.home.render(stallApp, [])).includes('href="#/stall-survey"'), 'Merchant home links to the stall survey');
-await D.submitStallSurvey(merchant, { area: 'KK3', sell: 'food', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['dontKnow'], help: ['qrSetup'], trade: 'daily', listing: 'yes', bankHelp: 'yes' }, 'ms');
+// Required: until it's answered, every page but the survey, shop details and closing the account leads to the survey.
+for (const r of ['home', 'insights', 'promote', 'scan', 'survey']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), 'stall-survey', `${r} waits for the stall survey`);
+for (const r of ['stall-survey', 'shop', 'delete-account']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), null, `${r} stays open before the survey`);
+assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: null }, 'home'), null, 'merchants who haven’t sent shop details aren’t sent to the survey yet');
+assert.ok(stallForm.includes('ss-required') && !stallForm.includes('class="back"') && stallForm.includes('id="ss-help"'), 'the unanswered survey says it’s required, has no way back, and offers the screen guide');
+await D.submitStallSurvey(merchant, { name: 'Test Shop', location: 'KK3', type: 'food', age: 'u6m', registered: 'no', payments: ['cash'], banks: ['bsn'], bizAccount: 'personal', records: 'manual',
+  customers: 'u50', challenges: ['traffic'], financing: 'no', priorities: ['sales'], support: ['qr'], listing: 'yes', ownerName: 'Test Owner', consentContact: true, consentPartners: false }, 'ms');
 const stallResult = await M.routes['stall-survey'].render(stallApp, []);
+assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, 'insights'), null, 'answering the survey opens the rest of the app');
+assert.ok(!stallResult.includes('ss-required') && stallResult.includes('class="back"'), 'the answered survey is no longer marked required');
 assert.ok(stallResult.includes('id="ss-result"') && stallResult.includes('Cash Classic') && stallResult.includes('Klasik Tunai') && !stallResult.includes('id="stall-survey"'), 'Answered surveys show the stall type');
 const stallAdmin = await H.routes['stall-survey'].render(await makeApp(hep), []);
 assert.ok(stallAdmin.includes('id="ss-xlsx"') && stallAdmin.includes('id="ss-csv"') && stallAdmin.includes('Cash Classic') && stallAdmin.includes('All responses (1)'), 'Admin team sees the analysis with exports');

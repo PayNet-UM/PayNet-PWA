@@ -2735,4 +2735,43 @@ Stall survey exported.|Tinjauan kedai dieksport.
 Tell us about your stall|Ceritakan tentang kedai anda
 10 quick questions, about 3 minutes. Find your stall type and what we can set up for you, free.|10 soalan ringkas, kira-kira 3 minit. Ketahui jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
 In progress|Sedang diproses
+Pick your language|Pilih bahasa anda
+Answer in English or Bahasa Melayu. You can switch any time and keep your answers.|Jawab dalam Bahasa Inggeris atau Bahasa Melayu. Anda boleh tukar bila-bila masa dan jawapan anda kekal.
+About your stall|Tentang kedai anda
+Where you trade, and your Merchant or Terminal ID if you have one. The peak counts are optional.|Di mana anda berniaga, dan Merchant ID atau Terminal ID jika ada. Kiraan waktu puncak adalah pilihan.
+10 quick questions|10 soalan pantas
+How you sell and get paid. Questions marked * need an answer.|Cara anda berniaga dan menerima bayaran. Soalan bertanda * perlu dijawab.
+Get your stall type|Dapatkan jenis kedai anda
+Send your answers to see your stall type and what the team can set up for you, free. Finish this to open the rest of +Onz for Business.|Hantar jawapan anda untuk melihat jenis kedai anda dan apa yang pasukan boleh bantu, percuma. Lengkapkan ini untuk membuka bahagian lain +Onz for Business.
+Finish the stall survey first. It takes about 3 minutes.|Lengkapkan tinjauan kedai dahulu. Ia mengambil masa kira-kira 3 minit.
+Merchant assessment|Penilaian peniaga
+About 5 minutes|Kira-kira 5 minit
+Send your shop details first, then tell us about your business.|Hantar butiran kedai anda dahulu, kemudian ceritakan tentang perniagaan anda.
+15 questions about your business, in four short sections. See your stall type and how +Onz can help.|15 soalan tentang perniagaan anda, dalam empat bahagian ringkas. Lihat jenis kedai anda dan bagaimana +Onz boleh membantu.
+15 questions about your business. See your stall type.|15 soalan tentang perniagaan anda. Lihat jenis kedai anda.
+Finish the merchant assessment first. It takes about 5 minutes.|Lengkapkan penilaian peniaga dahulu. Ia mengambil masa kira-kira 5 minit.
+Sent to the Admin team. Next, a short assessment about your business.|Dihantar kepada pasukan Admin. Seterusnya, penilaian ringkas tentang perniagaan anda.
+Sent to the Admin team. You haven’t done the merchant assessment yet.|Dihantar kepada pasukan Admin. Anda belum menjawab penilaian peniaga.
+Four short sections|Empat bahagian ringkas
+Your business profile, how you take payments and keep records, what you need to grow, and how we can contact you. Questions marked * need an answer.|Profil perniagaan anda, cara anda menerima bayaran dan menyimpan rekod, apa yang anda perlukan untuk berkembang, dan cara kami boleh menghubungi anda. Soalan bertanda * perlu dijawab.
+You choose|Anda yang tentukan
+Tick whether +Onz may contact you, and whether to be introduced to financial partners. Saying no doesn’t affect your merchant registration.|Tandakan sama ada +Onz boleh menghubungi anda, dan sama ada anda mahu diperkenalkan kepada rakan kewangan. Menolak tidak menjejaskan pendaftaran peniaga anda.
+See your stall type|Lihat jenis kedai anda
+Send your answers to see your stall type and how +Onz can help. Finish this to open the rest of +Onz for Business.|Hantar jawapan anda untuk melihat jenis kedai anda dan bagaimana +Onz boleh membantu. Lengkapkan ini untuk membuka bahagian lain +Onz for Business.
+The +Onz Merchant Assessment (digital and financial readiness), answered by merchants after sending their shop details.|Penilaian Peniaga +Onz (kesediaan digital dan kewangan), dijawab oleh peniaga selepas menghantar butiran kedai.
+No merchant assessments yet. Merchants are asked to fill it in right after they send their shop details.|Belum ada penilaian peniaga. Peniaga diminta mengisinya sejurus selepas menghantar butiran kedai.
+Take Business QR or card|Terima Business QR atau kad
+No business bank account|Tiada akaun bank perniagaan
+Personal account, opening one or not sure|Akaun peribadi, sedang membuka atau tidak pasti
+Interested in financing|Berminat dengan pembiayaan
+Partner introductions OK|Setuju diperkenalkan kepada rakan kongsi
+From the most digital way each stall takes payment.|Berdasarkan cara bayaran paling digital yang diterima setiap kedai.
+Owner|Pemilik
+Business account|Akaun perniagaan
+Financing|Pembiayaan
+Contact OK|Setuju dihubungi
+Partners OK|Setuju dengan rakan kongsi
+Merchant assessment exported.|Penilaian peniaga dieksport.
+Do the merchant assessment|Jawab penilaian peniaga
+15 questions about your business, about 5 minutes. See your stall type and what we can set up for you, free.|15 soalan tentang perniagaan anda, kira-kira 5 minit. Lihat jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
 `;
