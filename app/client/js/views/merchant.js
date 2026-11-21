@@ -8,7 +8,7 @@ import { merchantDealQRRender, merchantDealQRMount } from '../deal-flow.js';
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, busy, errText, fmtDate, fmtTime, timeAgo, confetti, renderQR,
   startScanner, compressImage, barChart, colorFor, initials, downloadCSV } from '../ui.js';
 import { pinPicker, hasPin, inGeoBox } from '../map.js';
-import { surveyHTML, surveyMount, merchantLogo } from './student.js';
+import { surveyHTML, surveyMount, merchantLogo, studentShopRender, studentShopMount } from './student.js';
 import { avatarSVG, defaultFor } from '../avatar.js';
 import { merchantHeading, merchantMetric, merchantEmpty, merchantSetup, merchantAction } from '../merchant-ui.js';
 import { closeRender, closeMount } from './close.js';
@@ -248,20 +248,26 @@ async function shopRender(app) {
   const details = [['Business name', m.name], ['Account name on your DuitNow QR', priv?.accountName], ['Type', m.type], ['Category', m.segment],
     ['Location', m.location], ['Campus zone', m.zone], ['Contact phone', priv?.phone || m.phone], ['Ambassador ID', priv?.ambassadorId || m.ambassadorId],
     ...(m.eventName ? [['Event', `${m.eventName}${m.eventEnd ? ` · until ${m.eventEnd}` : ''}`]] : [])].filter(([, val]) => val);
-  return `<div class="merchant-page mer-shop">${head}
-    <form id="logo-form" class="mer-shop-identity mer-shop-profile">
+  const facts = [m.type, m.zone].filter(Boolean);
+  return `<div class="merchant-page mer-shop">
+    <form id="logo-form" class="kk-hero merchant-home-hero mer-shop-hero">
       <label class="mer-logo-pick" title="Change logo"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" aria-label="Change your shop logo">
         <span class="logo-preview" id="logo-prev">${safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span><span class="mer-logo-edit" aria-hidden="true">${icon('pencil')}</span></label>
       <input type="hidden" name="logoData" value="">
-      <div><h2 data-no-i18n>${esc(m.name)}</h2>${m.location ? `<p>${icon('map-pin')} <span data-no-i18n>${esc(m.location)}</span></p>` : ''}<div class="row merchant-home-status">${statusBadge(m)}${ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div>
+      <div class="mer-home-copy"><span class="mer-eyebrow">My shop</span><h1 data-no-i18n>${esc(m.name)}</h1>${m.location ? `<p class="mer-hero-location">${icon('map-pin')} <span data-no-i18n>${esc(m.location)}</span></p>` : ''}
+        <div class="row merchant-home-status">${statusBadge(m)}${ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div>
+        <a class="btn small mer-hero-preview" href="#/preview">${icon('eye')} Preview as a student</a>
+        ${facts.length ? `<p class="mer-shop-facts">${facts.map((f) => `<span>${esc(f)}</span>`).join('')}</p>` : ''}
         <small class="mer-logo-help">Tap your logo to change it. Square works best.</small>
-        <button class="btn small primary" id="logo-save" hidden>${icon('check')} Save new logo</button></div>
+        <button class="btn small mer-hero-save" id="logo-save" hidden>${icon('check')} Save new logo</button></div>
+      <div class="mer-hero-art" aria-hidden="true"><span>${icon('store')}</span><i>${icon('star')}</i><b>+</b></div>
     </form>
     <div class="mer-shop-grid is-verified">
       <section class="section mer-shop-map"><div class="head"><h2>${icon('map-pin')} Where students find you</h2></div>
         <form id="pin-form" class="card stack">${pinBlock(m, true)}<button class="btn primary" id="pin-save" hidden>${icon('map-pin')} Save new location</button></form></section>
       <div class="mer-shop-side"><section class="section mer-counter-kit"><div class="head"><h2>${icon('printer')} Poster for your counter</h2></div>
-        <div class="card mer-poster-card"><p>Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.</p><a class="btn primary" href="#/poster">${icon('printer')} Open poster</a></div></section>
+        <div class="card mer-poster-card"><div class="mer-poster-copy"><p>Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.</p><a class="btn primary" href="#/poster">${icon('printer')} Open poster</a></div>
+          <a class="mer-poster-mini" href="#/poster" aria-label="Open your poster"><img src="icons/onz-logo-dark.svg" alt="" width="680" height="214"><b>Find us on +Onz.</b><span id="poster-mini-qr" aria-hidden="true"></span><small data-no-i18n>${esc(m.name)}</small></a></div></section>
       <section class="section mer-readiness" id="ready" tabindex="-1">
         ${ready ? `<details class="card mer-ready-done"><summary><span class="mer-ready-tick">${icon('check')}</span><span><b>Staff readiness</b><small>Done ${fmtDate(m.readyAt)}. Tap to review the checklist.</small></span>${icon('chevron-right')}</summary>${readinessBody(app, m, ready)}</details>`
           : `<div class="head"><h2>${icon('shield-check')} Staff readiness</h2><span class="badge warn">To do</span></div>
@@ -319,7 +325,7 @@ function pinBlock(m, standalone = false) {
   return `<div class="field pin-field">${standalone ? '' : '<span>Shop location on the map</span>'}
     <div class="pin-map" id="pin-map" aria-label="Map to place your shop"></div>
     <div class="row between pin-bar"><button type="button" class="btn small" id="locate">${icon('locate-fixed')} Use my current location</button>
-      <span class="faint num" id="pin-read">${has ? `${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}` : 'No pin yet'}</span></div>
+      <span class="mer-pin-status ${has ? 'is-set' : ''}" id="pin-read" ${has ? `data-lat="${m.lat}" data-lng="${m.lng}"` : ''}>${has ? `${icon('check')} Your pin is set. Students can walk straight to you.` : 'No pin yet. Tap the map or use your current location.'}</span></div>
     <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students use this pin for directions to your shop.</small>
     <input type="hidden" name="lat" value="${has ? m.lat : ''}"><input type="hidden" name="lng" value="${has ? m.lng : ''}"></div>`;
 }
@@ -329,8 +335,10 @@ async function mountPin(root, form, onMove = () => {}) {
   let placed = false; // the map reports its starting pin too; only count moves after that
   try {
     const picker = await pinPicker(el, { lat: parseFloat(form.lat.value), lng: parseFloat(form.lng.value) }, ({ lat, lng }) => {
-      form.lat.value = lat; form.lng.value = lng; read.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      read.classList.toggle('bad-text', !inGeoBox(lat, lng)); if (placed) onMove();
+      form.lat.value = lat; form.lng.value = lng; read.dataset.lat = lat; read.dataset.lng = lng;
+      const ok = inGeoBox(lat, lng);
+      read.innerHTML = ok ? `${icon('check')} ${placed ? 'Pin placed. Students will walk straight to this spot.' : 'Your pin is set. Students can walk straight to you.'}` : `${icon('circle-alert')} This spot is outside the UM campus. Drag the pin to your shop.`;
+      read.classList.toggle('bad-text', !ok); read.classList.toggle('is-set', ok); if (placed) onMove();
     });
     placed = true;
     $('#locate', root).onclick = (e) => busy(e.currentTarget, async () => {
@@ -355,6 +363,7 @@ function shopMount(root, app, [section] = []) {
   mountPin(root, pf || f, () => { const b = $('#pin-save', root); if (b) b.hidden = false; });
   mountLogo(root, lf || f);
   mountUploads(root);
+  if ($('#poster-mini-qr', root)) renderQR($('#poster-mini-qr', root), `${location.origin}${location.pathname}#/merchant/${app.ctx.uid}`, 120);
   if (lf) lf.onsubmit = (e) => {
     e.preventDefault();
     busy($('#logo-save', lf), async () => {
@@ -400,6 +409,17 @@ function shopMount(root, app, [section] = []) {
   const off = app.on((t) => { if ((t === 'merchant' || t === 'merchant-readiness') && !root.contains(document.activeElement)) app.render(); });
   return off;
 }
+
+// "Preview as a student": the real student shop page, inside a frame, with its buttons switched off.
+async function previewRender(app) {
+  if (app.merchant?.status !== 'verified') return `<div class="merchant-page"><a class="back" href="#/shop">${icon('arrow-left')} My shop</a><div class="card empty"><h1>Preview as a student</h1><p>Students can see your shop once the Admin team has verified it.</p></div></div>`;
+  return `<div class="merchant-page mer-preview"><a class="back" href="#/shop">${icon('arrow-left')} My shop</a>
+    <div class="mer-preview-note">${icon('eye')}<div><b>This is what students see</b><p>Your shop page in the student app, with your logo, location and live deals. Buttons are switched off in this preview.</p></div></div>
+    <div class="mer-preview-device"><div class="mer-preview-bar"><span>${icon('user')} Student app</span><span>Preview</span></div>
+      <div class="mer-preview-screen" tabindex="0" aria-label="Your shop page, as students see it"><div inert>${await studentShopRender(app, [app.ctx.uid])}</div></div></div>
+    <p class="mer-preview-tip">Something looks wrong? Change your logo or map pin in <a href="#/shop">My shop</a>. For other details, <a href="#/contact">contact the Admin team</a>.</p></div>`;
+}
+function previewMount(root, app) { return studentShopMount(root, app, [app.ctx.uid]) || null; }
 
 async function posterRender(app) {
   const m = app.merchant; if (!m) return needVerified(app);
@@ -605,6 +625,7 @@ export const routes = {
   scan: { title: 'Deal QR', render: merchantDealQRRender, mount: merchantDealQRMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   shop: { title: 'My shop', render: shopRender, mount: shopMount, wide: true },
   poster: { title: 'Poster', render: posterRender, mount: posterMount, tab: 'shop' },
+  preview: { title: 'Preview as a student', render: previewRender, mount: previewMount, tab: 'shop', wide: true },
   promote: { title: 'Promote your shop', render: promoteRender, mount: promoteMount, feature: ['merchantTools', 'dealsAndPay', 'overview'], wide: true },
   insights: { title: 'Insights', render: insightsRender, mount: insightsMount, feature: 'merchantTools', wide: true },
   'stall-survey': { title: 'Merchant assessment', render: stallSurveyRender, mount: stallSurveyMount, tab: 'home', wide: true },

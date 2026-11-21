@@ -2817,4 +2817,19 @@ Your details are sent. Answer 15 questions about your business (about 5 minutes)
 Shop details sent and merchant assessment done.|Butiran kedai dihantar dan penilaian peniaga selesai.
 Get verified by the Admin team|Dapatkan pengesahan daripada pasukan Admin
 The Admin team checks your details in 1–2 working days.|Pasukan Admin menyemak butiran anda dalam 1–2 hari bekerja.
+Your pin is set. Students can walk straight to you.|Pin anda telah ditetapkan. Pelajar boleh terus berjalan ke kedai anda.
+No pin yet. Tap the map or use your current location.|Belum ada pin. Ketik peta atau gunakan lokasi semasa anda.
+Pin placed. Students will walk straight to this spot.|Pin diletakkan. Pelajar akan terus berjalan ke tempat ini.
+This spot is outside the UM campus. Drag the pin to your shop.|Tempat ini di luar kampus UM. Seret pin ke kedai anda.
+Open your poster|Buka poster anda
+Preview as a student|Pratonton sebagai pelajar
+This is what students see|Inilah yang pelajar lihat
+Your shop page in the student app, with your logo, location and live deals. Buttons are switched off in this preview.|Halaman kedai anda dalam aplikasi pelajar, dengan logo, lokasi dan tawaran aktif anda. Butang dimatikan dalam pratonton ini.
+Student app|Aplikasi pelajar
+Preview|Pratonton
+Something looks wrong? Change your logo or map pin in|Ada yang tidak kena? Tukar logo atau pin peta anda dalam
+For other details,|Untuk butiran lain,
+contact the Admin team|hubungi pasukan Admin
+Students can see your shop once the Admin team has verified it.|Pelajar boleh melihat kedai anda setelah pasukan Admin mengesahkannya.
+Your shop page, as students see it|Halaman kedai anda, seperti yang dilihat pelajar
 `;

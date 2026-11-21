@@ -730,3 +730,48 @@
   .mer-shop-grid.is-verified .mer-shop-map { grid-row:auto; }
   .mer-shop-grid.is-verified .mer-counter-kit,.mer-shop-grid.is-verified .mer-readiness { grid-column:auto; }
 }
+
+/* My shop banner: the same +Onz look as the Home hub banner. */
+.merchant-page .mer-shop-hero { margin:12px 0 26px; }
+.mer-shop-hero .mer-logo-pick .logo-preview { width:96px;height:96px;border-radius:26px;border:3px solid #fff;box-shadow:0 6px 0 #080d6835;transform:rotate(-4deg); }
+.mer-shop-hero .mer-logo-edit { background:var(--onz-lime);color:var(--onz-navy);border-color:var(--onz-blue); }
+.mer-shop-hero .mer-logo-help { color:#d6d9ff; }
+.mer-shop-facts { display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0; }
+.mer-shop-facts span { padding:3px 10px;border-radius:99px;background:#ffffff1f;border:1px solid #ffffff40;color:#fff;font-size:12px;font-weight:700; }
+.mer-shop-hero .btn.mer-hero-save { margin-top:10px;background:var(--onz-lime);border-color:var(--onz-lime);color:var(--onz-navy);font-weight:800; }
+@media (max-width:520px) { .mer-shop-hero .mer-logo-pick .logo-preview { width:72px;height:72px;border-radius:20px; } }
+
+/* Pin status in plain words. */
+.mer-pin-status { display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ink-2); }
+.mer-pin-status.is-set { color:#2f6b0f; }
+.mer-pin-status.bad-text { color:var(--red); }
+.mer-pin-status .ic { width:17px;height:17px;flex:none; }
+
+/* Poster card with a small preview of the real poster. */
+.mer-poster-card { grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px; }
+.mer-poster-copy { display:grid;gap:14px; }
+.mer-poster-mini { display:grid;justify-items:center;gap:6px;width:150px;padding:14px 12px;border-radius:14px;background:#fff;border:1px solid #c6dbea;box-shadow:0 6px 16px -10px #1a4d72;color:var(--onz-navy);text-decoration:none;transform:rotate(2deg); }
+.mer-poster-mini:hover,.mer-poster-mini:focus-visible { transform:rotate(0);text-decoration:none; }
+.mer-poster-mini img { width:84px;height:auto;border-radius:0; }
+.mer-poster-mini b { font-size:13px; }
+.mer-poster-mini small { font-size:11px;color:var(--ink-2);text-align:center; }
+#poster-mini-qr canvas,#poster-mini-qr img { display:block;width:96px!important;height:96px!important; }
+@media (max-width:420px) { .mer-poster-card { grid-template-columns:1fr; } .mer-poster-mini { justify-self:center; } }
+
+/* "Preview as a student" (mock-up). */
+.mer-shop-hero .btn.mer-hero-preview { margin-top:10px;background:#ffffff1f;border:1px solid #ffffff66;color:#fff; }
+.mer-shop-hero .btn.mer-hero-preview:hover { background:#ffffff33;text-decoration:none; }
+.mer-preview-note { display:flex;gap:12px;align-items:flex-start;margin:12px 0 18px;padding:14px 16px;border-radius:16px;background:var(--blue-wash);color:var(--onz-navy); }
+.mer-preview-note > .ic { width:24px;height:24px;flex:none;color:var(--onz-blue);margin-top:2px; }
+.mer-preview-note p { margin:2px 0 0;font-size:14px;color:var(--ink-2); }
+.mer-preview-device { max-width:430px;margin:0 auto;border:8px solid var(--onz-navy);border-radius:32px;overflow:hidden;background:var(--paper);box-shadow:0 20px 40px -24px #080d68; }
+.mer-preview-bar { display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--onz-blue);color:#fff;font-size:13px;font-weight:700; }
+.mer-preview-bar span { display:inline-flex;align-items:center;gap:6px; }
+.mer-preview-bar span:last-child { padding:2px 10px;border-radius:99px;background:var(--onz-lime);color:var(--onz-navy);font-size:11px;text-transform:uppercase;letter-spacing:.06em; }
+.mer-preview-bar .ic { width:16px;height:16px; }
+.mer-preview-screen { padding:16px;max-height:720px;overflow:auto; }
+.mer-preview-screen .back { display:none; }
+.mer-preview-screen [style*="position:sticky"] { position:static!important; }
+.mer-preview-tip { max-width:430px;margin:16px auto 0;text-align:center;font-size:14px;color:var(--ink-2); }
+.mer-preview-screen { overscroll-behavior:contain;-webkit-overflow-scrolling:touch; }
+.mer-preview-screen:focus-visible { outline:3px solid var(--onz-lime);outline-offset:-3px; }

@@ -209,7 +209,7 @@ await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
-await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.10994'));
+await mer.click('#locate'); await mer.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
 if (!/Location saved/.test(await mer.textContent('#toast'))) throw new Error('pin not saved');
 const png = fs.readFileSync(new URL('../app/shared/icons/icon-192.png', import.meta.url));
@@ -319,7 +319,7 @@ await nm.click('#app-form button.primary'); await nm.waitForSelector('#toast.sho
 const noLogo = await nm.textContent('#toast');
 if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caught: ' + noLogo);
 await nm.waitForTimeout(3500);
-await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
+await nm.click('#locate'); await nm.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
 await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
