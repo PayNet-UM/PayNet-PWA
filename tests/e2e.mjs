@@ -188,7 +188,8 @@ const liveId = await mer.evaluate(async () => {
 });
 const pointsBeforeScan = await pointsOf(stu);
 // The QR library draws a canvas, then may swap it for an image, so either one counts as the QR showing.
-await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas, #live-deal-qr img');
+await mer.goto(BASE + '#/scan/' + liveId);
+await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
 // Feed the actual merchant QR image through the student's camera pipeline.
