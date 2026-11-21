@@ -43,7 +43,7 @@ for (const [role, mod, app, routes] of [
       assert.equal((html.match(/<h1\b/g) || []).length, 1, `${route} needs one page heading`);
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
       assert.equal(new Set(ids).size, ids.length, `${route} has duplicate form IDs`);
-      const controls = { scan: [], shop: ['app-form', 'logo-form', 'pin-form', 'ready-form'], promote: ['seats', 'new-deal'] }[route] || [];
+      const controls = { scan: [], shop: ['shop-details', 'logo-form', 'pin-form', 'ready-form'], promote: ['seats', 'new-deal'] }[route] || [];
       for (const id of controls) assert.ok(ids.includes(id), `Merchant ${route} lost its ${id} control`);
     }
     if (role === 'HEP') {
@@ -96,8 +96,17 @@ readyApp.merchant.readyAt = sdk.Timestamp.fromMillis(2000);
 assert.ok(!(await M.routes.home.render(readyApp, [])).includes('mer-setup-title'), 'Confirming the new update should hide readiness again');
 console.log('  ✓ Completed shop readiness hides, returns for a new HEP update, and hides after confirmation'); passed++;
 
+// While the Admin team reviews the application, "Start here" sends the merchant to finish the assessment (part of step 1).
+const waitingApp = await makeApp(merchant);
+waitingApp.merchant = { ...waitingApp.merchant, status: 'pending', ready: false };
+const waitingHome = await M.routes.home.render(waitingApp, []);
+const nextStep = /<li class="is-next"[^>]*>[\s\S]*?<\/li>/.exec(waitingHome)?.[0] || '';
+assert.ok(nextStep.includes('Finish the merchant assessment') && nextStep.includes('href="#/stall-survey"'), 'While waiting for approval, the next step should be the stall survey');
+assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In progress') && waitingHome.includes('Next: Finish the merchant assessment') && (waitingHome.match(/<li class=/g) || []).length <= 5, 'The approval step should show as in progress, not as the next step');
+console.log('  ✓ While waiting for approval, Start here points to the stall survey'); passed++;
+
 const promotion = await M.routes.promote.render(await makeApp(merchant), []);
-assert.ok(promotion.includes('28 seats free') && promotion.includes('--progress:30%'), 'Occupancy visual should use recorded seats');
+assert.ok(!promotion.includes('seats free') && promotion.includes('--progress:30%') && promotion.includes('data-step="1"'), 'Café occupancy should use recorded seats');
 assert.ok(promotion.includes('Live now') && promotion.includes('Paused') && promotion.includes('Ready to publish'), 'Deal states should remain distinct');
 assert.ok(promotion.includes('data-toggle="live" data-en="0"') && promotion.includes('data-toggle="paused" data-en="1"'), 'Pause/resume controls should retain their intent');
 assert.ok(promotion.includes('href="#/scan/live"') && promotion.includes('&lt;Study break&gt;') && !promotion.includes('new-offer'), 'Live-deal QR and escaping should replace standalone offers');

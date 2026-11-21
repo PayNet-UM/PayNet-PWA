@@ -362,6 +362,24 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     await D.publishDeal(merch, 'legacy_pending');
     eq((await D.approvedDeals(stuA)).some((d) => d.id === 'legacy_pending'), true);
   });
+  const editInput = { title: 'Evening study break', benefit: 'RM2 off any drink', startMin: 18 * 60, endMin: 21 * 60, threshold: 70 };
+  await ok('a merchant edits its own deal', async () => {
+    await D.editDeal(merch, 'legacy_pending', editInput);
+    const d = (await D.myDeals(merch)).find((x) => x.id === 'legacy_pending');
+    eq(d.title, 'Evening study break', 'title'); eq(d.startMin, 18 * 60, 'start'); eq(d.threshold, 70, 'threshold');
+  });
+  await denied('another merchant cannot edit it', () => D.editDeal(merch2, 'legacy_pending', editInput));
+  await denied('an edit cannot set impossible hours', () => D.editDeal(merch, 'legacy_pending', { ...editInput, startMin: 20 * 60, endMin: 19 * 60 }));
+  await denied('an edit cannot move the deal to another shop', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'deals', 'legacy_pending'), { merchantId: 'mer2' }));
+  await denied('another merchant cannot remove it', () => D.removeDeal(merch2, 'legacy_pending'));
+  await ok('a merchant removes its own deal: hidden from its list and from students', async () => {
+    await D.removeDeal(merch, 'legacy_pending');
+    eq((await D.myDeals(merch)).some((x) => x.id === 'legacy_pending'), false, 'merchant list');
+    eq((await D.approvedDeals(stuA)).some((x) => x.id === 'legacy_pending'), false, 'student list');
+  });
+  await denied('a removed deal cannot be resumed', () => D.toggleDeal(merch, 'legacy_pending', true));
+  await denied('a removed deal cannot be edited', () => D.editDeal(merch, 'legacy_pending', editInput));
+  await denied('a removed deal cannot show a QR', () => L.issueDealQR(merch, 'legacy_pending'));
   log('Merchant QR → student claim → merchant discount');
   let qrSession, liveClaim;
   await ok('only the deal owner can issue its short-lived QR', async () => {
@@ -595,6 +613,45 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     eq((await D.myFeedback(stuA)).find((f) => f.id === idea.id).status, 'done', 'status');
   });
   await denied('HEP cannot change what the student wrote', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'feedback', firstFeedback), { message: 'Edited by an admin.' }));
+
+  log('Voucher program');
+  const voucherForm = { offer: 'RM5 off any meal', value: 5, perMonth: 50, conditions: 'Minimum spend RM10.', contactName: 'Hafiz Rahman', contactPhone: '012-345 6789' };
+  const vdoc = (who, id, extra = {}) => who.sdk.setDoc(who.sdk.doc(who.db, 'voucherApplications', id), { merchantId: id, merchantName: 'Kopi Kolej', offer: 'RM5 off any meal',
+    valueCents: 500, perMonth: 50, conditions: '', contactName: 'Hafiz Rahman', contactPhone: '0123456789', status: 'pending', submittedAt: who.sdk.serverTimestamp(), ...extra });
+  await ok('a verified merchant applies to the voucher program and sees it waiting', async () => {
+    await D.applyVoucherProgram(merch, voucherForm);
+    const a = await D.myVoucherApplication(merch);
+    eq(a.status, 'pending', 'status'); eq(a.valueCents, 500, 'value'); eq(a.merchantName, 'Kopi Kolej', 'shop name');
+  });
+  await ok('they can edit it while it’s waiting', async () => {
+    await D.applyVoucherProgram(merch, { ...voucherForm, perMonth: 80 });
+    eq((await D.myVoucherApplication(merch)).perMonth, 80, 'per month');
+  });
+  await denied('a merchant cannot apply in another shop’s name', () => vdoc(merch, 'mer2', { merchantName: 'Fresh Laundry' }));
+  await denied('a merchant cannot approve their own application', () => vdoc(merch, 'mer1', { status: 'approved' }));
+  await denied('a merchant cannot read another shop’s application', () => merch2.sdk.getDoc(merch2.sdk.doc(merch2.db, 'voucherApplications', 'mer1')));
+  await denied('a student cannot apply to the voucher program', () => vdoc(stuA, 'stuA', { merchantName: '' }));
+  await ok('the app refuses a voucher with no value', async () => {
+    try { await D.applyVoucherProgram(merch2, { ...voucherForm, value: 0 }); } catch (e) { if (/between RM0.50/.test(e.message)) return; throw e; }
+    throw new Error('a voucher worth RM0 was accepted');
+  });
+  await denied('the rules also refuse a voucher with no value', () => vdoc(merch2, 'mer2', { merchantName: 'Fresh Laundry', valueCents: 0 }));
+  await ok('the Admin team sees the application and approves it with a note', async () => {
+    const all = await D.listVoucherApplications(mpp);
+    eq(all.length, 1, 'applications'); eq(all[0].contactPhone, '012-345 6789', 'phone');
+    await D.reviewVoucherApplication(mpp, 'mer1', 'approved', 'We’ll call you this week.');
+    const a = await D.myVoucherApplication(merch);
+    eq(a.status, 'approved', 'status'); eq(a.reviewNote, 'We’ll call you this week.', 'note');
+  });
+  await denied('once approved, the merchant cannot change it', () => D.applyVoucherProgram(merch, { ...voucherForm, value: 50 }));
+  await denied('the Admin team cannot change what the merchant offered', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'voucherApplications', 'mer1'), { valueCents: 100 }));
+  await ok('after a decline, the merchant can apply again', async () => {
+    await D.applyVoucherProgram(merch2, { ...voucherForm, offer: 'Free wash and fold' });
+    await D.reviewVoucherApplication(mpp, 'mer2', 'declined', 'Not this semester.');
+    await D.applyVoucherProgram(merch2, { ...voucherForm, offer: 'RM3 off a wash and fold' });
+    const a = await D.myVoucherApplication(merch2);
+    eq(a.status, 'pending', 'status'); eq(a.offer, 'RM3 off a wash and fold', 'offer');
+  });
 
   const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
   await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));

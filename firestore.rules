@@ -355,6 +355,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function dealFieldsOk() {
+      return D().title is string && D().title.size() >= 3 && D().title.size() <= 60
+        && D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160
+        && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
+        && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+    }
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status in ['approved', 'published'] || resource.data.merchantId == uid() || isMpp());
       allow create: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'published'
@@ -364,8 +370,13 @@ service cloud.firestore {
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
         && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+      // Removing keeps the deal (past claims and reports point to it) but switches it off for good.
       allow update: if (isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && resource.data.merchantId == uid()
-          && (changed().hasOnly(['enabled']) || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')))
+          && resource.data.get('removed', false) != true
+          && (changed().hasOnly(['enabled'])
+            || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')
+            || (changed().hasOnly(['title', 'benefit', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
+            || (changed().hasOnly(['removed', 'enabled', 'removedAt']) && D().removed == true && D().enabled == false && D().removedAt == request.time)))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 
@@ -488,6 +499,31 @@ service cloud.firestore {
       allow update: if isMpp() && changed().hasOnly(['status', 'reply', 'repliedBy', 'repliedAt'])
         && D().status in ['replied', 'done'] && D().repliedBy == email() && D().repliedAt == request.time
         && (D().status != 'replied' || (D().reply is string && D().reply.size() >= 2 && D().reply.size() <= 1000));
+      allow delete: if false;
+    }
+
+    // Voucher program: a verified merchant applies to offer a voucher. One application per merchant (the ID is the
+    // merchant). They can send it again while it's waiting or after a decline, but not once it's approved.
+    // Only the merchant and HEP can read it; only HEP can approve or decline.
+    function voucherApplicationOk() {
+      return isVerifiedMerchant() && D().keys().hasOnly(['merchantId', 'merchantName', 'offer', 'valueCents', 'perMonth', 'conditions',
+          'contactName', 'contactPhone', 'status', 'submittedAt'])
+        && D().merchantId == uid() && D().merchantName == get(/databases/$(database)/documents/merchants/$(uid())).data.name
+        && D().offer is string && D().offer.size() >= 3 && D().offer.size() <= 160
+        && D().valueCents is int && D().valueCents >= 50 && D().valueCents <= 100000
+        && D().perMonth is int && D().perMonth >= 1 && D().perMonth <= 10000
+        && D().conditions is string && D().conditions.size() <= 500
+        && D().contactName is string && D().contactName.size() >= 2 && D().contactName.size() <= 80
+        && D().contactPhone is string && D().contactPhone.size() >= 8 && D().contactPhone.size() <= 20
+        && D().status == 'pending' && D().submittedAt == request.time;
+    }
+    match /voucherApplications/{m} {
+      allow read: if signedIn() && (m == uid() || isMpp());
+      allow create: if m == uid() && voucherApplicationOk();
+      allow update: if (m == uid() && resource.data.status in ['pending', 'declined'] && voucherApplicationOk())
+        || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt'])
+          && D().status in ['approved', 'declined'] && D().reviewedBy == email() && D().reviewedAt == request.time
+          && D().reviewNote is string && D().reviewNote.size() <= 500);
       allow delete: if false;
     }
 

@@ -15,7 +15,7 @@ import { siteUrls } from '../firebase-config.js';
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
+  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
   ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
@@ -46,13 +46,14 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w, x, fb, events] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
-      D.listFeedback(app.ctx).catch(() => []),D.listEventSubmissions(app.ctx).catch(()=>[])]);
+    const [m, c, w, x, fb, events, va] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
+      D.listFeedback(app.ctx).catch(() => []), D.listEventSubmissions(app.ctx).catch(() => []), D.listVoucherApplications(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
     set('feedback', fb.filter((f) => f.status === 'new').length);
-    set('campaigns',events.length);
+    set('campaigns', events.length);
+    set('vouchers', va.filter((a) => a.status === 'pending').length);
   } catch { /* not initialised yet */ }
 }
 
@@ -468,6 +469,41 @@ function feedbackMount(root, app) {
   });
 }
 
+// ------------------------------------------------------------- voucher program (merchant applications)
+let vaFilter = 'pending';
+async function vouchersRender(app) {
+  const all = await D.listVoucherApplications(app.ctx); app._va = all;
+  const count = (k) => (k === 'all' ? all.length : all.filter((a) => a.status === k).length);
+  const shown = vaFilter === 'all' ? all : all.filter((a) => a.status === vaFilter);
+  return `${hepHeading('Voucher program', 'Merchants who want to offer a voucher that students can swap points for. Approving only records your decision. Agree the details with the merchant first, then add the voucher in Rewards and budget.', 'ticket')}
+    <div class="chips" role="group" aria-label="Show">${[['pending', 'Waiting'], ['approved', 'Approved'], ['declined', 'Declined'], ['all', 'All']].map(([k, l]) =>
+      `<button type="button" data-vaf="${k}" class="${vaFilter === k ? 'on' : ''}" aria-pressed="${vaFilter === k}">${l} <span data-no-i18n>(${count(k)})</span></button>`).join('')}</div>
+    <div class="list hep-fb-list">${shown.map((a) => `<article class="card pad-lg hep-fb hep-va is-${esc(a.status)}">
+      <div class="row between"><div class="row" style="gap:8px"><b data-no-i18n>${esc(a.merchantName || 'Merchant')}</b><span class="faint">${fmtDateTime(a.submittedAt)}</span></div>
+        <span class="badge ${a.status === 'approved' ? 'ok' : a.status === 'declined' ? 'bad' : 'warn'}">${a.status === 'approved' ? 'Approved' : a.status === 'declined' ? 'Declined' : 'Waiting'}</span></div>
+      <p class="hep-fb-msg" data-no-i18n>${esc(a.offer)}</p>
+      <p><span>Value</span> <b>${rm(a.valueCents)}</b> · <b data-no-i18n>${n(a.perMonth)}</b> <span>a month</span></p>
+      ${a.conditions ? `<p class="faint"><span>Conditions:</span> <span data-no-i18n>${esc(a.conditions)}</span></p>` : ''}
+      <p class="faint"><span data-no-i18n>${esc(a.contactName)}</span> · <a data-no-i18n href="tel:${esc(String(a.contactPhone || '').replace(/[^+0-9]/g, ''))}">${esc(a.contactPhone)}</a></p>
+      ${a.reviewNote ? `<div class="hep-fb-reply"><b>Your note</b> <span class="faint" data-no-i18n>${esc(a.reviewedBy || '')} · ${fmtDateTime(a.reviewedAt)}</span><p data-no-i18n>${esc(a.reviewNote)}</p></div>` : ''}
+      ${a.status === 'pending' ? `<div class="row" style="gap:8px;margin-top:10px"><button class="btn small go" data-va="${esc(a.id)}" data-st="approved">${icon('check')} Approve</button>
+        <button class="btn small" data-va="${esc(a.id)}" data-st="declined">${icon('x')} Decline</button></div>` : ''}</article>`).join('')
+      || `<div class="card empty">${icon('ticket')}<p>${vaFilter === 'pending' ? 'No applications waiting.' : 'Nothing here yet.'}</p></div>`}</div>`;
+}
+function vouchersMount(root, app) {
+  $$('[data-vaf]', root).forEach((b) => { b.onclick = () => { vaFilter = b.dataset.vaf; app.render(); }; });
+  $$('[data-va]', root).forEach((b) => {
+    b.onclick = () => {
+      const a = app._va.find((x) => x.id === b.dataset.va), approve = b.dataset.st === 'approved';
+      const el = sheet(`<h2>${approve ? 'Approve' : 'Decline'} <span data-no-i18n>${esc(a.merchantName)}</span></h2><p class="muted hep-fb-quote" data-no-i18n>${esc(a.offer)}</p>
+        <form id="vaf" class="stack" style="margin-top:12px"><label class="field">Note to the merchant (optional)<textarea name="note" rows="4" maxlength="500" placeholder="${approve ? 'e.g. We’ll call you this week to agree the details.' : 'e.g. We’re not adding new vouchers this semester.'}"></textarea>
+          <small>The merchant sees this on their Promote your shop page.</small></label><button class="btn ${approve ? 'go' : 'primary'}">${approve ? 'Approve application' : 'Decline application'}</button></form>`);
+      $('#vaf', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), async () => { try { await D.reviewVoucherApplication(app.ctx, a.id, b.dataset.st, e.target.note.value); closeSheet(); toast(approve ? 'Application approved.' : 'Application declined.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+    };
+  });
+}
+
 // ------------------------------------------------------------- students (people)
 let peopleQ = '';
 async function peopleRender(app) {
@@ -633,6 +669,7 @@ export const routes = {
   kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
   'stall-survey': { title: 'Merchant assessment', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
   feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
+  vouchers: { title: 'Voucher program', render: vouchersRender, mount: vouchersMount, wide: true },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
   activity: { title: 'Activity log', render: activityRender },

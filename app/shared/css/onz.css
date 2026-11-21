@@ -125,6 +125,10 @@ body:has(.pts-chip) .section>.head h2::before { content:'+';display:grid;place-i
 @media(min-width:1024px) {
   .tabbar:has([data-tab="community"]) a[data-tab="about"] { order:-2; }
   .tabbar:has([data-tab="community"]) a[data-tab="home"] { order:-1; }
+  /* Merchant sidebar: Home first, About us last. */
+  .tabbar:has([data-tab="promote"]) a[data-tab="home"] { order:-1; }
+  .tabbar:has([data-tab="promote"]) a[data-tab="about"] { order:9; }
+  .tabbar:has([data-tab="promote"])::after { order:10; }
   .tabbar,body:has(.pts-chip) .tabbar { background:var(--onz-blue);border:0;box-shadow:none;padding-top:22px; }
   .tabbar a,body:has(.pts-chip) .tabbar a { color:#e4e2ff;border:0;border-radius:14px;margin:3px 14px;padding:14px 12px; }
   .tabbar a.on,body:has(.pts-chip) .tabbar a.on { background:var(--onz-lime);color:var(--onz-navy);border:0;box-shadow:none; }

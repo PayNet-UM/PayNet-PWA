@@ -135,6 +135,9 @@ async function merchantRender(app, [id]) {
     ${deals.length ? `<section class="section"><div class="head"><h2>Live deals</h2></div><div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p></div><a class="btn primary small" href="#/claim-deal/${esc(d.id)}">${icon('qr-code')} Scan to claim</a></div>`).join('')}</div></section>` : ''}
     <div style="position:sticky;bottom:calc(var(--nav-h) + 12px);margin-top:20px"><a class="btn primary block" href="#/explore/${esc(m.id)}">${icon('map')} View nearby shops</a></div>`;
 }
+// The merchant app reuses this page for "Preview as a student".
+export const studentShopRender = (app, args) => merchantRender(app, args);
+export const studentShopMount = (root, app, args) => merchantMount(root, app, args);
 function merchantMount(root, app, [id]) {
   const el = $('#shop-map', root); if (!el) return;
   let map = null;

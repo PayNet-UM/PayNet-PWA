@@ -167,10 +167,13 @@ ok(`student swapped 300 points for voucher ${vcode}`);
 const fresh = async (pg) => pg.addInitScript(() => { if (sessionStorage.getItem('umc-demo-session') === null) sessionStorage.setItem('umc-demo-session', ''); });
 const mer = await ctx.newPage(); watch(mer, 'merchant'); await fresh(mer);
 await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#merchant-wallet .stat', { timeout: 30000 });
+// A shop with no claims yet sees "Start here" with the deal QR as the next step.
+if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here li.is-next'))) throw new Error('Start here should point to the deal QR next');
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-redeem-steps');
+await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-intro');
+if (!(await mer.locator('.mer-qr-manage[href="#/promote"]').count())) throw new Error('Deal QR should point to Promote your shop');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
 await login(counter, adminEmail, ADMIN); await counter.goto(ADMIN + '#/rewards'); await counter.waitForSelector('#vfind');
@@ -184,7 +187,9 @@ const liveId = await mer.evaluate(async () => {
   return D.createDeal(a.ctx,{title:'Campus QR special',benefit:'20% off any coffee',startMin:0,endMin:1440,threshold:60});
 });
 const pointsBeforeScan = await pointsOf(stu);
-await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas');
+// The QR library draws a canvas, then may swap it for an image, so either one counts as the QR showing.
+await mer.goto(BASE + '#/scan/' + liveId);
+await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
 // Feed the actual merchant QR image through the student's camera pipeline.
@@ -198,13 +203,16 @@ await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmati
 if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
 await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
 if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
-await mer.waitForSelector('[data-apply-claim]'); await mer.click('[data-apply-claim]');
+await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `${shots}/m-deal-qr-claim.png` });
+// The claim shows above the QR, so staff see it without scrolling.
+if (!(await mer.evaluate(() => document.querySelector('.mer-claim').getBoundingClientRect().top < document.querySelector('#live-deal-qr').getBoundingClientRect().top))) throw new Error('the new claim should appear above the QR');
+await mer.click('[data-apply-claim]');
 await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
-await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.10994'));
+await mer.click('#locate'); await mer.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
 if (!/Location saved/.test(await mer.textContent('#toast'))) throw new Error('pin not saved');
 const png = fs.readFileSync(new URL('../app/shared/icons/icon-192.png', import.meta.url));
@@ -220,7 +228,25 @@ await mer.fill('#df [name=title]', 'Campus study break'); await mer.fill('#df [n
 await mer.waitForFunction(() => document.querySelector('#deal-preview-title')?.textContent === 'Campus study break' && document.querySelector('#deal-preview-threshold')?.textContent === '45%');
 await mer.screenshot({ path: `${shots}/m-deal-builder.png`, fullPage: true });
 await mer.click('#sheet [data-close]');
+// Promote has two tabs: Live deals ("students earn points") and Voucher program ("students spend points").
+if (!/earn/.test(await mer.textContent('.mer-way.is-deal .mer-way-title')) || !/spend/.test(await mer.textContent('.mer-seg .is-voucher'))) throw new Error('Promote should contrast earning and spending points');
+await mer.click('.mer-seg .is-voucher'); await mer.waitForSelector('#voucher-apply', { state: 'visible' });
+if (!(await mer.isVisible('#seats'))) throw new Error('Café occupancy should stay visible on the voucher tab');
+await mer.screenshot({ path: `${shots}/m-promote-how.png`, fullPage: true });
+await mer.click('#voucher-apply'); await mer.waitForSelector('#vf');
+await mer.fill('#vf [name=offer]', 'RM5 off any meal'); await mer.fill('#vf [name=value]', '5'); await mer.fill('#vf [name=perMonth]', '40');
+await mer.fill('#vf [name=contactPhone]', '012-345 6789'); await mer.click('#vf button');
+await mer.waitForSelector('.mer-voucher-status.is-pending', { timeout: 20000 });
+await mer.screenshot({ path: `${shots}/m-voucher-pending.png`, fullPage: true });
+ok('Promote splits live deals and the voucher program into two tabs, and the merchant applied to the voucher program');
+// Insights switches period and shows the week as a chart.
+await mer.goto(BASE + '#/insights'); await mer.waitForSelector('.mer-chart .bars');
+await mer.click('[data-period="today"]'); await mer.waitForSelector('[data-period="today"][aria-pressed="true"]');
+await mer.click('[data-period="month"]'); await mer.screenshot({ path: `${shots}/m-insights-month.png`, fullPage: true });
+ok('Insights switches between today, 7 and 30 days and charts claims per day');
 await mer.goto(BASE + '#/home'); await mer.setViewportSize({ width: 1360, height: 900 }); await mer.waitForSelector('.mer-actions');
+const sideOrder = await mer.evaluate(() => [...document.querySelectorAll('.tabbar a')].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map((a) => a.dataset.tab));
+if (sideOrder[0] !== 'home' || sideOrder.at(-1) !== 'about') throw new Error('merchant sidebar should start with Home and end with About us: ' + sideOrder.join(', '));
 await mer.screenshot({ path: `${shots}/m-home-desktop.png`, fullPage: true });
 await mer.setViewportSize({ width: 390, height: 844 });
 if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
@@ -296,7 +322,7 @@ await nm.click('#app-form button.primary'); await nm.waitForSelector('#toast.sho
 const noLogo = await nm.textContent('#toast');
 if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caught: ' + noLogo);
 await nm.waitForTimeout(3500);
-await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
+await nm.click('#locate'); await nm.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
 await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
@@ -337,7 +363,16 @@ if (await mpp.locator('script[src*="views/student"], .tabbar').count() !== 0) th
 await mpp.goto(ADMIN + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
 await mpp.waitForSelector('#toast.show'); ok('HEP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
-for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings']) {
+// HEP approves the voucher program application; the merchant sees it on Promote.
+await mpp.goto(ADMIN + '#/vouchers'); await mpp.waitForSelector('.hep-va');
+if ((await mpp.textContent('[data-count="vouchers"]')).trim() !== '1') throw new Error('Voucher program menu should count 1 waiting application');
+await mpp.screenshot({ path: `${shots}/p-vouchers.png`, fullPage: true });
+await mpp.click('[data-va][data-st="approved"]'); await mpp.fill('#vaf [name=note]', 'We’ll call you this week.'); await mpp.click('#vaf button');
+await mpp.waitForSelector('text=No applications waiting.');
+await mer.goto(BASE + '#/promote/vouchers'); await mer.waitForSelector('.mer-voucher-status.is-approved');
+if (!/We’ll call you this week/.test(await mer.textContent('.mer-voucher-status'))) throw new Error('merchant should see the Admin note');
+ok('HEP approved the voucher application with a note, and the merchant sees it');
+for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
   await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }
@@ -391,6 +426,8 @@ const off = await ctx.newPage(); watch(off, 'switches'); await fresh(off); await
 await login(off, adminEmail, ADMIN); await off.waitForSelector('#mpp-rail', { timeout: 30000 });
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 await mer.goto(BASE + '#/home'); await mer.waitForSelector('.mer-home-grid.is-ready');
+await mer.waitForSelector('#merchant-wallet .stat'); await mer.waitForTimeout(500);
+if (await mer.locator('#start-here').count()) throw new Error('Start here should go once a student has claimed a deal');
 await off.fill('#readiness-update [name=message]', 'Review the refreshed counter poster with your team.');
 await off.click('#readiness-update button');
 await mer.waitForSelector('.mer-setup');
