@@ -362,6 +362,24 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     await D.publishDeal(merch, 'legacy_pending');
     eq((await D.approvedDeals(stuA)).some((d) => d.id === 'legacy_pending'), true);
   });
+  const editInput = { title: 'Evening study break', benefit: 'RM2 off any drink', startMin: 18 * 60, endMin: 21 * 60, threshold: 70 };
+  await ok('a merchant edits its own deal', async () => {
+    await D.editDeal(merch, 'legacy_pending', editInput);
+    const d = (await D.myDeals(merch)).find((x) => x.id === 'legacy_pending');
+    eq(d.title, 'Evening study break', 'title'); eq(d.startMin, 18 * 60, 'start'); eq(d.threshold, 70, 'threshold');
+  });
+  await denied('another merchant cannot edit it', () => D.editDeal(merch2, 'legacy_pending', editInput));
+  await denied('an edit cannot set impossible hours', () => D.editDeal(merch, 'legacy_pending', { ...editInput, startMin: 20 * 60, endMin: 19 * 60 }));
+  await denied('an edit cannot move the deal to another shop', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'deals', 'legacy_pending'), { merchantId: 'mer2' }));
+  await denied('another merchant cannot remove it', () => D.removeDeal(merch2, 'legacy_pending'));
+  await ok('a merchant removes its own deal: hidden from its list and from students', async () => {
+    await D.removeDeal(merch, 'legacy_pending');
+    eq((await D.myDeals(merch)).some((x) => x.id === 'legacy_pending'), false, 'merchant list');
+    eq((await D.approvedDeals(stuA)).some((x) => x.id === 'legacy_pending'), false, 'student list');
+  });
+  await denied('a removed deal cannot be resumed', () => D.toggleDeal(merch, 'legacy_pending', true));
+  await denied('a removed deal cannot be edited', () => D.editDeal(merch, 'legacy_pending', editInput));
+  await denied('a removed deal cannot show a QR', () => L.issueDealQR(merch, 'legacy_pending'));
   log('Merchant QR → student claim → merchant discount');
   let qrSession, liveClaim;
   await ok('only the deal owner can issue its short-lived QR', async () => {

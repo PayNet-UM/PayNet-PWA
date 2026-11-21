@@ -703,8 +703,15 @@ export async function createDeal(ctx, d) {
     minSpendCents: 0, limit: 1, status: 'published', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
 }
-export async function myDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid)); }
-export async function approvedDeals(ctx) { return list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published'])); }
+// Removed deals are kept (claims and reports still point to them) but hidden everywhere in the app.
+export async function myDeals(ctx) { return (await list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid))).filter((d) => !d.removed); }
+export async function approvedDeals(ctx) { return (await list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published']))).filter((d) => !d.removed); }
+export async function editDeal(ctx, id, d) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold });
+}
+export async function removeDeal(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { removed: true, enabled: false, removedAt: ctx.sdk.serverTimestamp() });
+}
 export async function publishDeal(ctx, id) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { status: 'published' }); }
 export async function pendingDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'pending')); }
 export async function toggleDeal(ctx, id, enabled) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { enabled }); }

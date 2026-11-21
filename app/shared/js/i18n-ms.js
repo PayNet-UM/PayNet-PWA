@@ -2832,4 +2832,16 @@ For other details,|Untuk butiran lain,
 contact the Admin team|hubungi pasukan Admin
 Students can see your shop once the Admin team has verified it.|Pelajar boleh melihat kedai anda setelah pasukan Admin mengesahkannya.
 Your shop page, as students see it|Halaman kedai anda, seperti yang dilihat pelajar
+What is a deal QR?|Apakah QR tawaran?
+First, create a live deal: a discount for your quiet hours. Its QR then appears here.|Mula-mula, cipta tawaran aktif: diskaun untuk waktu lengang anda. QR-nya kemudian dipaparkan di sini.
+Create your first deal|Cipta tawaran pertama anda
+Create, pause or change your deals in Promote your shop|Cipta, jeda atau ubah tawaran anda dalam Promosikan kedai anda
+Go to Promote your shop|Pergi ke Promosikan kedai anda
+Remove deal|Buang tawaran
+Students won’t see it any more, and it disappears from your list. Claims students already made stay in your Insights.|Pelajar tidak akan melihatnya lagi, dan ia hilang daripada senarai anda. Tuntutan yang telah dibuat pelajar kekal dalam Analisis anda.
+Deal removed.|Tawaran dibuang.
+Deal updated.|Tawaran dikemas kini.
+Change your deal|Ubah tawaran anda
+Edit live deal|Sunting tawaran aktif
+Changes show to students straight away|Perubahan terus dipaparkan kepada pelajar
 `;

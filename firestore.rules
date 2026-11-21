@@ -355,6 +355,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function dealFieldsOk() {
+      return D().title is string && D().title.size() >= 3 && D().title.size() <= 60
+        && D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160
+        && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
+        && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+    }
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status in ['approved', 'published'] || resource.data.merchantId == uid() || isMpp());
       allow create: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'published'
@@ -364,8 +370,13 @@ service cloud.firestore {
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
         && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+      // Removing keeps the deal (past claims and reports point to it) but switches it off for good.
       allow update: if (isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && resource.data.merchantId == uid()
-          && (changed().hasOnly(['enabled']) || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')))
+          && resource.data.get('removed', false) != true
+          && (changed().hasOnly(['enabled'])
+            || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')
+            || (changed().hasOnly(['title', 'benefit', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
+            || (changed().hasOnly(['removed', 'enabled', 'removedAt']) && D().removed == true && D().enabled == false && D().removedAt == request.time)))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 

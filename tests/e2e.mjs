@@ -172,7 +172,8 @@ if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here 
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-tip');
+await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-intro');
+if (!(await mer.locator('.mer-qr-manage[href="#/promote"]').count())) throw new Error('Deal QR should point to Promote your shop');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
 await login(counter, adminEmail, ADMIN); await counter.goto(ADMIN + '#/rewards'); await counter.waitForSelector('#vfind');
@@ -186,7 +187,8 @@ const liveId = await mer.evaluate(async () => {
   return D.createDeal(a.ctx,{title:'Campus QR special',benefit:'20% off any coffee',startMin:0,endMin:1440,threshold:60});
 });
 const pointsBeforeScan = await pointsOf(stu);
-await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas');
+// The QR library draws a canvas, then may swap it for an image, so either one counts as the QR showing.
+await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas, #live-deal-qr img');
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
 // Feed the actual merchant QR image through the student's camera pipeline.

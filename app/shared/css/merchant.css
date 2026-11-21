@@ -775,3 +775,45 @@
 .mer-preview-tip { max-width:430px;margin:16px auto 0;text-align:center;font-size:14px;color:var(--ink-2); }
 .mer-preview-screen { overscroll-behavior:contain;-webkit-overflow-scrolling:touch; }
 .mer-preview-screen:focus-visible { outline:3px solid var(--onz-lime);outline-offset:-3px; }
+
+/* Promote: no repeated name in the banners, 2 columns on desktop. */
+.mer-ways .mer-way { max-width:none; }
+.mer-deals-results { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px;font-size:14px;color:var(--ink-2); }
+.mer-deals-results:empty { display:none; }
+.mer-deals-results > .ic { width:18px;height:18px;color:var(--onz-blue);flex:none; }
+.mer-deals-results a { display:inline-flex;align-items:center;gap:4px;font-weight:700; }
+.mer-deals-results a .ic { width:15px;height:15px; }
+@media (min-width:1001px) {
+  .mer-promote-grid { display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:24px;align-items:start; }
+  .mer-promote-grid > .section { margin-top:0; }
+  .mer-promote-grid .mer-deal-grid { grid-template-columns:1fr; }
+  .mer-promote-grid .card.mer-seats { margin-top:0; }
+  .mer-promote .mer-ways { margin-bottom:24px; }
+}
+
+/* Deal QR: "What is a deal QR?" for merchants who arrive here before Promote your shop. */
+.mer-qr-intro { display:grid;gap:10px;margin:0 0 18px;padding:18px 20px;border-radius:20px;background:radial-gradient(#080d6810 1px,transparent 1px) 0 0/16px 16px,linear-gradient(135deg,#f1fba6 0%,#dcef62 100%);border-bottom:4px solid #b9cc3a;color:var(--onz-navy); }
+.mer-qr-intro h2 { margin:0;font-size:20px; }
+.mer-qr-intro p { margin:0;font-size:15px;color:#2a3000;line-height:1.5; }
+.mer-qr-intro.is-full { padding:22px; }
+.mer-qr-intro.is-full h2 { font-size:clamp(22px,3.4vw,28px); }
+.mer-qr-intro .btn.mer-way-cta { justify-self:start;min-height:48px;margin-top:4px;background:var(--onz-blue);border-color:var(--onz-blue);color:#fff;font-weight:800;box-shadow:0 4px 0 #0b0880; }
+.mer-qr-manage { display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--onz-blue); }
+.mer-qr-manage .ic { width:17px;height:17px;flex:none; }
+.mer-qr-intro.is-mini { padding:0;gap:0;margin-bottom:8px;border-bottom-width:3px; }
+.mer-qr-intro.is-mini > summary { display:flex;align-items:center;gap:8px;min-height:48px;padding:10px 16px;cursor:pointer;list-style:none;font-weight:700; }
+.mer-qr-intro.is-mini > summary::-webkit-details-marker { display:none; }
+.mer-qr-intro.is-mini > summary > span { flex:1; }
+.mer-qr-intro.is-mini > summary .ic { width:18px;height:18px;flex:none; }
+.mer-qr-intro.is-mini > summary > .ic:last-child { transition:transform .2s ease; }
+.mer-qr-intro.is-mini[open] > summary > .ic:last-child { transform:rotate(90deg); }
+.mer-qr-intro.is-mini > p { padding:0 16px 14px; }
+.mer-qr-manage-line { margin:0 0 16px;font-size:14px; }
+@media (max-width:520px) { .mer-qr-intro.is-full .btn { justify-self:stretch; } }
+@media (prefers-reduced-motion:reduce) { .mer-qr-intro.is-mini > summary > .ic:last-child { transition:none; } }
+
+/* Edit / Remove on each deal: quieter than the main actions so they aren't tapped by accident. */
+.mer-deal-manage { display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;padding-top:10px;border-top:1px dashed var(--line);width:100%; }
+.mer-deal-manage .btn { min-height:40px;font-size:13px; }
+.mer-deal-manage .mer-deal-remove { color:var(--red); }
+.mer-deal-manage .mer-deal-remove:hover { background:var(--red-wash); }

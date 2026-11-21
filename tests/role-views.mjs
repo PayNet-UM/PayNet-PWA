@@ -106,7 +106,7 @@ assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In
 console.log('  ✓ While waiting for approval, Start here points to the stall survey'); passed++;
 
 const promotion = await M.routes.promote.render(await makeApp(merchant), []);
-assert.ok(promotion.includes('28 seats free') && promotion.includes('--progress:30%') && promotion.includes('data-step="1"'), 'Café occupancy should use recorded seats');
+assert.ok(!promotion.includes('seats free') && promotion.includes('--progress:30%') && promotion.includes('data-step="1"'), 'Café occupancy should use recorded seats');
 assert.ok(promotion.includes('Live now') && promotion.includes('Paused') && promotion.includes('Ready to publish'), 'Deal states should remain distinct');
 assert.ok(promotion.includes('data-toggle="live" data-en="0"') && promotion.includes('data-toggle="paused" data-en="1"'), 'Pause/resume controls should retain their intent');
 assert.ok(promotion.includes('href="#/scan/live"') && promotion.includes('&lt;Study break&gt;') && !promotion.includes('new-offer'), 'Live-deal QR and escaping should replace standalone offers');

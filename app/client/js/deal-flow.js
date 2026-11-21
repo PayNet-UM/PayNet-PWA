@@ -19,15 +19,24 @@ export async function merchantDealQRRender(app) {
   app._dealQRRows = rows;
   const live = rows.filter((r) => r.status === 'Available'), other = rows.filter((r) => r.status !== 'Available' && r.deal.status !== 'rejected');
   const pts = n(app.rules.liveDealPoints ?? 10);
+  // Merchants often open Deal QR before Promote your shop, so say what it is and where deals are made.
+  // Big when they have no deals yet, a box when none is live, one expandable line while a deal is live.
+  const what = `Each live deal has its own QR code. Show it at your counter. Students scan it with +Onz to claim your discount and earn ${pts} points. Then you tap Apply discount.`;
+  const manage = `<a class="mer-qr-manage" href="#/promote">${icon('badge-percent')} Create, pause or change your deals in Promote your shop ${icon('arrow-right')}</a>`;
+  const intro = !rows.length ? `<section class="mer-qr-intro is-full"><h2>What is a deal QR?</h2><p>${what}</p><p>First, create a live deal: a discount for your quiet hours. Its QR then appears here.</p>
+        <a class="btn mer-way-cta" href="#/promote">${icon('plus')} Create your first deal ${icon('arrow-right')}</a></section>`
+    : !live.length ? `<section class="mer-qr-intro"><h2>What is a deal QR?</h2><p>${what}</p>${manage}</section>`
+    : `<details class="mer-qr-intro is-mini"><summary>${icon('info')}<span>What is a deal QR?</span>${icon('chevron-right')}</summary><p>${what}</p></details><p class="mer-qr-manage-line">${manage}</p>`;
   return `<div class="merchant-page mer-redeem">${merchantHeading('Deal QR', 'Show this at your counter. Students scan it to claim your deal.', 'qr-code')}
-    <p class="mer-qr-tip">${icon('sparkles')}<span>Tell customers: “Scan this to get ${pts} points and the discount.”</span></p>
+    ${intro}
+    ${live.length ? `<p class="mer-qr-tip">${icon('sparkles')}<span>Tell customers: “Scan this to get ${pts} points and the discount.”</span></p>` : ''}
     ${live.length ? `<section class="section"><h2 class="mer-qr-h">Live now</h2><div class="mer-qr-live">${live.map(({ deal }) => `<article class="mer-qr-deal">
         <div><h3 data-no-i18n>${esc(deal.title)}</h3>${deal.benefit ? `<p class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}<p class="mer-qr-hours">${icon('clock')} ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)}</p></div>
         <button class="btn mer-qr-show" data-deal-qr="${esc(deal.id)}">${icon('qr-code')} Show QR to students</button></article>`).join('')}</div></section>`
-      : `<div class="mer-qr-none">${icon('clock')}<div><b>No deal is live right now.</b><p>A deal shows here during its hours, while your café has space.</p></div><a class="btn small" href="#/promote">${icon('plus')} Create a deal</a></div>`}
+      : rows.length ? `<div class="mer-qr-none">${icon('clock')}<div><b>No deal is live right now.</b><p>A deal shows here during its hours, while your café has space.</p></div></div>` : ''}
     ${other.length ? `<section class="section"><h2 class="mer-qr-h">Not live right now</h2><div class="mer-qr-other">${other.map(({ deal, status }) => { const [why, act] = whyNotLive(deal, status);
       return `<article class="card mer-qr-off"><div><h3 data-no-i18n>${esc(deal.title)}</h3><p>${why}</p></div>${act ? `<a class="btn small" href="#/${act[0]}">${act[1]} ${icon('arrow-right')}</a>` : ''}</article>`; }).join('')}</div></section>` : ''}
-    ${!rows.length ? merchantEmpty('qr-code', 'No live deals yet.', 'Create a live deal in Promote your shop to start showing its QR.') : ''}</div>`;
+    </div>`;
 }
 export function merchantDealQRMount(root, app, [requested] = []) {
   let alive = true, stopSheet = () => {};
