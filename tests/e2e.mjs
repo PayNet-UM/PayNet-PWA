@@ -172,7 +172,7 @@ if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here 
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-redeem-steps');
+await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-tip');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
 await login(counter, adminEmail, ADMIN); await counter.goto(ADMIN + '#/rewards'); await counter.waitForSelector('#vfind');
@@ -200,7 +200,10 @@ await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmati
 if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
 await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
 if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
-await mer.waitForSelector('[data-apply-claim]'); await mer.click('[data-apply-claim]');
+await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `${shots}/m-deal-qr-claim.png` });
+// The claim shows above the QR, so staff see it without scrolling.
+if (!(await mer.evaluate(() => document.querySelector('.mer-claim').getBoundingClientRect().top < document.querySelector('#live-deal-qr').getBoundingClientRect().top))) throw new Error('the new claim should appear above the QR');
+await mer.click('[data-apply-claim]');
 await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');

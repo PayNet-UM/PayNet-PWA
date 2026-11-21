@@ -632,3 +632,101 @@
 .mer-start-steps li.is-waiting a { border-style:dashed; }
 .mer-start-steps li.is-waiting .mer-start-num { border-style:dashed; }
 .mer-start-wait { flex:none;padding:3px 10px;border-radius:99px;background:#ffffff26;font-size:12px;font-weight:700;white-space:nowrap; }
+
+/* ---- My shop (verified): profile with tap-to-change logo, map, poster, readiness, then locked details. ---- */
+.mer-upload { display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer; }
+.mer-upload .btn { pointer-events:none; }
+.mer-upload:focus-within .btn { outline:3px solid var(--onz-lime);outline-offset:2px; }
+.mer-upload-name { font-size:14px;color:var(--ink-2);overflow-wrap:anywhere; }
+.mer-upload-field > span:first-child { font-weight:700;font-size:14px; }
+.mer-shop-profile { align-items:center; }
+.mer-shop-profile .merchant-home-status { margin-top:8px;gap:6px; }
+.mer-logo-pick { position:relative;flex:none;cursor:pointer; }
+.mer-logo-pick .logo-preview { width:84px;height:84px;border:3px solid #fff;border-radius:22px;background:#fff;box-shadow:0 4px 0 #d9d2f1; }
+.mer-logo-pick:focus-within .logo-preview { outline:3px solid var(--onz-blue);outline-offset:2px; }
+.mer-logo-edit { position:absolute;right:-6px;bottom:-6px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--onz-blue);color:#fff;border:3px solid #fff; }
+.mer-logo-edit .ic { width:14px;height:14px; }
+.mer-logo-help { display:block;margin-top:8px;font-size:13px;color:var(--ink-2); }
+#logo-save { margin-top:10px; }
+.mer-shop-grid.is-verified { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.mer-shop-grid.is-verified .mer-shop-map { grid-column:1;grid-row:span 2; }
+.mer-shop-grid.is-verified .mer-readiness,.mer-shop-grid.is-verified .mer-shop-details { grid-column:1/-1; }
+.mer-poster-card { display:grid;gap:14px; }
+.mer-poster-card p { margin:0;font-size:15px;color:var(--ink-2); }
+.mer-poster-card .btn { justify-self:start;min-height:48px; }
+.mer-ready-done { padding:0;overflow:hidden; }
+.mer-ready-done > summary { display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;list-style:none; }
+.mer-ready-done > summary::-webkit-details-marker { display:none; }
+.mer-ready-done > summary > span:nth-child(2) { flex:1;display:grid;gap:2px; }
+.mer-ready-done > summary small { color:var(--ink-2);font-size:13px; }
+.mer-ready-done > summary > .ic { width:18px;height:18px;color:var(--ink-3);transition:transform .2s ease; }
+.mer-ready-done[open] > summary > .ic { transform:rotate(90deg); }
+.mer-ready-done > .mer-readiness-content { margin:0 16px 16px; }
+.mer-ready-tick { display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;flex:none; }
+.mer-ready-tick .ic { width:20px;height:20px; }
+.mer-details { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 24px;margin:0; }
+.mer-details > div { display:grid;gap:2px;padding-bottom:12px;border-bottom:1px solid var(--line); }
+.mer-details dt { font-size:13px;color:var(--ink-2); }
+.mer-details dd { margin:0;font-weight:700;color:var(--ink);overflow-wrap:anywhere; }
+.mer-details .qr-thumb { width:96px;height:96px;margin-top:4px;border-radius:12px;border:1px solid var(--line); }
+.mer-details-note { display:flex;gap:8px;align-items:flex-start;margin:16px 0 0;font-size:14px;color:var(--ink-2); }
+.mer-details-note .ic { width:18px;height:18px;flex:none;margin-top:2px;color:var(--onz-blue); }
+@media (max-width:760px) { .mer-shop-grid.is-verified { grid-template-columns:1fr; } .mer-shop-grid.is-verified .mer-shop-map { grid-column:auto;grid-row:auto; } }
+@media (max-width:520px) { .mer-shop-profile .mer-shop-identity > .badge { margin:0; } .mer-poster-card .btn { width:100%;justify-self:stretch; } }
+
+/* ---- Deal QR: counter first. ---- */
+.mer-qr-tip { display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;padding:12px 14px;border-radius:14px;background:var(--blue-wash);color:var(--onz-navy);font-size:15px;font-weight:600; }
+.mer-qr-tip .ic { width:20px;height:20px;flex:none;margin-top:1px;color:var(--onz-blue); }
+.mer-qr-h { font-size:20px;margin:0 0 12px; }
+.mer-qr-live { display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+.mer-qr-deal { display:grid;gap:16px;padding:20px;border-radius:24px;color:#fff;background:radial-gradient(#ffffff1c 1px,transparent 1px) 0 0/16px 16px,linear-gradient(130deg,var(--onz-blue,#2420ff),var(--onz-navy,#080d68));border-bottom:5px solid #0b0880; }
+.mer-qr-deal h3 { margin:0;font-size:24px;color:#fff; }
+.mer-qr-deal .deal-benefit { color:#dfe2ff;font-size:15px;margin-top:4px; }
+.mer-qr-deal .badge.ok { background:#e8ffd0;color:#24520b; }
+.mer-qr-hours { display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:14px;color:#cfd3ff; }
+.mer-qr-hours .ic { width:16px;height:16px; }
+.btn.mer-qr-show { min-height:56px;font-size:17px;font-weight:800;background:var(--onz-lime);border-color:var(--onz-lime);color:var(--onz-navy);box-shadow:0 4px 0 #b7c800; }
+.btn.mer-qr-show .ic { width:22px;height:22px; }
+.mer-qr-none { display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:18px;background:#fff8e6;border:1px solid #f2d59b;color:#6b4a00; }
+.mer-qr-none > .ic { width:24px;height:24px;flex:none; }
+.mer-qr-none > div { flex:1;min-width:200px; }
+.mer-qr-none p { margin:2px 0 0;font-size:14px; }
+.mer-qr-other { display:grid;gap:10px; }
+.card.mer-qr-off { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 18px;border-color:var(--line);border-bottom-width:1px;border-radius:18px; }
+.mer-qr-off h3 { font-size:17px;margin:0; }
+.mer-qr-off p { margin:4px 0 0;font-size:14px;color:var(--ink-2); }
+.mer-qr-off .btn { min-height:44px; }
+/* QR sheet: claims appear above the QR, so staff see them without scrolling. */
+.mer-claims { display:grid;gap:10px;margin-top:16px; }
+.mer-claims:empty { display:none; }
+.deal-counter-claim.mer-claim { padding:14px 16px;border:2px solid #9ccf62;background:#f0fbdf;animation:mer-claim-in .3s ease-out; }
+.mer-claim strong { display:block;font-size:18px; }
+.mer-claim p { margin:2px 0 0;font-size:14px;color:#3f5a1e; }
+.mer-claim-tag { display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#2f6b0f;text-transform:uppercase;letter-spacing:.05em; }
+.mer-claim-tag .ic { width:14px;height:14px; }
+.mer-claim .btn { min-height:52px;padding-inline:20px;font-size:16px; }
+.mer-qr-timer { width:min(300px,100%);height:6px;border-radius:99px;background:var(--line);overflow:hidden; }
+.mer-qr-timer i { display:block;height:100%;background:var(--onz-blue);transition:width 1s linear; }
+.mer-qr-auto { margin:0;text-align:center;font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums; }
+.mer-qr-foot { display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--ink-2); }
+.mer-qr-foot > span { display:inline-flex;align-items:center;gap:6px; }
+.mer-qr-foot .ic { width:16px;height:16px; }
+@keyframes mer-claim-in { from { opacity:0;transform:translateY(-6px); } }
+@media (max-width:520px) { .mer-claim .btn { width:100%; } }
+@media (prefers-reduced-motion:reduce) { .deal-counter-claim.mer-claim { animation:none; } .mer-qr-timer i,.mer-ready-done > summary > .ic { transition:none; } }
+#logo-save[hidden],#pin-save[hidden] { display:none; }
+.merchant-page .card.mer-ready-done { padding:0; }
+/* Hidden file inputs behind the upload buttons: beat the app's full-width input style. */
+.mer-upload,.mer-logo-pick { position:relative; }
+.mer-upload input[type=file],.mer-logo-pick input[type=file] { position:absolute!important;inset:0 auto auto 0;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0;overflow:hidden;clip:rect(0 0 0 0); }
+@media (min-width:761px) {
+  .mer-shop-grid.is-verified { align-items:start; }
+  .mer-shop-grid.is-verified .mer-counter-kit,.mer-shop-grid.is-verified .mer-readiness { grid-column:2; }
+  .mer-shop-grid.is-verified .mer-shop-details { grid-column:1/-1; }
+}
+.mer-shop-side { display:grid;gap:24px;align-content:start; }
+.mer-shop-side > .section { margin:0; }
+@media (min-width:761px) {
+  .mer-shop-grid.is-verified .mer-shop-map { grid-row:auto; }
+  .mer-shop-grid.is-verified .mer-counter-kit,.mer-shop-grid.is-verified .mer-readiness { grid-column:auto; }
+}

@@ -48,15 +48,17 @@ function needVerified(app) {
 // Each step: [icon, title, help, route, done, canDo]. done is true, false, 'waiting' (the Admin team's turn)
 // or 'claims' (ticked in homeMount once claims load). canDo says whether the merchant can act on it right now.
 function startSteps(app, m, deals, liveOn, stall) {
-  const verified = m?.status === 'verified';
+  const verified = m?.status === 'verified', rejected = m?.status === 'rejected', assessed = isCurrentStallSurvey(stall);
+  // Step 1 is everything the app asks for together: shop details (with logo and map pin) and then the required assessment.
+  const apply = !m ? ['store', 'Apply to join +Onz', 'Send your shop details, logo and map pin, then answer the merchant assessment (about 5 minutes).', 'shop', false, true]
+    : rejected ? ['store', 'Update your application', 'The Admin team asked for changes. Fix them and send it again.', 'shop', false, true]
+    : !assessed ? ['list-checks', 'Finish the merchant assessment', 'Your details are sent. Answer 15 questions about your business (about 5 minutes).', 'stall-survey', false, true]
+    : ['store', 'Apply to join +Onz', 'Shop details sent and merchant assessment done.', 'shop', true, true];
   return [
-    m && m.status === 'pending'
-      ? ['clock', 'Wait for the Admin team to verify you', 'You’ve applied. We check your details in 1–2 working days.', 'shop', 'waiting', false]
-      : ['store', m?.status === 'rejected' ? 'Update your application' : 'Apply and get verified', m?.status === 'rejected' ? 'The Admin team asked for changes. Fix them and send it again.' : 'Send your shop details. The Admin team checks them in 1–2 working days.', 'shop', verified, true],
-    // The merchant assessment (stall survey) is required once a merchant has applied; it can be done while waiting for approval.
-    ['list-checks', 'Do the merchant assessment', '15 questions about your business, about 5 minutes. See your stall type and what we can set up for you, free.', 'stall-survey', isCurrentStallSurvey(stall), !!m],
-    ['map-pin', 'Add your logo and map pin', 'So students can recognise your shop and walk straight to it.', 'shop', !!(m?.logo && hasPin(m)), true],
-    ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules), !!m && m.status !== 'rejected'],
+    apply,
+    ['badge-check', 'Get verified by the Admin team', m?.status === 'pending' ? 'You’ve applied. We check your details in 1–2 working days.' : 'The Admin team checks your details in 1–2 working days.', 'shop',
+      verified ? true : m?.status === 'pending' ? 'waiting' : false, false],
+    ['shield-check', 'Get your staff ready', 'A short checklist so everyone at the counter knows what to do.', 'shop/ready', D.merchantReadinessCurrent(m, app.rules), !!m && !rejected],
     ...(liveOn ? [
       ['badge-percent', 'Create your first live deal', 'A discount for your quiet hours. It goes live straight away.', 'promote', deals > 0, verified],
       ['qr-code', 'Show your deal QR at the counter', 'Students scan it to claim the discount. You’ll see the claim on your screen.', 'scan', 'claims', verified && deals > 0],
@@ -202,46 +204,87 @@ const READY_TEXT = {
 const READY_CHECKS = ['Staff confirm every payment in our own banking app or terminal', 'Staff know how to show a live-deal QR and apply the discount',
   'The name on our DuitNow QR matches our registered business name', 'Our +Onz poster is displayed next to our DuitNow QR'];
 let readyLang = 'English';
+// A file picker that looks like a button (the browser's "Choose File / No file chosen" can't be styled or translated).
+// The real input stays in the page, visually hidden, so keyboard, screen readers and tests still use it.
+const uploadField = (name, accept, label, help, { required = false, current = '' } = {}) => `<div class="field mer-upload-field"><span>${label}</span>
+  <label class="mer-upload"><input type="file" name="${name}" accept="${accept}" class="visually-hidden" ${required ? 'required' : ''}>
+    <span class="btn small">${icon('image')} ${current ? 'Choose a new photo' : 'Choose a photo'}</span><span class="mer-upload-name" data-file-name>${current ? esc(current) : 'No photo chosen yet'}</span></label>
+  ${help ? `<small>${help}</small>` : ''}</div>`;
+function mountUploads(root) {
+  $$('.mer-upload input[type=file]', root).forEach((input) => input.addEventListener('change', () => {
+    const name = input.files[0]?.name; const out = $('[data-file-name]', input.closest('.mer-upload'));
+    if (name && out) { out.textContent = name; out.setAttribute('data-no-i18n', ''); }
+  }));
+}
+
 async function shopRender(app) {
   const m = app.merchant; const priv = m ? await D.getMerchantPrivate(app.ctx, app.ctx.uid).catch(() => null) : null;
   const editable = !m || m.status !== 'verified';
   const ready = D.merchantReadinessCurrent(m, app.rules);
   const v = (k) => esc((m && m[k]) || (priv && priv[k]) || '');
   const sel = (name, opts, cur) => `<select name="${name}">${opts.map((o) => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-  return `<div class="merchant-page mer-shop">${merchantHeading('My shop', 'Your campus storefront, all in one place.', 'store', 'Make it yours')}
-    <div class="mer-shop-identity"><span class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</span><div><h2>${esc(m?.name || app.profile.name)}</h2>${m?.location ? `<p>${icon('map-pin')} ${esc(m.location)}</p>` : ''}</div>${statusBadge(m)}</div>
+  const head = `${merchantHeading('My shop', 'How students see your shop, and what you need at the counter.', 'store')}
     ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>The Admin team asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
-    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. The Admin team will check that your QR name matches your business.</span></div>` : ''}
-    <div class="mer-shop-grid ${!editable ? 'is-verified' : ''}"><section class="section mer-business"><div class="head"><h2>${icon('store')} Business details</h2></div>
-    <form id="app-form" class="card stack" ${editable ? '' : 'inert'}>
+    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. The Admin team will check that your QR name matches your business.</span></div>` : ''}`;
+
+  // Not verified yet: the application form, with friendlier upload buttons.
+  if (editable) return `<div class="merchant-page mer-shop">${head}
+    <section class="section mer-business"><div class="head"><h2>${icon('store')} ${m ? 'Your application' : 'Apply to join +Onz'}</h2></div>
+    <form id="app-form" class="card stack">
       <label class="field">Business name, as students know it<input name="name" required minlength="2" maxlength="100" value="${v('name')}"></label>
       <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>The Admin team checks this matches the QR.</small></label>
       <div class="grid-2"><label class="field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
       <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
       <div class="grid-2"><label class="field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
       <div id="event-fields" class="grid-2"><label class="field">Event name<input name="eventName" value="${v('eventName')}"></label><label class="field">Event ends<input name="eventEnd" type="date" value="${v('eventEnd')}"></label></div>
-      ${editable ? logoBlock(m) : ''}
-      ${editable ? pinBlock(m) : ''}
-      <label class="field">Photo of your DuitNow QR<input name="qr" type="file" accept="image/*" ${priv && priv.qrImage ? '' : 'required'}><small>A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.</small></label>
+      ${logoBlock(m)}
+      ${pinBlock(m)}
+      ${uploadField('qr', 'image/*', 'Photo of your DuitNow QR', 'A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.', { required: !(priv && priv.qrImage), current: priv && priv.qrImage ? 'Photo uploaded' : '' })}
       ${priv && safeImg(priv.qrImage) ? `<img class="qr-thumb" style="width:120px;height:120px" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR">` : ''}
-      ${editable ? `<button class="btn primary">${m ? 'Send updated details to the Admin team' : 'Send to the Admin team for verification'}</button>` : '<p class="faint">Verified details are locked. Ask the Admin team if something needs to change.</p>'}
-    </form></section>
-    ${!editable ? `<section class="section"><div class="head"><h2>Logo</h2></div><form id="logo-form" class="card stack">${logoBlock(m, true)}
-      <button class="btn primary" id="logo-save">${icon('image')} Save logo</button></form></section>
-      <section class="section"><div class="head"><h2>Shop location on the map</h2></div><form id="pin-form" class="card stack">${pinBlock(m, true)}
-      <button class="btn primary" id="pin-save">${icon('map-pin')} Save location</button></form></section>` : ''}
-    ${m ? `<section class="section mer-readiness" id="ready" tabindex="-1"><div class="head"><h2>${icon('shield-check')} Staff readiness</h2>${ready ? `<span class="badge ok">${icon('check')}Done ${fmtDate(m.readyAt)}</span>` : ''}</div>
-      ${!ready && app.rules.merchantReadinessUpdate?.message ? `<div class="notice mer-readiness-notice">${icon('bell')}<div><strong>New readiness update</strong><p data-no-i18n>${esc(app.rules.merchantReadinessUpdate.message)}</p></div></div>` : ''}
-      <div class="card stack mer-readiness-content"><div class="chips">${Object.keys(READY_TEXT).map((l) => `<button data-lang="${l}" class="${l === readyLang ? 'on' : ''}">${l}</button>`).join('')}</div>
-        ${READY_TEXT[readyLang].map(([t, d]) => `<div><h3>${esc(t)}</h3><p class="muted" style="font-size:14px;margin-top:4px">${esc(d)}</p></div>`).join('')}
-        <form id="ready-form" data-update="${toMs(app.rules.merchantReadinessUpdate?.publishedAt) || 0}">${READY_CHECKS.map((c) => `<label class="check"><input type="checkbox" required ${ready ? 'checked' : ''}> ${esc(c)}</label>`).join('')}
-          <button class="btn ${ready ? '' : 'primary'}" ${m.status === 'rejected' ? 'disabled' : ''}>${ready ? 'Checklist complete' : 'Confirm my staff are ready'}</button></form></div></section>` : ''}
-    ${m && m.status === 'verified' ? `<section class="section mer-counter-kit"><div class="head"><h2>Poster for your counter</h2></div><div class="card row"><span class="tile-icon">${icon('printer')}</span><div style="flex:1"><p class="muted" style="font-size:14px">Print it and place it next to your DuitNow QR. Students scan it to open your shop in the app.</p></div><a class="btn small" href="#/poster">Open poster ${icon('arrow-right')}</a></div></section>` : ''}</div></div>`;
+      <button class="btn primary">${m ? 'Send updated details to the Admin team' : 'Send to the Admin team for verification'}</button>
+    </form></section></div>`;
+
+  // Verified: the things a merchant changes or uses first, the locked details last as a plain list.
+  const details = [['Business name', m.name], ['Account name on your DuitNow QR', priv?.accountName], ['Type', m.type], ['Category', m.segment],
+    ['Location', m.location], ['Campus zone', m.zone], ['Contact phone', priv?.phone || m.phone], ['Ambassador ID', priv?.ambassadorId || m.ambassadorId],
+    ...(m.eventName ? [['Event', `${m.eventName}${m.eventEnd ? ` · until ${m.eventEnd}` : ''}`]] : [])].filter(([, val]) => val);
+  return `<div class="merchant-page mer-shop">${head}
+    <form id="logo-form" class="mer-shop-identity mer-shop-profile">
+      <label class="mer-logo-pick" title="Change logo"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" aria-label="Change your shop logo">
+        <span class="logo-preview" id="logo-prev">${safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span><span class="mer-logo-edit" aria-hidden="true">${icon('pencil')}</span></label>
+      <input type="hidden" name="logoData" value="">
+      <div><h2 data-no-i18n>${esc(m.name)}</h2>${m.location ? `<p>${icon('map-pin')} <span data-no-i18n>${esc(m.location)}</span></p>` : ''}<div class="row merchant-home-status">${statusBadge(m)}${ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div>
+        <small class="mer-logo-help">Tap your logo to change it. Square works best.</small>
+        <button class="btn small primary" id="logo-save" hidden>${icon('check')} Save new logo</button></div>
+    </form>
+    <div class="mer-shop-grid is-verified">
+      <section class="section mer-shop-map"><div class="head"><h2>${icon('map-pin')} Where students find you</h2></div>
+        <form id="pin-form" class="card stack">${pinBlock(m, true)}<button class="btn primary" id="pin-save" hidden>${icon('map-pin')} Save new location</button></form></section>
+      <div class="mer-shop-side"><section class="section mer-counter-kit"><div class="head"><h2>${icon('printer')} Poster for your counter</h2></div>
+        <div class="card mer-poster-card"><p>Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.</p><a class="btn primary" href="#/poster">${icon('printer')} Open poster</a></div></section>
+      <section class="section mer-readiness" id="ready" tabindex="-1">
+        ${ready ? `<details class="card mer-ready-done"><summary><span class="mer-ready-tick">${icon('check')}</span><span><b>Staff readiness</b><small>Done ${fmtDate(m.readyAt)}. Tap to review the checklist.</small></span>${icon('chevron-right')}</summary>${readinessBody(app, m, ready)}</details>`
+          : `<div class="head"><h2>${icon('shield-check')} Staff readiness</h2><span class="badge warn">To do</span></div>
+        ${app.rules.merchantReadinessUpdate?.message ? `<div class="notice mer-readiness-notice">${icon('bell')}<div><strong>New readiness update</strong><p data-no-i18n>${esc(app.rules.merchantReadinessUpdate.message)}</p></div></div>` : ''}
+        <div class="card">${readinessBody(app, m, ready)}</div>`}
+      </section></div>
+      <section class="section mer-shop-details" id="shop-details"><div class="head"><h2>${icon('store')} Business details</h2><span class="badge grey">${icon('lock')} Locked</span></div>
+        <div class="card"><dl class="mer-details">${details.map(([k, val]) => `<div><dt>${k}</dt><dd data-no-i18n>${esc(val)}</dd></div>`).join('')}
+          ${priv && safeImg(priv.qrImage) ? `<div><dt>Your DuitNow QR</dt><dd><img class="qr-thumb" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR"></dd></div>` : ''}</dl>
+          <p class="mer-details-note">${icon('info')}<span>These were checked by the Admin team, so they’re locked. Need to change something? <a href="#/contact">Contact the Admin team</a>.</span></p></div></section>
+    </div></div>`;
 }
-function logoBlock(m, standalone = false) {
-  return `<div class="field logo-field">${standalone ? '' : '<span>Shop logo</span>'}
+function readinessBody(app, m, ready) {
+  return `<div class="stack mer-readiness-content"><div class="chips">${Object.keys(READY_TEXT).map((l) => `<button type="button" data-lang="${l}" class="${l === readyLang ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${READY_TEXT[readyLang].map(([t, d]) => `<div><h3>${esc(t)}</h3><p class="muted" style="font-size:14px;margin-top:4px">${esc(d)}</p></div>`).join('')}
+    <form id="ready-form" data-update="${toMs(app.rules.merchantReadinessUpdate?.publishedAt) || 0}">${READY_CHECKS.map((c) => `<label class="check"><input type="checkbox" required ${ready ? 'checked' : ''}> ${esc(c)}</label>`).join('')}
+      <button class="btn ${ready ? '' : 'primary'}" ${m.status === 'rejected' ? 'disabled' : ''}>${ready ? 'Checklist complete' : 'Confirm my staff are ready'}</button></form></div>`;
+}
+function logoBlock(m) {
+  return `<div class="field logo-field"><span>Shop logo</span>
     <div class="row" style="gap:14px;flex-wrap:nowrap"><span class="logo-preview" id="logo-prev">${m && safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span>
-      <div style="flex:1"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" ${m && m.logo ? '' : 'required'} aria-label="Upload your logo">
+      <div style="flex:1"><label class="mer-upload"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" ${m && m.logo ? '' : 'required'} aria-label="Upload your logo">
+        <span class="btn small">${icon('image')} ${m && m.logo ? 'Choose a new logo' : 'Choose your logo'}</span></label>
       <small>Square works best. It appears on the map pin and your shop page. Shrunk to 256 px automatically.</small></div></div>
     <input type="hidden" name="logoData" value=""></div>`;
 }
@@ -267,7 +310,7 @@ function mountLogo(root, form) {
   if (!form || !form.logo) return;
   form.logo.onchange = async () => {
     const f = form.logo.files[0]; if (!f) return;
-    try { const data = await prepareLogo(f); form.logoData.value = data; $('#logo-prev', root).innerHTML = `<img src="${data}" alt="Your logo">`; }
+    try { const data = await prepareLogo(f); form.logoData.value = data; $('#logo-prev', root).innerHTML = `<img src="${data}" alt="Your logo">`; const save = $('#logo-save', root); if (save) save.hidden = false; }
     catch (err) { toast(err.message, true); form.logo.value = ''; }
   };
 }
@@ -280,14 +323,16 @@ function pinBlock(m, standalone = false) {
     <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students use this pin for directions to your shop.</small>
     <input type="hidden" name="lat" value="${has ? m.lat : ''}"><input type="hidden" name="lng" value="${has ? m.lng : ''}"></div>`;
 }
-async function mountPin(root, form) {
+async function mountPin(root, form, onMove = () => {}) {
   const el = $('#pin-map', root); if (!el || !form) return null;
   const read = $('#pin-read', root);
+  let placed = false; // the map reports its starting pin too; only count moves after that
   try {
     const picker = await pinPicker(el, { lat: parseFloat(form.lat.value), lng: parseFloat(form.lng.value) }, ({ lat, lng }) => {
       form.lat.value = lat; form.lng.value = lng; read.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      read.classList.toggle('bad-text', !inGeoBox(lat, lng));
+      read.classList.toggle('bad-text', !inGeoBox(lat, lng)); if (placed) onMove();
     });
+    placed = true;
     $('#locate', root).onclick = (e) => busy(e.currentTarget, async () => {
       try { const p = await picker.useMyLocation(); if (!inGeoBox(p.lat, p.lng)) toast('That location is outside the UM campus area. Drag the pin to your shop.', true); else toast(p.accuracy > 50 ? `Pin placed (accurate to about ${p.accuracy} m). Drag it if it’s off.` : 'Pin placed at your location.'); }
       catch (err) { toast(err.message, true); }
@@ -304,26 +349,27 @@ function pinValues(form, required) {
 function shopMount(root, app, [section] = []) {
   if (section === 'ready' && $('#ready', root)) { $('#ready', root).focus({ preventScroll: true }); $('#ready', root).scrollIntoView({ block: 'start' }); }
   const f = $('#app-form', root);
-  const syncEvent = () => { $('#event-fields', root).classList.toggle('hidden', f.segment.value !== 'Temporary student entrepreneur'); };
-  f.segment.onchange = syncEvent; syncEvent();
+  if (f) { const syncEvent = () => { $('#event-fields', root).classList.toggle('hidden', f.segment.value !== 'Temporary student entrepreneur'); };
+    f.segment.onchange = syncEvent; syncEvent(); }
   const pf = $('#pin-form', root); const lf = $('#logo-form', root);
-  mountPin(root, pf || f);
+  mountPin(root, pf || f, () => { const b = $('#pin-save', root); if (b) b.hidden = false; });
   mountLogo(root, lf || f);
+  mountUploads(root);
   if (lf) lf.onsubmit = (e) => {
     e.preventDefault();
     busy($('#logo-save', lf), async () => {
       if (!lf.logoData.value) return toast('Choose a logo image first.', true);
-      try { await D.setMerchantLogo(app.ctx, lf.logoData.value); toast('Logo saved.'); } catch (err) { toast(errText(err), true); }
+      try { await D.setMerchantLogo(app.ctx, lf.logoData.value); toast('Logo saved.'); $('#logo-save', lf).hidden = true; } catch (err) { toast(errText(err), true); }
     });
   };
   if (pf) pf.onsubmit = (e) => {
     e.preventDefault();
     busy($('#pin-save', pf), async () => {
-      try { const { lat, lng } = pinValues(pf, true); await D.setMerchantPin(app.ctx, lat, lng); toast('Location saved. Students can now find you on the map.'); }
+      try { const { lat, lng } = pinValues(pf, true); await D.setMerchantPin(app.ctx, lat, lng); toast('Location saved. Students can now find you on the map.'); $('#pin-save', pf).hidden = true; }
       catch (err) { toast(err.code ? errText(err) : err.message, true); }
     });
   };
-  f.onsubmit = (e) => {
+  if (f) f.onsubmit = (e) => {
     e.preventDefault();
     busy($('button', f), async () => {
       try {

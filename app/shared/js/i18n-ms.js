@@ -2774,4 +2774,47 @@ Partners OK|Setuju dengan rakan kongsi
 Merchant assessment exported.|Penilaian peniaga dieksport.
 Do the merchant assessment|Jawab penilaian peniaga
 15 questions about your business, about 5 minutes. See your stall type and what we can set up for you, free.|15 soalan tentang perniagaan anda, kira-kira 5 minit. Lihat jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
+How students see your shop, and what you need at the counter.|Cara pelajar melihat kedai anda, dan apa yang anda perlukan di kaunter.
+Choose a new photo|Pilih foto baharu
+Choose a photo|Pilih foto
+No photo chosen yet|Belum ada foto dipilih
+Photo uploaded|Foto telah dimuat naik
+Choose a new logo|Pilih logo baharu
+Choose your logo|Pilih logo anda
+Change your shop logo|Tukar logo kedai anda
+Change logo|Tukar logo
+Tap your logo to change it. Square works best.|Ketik logo anda untuk menukarnya. Bentuk segi empat sama paling sesuai.
+Save new logo|Simpan logo baharu
+Where students find you|Di mana pelajar menemui anda
+Save new location|Simpan lokasi baharu
+Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.|Cetak dan letakkannya di sebelah QR DuitNow anda. Pelajar mengimbasnya untuk membuka kedai anda dalam +Onz.
+Business name|Nama perniagaan
+Ambassador ID|ID Duta
+Your DuitNow QR|QR DuitNow anda
+These were checked by the Admin team, so they’re locked. Need to change something?|Butiran ini telah disemak oleh pasukan Admin, jadi ia dikunci. Perlu menukar sesuatu?
+Contact the Admin team|Hubungi pasukan Admin
+Show QR to students|Paparkan QR kepada pelajar
+No deal is live right now.|Tiada tawaran yang aktif sekarang.
+A deal shows here during its hours, while your café has space.|Tawaran dipaparkan di sini dalam waktunya, semasa kafe anda masih ada ruang.
+Not live right now|Tidak aktif sekarang
+Update café occupancy|Kemas kini kepadatan kafe
+Set your seat count first, so students know you have space.|Tetapkan bilangan tempat duduk dahulu, supaya pelajar tahu anda ada ruang.
+You paused this deal.|Anda telah menjeda tawaran ini.
+Resume it|Sambung semula
+Not published yet.|Belum diterbitkan.
+Publish it|Terbitkan
+Create a live deal in Promote your shop to start showing its QR.|Cipta tawaran aktif dalam Promosikan kedai anda untuk mula memaparkan QR-nya.
+New claim|Tuntutan baharu
+Give them the discount, then tap the button.|Berikan diskaun, kemudian ketik butang ini.
+min left|minit lagi
+waiting for a discount|menunggu diskaun
+Your screen stays on while this is open.|Skrin anda kekal hidup semasa ini dibuka.
+This deal isn’t live any more. Close this and check Promote your shop.|Tawaran ini tidak aktif lagi. Tutup ini dan semak Promosikan kedai anda.
+Apply to join +Onz|Mohon untuk menyertai +Onz
+Send your shop details, logo and map pin, then answer the merchant assessment (about 5 minutes).|Hantar butiran kedai, logo dan pin peta anda, kemudian jawab penilaian peniaga (kira-kira 5 minit).
+Finish the merchant assessment|Lengkapkan penilaian peniaga
+Your details are sent. Answer 15 questions about your business (about 5 minutes).|Butiran anda telah dihantar. Jawab 15 soalan tentang perniagaan anda (kira-kira 5 minit).
+Shop details sent and merchant assessment done.|Butiran kedai dihantar dan penilaian peniaga selesai.
+Get verified by the Admin team|Dapatkan pengesahan daripada pasukan Admin
+The Admin team checks your details in 1–2 working days.|Pasukan Admin menyemak butiran anda dalam 1–2 hari bekerja.
 `;
