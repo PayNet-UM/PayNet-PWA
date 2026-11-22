@@ -372,7 +372,7 @@ await mpp.waitForSelector('text=No applications waiting.');
 await mer.goto(BASE + '#/promote/vouchers'); await mer.waitForSelector('.mer-voucher-status.is-approved');
 if (!/We’ll call you this week/.test(await mer.textContent('.mer-voucher-status'))) throw new Error('merchant should see the Admin note');
 ok('HEP approved the voucher application with a note, and the merchant sees it');
-for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
+for (const r of ['overview', 'dashboard', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
   await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }

@@ -803,6 +803,15 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('HEP can’t change the reasons someone gave', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1'), { reasons: ['rewards'] }));
   await denied('HEP can’t delete a closure note', () => mpp.sdk.deleteDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1')));
 
+  log('HEP Dashboard summaries');
+  await seedHistory([['dailyStats/2026-11-20', { day: '2026-11-20', students: { total: 3 } }]]);
+  await ok('HEP can open a daily summary', async () => eq((await mpp.sdk.getDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'))).data().students.total, 3));
+  await denied('a student cannot open a daily summary', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'dailyStats', '2026-11-20')));
+  await ok('HEP can read the daily summaries', () => mpp.sdk.getDocs(mpp.sdk.collection(mpp.db, 'dailyStats')));
+  await denied('a student cannot read the daily summaries', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'dailyStats')));
+  await denied('a merchant cannot read the daily summaries', () => merch.sdk.getDocs(merch.sdk.collection(merch.db, 'dailyStats')));
+  await denied('nobody can write a daily summary from the app, not even HEP', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'), { students: { total: 99999 } }));
+
   log('Student event submissions');
   const eventInput={name:'Student innovation summit',description:'Talks and student projects.',category:'summits',start:'2026-12-01',end:'2026-12-02',time:'10 am – 4 pm',location:'Dewan Tunku Canselor',organiser:'UM Student Society',contactEmail:'organiser@example.test',posterImage:'data:image/png;base64,AAAA'};
   const rawEvent=c=>({...eventInput,uid:c.uid,status:'pending',submittedAt:c.sdk.serverTimestamp()});

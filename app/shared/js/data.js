@@ -792,6 +792,10 @@ export async function saveConfig(ctx, name, data) {
   await b.commit();
 }
 export async function listUsers(ctx) { return list(ctx, 'users'); }
+// HEP Dashboard daily summaries (dailyStats/{YYYY-MM-DD}, written by the server), oldest first, from `fromDay`.
+export async function listDailyStats(ctx, fromDay = '0000-00-00') {
+  return (await list(ctx, 'dailyStats')).filter((r) => (r.day || r.id) >= fromDay).sort((a, b) => (a.day || a.id).localeCompare(b.day || b.id));
+}
 export async function setBlocked(ctx, uid, blocked) {
   const b = ctx.sdk.writeBatch(ctx.db);
   const adminLogId = logAdmin(ctx, b, blocked ? 'block' : 'unblock', uid);

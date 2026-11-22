@@ -1,6 +1,7 @@
 // Demo mode only: builds a small, realistic campus (through the same rules as live) on first open.
 import { stallType as stallTypeOf } from './stall-survey.js';
 import * as D from './data.js';
+import { seedDemoDailyStats } from './demo-stats.js';
 import { sheet, closeSheet, toast, esc, icon, $, $$ } from './ui.js';
 import { mppBootstrapEmails, siteUrls } from './firebase-config.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
@@ -170,7 +171,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
         ...Object.fromEntries(D.FEATURES.map(([key]) => [key, typeof rules.features?.[key] === 'boolean' ? rules.features[key] : true])),
       } }));
     }
-    retireDemoAttendance(sdk); seedDemoFriends(sdk); seedDemoStallSurveys(sdk); return;
+    retireDemoAttendance(sdk); seedDemoFriends(sdk); seedDemoStallSurveys(sdk); seedDemoDailyStats(sdk); return;
   }
   progress('Setting up the demo campus…');
   const as = async (email) => {
@@ -218,7 +219,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
     }
     const admin = await as(MPP_EMAIL);
     await D.adjustPoints(admin, aina.uid, 300, 'Pilot tester welcome bonus');
-    seedDemoFriends(sdk); seedDemoStallSurveys(sdk);
+    seedDemoFriends(sdk); seedDemoStallSurveys(sdk); seedDemoDailyStats(sdk);
   } catch (e) {
     console.error('Demo setup failed', e);
     toast('Demo setup hit a problem: ' + e.message, true);

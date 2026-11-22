@@ -130,6 +130,16 @@ firebase.json        Hosting (client and admin sites), Firestore and emulator se
 - **Admin emails are publicly readable.** They appear in the site's JavaScript and at `/firestore.rules`, so use a shared team mailbox rather than a personal address.
 - **Keep staging free of real personal data.** It has weaker controls and more people with access.
 
+### HEP Dashboard
+The **Dashboard** page shows students, merchants, transactions, campaigns and impact from daily summaries the server rebuilds every 3 hours. Every number is labelled **From the app**, **Entered by HEP** or **Not tracked yet**.
+
+The active-user tiers:
+- **Opened the app**: opened +Onz at least once.
+- **Basic Active User**: did a lesson, the money check or an event submission.
+- **Engaged Active User**: used at least 3 of the 4 areas, Learn, Rewards, Community and Habit (a 7-day streak).
+
+Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/DEPLOY.md#hep-dashboard-summaries-once-per-project).
+
 ### HEP admin safety
 - **Sign-out after 30 idle minutes.** The HEP dashboard signs out after 30 minutes with no clicks, typing or scrolling in any of its tabs, so a shared office computer isn't left open.
 - **Big changes need a recent sign-in.** `firestore.rules` refuses changes to who can use the app, feature switches, points rules, the activation fund, rewards, blocks, point adjustments, matric releases, merchant reviews and welfare reviews unless the admin signed in within the last 12 hours. The dashboard signs the admin out just before that, so they simply sign in again.

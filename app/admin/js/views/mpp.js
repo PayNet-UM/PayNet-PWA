@@ -11,11 +11,12 @@ import { langToggleHTML, tr, getLang } from '../i18n.js';
 import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallResponseRowsV1, stallAnalysisRows, isCurrentStallSurvey } from '../stall-survey.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
+import { dashboardRender } from './dashboard.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
+  ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
   ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
@@ -660,6 +661,7 @@ function settingsMount(root, app) {
 export const routes = {
   points: { title:'Points guide',render:pointsPageRender },
   overview: { title: 'Overview', render: overviewRender, mount: overviewMount },
+  dashboard: { title: 'Dashboard', render: dashboardRender, wide: true },
   merchants: { title: 'Merchants', render: merchantsRender, mount: merchantsMount },
   approvals: { title: 'Approvals', render: approvalsRender, mount: approvalsMount },
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },
