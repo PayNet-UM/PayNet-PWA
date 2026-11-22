@@ -7,7 +7,9 @@ let pass = 0, fail = 0;
 const test = async (name, fn) => { try { await fn(); pass++; console.log('  ✓', name); } catch (e) { fail++; console.log('  ✗', name, '\n   ', e.message); } };
 const rejects = async (p, code) => { try { await p; } catch (e) { assert.ok(e instanceof HttpError, 'not an HttpError: ' + e.message); assert.equal(e.code, code); return; } assert.fail('expected ' + code); };
 
-function setup() {
+// exists: the error the store throws for a code that's already taken. The default is the in-memory shape; the
+// real Firebase Admin SDK throws { code: 6, message: '6 ALREADY_EXISTS: …' }.
+function setup({ exists = () => Object.assign(new Error('exists'), { code: 'already-exists' }) } = {}) {
   let clock = 1_000_000;
   const rows = new Map();
   const deps = {
@@ -22,7 +24,7 @@ function setup() {
     },
     mintToken: async (uid) => `custom-token-for-${uid}`,
     store: {
-      async create(id, data) { if (rows.has(id)) { const e = new Error('exists'); e.code = 'already-exists'; throw e; } rows.set(id, { ...data }); },
+      async create(id, data) { if (rows.has(id)) throw exists(); rows.set(id, { ...data }); },
       async peek(id) { return rows.get(id) || null; },
       async take(id) { const r = rows.get(id) || null; rows.delete(id); return r; },
     },
@@ -64,6 +66,22 @@ await test('a hand-off code can be claimed by only one sign-in', async () => {
   assert.equal((await create(d, { hash, idToken: 'token-aina-verified-xxxxxxxx' })).ok, true, 'same person reloading is fine');
   await rejects(create(d, { hash, idToken: 'token-cara-verified-xxxxxxxx' }), 'used');
   assert.equal(d.rows.get(hash).uid, 'aina');
+});
+const realSdkExists = () => Object.assign(new Error('6 ALREADY_EXISTS: Document already exists: handoffs/x'), { code: 6 });
+await test('with the real Firebase error, the same person reloading the Safari page still continues', async () => {
+  const d = setup({ exists: realSdkExists }); const hash = sha256hex(newSecret());
+  await create(d, { hash, idToken: 'token-aina-verified-xxxxxxxx' });
+  assert.equal((await create(d, { hash, idToken: 'token-aina-verified-xxxxxxxx' })).ok, true);
+});
+await test('with the real Firebase error, a different account gets "already used", not a crash', async () => {
+  const d = setup({ exists: realSdkExists }); const hash = sha256hex(newSecret());
+  await create(d, { hash, idToken: 'token-aina-verified-xxxxxxxx' });
+  await rejects(create(d, { hash, idToken: 'token-cara-verified-xxxxxxxx' }), 'used');
+  assert.equal(d.rows.get(hash).uid, 'aina');
+});
+await test('other store errors are not mistaken for a repeat', async () => {
+  const d = setup(); d.store.create = async () => { throw Object.assign(new Error('14 UNAVAILABLE'), { code: 14 }); };
+  await assert.rejects(create(d, { hash: sha256hex(newSecret()), idToken: 'token-aina-verified-xxxxxxxx' }), /UNAVAILABLE/);
 });
 await test('needs a valid, verified sign-in', async () => {
   const d = setup(); const hash = sha256hex(newSecret());
