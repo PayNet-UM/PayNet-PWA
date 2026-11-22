@@ -17,6 +17,10 @@ export class HttpError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
 
+// A hand-off code used a second time. The Firebase Admin SDK reports this as gRPC code 6 (ALREADY_EXISTS), not the
+// string 'already-exists'; missing that turned a harmless repeat into "Something went wrong".
+export const alreadyExists = (e) => !!e && (e.code === 'already-exists' || e.code === 6 || /ALREADY_EXISTS/.test(String(e.message || '')));
+
 // deps: { verifyIdToken(token) -> {uid, email, email_verified}, store: { create(id, data), peek(id) -> data|null, take(id) -> data|null }, mintToken(uid) -> string, now() }
 export async function create(deps, { hash, idToken }) {
   if (typeof hash !== 'string' || !HASH.test(hash)) throw new HttpError(400, 'bad-request', 'Missing or invalid hand-off code.');
@@ -28,7 +32,7 @@ export async function create(deps, { hash, idToken }) {
   try {
     await deps.store.create(hash, { uid: user.uid, email: user.email || null, createdAt: now, expiresAt: now + TTL_MS });
   } catch (e) {
-    if (e && e.code === 'already-exists') {
+    if (alreadyExists(e)) {
       // The same person reloading the Safari page is fine; a different account can't take over the code.
       const rec = await deps.store.peek(hash);
       if (rec && rec.uid === user.uid) return { ok: true, email: user.email || null };
