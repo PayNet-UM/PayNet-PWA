@@ -458,6 +458,11 @@ service cloud.firestore {
     }
     // Referral leaderboard: the 10 students whose codes were used most. Written only by the server
     // (functions/referrals.js); everyone signed in can see it.
+    // HEP Dashboard daily summaries: counts only, written by the server (functions/daily-stats-load.js).
+    match /dailyStats/{day} {
+      allow read: if isMpp();
+      allow write: if false;
+    }
     match /stats/referrals {
       allow read: if signedIn();
       allow write: if false;

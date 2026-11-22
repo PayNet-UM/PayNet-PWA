@@ -2,6 +2,7 @@
 // them on its own address with no cross-site setup.
 import { onRequest } from 'firebase-functions/v2/https';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
@@ -10,6 +11,8 @@ import { syncLeagueStudent } from './league.js';
 import { awardAppStreak } from './streaks.js';
 import { rebuildReferralBoard } from './referrals.js';
 import { closeAccount, patchFor } from './account.js';
+import { buildDays } from './daily-stats-load.js';
+import { dayOf, addDays } from './daily-stats.js';
 
 initializeApp();
 const db = getFirestore();
@@ -29,6 +32,10 @@ export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: '
   if (before?.college === after?.college && before?.faculty === after?.faculty && before?.role === after?.role) return;
   return syncLeagueStudent(db, event.params.uid);
 });
+// HEP Dashboard: every 3 hours, recount yesterday (to close it) and today so far into dailyStats/{day}.
+// Needs the Cloud Scheduler API on the project (docs/DEPLOY.md). Backfill past days with functions/rebuild-daily.js.
+export const dailyStatsSummary = onSchedule({ schedule: '0 */3 * * *', timeZone: 'Asia/Kuala_Lumpur', region: 'asia-southeast1', retryCount: 2, memory: '512MiB', timeoutSeconds: 300 },
+  async () => { const today = dayOf(Date.now()); await buildDays(db, [addDays(today, -1), today]); });
 // Referral leaderboard (stats/referrals): recounted whenever a referral is added or removed.
 export const referralBoard = onDocumentWritten({ ...leagueOptions, document: 'referrals/{friend}' }, () => rebuildReferralBoard(db));
 

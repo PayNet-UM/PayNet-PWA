@@ -2844,4 +2844,61 @@ Deal updated.|Tawaran dikemas kini.
 Change your deal|Ubah tawaran anda
 Edit live deal|Sunting tawaran aktif
 Changes show to students straight away|Perubahan terus dipaparkan kepada pelajar
+1. Students and engagement|1. Pelajar dan penglibatan
+2. Merchants|2. Peniaga
+3. Commerce and transactions|3. Perdagangan dan transaksi
+4. Campaigns|4. Kempen
+5. Impact|5. Impak
+6. KPI tracking|6. Penjejakan KPI
+Registered students|Pelajar berdaftar
+Basic Active Users, 30 days|Pengguna Aktif Asas, 30 hari
+Engaged Active Users, 30 days|Pengguna Aktif Terlibat, 30 hari
+Daily vs monthly opens|Buka harian berbanding bulanan
+Student activation (ever)|Pengaktifan pelajar (keseluruhan)
+Repeat participation|Penyertaan berulang
+Students who…|Pelajar yang…
+Last 7 days|7 hari lepas
+Last 30 days|30 hari lepas
+Opened the app|Membuka aplikasi
+Opened +Onz at least once|Membuka +Onz sekurang-kurangnya sekali
+Basic Active Users|Pengguna Aktif Asas
+Did a lesson, the money check or an event submission|Membuat pelajaran, semakan wang atau penghantaran acara
+Engaged Active Users|Pengguna Aktif Terlibat
+By residential college|Mengikut kolej kediaman
+By faculty|Mengikut fakulti
+By category|Mengikut kategori
+Payment readiness|Kesediaan pembayaran
+Not set|Belum ditetapkan
+No data yet.|Belum ada data.
+Merchants onboarded|Peniaga yang menyertai
+Merchants assessed|Peniaga dinilai
+Merchant assessments done in the app|Penilaian peniaga dalam aplikasi
+Shop page views|Paparan halaman kedai
+The app doesn’t record views yet|Aplikasi belum merekod paparan
+DuitNow QR transactions this month|Transaksi DuitNow QR bulan ini
+Vouchers claimed|Baucar dituntut
+Gross transaction value|Nilai transaksi kasar
+Needs PayNet or merchant reporting|Memerlukan laporan PayNet atau peniaga
+Bookings and conversion|Tempahan dan penukaran
+Bookings aren’t in +Onz yet|Tempahan belum ada dalam +Onz
+Live-deal QR claims|Tuntutan QR tawaran langsung
+Event submissions|Penghantaran acara
+Student events sent to HEP|Acara pelajar dihantar kepada HEP
+Friends who joined with a referral code|Rakan yang menyertai dengan kod rujukan
+Friend connections|Hubungan rakan
+Accepted friendships|Persahabatan diterima
+Tracking links and KOLs|Pautan penjejakan dan KOL
+Coming in the Initiatives update|Akan datang dalam kemas kini Inisiatif
+Merchants accepting digital payments|Peniaga yang menerima bayaran digital
+Cashless transactions facilitated|Transaksi tanpa tunai yang dibantu
+This month, from PayNet’s count|Bulan ini, daripada kiraan PayNet
+Merchant sales through +Onz|Jualan peniaga melalui +Onz
+Needs merchant reporting|Memerlukan laporan peniaga
+Student gigs and bookings|Gig dan tempahan pelajar
+Planned feature|Ciri yang dirancang
+From the app|Daripada aplikasi
+Entered by HEP|Dimasukkan oleh HEP
+Not tracked yet|Belum dijejak
+The app never handles payments, so purchase amounts come from PayNet or merchants.|Aplikasi tidak mengendalikan bayaran, jadi jumlah pembelian datang daripada PayNet atau peniaga.
+Targets and on-track status for the 9 approved KPIs arrive in the next update.|Sasaran dan status bagi 9 KPI yang diluluskan akan tiba dalam kemas kini seterusnya.
 `;
