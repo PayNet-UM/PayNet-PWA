@@ -221,3 +221,10 @@
 .dash-spark { display:block; color:var(--brand, #2420ff); margin:4px 0; }
 .dash-tiers { margin-top:14px; }
 .dash-break td { padding:6px 8px; }
+
+/* Sidebar menu: scroll up and down only (items nudge right on hover), with a thin scrollbar that suits the blue rail. */
+.mpp .rail nav { overflow-x:hidden; scrollbar-width:thin; scrollbar-color:#ffffff59 transparent; }
+.mpp .rail nav::-webkit-scrollbar { width:6px; height:0; }
+.mpp .rail nav::-webkit-scrollbar-track { background:transparent; }
+.mpp .rail nav::-webkit-scrollbar-thumb { background:#ffffff59; border-radius:99px; }
+.mpp .rail nav::-webkit-scrollbar-button { display:none; }

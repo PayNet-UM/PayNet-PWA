@@ -107,6 +107,12 @@ The **Dashboard** reads daily summaries (`dailyStats/{YYYY-MM-DD}`: counts only,
    ```
 
    Without it, the deploy stops while creating `dailyStatsSummary`. Enable it and re-run the failed job.
+
+   The deploy account also needs permission to create the schedule. Without it, the deploy stops with `lacks IAM permission "cloudscheduler.jobs.update"`. Grant it once, too:
+
+   ```bash
+   gcloud projects add-iam-policy-binding <project> --member=serviceAccount:github-deploy@<project>.iam.gserviceaccount.com --role=roles/cloudscheduler.admin
+   ```
 2. **Backfill past days** once, so the Dashboard shows trends from the first sign-up rather than only from the deploy. An Owner runs this in Cloud Shell, in a checkout of the repo, with `npm ci --prefix functions` done first:
 
    ```bash
