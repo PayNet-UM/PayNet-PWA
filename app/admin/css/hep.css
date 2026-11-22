@@ -228,3 +228,7 @@
 .mpp .rail nav::-webkit-scrollbar-track { background:transparent; }
 .mpp .rail nav::-webkit-scrollbar-thumb { background:#ffffff59; border-radius:99px; }
 .mpp .rail nav::-webkit-scrollbar-button { display:none; }
+.dash-kpis .badge { white-space:nowrap; }
+.dash-kpis td:nth-child(5) { white-space:nowrap; }
+.dash-flags { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.dash-flags svg { width:18px; height:18px; flex-shrink:0; }

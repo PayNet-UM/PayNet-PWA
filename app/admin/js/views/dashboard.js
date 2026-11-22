@@ -1,10 +1,11 @@
 // HEP Dashboard: programme performance from the daily summaries (dailyStats, built by the server every 3 hours,
 // or by Demo mode). Sections follow the team lead's brief; every number says where it comes from.
 import * as D from '../data.js';
-import { esc, icon, n, rm, fmtDateTime } from '../ui.js';
+import { $, esc, icon, n, rm, fmtDateTime, sheet, closeSheet, busy, toast, errText } from '../ui.js';
 import { hepHeading, hepEmpty } from '../hep-ui.js';
 import { addDays, dayOf } from '../daily-stats.js';
 import { STALL_TYPES } from '../stall-survey.js';
+import { KPIS, FIGURE_FIELDS, kpiSettings, kpiActuals, kpiStatus, monthlyTransactions, STATUS_LABEL } from '../kpis.js';
 
 const SOURCES = { app: ['From the app', 'ok'], hep: ['Entered by HEP', ''], none: ['Not tracked yet', 'warn'] };
 const badge = (kind) => `<span class="badge ${SOURCES[kind][1]} dash-source">${SOURCES[kind][0]}</span>`;
@@ -30,7 +31,11 @@ const section = (title, intro, body) => `<section class="card pad-lg dash-sectio
 
 export async function dashboardRender(app) {
   const today = dayOf(Date.now());
-  const [rows, paynet] = await Promise.all([D.listDailyStats(app.ctx, addDays(today, -63)), D.paynetCounts(app.ctx, D.monthKey()).catch(() => [])]);
+  const [rows, paynet, allPaynet, manualRows, savedTargets, savedFigures] = await Promise.all([D.listDailyStats(app.ctx, addDays(today, -63)),
+    D.paynetCounts(app.ctx, D.monthKey()).catch(() => []), D.allPaynetCounts(app.ctx).catch(() => []), D.listManualVolumes(app.ctx).catch(() => []),
+    D.getConfig(app.ctx, 'kpiTargets').catch(() => null), D.getConfig(app.ctx, 'kpiFigures').catch(() => null)]);
+  const settings = kpiSettings(savedTargets || {}), figures = savedFigures || {}, months = monthlyTransactions(allPaynet, manualRows);
+  app._kpi = { settings, figures };
   const head = hepHeading('Dashboard', 'How +Onz is doing: students, merchants, transactions, campaigns and impact. Each number says where it comes from.', 'chart-column');
   if (!rows.length) return head + hepEmpty('No summary yet. It appears within 3 hours of the server update, or straight away after the backfill in docs/DEPLOY.md.', 'chart-column');
   const latest = rows[rows.length - 1], byDay = new Map(rows.map((r) => [r.day, r]));
@@ -47,6 +52,7 @@ export async function dashboardRender(app) {
     </tbody></table></div>`;
 
   return `${head}
+    ${kpiFlags(latest, settings, figures, months)}
     <p class="faint dash-updated">${icon('clock')} Updated every 3 hours. Last update: ${fmtDateTime(latest.generatedAt)}. Figures up to ${esc(latest.day)}.</p>
     ${section('1. Students and engagement', '', `<div class="stats dash-grid">
       ${tile('Registered students', n(s.total), `+${n(s.new7)} in the last 7 days`, 'app', weekly((r) => r.students.total))}
@@ -83,5 +89,58 @@ export async function dashboardRender(app) {
       ${missing('Merchant sales through +Onz', 'Needs merchant reporting')}
       ${missing('Student gigs and bookings', 'Planned feature')}
       </div>`)}
-    ${section('6. KPI tracking', 'Targets and on-track status for the 9 approved KPIs arrive in the next update.', '')}`;
+    ${section('6. KPI tracking', `Programme period ${esc(settings.start)} to ${esc(settings.end)}. Counts are judged against where they should be by today; percentages against the target. Amber below ${n(settings.amberPct)}% of that.`,
+      kpiTable(latest, settings, figures, months) + `<div class="row" style="margin-top:12px;gap:8px"><button class="btn small" id="kpi-targets">${icon('pencil')} Edit targets</button><button class="btn small" id="kpi-figures">${icon('pencil')} Enter figures</button></div>`)}`;
+}
+
+// ------------------------------------------------------------- KPI tracking (section 6)
+const STATUS_CLASS = { on: 'ok', watch: '', behind: 'warn', pending: '', none: '' };
+const fmtKpi = (k, v) => (v == null ? '—' : k.unit === '%' ? `${v}%` : n(v));
+function scored(latest, settings, figures, months) {
+  const actuals = kpiActuals({ latest, figures, months, settings });
+  return KPIS.map((k) => ({ k, a: actuals[k.id], s: kpiStatus(k, actuals[k.id].value, settings) }));
+}
+function kpiFlags(latest, settings, figures, months) {
+  const behind = scored(latest, settings, figures, months).filter((x) => x.s.status === 'behind');
+  return behind.length ? `<div class="notice warn dash-flags">${icon('circle-alert')} <b>Behind target:</b> ${behind.map((x) => esc(x.k.name)).join(', ')}. See section 6 for what to try.</div>` : '';
+}
+function kpiTable(latest, settings, figures, months) {
+  const rows = scored(latest, settings, figures, months).map(({ k, a, s }) => `<tr>
+    <td><b>${esc(k.name)}</b><br><span class="faint">${esc(k.component)}</span></td>
+    <td class="r num"><b>${fmtKpi(k, a.value)}</b>${a.parts.length > 1 ? `<br><span class="faint">${a.parts.map((p) => `${esc(p.label)}: ${n(p.value)}`).join(' · ')}</span>` : ''}${a.pending ? `<br><span class="faint">${esc(a.pending)}</span>` : ''}</td>
+    <td class="r num">${fmtKpi(k, settings.targets[k.id])}</td>
+    <td class="r num">${s.pctOfTarget == null ? '—' : s.pctOfTarget + '%'}${k.type === 'cumulative' && s.expected != null ? `<br><span class="faint">${n(s.expected)} expected by today</span>` : ''}</td>
+    <td><span class="badge ${STATUS_CLASS[s.status]}">${STATUS_LABEL[s.status]}</span></td>
+    <td class="faint">${s.status === 'behind' || s.status === 'watch' ? `<b>Try:</b> ${esc(k.steps)}` : esc(k.measured)}</td></tr>`).join('');
+  return `<div class="table-wrap"><table class="data dash-kpis"><thead><tr><th>KPI</th><th class="r">Actual</th><th class="r">Target</th><th class="r">% of target</th><th>Status</th><th>How it’s measured, or what to try</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function targetsSheet(app) {
+  const s = app._kpi.settings;
+  const el = sheet(`<h2>Edit KPI targets</h2><p class="muted">From the approved KPI sheet. Changes are recorded in the Activity log.</p>
+    <form id="kt" class="stack" style="margin-top:12px"><div class="grid-2"><label class="field">Programme start<input name="start" type="date" required value="${esc(s.start)}"></label>
+      <label class="field">Programme end<input name="end" type="date" required value="${esc(s.end)}"></label></div>
+      <label class="field">Amber below (% of where it should be)<input name="amberPct" type="number" min="1" max="100" required value="${s.amberPct}"></label>
+      ${KPIS.map((k) => `<label class="field">${esc(k.name)}${k.unit ? ' (%)' : ''}<input name="t_${k.id}" type="number" min="0" step="any" required value="${s.targets[k.id]}"></label>`).join('')}
+      <button class="btn primary block">Save targets</button></form>`);
+  $('#kt', el).onsubmit = (e) => { e.preventDefault(); const f = e.target;
+    if (f.end.value < f.start.value) return toast('The end date must be after the start date.', true);
+    busy($('button', f), async () => { try {
+      await D.saveConfig(app.ctx, 'kpiTargets', { start: f.start.value, end: f.end.value, amberPct: Number(f.amberPct.value),
+        targets: Object.fromEntries(KPIS.map((k) => [k.id, Number(f['t_' + k.id].value)])) });
+      closeSheet(); toast('KPI targets saved.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+}
+function figuresSheet(app) {
+  const fig = app._kpi.figures;
+  const el = sheet(`<h2>Enter figures</h2><p class="muted">Numbers the app can’t see. They’re labelled “Entered by HEP” and recorded in the Activity log.</p>
+    <form id="kf" class="stack" style="margin-top:12px">${FIGURE_FIELDS.map(([key, label]) => `<label class="field">${esc(label)}<input name="${key}" type="number" min="0" step="1" value="${fig[key] ?? ''}"></label>`).join('')}
+      <button class="btn primary block">Save figures</button></form>`);
+  $('#kf', el).onsubmit = (e) => { e.preventDefault(); const f = e.target;
+    busy($('button', f), async () => { try {
+      await D.saveConfig(app.ctx, 'kpiFigures', Object.fromEntries(FIGURE_FIELDS.map(([key]) => [key, f[key].value === '' ? null : Math.floor(Number(f[key].value))])));
+      closeSheet(); toast('Figures saved.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+}
+export function dashboardMount(root, app) {
+  const t = $('#kpi-targets', root), f = $('#kpi-figures', root);
+  if (t) t.onclick = () => targetsSheet(app);
+  if (f) f.onclick = () => figuresSheet(app);
 }

@@ -2901,4 +2901,45 @@ Entered by HEP|Dimasukkan oleh HEP
 Not tracked yet|Belum dijejak
 The app never handles payments, so purchase amounts come from PayNet or merchants.|Aplikasi tidak mengendalikan bayaran, jadi jumlah pembelian datang daripada PayNet atau peniaga.
 Targets and on-track status for the 9 approved KPIs arrive in the next update.|Sasaran dan status bagi 9 KPI yang diluluskan akan tiba dalam kemas kini seterusnya.
+Actual|Sebenar
+Target|Sasaran
+% of target|% daripada sasaran
+How it’s measured, or what to try|Cara diukur, atau apa yang boleh dicuba
+On track|Di landasan
+Watch|Pantau
+Behind|Ketinggalan
+Not available yet|Belum tersedia
+No target set|Tiada sasaran ditetapkan
+Edit targets|Ubah sasaran
+Enter figures|Masukkan angka
+Edit KPI targets|Ubah sasaran KPI
+From the approved KPI sheet. Changes are recorded in the Activity log.|Daripada helaian KPI yang diluluskan. Perubahan direkodkan dalam Log aktiviti.
+Programme start|Mula program
+Programme end|Tamat program
+Amber below (% of where it should be)|Kuning di bawah (% daripada sepatutnya)
+Save targets|Simpan sasaran
+KPI targets saved.|Sasaran KPI disimpan.
+Numbers the app can’t see. They’re labelled “Entered by HEP” and recorded in the Activity log.|Angka yang tidak dapat dilihat oleh aplikasi. Ia dilabel “Dimasukkan oleh HEP” dan direkodkan dalam Log aktiviti.
+Save figures|Simpan angka
+Figures saved.|Angka disimpan.
+The end date must be after the start date.|Tarikh tamat mesti selepas tarikh mula.
+Stalls surveyed outside the app|Gerai yang ditinjau di luar aplikasi
+Merchants submitted to PayNet outside the app|Peniaga yang dihantar kepada PayNet di luar aplikasi
+Reach outside the app (circulars, roadshows, KOL and Instagram)|Capaian di luar aplikasi (pekeliling, jelajah, KOL dan Instagram)
+Stalls still taking QR at the end of the campaign|Gerai yang masih menerima QR pada akhir kempen
+Stalls listed (the base for retention)|Gerai yang disenaraikan (asas untuk pengekalan)
+KPI targets|Sasaran KPI
+KPI figures|Angka KPI
+Behind target:|Ketinggalan sasaran:
+Merchants mapped|Peniaga dipetakan
+Merchants listed with PayNet|Peniaga disenaraikan dengan PayNet
+Merchants ready (verified QR)|Peniaga bersedia (QR disahkan)
+Student reach|Capaian pelajar
+Student activation|Pengaktifan pelajar
+Transaction growth (month on month)|Pertumbuhan transaksi (bulan ke bulan)
+Post-campaign retention|Pengekalan selepas kempen
+Qualifying transactions|Transaksi yang layak
+Waiting for a baseline month|Menunggu bulan asas
+Entered by HEP at the end of the campaign|Dimasukkan oleh HEP pada akhir kempen
+No activated students yet|Belum ada pelajar diaktifkan
 `;
