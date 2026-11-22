@@ -11,7 +11,7 @@ import { langToggleHTML, tr, getLang } from '../i18n.js';
 import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallResponseRowsV1, stallAnalysisRows, isCurrentStallSurvey } from '../stall-survey.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
-import { dashboardRender } from './dashboard.js';
+import { dashboardRender, dashboardMount } from './dashboard.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
@@ -661,7 +661,7 @@ function settingsMount(root, app) {
 export const routes = {
   points: { title:'Points guide',render:pointsPageRender },
   overview: { title: 'Overview', render: overviewRender, mount: overviewMount },
-  dashboard: { title: 'Dashboard', render: dashboardRender, wide: true },
+  dashboard: { title: 'Dashboard', render: dashboardRender, mount: dashboardMount, wide: true },
   merchants: { title: 'Merchants', render: merchantsRender, mount: merchantsMount },
   approvals: { title: 'Approvals', render: approvalsRender, mount: approvalsMount },
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },

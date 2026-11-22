@@ -116,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -128,6 +128,11 @@ export async function listAdminLog(ctx, max = 200) {
 }
 const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, label]));
 function configLog(name, data) {
+  if (name === 'kpiTargets') {
+    const t = data.targets || {};
+    return ['kpi-targets', 'KPI targets', `${data.start || ''} to ${data.end || ''}, amber at ${data.amberPct ?? ''}%; ` + Object.entries(t).map(([k, v]) => `${k} ${v}`).join(', ')];
+  }
+  if (name === 'kpiFigures') return ['kpi-figures', 'KPI figures', Object.entries(data).filter(([k]) => k !== 'updatedAt').map(([k, v]) => `${k} ${v}`).join(', ')];
   if (name === 'access') {
     const c = (k) => (data[k] || []).length;
     return ['access', 'Who can use the app', `${c('mppEmails')} Admin team members, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
@@ -848,6 +853,7 @@ export async function savePaynetCounts(ctx, month, rows) {
   await b.commit();
 }
 export async function paynetCounts(ctx, month) { return list(ctx, 'paynetCounts', eq(ctx, 'month', month)); }
+export async function allPaynetCounts(ctx) { return list(ctx, 'paynetCounts'); }
 
 // ------------------------------------------------------------- survey scoring (from the original demo)
 export const SURVEY_KNOWLEDGE = [

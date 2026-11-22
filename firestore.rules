@@ -76,7 +76,7 @@ service cloud.firestore {
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
-                          'event', 'event-delete', 'event-review']
+                          'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;

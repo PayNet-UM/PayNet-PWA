@@ -810,6 +810,17 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('HEP can read the daily summaries', () => mpp.sdk.getDocs(mpp.sdk.collection(mpp.db, 'dailyStats')));
   await denied('a student cannot read the daily summaries', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'dailyStats')));
   await denied('a merchant cannot read the daily summaries', () => merch.sdk.getDocs(merch.sdk.collection(merch.db, 'dailyStats')));
+  await ok('HEP saves KPI targets, and the change is logged', async () => {
+    await D.saveConfig(mpp, 'kpiTargets', { start: '2026-11-11', end: '2026-12-31', amberPct: 90, targets: { reach: 8000 } });
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'kpi-targets'), true);
+  });
+  await ok('HEP enters KPI figures, and the change is logged', async () => {
+    await D.saveConfig(mpp, 'kpiFigures', { mappedOutside: 40, reachExternal: 2000 });
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'kpi-figures'), true);
+  });
+  await denied('a student cannot read KPI targets', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'config', 'kpiTargets')));
+  await denied('a student cannot change KPI figures', () => D.saveConfig(stuA, 'kpiFigures', { reachExternal: 999999 }));
+  await denied('KPI targets cannot be changed without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'config', 'kpiTargets'), { amberPct: 1 }, { merge: true }));
   await denied('nobody can write a daily summary from the app, not even HEP', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'), { students: { total: 99999 } }));
 
   log('Student event submissions');

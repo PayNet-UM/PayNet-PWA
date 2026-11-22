@@ -138,6 +138,13 @@ The active-user tiers:
 - **Basic Active User**: did a lesson, the money check or an event submission.
 - **Engaged Active User**: used at least 3 of the 4 areas, Learn, Rewards, Community and Habit (a 7-day streak).
 
+**KPI tracking** (section 6) scores the 9 approved KPIs, from the team's KPI sheet, in `app/shared/js/kpis.js`:
+- **Counts** are compared with where they should be by today.
+- **Percentages** are compared with the target.
+- Each KPI shows **On track**, **Watch** or **Behind**, and the sheet's "steps to improve" appear when one slips.
+
+HEP edits the targets and the period with **Edit targets**, and adds numbers the app can't see (stalls surveyed outside the app, outside reach, end-of-campaign retention) with **Enter figures**. Both are recorded in the Activity log.
+
 Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/DEPLOY.md#hep-dashboard-summaries-once-per-project).
 
 ### HEP admin safety

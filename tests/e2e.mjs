@@ -446,6 +446,18 @@ await off.goto(ADMIN + '#/activity'); await off.waitForSelector('#view table.dat
 const activity = await off.locator('#view table.data').innerText();
 for (const text of ['Feature switches', 'All off', 'Readiness update', adminEmail]) if (!activity.includes(text)) throw new Error('activity log is missing: ' + text);
 ok('the Activity log lists those changes and the admin who made them');
+await off.goto(ADMIN + '#/dashboard'); await off.waitForSelector('.dash-kpis');
+if (await off.locator('.dash-kpis tbody tr').count() !== 9) throw new Error('expected the 9 approved KPIs');
+await off.click('#kpi-targets'); await off.waitForSelector('#kt');
+await off.fill('#kt [name=t_reach]', '1'); await off.click('#kt button'); await off.waitForSelector('#toast.show');
+await off.waitForSelector('.dash-kpis');
+const reachRow = await off.locator('.dash-kpis tbody tr', { hasText: 'Student reach' }).innerText();
+if (!/On track/.test(reachRow)) throw new Error('a target of 1 should be on track: ' + reachRow);
+await off.click('#kpi-figures'); await off.waitForSelector('#kf');
+await off.fill('#kf [name=retentionStillQr]', '8'); await off.fill('#kf [name=retentionBase]', '10'); await off.click('#kf button'); await off.waitForSelector('#toast.show');
+await off.waitForSelector('.dash-kpis');
+if (!/80%/.test(await off.locator('.dash-kpis tbody tr', { hasText: 'Post-campaign retention' }).innerText())) throw new Error('retention should be 80%');
+ok('the Dashboard scores the 9 KPIs; HEP edited a target and entered figures');
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
