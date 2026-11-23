@@ -79,7 +79,7 @@ service cloud.firestore {
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
                           'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures',
-                          'initiative', 'initiative-delete']
+                          'initiative', 'initiative-delete', 'delete-account']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -604,6 +604,24 @@ service cloud.firestore {
 
     // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
     // anonymous; businesses' closing requests name the business so HEP can close it.
+    // HEP deletes an account: the dashboard writes this request with its activity-log entry, and a server trigger
+    // (hepAccountDeletion) carries it out and saves the result. Never an admin's own account or another admin's.
+    function closingRequest(u) { return 'request_' + u; }
+    match /accountDeletions/{id} {
+      allow read: if isMpp();
+      allow create: if adminChange() && loggedBy(D().logId)
+        && D().keys().hasOnly(['uid', 'role', 'by', 'at', 'logId', 'status', 'confirm'])
+        && D().by == email() && D().at == request.time && D().status == 'pending'
+        && D().uid is string && D().uid != uid()
+        && exists(/databases/$(database)/documents/users/$(D().uid))
+        && D().role == userDoc(D().uid).role
+        && !(userDoc(D().uid).get('email', '') in access().mppEmails) && !(userDoc(D().uid).get('email', '') in bootstrapAdmins())
+        && D().confirm is string
+        && ((D().role == 'student' && D().confirm.size() > 0 && D().confirm == userDoc(D().uid).get('matric', ''))
+          || (D().role == 'merchant' && exists(/databases/$(database)/documents/accountClosures/$(closingRequest(D().uid)))));
+      allow update, delete: if false;
+    }
+
     match /accountClosures/{id} {
       allow read: if isMpp();
       allow update: if isMpp() && changed().hasOnly(['seen', 'status', 'handledBy', 'handledAt'])

@@ -78,6 +78,32 @@ function demoStreakRewards(store,after,plan,time){
 
 // Demo equivalent of the server KK League reconciliation, including old saved
 // demo accounts. Only positive ledger credits count; balances are never used.
+// Demo equivalent of the server trigger that carries out HEP's account deletions (functions/account.js adminDelete).
+// Simplified: it removes the profile, shop and sign-in; the full list of what goes is tested on the server code.
+function runDemoDeletions(docs, writes) {
+  for (const [p, d] of writes) {
+    if (!d || !p.startsWith('accountDeletions/') || d.status !== 'pending') continue;
+    const uid = d.uid, prof = docs.get('users/' + uid);
+    if (prof) {
+      for (const k of [...docs.keys()]) {
+        if (k === 'users/' + uid || k.startsWith('users/' + uid + '/') || ['merchants/', 'merchantPrivate/', 'presence/', 'surveys/', 'voucherApplications/'].some((c) => k === c + uid)) docs.delete(k);
+      }
+      if (prof.matric) docs.delete('matrics/' + prof.matric);
+      if (prof.referralCode) docs.delete('referralCodes/' + prof.referralCode);
+      if (prof.username) docs.delete('usernames/' + prof.username);
+      const req = docs.get('accountClosures/request_' + uid);
+      if (req) docs.set('accountClosures/request_' + uid, { ...req, status: 'done', seen: true, handledBy: d.by, handledAt: d.at });
+      if (d.role === 'student') docs.set('accountClosures/hep_' + randomId(12), { kind: 'deleted', role: 'student', reasons: [], comment: '', byAdmin: d.by,
+        college: prof.college || '', faculty: prof.faculty || '', points: Number(prof.points) || 0, createdAt: d.at, seen: true });
+    }
+    try {
+      const users = JSON.parse(env.storage?.getItem(env.authKey) || '{}');
+      for (const [k, v] of Object.entries(users)) if (v.uid === uid) delete users[k];
+      env.storage?.setItem(env.authKey, JSON.stringify(users));
+    } catch { /* no demo sign-ins stored */ }
+    docs.set(p, { ...d, status: 'done' });
+  }
+}
 function rebuildDemoLeague(docs) {
   if (!docs.has('stats/campus')) return;
   const earned = new Map(), colleges = {}, faculties = {};
@@ -130,6 +156,7 @@ class Store {
   get(path) { const d = this.docs.get(path); return d ? clone(d) : null; }
   apply(writes) {
     for (const [p, d] of writes) { if (d === null) this.docs.delete(p); else this.docs.set(p, clone(d)); }
+    runDemoDeletions(this.docs, writes);
     rebuildDemoLeague(this.docs);
     this.save(); this.notify();
   }

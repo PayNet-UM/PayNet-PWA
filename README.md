@@ -158,6 +158,12 @@ Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/
 - **Why a server list, not Firebase linking:** Firebase allows only one Google account per sign-in. So the student proves they own the other email in a separate Google window, and the server saves it in `emailAliases` (the app can't read or write it) and copies it to the profile as `linkedEmails`, so HEP can search Students by either email.
 - **Signing in with it:** that sign-in has no profile, so the app asks the server, which hands back a one-time sign-in for the real account (like the iPhone hand-off). It only ever leads to a student account, and never takes over an email that has its own +Onz account.
 - **Removing:** students can remove an added email on the same card. Deleting an account frees its emails.
+
+**Deleting accounts** (`functions/account.js`):
+- **Students** delete their own account under **Me > Delete my account**. Their personal data goes straight away, and HEP sees an anonymous note in **Account closures**.
+- **HEP deletes a student** from the **Students** page (**Delete account**), typing the student's matric number to confirm. Useful for a duplicate made with the wrong email.
+- **Businesses** send a closing request instead. HEP settles their vouchers and PayNet listing, then clicks **Delete account** on the request in **Account closures**. Vouchers, claims, visits and the merchant assessment are kept; the profile, listing, deals and sign-in go.
+- **How it's checked:** the dashboard writes `accountDeletions/{id}` with its Activity log entry. The rules only accept it from an admin signed in within 12 hours, never for an admin's own profile, with the right matric number for a student, and with an open closing request for a business. The server trigger `hepAccountDeletion` then carries it out and saves the result, which the dashboard waits for.
 - **Sign-up wording:** the profile form asks students to use the email they'll keep, and offers **I already have an account with another email**.
 - **Already signed in with the wrong email:** that button, or a "matric already has an account" error, removes the new, empty sign-in (only if it has no profile) so the student can sign in with their first email and add this one.
 - **iPhone home-screen app:** adding an email needs Google's pop-up window, so the app asks the student to do it in Safari or Chrome.

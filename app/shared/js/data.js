@@ -116,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'change-faculty': 'Changed a student’s faculty', 'delete-account': 'Deleted an account',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -427,6 +427,28 @@ async function accountApi(path, idToken, body = {}) {
 export const addSignInEmail = (idToken, otherToken) => accountApi('add-email', idToken, { otherToken });
 export const removeSignInEmail = (idToken, email) => accountApi('remove-email', idToken, { email });
 export const signInByEmailAlias = (idToken) => accountApi('alias-sign-in', idToken);
+// HEP deletes an account (firestore.rules accountDeletions; carried out by the server trigger hepAccountDeletion).
+// confirm: the student's matric number as HEP typed it; empty for a business. Returns the request id to watch.
+export async function requestAccountDeletion(ctx, { uid, role, confirm = '', label = '' }) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  // The log keeps no name or matric number, since the point is to remove them.
+  const logId = logAdmin(ctx, b, 'delete-account', uid, role === 'merchant' ? `Business account: ${label}` : 'Student account');
+  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'accountDeletions'));
+  b.set(ref, { uid, role, by: ctx.email, at: ctx.sdk.serverTimestamp(), logId, status: 'pending', confirm: String(confirm) });
+  await b.commit();
+  return ref.id;
+}
+// Resolves with the finished request ({ status: 'done' | 'error', message?, warning? }), or { status: 'slow' } after a minute.
+export function waitForDeletion(ctx, id, ms = 60000) {
+  return new Promise((resolve) => {
+    let stop = () => {};
+    const timer = setTimeout(() => { stop(); resolve({ status: 'slow' }); }, ms);
+    stop = ctx.sdk.onSnapshot(ctx.sdk.doc(ctx.db, 'accountDeletions', id), (s) => {
+      const d = s.exists() ? s.data() : null;
+      if (d && d.status !== 'pending') { clearTimeout(timer); stop(); resolve(d); }
+    }, () => { clearTimeout(timer); resolve({ status: 'slow' }); });
+  });
+}
 export async function listClosures(ctx) {
   return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
 }

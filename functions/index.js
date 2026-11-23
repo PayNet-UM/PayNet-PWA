@@ -1,7 +1,7 @@
 // Kampus Kita+ server functions. Firebase Hosting sends /api/** here (see firebase.json), so the app calls
 // them on its own address with no cross-site setup.
 import { onRequest } from 'firebase-functions/v2/https';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentWritten, onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -10,7 +10,7 @@ import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
 import { awardAppStreak } from './streaks.js';
 import { rebuildReferralBoard } from './referrals.js';
-import { closeAccount, patchFor } from './account.js';
+import { closeAccount, patchFor, adminDelete } from './account.js';
 import { addEmail, aliasSignIn, removeEmail } from './email-alias.js';
 import { buildDays } from './daily-stats-load.js';
 import { dayOf, addDays } from './daily-stats.js';
@@ -132,6 +132,27 @@ const aliasDeps = {
 // Runs as the account named in functions/.env.<project-id> (HANDOFF_SERVICE_ACCOUNT): it needs the
 // "Service Account Token Creator" role to make sign-in tokens. Without the file it runs as the default compute account.
 const runAs = process.env.HANDOFF_SERVICE_ACCOUNT ? { serviceAccount: process.env.HANDOFF_SERVICE_ACCOUNT } : {};
+
+// HEP deletes an account (functions/account.js adminDelete). The rules already checked who asked; this carries it out
+// and saves the result on the request, which the dashboard is watching. No retry: a half-done deletion is reported, not looped.
+export const hepAccountDeletion = onDocumentCreated({ region: 'asia-southeast1', retry: false, maxInstances: 2, timeoutSeconds: 120, document: 'accountDeletions/{id}' },
+  async (event) => {
+    const req = event.data?.data(); if (!req || req.status !== 'pending') return;
+    let result;
+    try {
+      result = await adminDelete({
+        ...accountDeps,
+        updateClosure: async (id, data) => {
+          const ref = db.collection('accountClosures').doc(id);
+          if ((await ref.get()).exists) await ref.update({ ...data, handledAt: Timestamp.fromMillis(data.handledAt) });
+        },
+      }, { uid: req.uid, role: req.role, by: req.by });
+    } catch (e) {
+      console.error(e);
+      result = { status: 'error', message: 'Something went wrong part-way. Try again, or check the account under Students or Merchants.' };
+    }
+    await event.data.ref.update({ ...result, doneAt: FieldValue.serverTimestamp() });
+  });
 
 export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 60, ...runAs }, async (req, res) => {
   res.set('Cache-Control', 'no-store');

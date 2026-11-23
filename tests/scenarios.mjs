@@ -828,6 +828,33 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot add an email to the list themselves', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
   await denied('HEP cannot write the list of added emails either', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
 
+  log('HEP deletes an account');
+  const leaving = await makeCtx({ uid: 'del1', email: 'leaving@siswa.um.edu.my' });
+  await D.createProfile(leaving, { role: 'student', name: 'Leaving Student', matric: 'DEL00001', college: 'KK1', faculty: D.FACULTIES[0] });
+  await seedHistory([
+    ['users/del2', { role: 'merchant', name: 'Closing Owner', email: 'closing@shop.my' }],
+    ['users/del3', { role: 'merchant', name: 'Open Owner', email: 'open@shop.my' }],
+    ['accountClosures/request_del2', { kind: 'request', status: 'open', uid: 'del2', seen: false }],
+    ['users/adm2', { role: 'student', name: 'Admin Who Studies', email: adminEmail, matric: 'ADM00001' }],
+  ]);
+  const delReq = (ctx, over) => ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'accountDeletions', 'manual1'),
+    { uid: 'del1', role: 'student', by: ctx.email, at: ctx.sdk.serverTimestamp(), logId: 'no-such-log', status: 'pending', confirm: 'DEL00001', ...over });
+  await denied('a student cannot delete someone’s account', () => D.requestAccountDeletion(stuA, { uid: 'del1', role: 'student', confirm: 'DEL00001' }));
+  await denied('HEP must type the student’s matric number', () => D.requestAccountDeletion(mpp, { uid: 'del1', role: 'student', confirm: 'DEL00002' }));
+  await denied('HEP cannot delete without an activity-log entry', () => delReq(mpp));
+  await denied('HEP needs a recent sign-in to delete an account', async () => {
+    const staleAdmin = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 13 });
+    await D.requestAccountDeletion(staleAdmin, { uid: 'del1', role: 'student', confirm: 'DEL00001' });
+  });
+  await denied('the account type must match', () => D.requestAccountDeletion(mpp, { uid: 'del1', role: 'merchant' }));
+  await denied('a business without a closing request cannot be deleted', () => D.requestAccountDeletion(mpp, { uid: 'del3', role: 'merchant' }));
+  await denied('an admin’s own profile cannot be deleted here', () => D.requestAccountDeletion(mpp, { uid: 'adm2', role: 'student', confirm: 'ADM00001' }));
+  let delId = '';
+  await ok('HEP deletes a student after typing their matric number', async () => { delId = await D.requestAccountDeletion(mpp, { uid: 'del1', role: 'student', confirm: 'DEL00001' }); });
+  await ok('HEP deletes a business that asked to close', () => D.requestAccountDeletion(mpp, { uid: 'del2', role: 'merchant', label: 'Closing Shop' }));
+  await denied('students cannot see deletion requests', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'accountDeletions')));
+  await denied('nobody can change a deletion request from the app', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountDeletions', delId), { status: 'error' }));
+
   log('Initiatives and KOL tracking');
   const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
   await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {
