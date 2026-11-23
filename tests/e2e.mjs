@@ -460,7 +460,8 @@ await off.waitForSelector('.dash-kpis');
 if (!/80%/.test(await off.locator('.dash-kpis tbody tr', { hasText: 'Post-campaign retention' }).innerText())) throw new Error('retention should be 80%');
 ok('the Dashboard scores the 9 KPIs; HEP edited a target and entered figures');
 // Trends: pick a number and a period, read a day from the tooltip, and see it as a table.
-await off.waitForSelector('#tr-chart svg .trend-line, #tr-chart svg .trend-dot');
+// A flat line has no height, which Playwright counts as hidden, so check the chart is visible and the line exists.
+await off.waitForSelector('#tr-chart svg'); await off.waitForSelector('#tr-chart svg .trend-line, #tr-chart svg .trend-dot', { state: 'attached' });
 await off.selectOption('#tr-metric', 'quizRate'); await off.click('[data-range="all"]');
 if ((await off.textContent('#tr-name')).trim() !== 'Quiz participation rate') throw new Error('the trend should switch metric');
 if (!/%$/.test((await off.textContent('#tr-value')).trim())) throw new Error('the quiz rate should be a percentage: ' + await off.textContent('#tr-value'));
