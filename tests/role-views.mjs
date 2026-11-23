@@ -51,7 +51,7 @@ for (const [role, mod, app, routes] of [
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
       assert.equal(new Set(ids).size, ids.length, `HEP ${route} has duplicate form IDs`);
       const controls = { overview: ['month'], paynet: ['month', 'csv1', 'xlsx1', 'add2', 'xlsx2'], recon: ['month', 'imp', 'exp'],
-        rewards: ['alloc', 'new-rw', 'vfind'], campaigns: ['new'], kpis: ['month', 'kcsv', 'scsv'], people: ['pq', 'pt', 'rel'],
+        rewards: ['alloc', 'new-rw', 'vfind'], campaigns: ['new'], kpis: ['scsv'], people: ['pq', 'pt', 'rel'],
         settings: ['features', 'rules', 'access', 'readiness-update'] }[route] || [];
       for (const id of controls) assert.ok(ids.includes(id), `HEP ${route} lost its ${id} control`);
     }

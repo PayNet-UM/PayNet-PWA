@@ -21,7 +21,8 @@ export function reportSheets({ rows, settings, figures = {}, months = {}, initia
   const tierRow = (label, key) => [label, act.d1?.[key] ?? 0, act.d7?.[key] ?? 0, act.d30?.[key] ?? 0];
   const breakdown = (obj, label = (k) => k) => Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => [label(k), v]);
   const trend = rows.map((r) => [r.day, r.students?.total ?? 0, r.students?.new ?? 0, r.active?.d1?.opened ?? 0, r.active?.d7?.basic ?? 0,
-    r.active?.d7?.engaged ?? 0, r.activation?.ever ?? 0, r.merchants?.verified ?? 0, r.commerce?.vouchersUsed ?? 0, r.commerce?.dealClaims ?? 0]);
+    r.active?.d7?.engaged ?? 0, r.activation?.ever ?? 0, r.merchants?.verified ?? 0, r.commerce?.vouchersUsed ?? 0, r.commerce?.dealClaims ?? 0,
+    r.active?.daysPerWeek ?? '', r.rates?.referral ?? '', r.rates?.quiz ?? '']);
   const ini = initiatives.map((it) => { const x = initiativeImpact(rows, it);
     return [it.name, labels.type?.(it.type) || it.type, it.code, it.start || '', it.end || '', x.viaLink, x.activatedViaLink, x.before ?? '', x.after ?? '', x.extra ?? ''];
   });
@@ -31,7 +32,8 @@ export function reportSheets({ rows, settings, figures = {}, months = {}, initia
     { name: 'Students', columns: [['Students who…', 30], ['Today', 10], ['Last 7 days', 12], ['Last 30 days', 12]],
       rows: [tierRow('Opened the app', 'opened'), tierRow('Basic Active Users', 'basic'), tierRow('Engaged Active Users', 'engaged'), [],
         ['Registered students', st.total ?? 0], ['New in the last 7 days', st.new7 ?? 0], ['Activated (ever)', ac.ever ?? 0],
-        ['Repeat participation (%)', ac.repeatRate ?? 0], ['Daily vs monthly opens (%)', act.stickiness ?? 0], [],
+        ['Repeat participation (%)', ac.repeatRate ?? 0], ['Daily vs monthly opens (%)', act.stickiness ?? 0],
+        ['Days opened per week (average, last 7 days)', act.daysPerWeek ?? ''], ['Referral sign-up rate (%)', latest.rates?.referral ?? ''], ['Quiz participation rate (%)', latest.rates?.quiz ?? ''], [],
         ['By residential college'], ...breakdown(st.byCollege, (k) => (k === 'none' ? 'Not set' : k)), [], ['By faculty'], ...breakdown(st.byFaculty, (k) => (k === 'none' ? 'Not set' : k))] },
     { name: 'Merchants and commerce', columns: [['Measure', 40], ['Value', 14]],
       rows: [['Merchants onboarded', m.total ?? 0], ['Verified merchants', m.verified ?? 0], ['Waiting for review', m.pending ?? 0], ['Merchant assessments done', m.assessed ?? 0], [],
@@ -41,7 +43,7 @@ export function reportSheets({ rows, settings, figures = {}, months = {}, initia
         ['Transactions by month (PayNet + manual)'], ...Object.keys(months).sort().map((mo) => [mo, months[mo]])] },
     { name: 'Initiatives', columns: [['Initiative', 30], ['Type', 18], ['Code', 20], ['Start', 12], ['End', 12], ['Sign-ups via link', 16], ['Of them, active', 14], ['Daily sign-ups before', 18], ['Daily sign-ups after', 18], ['Estimated extra sign-ups', 20]],
       rows: ini.length ? [...ini, [], ['How students heard about +Onz'], ...breakdown(latest.sources?.byHeardFrom, labels.heard || ((k) => k))] : [['No initiatives yet']] },
-    { name: 'Daily trend', columns: [['Day', 12], ['Registered students', 18], ['New sign-ups', 14], ['Opened the app', 14], ['Basic active (7 days)', 18], ['Engaged active (7 days)', 20], ['Activated (ever)', 16], ['Verified merchants', 16], ['Vouchers used', 14], ['Live-deal claims', 14]],
+    { name: 'Daily trend', columns: [['Day', 12], ['Registered students', 18], ['New sign-ups', 14], ['Opened the app', 14], ['Basic active (7 days)', 18], ['Engaged active (7 days)', 20], ['Activated (ever)', 16], ['Verified merchants', 16], ['Vouchers used', 14], ['Live-deal claims', 14], ['Days opened per week', 18], ['Referral sign-up rate (%)', 20], ['Quiz participation (%)', 18]],
       rows: trend },
   ];
 }

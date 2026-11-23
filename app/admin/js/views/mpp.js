@@ -19,7 +19,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['initiatives', 'Initiatives', 'target'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -348,36 +348,22 @@ function rewardsMount(root, app) {
 const campaignsRender=eventAdminRender;
 const campaignsMount=eventAdminMount;
 
-// ------------------------------------------------------------- KPIs and surveys
+// ------------------------------------------------------------- money check results
+// The KPIs moved to the Dashboard (with targets and trends), so this page keeps only the money check results.
 async function kpisRender(app) {
-  const [users, merchants, surveys, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.listSurveys(app.ctx), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
+  const [users, surveys] = await Promise.all([D.listUsers(app.ctx), D.listSurveys(app.ctx)]);
   app._sv = { surveys, users };
-  const students = users.filter((u) => u.role === 'student');
-  const verified = merchants.filter((m) => m.status === 'verified'), ready = verified.filter((m) => D.merchantReadinessCurrent(m, app.rules));
-  const sStu = surveys.filter((s) => s.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((s, x) => s + x.knowledge, 0) / sStu.length) : 0;
-  const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((s) => s.grade === g).length, surveys.filter((s) => s.role === 'merchant' && s.grade === g).length]);
-  const kpi = [
-    ['Eligible merchants onboarded', n(verified.length), 'Verified merchants on the PayNet list'],
-    ['Merchant readiness', verified.length ? Math.round((ready.length / verified.length) * 100) + '%' : '—', `${ready.length} of ${verified.length} finished the staff checklist`],
-    ['Transaction frequency', n(counts.reduce((s, c) => s + c.count, 0)), `DuitNow QR transactions PayNet counted at listed merchants in ${monthLabel(month)} (import on Activity check)`],
-    ['Students enrolled', n(students.length), 'Registered student accounts'],
-    ['Financial capability', sStu.length ? avgK + '%' : '—', `Average knowledge score across ${sStu.length} student money checks`],
-    ['Referral sign-ups', n(refs.length), 'Referral codes linked to student accounts'],
-    ['Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), `${rm(vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + v.valueCents, 0))} paid out`],
-  ];
-  return `${hepHeading('KPIs and surveys', 'The solution map’s KPIs, calculated live from app records.', 'chart-column', monthPicker())}
-    <div class="stats" style="margin-bottom:22px">${hepMetric('Students enrolled', n(students.length), 'users', 'violet')}${hepMetric('Merchant readiness', verified.length ? Math.round(ready.length / verified.length * 100) + '%' : '—', 'shield-check', 'lime')}${hepMetric('Referral sign-ups', n(refs.length), 'user-plus', 'peach')}${hepMetric('Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), 'gift', 'sky')}</div>
-    <section class="card pad-lg"><div class="table-wrap"><table class="data kpi-table"><thead><tr><th>KPI</th><th class="r">Value</th><th>How it’s measured</th></tr></thead><tbody>${kpi.map(([k, v, h]) => `<tr><td>${k}</td><td class="r num" style="font-size:18px;font-weight:800">${v}</td><td class="faint">${h}</td></tr>`).join('')}</tbody></table></div>
-      <div class="row end" style="margin-top:10px"><button class="btn small" id="kcsv">${icon('download')} Export KPIs</button></div></section>
-    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Money check results</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
+  const sStu = surveys.filter((x) => x.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((a, x) => a + x.knowledge, 0) / sStu.length) : 0;
+  const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((x) => x.grade === g).length, surveys.filter((x) => x.role === 'merchant' && x.grade === g).length]);
+  return `${hepHeading('Money check results', 'How students and merchants did on the money check. Programme KPIs, targets and trends are on the Dashboard.', 'piggy-bank')}
+    <div class="stats" style="margin-bottom:22px">${hepMetric('Students who did the money check', n(sStu.length), 'users', 'violet')}${hepMetric('Average knowledge score', sStu.length ? avgK + '%' : '—', 'graduation-cap', 'lime')}</div>
+    <section class="card pad-lg"><div class="row between"><h2>Results by grade</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
       <div class="table-wrap"><table class="data" style="margin-top:10px"><thead><tr><th>Grade</th><th class="r">Students</th><th class="r">Merchants</th><th>Suggested support</th></tr></thead><tbody>
-      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></div></section>`;
+      ${grades.map(([g, st, m]) => `<tr><td><b>${g}</b></td><td class="r num">${st}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function kpisMount(root, app) {
-  bindMonth(root, app);
-  $('#kcsv', root).onclick = () => downloadCSV(`KPIs-UM-${month}.csv`, [['KPI', 'Value', 'Measure'], ...$$('.kpi-table tbody tr', root).map((tr) => $$('td', tr).map((td) => td.textContent))]);
   $('#scsv', root).onclick = () => downloadCSV('Money-check-responses.csv', [['Role', 'Name', 'Grade', 'Score', 'Knowledge', 'Digital', 'Completed'],
-    ...app._sv.surveys.map((s) => [s.role, app._sv.users.find((u) => u.id === s.id)?.name || '', s.grade, s.score, s.knowledge, s.digital, s.at ? new Date(toMs(s.at)).toISOString() : ''])]);
+    ...app._sv.surveys.map((x) => [x.role, app._sv.users.find((u) => u.id === x.id)?.name || '', x.grade, x.score, x.knowledge, x.digital, x.at ? new Date(toMs(x.at)).toISOString() : ''])]);
 }
 
 // ------------------------------------------------------------- merchant assessment, the "stall survey" (app/shared/js/stall-survey.js)
@@ -712,7 +698,7 @@ export const routes = {
   recon: { title: 'Reconciliation', render: reconRender, mount: reconMount },
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
   campaigns: { title: 'Campus events', render: campaignsRender, mount: campaignsMount },
-  kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
+  kpis: { title: 'Money check results', render: kpisRender, mount: kpisMount },
   'stall-survey': { title: 'Merchant assessment', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
   feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
   vouchers: { title: 'Voucher program', render: vouchersRender, mount: vouchersMount, wide: true },

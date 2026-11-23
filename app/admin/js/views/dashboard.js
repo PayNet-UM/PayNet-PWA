@@ -1,13 +1,14 @@
 // HEP Dashboard: programme performance from the daily summaries (dailyStats, built by the server every 3 hours,
 // or by Demo mode). Sections follow the team lead's brief; every number says where it comes from.
 import * as D from '../data.js';
-import { $, esc, icon, n, rm, fmtDateTime, sheet, closeSheet, busy, toast, errText, loadExcel, downloadBlob } from '../ui.js';
+import { $, $$, esc, icon, n, rm, fmtDateTime, sheet, closeSheet, busy, toast, errText, loadExcel, downloadBlob } from '../ui.js';
 import { reportSheets } from '../report.js';
 import { INITIATIVE_TYPES, HEARD_FROM } from '../initiatives.js';
 import { hepHeading, hepEmpty } from '../hep-ui.js';
 import { addDays, dayOf } from '../daily-stats.js';
 import { STALL_TYPES } from '../stall-survey.js';
 import { KPIS, FIGURE_FIELDS, kpiSettings, kpiActuals, kpiStatus, monthlyTransactions, STATUS_LABEL } from '../kpis.js';
+import { TREND_METRICS, TREND_RANGES, series, rangeDays, periodChange, periodValue, fmtValue, drawTrend } from '../trend-chart.js';
 
 const SOURCES = { app: ['From the app', 'ok'], hep: ['Entered by HEP', ''], none: ['Not tracked yet', 'warn'] };
 const badge = (kind) => `<span class="badge ${SOURCES[kind][1]} dash-source">${SOURCES[kind][0]}</span>`;
@@ -33,7 +34,7 @@ const section = (title, intro, body) => `<section class="card pad-lg dash-sectio
 
 export async function dashboardRender(app) {
   const today = dayOf(Date.now());
-  const [rows, paynet, allPaynet, manualRows, savedTargets, savedFigures] = await Promise.all([D.listDailyStats(app.ctx, addDays(today, -63)),
+  const [rows, paynet, allPaynet, manualRows, savedTargets, savedFigures] = await Promise.all([D.listDailyStats(app.ctx),
     D.paynetCounts(app.ctx, D.monthKey()).catch(() => []), D.allPaynetCounts(app.ctx).catch(() => []), D.listManualVolumes(app.ctx).catch(() => []),
     D.getConfig(app.ctx, 'kpiTargets').catch(() => null), D.getConfig(app.ctx, 'kpiFigures').catch(() => null)]);
   const settings = kpiSettings(savedTargets || {}), figures = savedFigures || {}, months = monthlyTransactions(allPaynet, manualRows);
@@ -59,6 +60,7 @@ export async function dashboardRender(app) {
   return `${head}
     ${kpiFlags(latest, settings, figures, months)}
     <p class="faint dash-updated">${icon('clock')} Updated every 3 hours. Last update: ${fmtDateTime(latest.generatedAt)}. Figures up to ${esc(latest.day)}.</p>
+    ${section('Trends', 'Pick a number to see how it changed day by day. Hover over the line, or use the arrow keys, to read each day.', trendsHTML())}
     ${section('1. Students and engagement', '', `<div class="stats dash-grid">
       ${tile('Registered students', n(s.total), `+${n(s.new7)} in the last 7 days`, 'app', weekly((r) => r.students.total))}
       ${tile('Basic Active Users, 30 days', n(a.d30.basic), `${n(a.d7.basic)} in the last 7 days`, 'app', weekly((r) => r.active.d7.basic))}
@@ -66,6 +68,8 @@ export async function dashboardRender(app) {
       ${tile('Daily vs monthly opens', `${a.stickiness}%`, 'Students opening today ÷ in the last 30 days', 'app', weekly((r) => r.active.stickiness))}
       ${tile('Student activation (ever)', n(act.ever), 'Basic Active Users so far (KPI target 4,000)', 'app', weekly((r) => r.activation.ever))}
       ${tile('Repeat participation', `${act.repeatRate}%`, `${n(act.repeat)} came back on another day (KPI target 55%)`, 'app', weekly((r) => r.activation.repeatRate))}
+      ${tile('Days opened per week', a.daysPerWeek == null ? '—' : fmtValue(a.daysPerWeek, 'days'), 'Average over the last 7 days, among students who opened the app', 'app', weekly((r) => r.active.daysPerWeek))}
+      ${tile('Quiz participation rate', latest.rates ? `${latest.rates.quiz}%` : '—', latest.rates ? `${n(latest.rates.learners)} students did a lesson quiz or the money check` : 'Shown after the next update', 'app', weekly((r) => r.rates?.quiz))}
       </div>${tiers}
       <div class="grid-2" style="margin-top:14px"><div><h3>By residential college</h3>${top(s.byCollege)}</div><div><h3>By faculty</h3>${top(s.byFaculty)}</div></div>`)}
     ${section('2. Merchants', '', `<div class="stats dash-grid">
@@ -85,6 +89,7 @@ export async function dashboardRender(app) {
       ${tile('Live-deal QR claims', n(c.dealClaims), `${n(c.dealClaimsToday)} today`, 'app', weekly((r) => r.commerce.dealClaims))}
       ${tile('Event submissions', n(com.eventSubmissions), 'Student events sent to HEP', 'app', weekly((r) => r.community.eventSubmissions))}
       ${tile('Referral sign-ups', n(com.referrals), 'Friends who joined with a referral code', 'app', weekly((r) => r.community.referrals))}
+      ${tile('Referral sign-up rate', latest.rates ? `${latest.rates.referral}%` : '—', 'Share of all students who joined with a referral code', 'app', weekly((r) => r.rates?.referral))}
       ${tile('Friend connections', n(com.friendships), 'Accepted friendships', 'app', weekly((r) => r.community.friendships))}
       ${tile('Sign-ups through tracking links', n(Object.values(latest.sources?.bySource || {}).reduce((a, b) => a + b, 0)), '<a href="#/initiatives">See each KOL and event</a>', 'app')}
       </div>`)}
@@ -96,6 +101,49 @@ export async function dashboardRender(app) {
       </div>`)}
     ${section('6. KPI tracking', `Programme period ${esc(settings.start)} to ${esc(settings.end)}. Counts are judged against where they should be by today; percentages against the target. Amber below ${n(settings.amberPct)}% of that.`,
       kpiTable(latest, settings, figures, months) + `<div class="row" style="margin-top:12px;gap:8px"><button class="btn small" id="kpi-targets">${icon('pencil')} Edit targets</button><button class="btn small" id="kpi-figures">${icon('pencil')} Enter figures</button></div>`)}`;
+}
+
+// ------------------------------------------------------------- Trends (app/shared/js/trend-chart.js)
+const TREND_KEY = 'onz-dash-trend';
+const trendState = () => { try { return { metric: 'students', range: 'programme', ...JSON.parse(localStorage.getItem(TREND_KEY) || '{}') }; } catch { return { metric: 'students', range: 'programme' }; } };
+function trendsHTML() {
+  const st = trendState();
+  return `<div class="trend-controls no-print"><label class="field">Number<select id="tr-metric">${TREND_METRICS.map((m) => `<option value="${m.id}" ${m.id === st.metric ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></label>
+    <div class="trend-ranges" role="group" aria-label="Period">${TREND_RANGES.map(([k, label]) => `<button type="button" class="btn small ${k === st.range ? 'primary' : 'ghost'}" data-range="${k}" aria-pressed="${k === st.range}">${esc(label)}</button>`).join('')}</div></div>
+    <div class="trend-head"><span class="trend-name" id="tr-name"></span><b class="num" id="tr-value"></b><span class="trend-of" id="tr-of"></span><span class="faint" id="tr-change"></span></div>
+    <div class="trend-chart" id="tr-chart"></div>
+    <details class="trend-table no-print"><summary>Show as table</summary><div class="table-wrap" id="tr-table"></div></details>`;
+}
+function mountTrends(root, app) {
+  const host = $('#tr-chart', root); if (!host) return;
+  const { rows, settings } = app._dash; const latest = rows[rows.length - 1];
+  const draw = () => {
+    const st = trendState(); const metric = TREND_METRICS.find((m) => m.id === st.metric) || TREND_METRICS[0];
+    const { from, to } = rangeDays(st.range, rows, latest.day, settings.start);
+    const pts = series(rows, metric, from, to);
+    const ch = periodChange(rows, metric, from, to);
+    $('#tr-name', root).textContent = metric.label;
+    // Per-day counts show the period's total, day-to-day figures their daily average, the rest today's value.
+    $('#tr-value', root).textContent = fmtValue(periodValue(rows, metric, from, to), metric.unit);
+    $('#tr-of', root).textContent = metric.agg === 'sum' ? 'in this period' : metric.agg === 'avg' ? 'a day on average' : 'now';
+    $('#tr-change', root).textContent = !ch ? 'No earlier period to compare yet'
+      : `${ch.diff > 0 ? '▲ +' : ch.diff < 0 ? '▼ ' : ''}${ch.kind === 'pct' ? ch.diff + '%' : ch.kind === 'pts' ? ch.diff + ' pts'
+        : metric.unit === 'days' ? `${ch.diff} days` : fmtValue(ch.diff, '')} vs the previous ${ch.days} days`;
+    drawTrend(host, pts, metric);
+    $('#tr-table', root).innerHTML = `<table class="data"><thead><tr><th>Day</th><th class="r">${esc(metric.label)}</th></tr></thead><tbody>${pts.slice().reverse()
+      .map((p) => `<tr><td>${esc(p.day)}</td><td class="r num">${esc(fmtValue(p.value, metric.unit))}</td></tr>`).join('')}</tbody></table>`;
+  };
+  const save = (patch) => { try { localStorage.setItem(TREND_KEY, JSON.stringify({ ...trendState(), ...patch })); } catch { /* not saved: still works */ } };
+  $('#tr-metric', root).onchange = (e) => { save({ metric: e.target.value }); draw(); };
+  $$('[data-range]', root).forEach((b) => { b.onclick = () => {
+    save({ range: b.dataset.range });
+    $$('[data-range]', root).forEach((x) => { const on = x === b; x.classList.toggle('primary', on); x.classList.toggle('ghost', !on); x.setAttribute('aria-pressed', String(on)); });
+    draw();
+  }; });
+  draw();
+  // Redraw at the new width when the window or sidebar changes size.
+  let w = host.clientWidth;
+  if (typeof ResizeObserver === 'function') { const ro = new ResizeObserver(() => { if (Math.abs(host.clientWidth - w) > 8) { w = host.clientWidth; draw(); } }); ro.observe(host); return () => ro.disconnect(); }
 }
 
 // ------------------------------------------------------------- KPI tracking (section 6)
@@ -145,12 +193,14 @@ function figuresSheet(app) {
       closeSheet(); toast('Figures saved.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
 }
 export function dashboardMount(root, app) {
+  const stopTrends = mountTrends(root, app);
   const x = $('#dash-xlsx', root), p = $('#dash-print', root);
   if (x) x.onclick = (e) => busy(e.currentTarget, () => downloadReport(app));
   if (p) p.onclick = () => window.print();
   const t = $('#kpi-targets', root), f = $('#kpi-figures', root);
   if (t) t.onclick = () => targetsSheet(app);
   if (f) f.onclick = () => figuresSheet(app);
+  return stopTrends; // the admin site calls this when leaving the page
 }
 
 // Excel report for PayNet and the team: counts only, one sheet per area (app/shared/js/report.js).

@@ -9,6 +9,9 @@
 //      learn (lesson or money check), rewards (voucher or live-deal claim),
 //      community (friend added, referral, event submission), habit (reached a 7-day app streak).
 // Student activation (KPI) counts Basic Active Users ever; repeat participation = basic actions on 2+ different days.
+// Rates (team request, 24 Nov 2026): referral sign-up rate = students who joined with a referral ÷ all students;
+// quiz participation = students who did a lesson or the money check ÷ all students; days opened per week = the
+// average number of days in the last 7 that a student opened the app, among students who opened it at least once.
 
 export const DAY_MS = 86400000;
 const MYT_MS = 8 * 3600000;
@@ -76,6 +79,11 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
     return { opened, basic, engaged };
   };
   const d1 = tiers(1), d7 = tiers(7), d30 = tiers(30);
+  const pct = (part, whole) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
+  let openDays7 = 0;
+  for (const uid of studentIds) openDays7 += [...(opens.get(uid) || [])].filter((d) => d >= windowStart(7) && d <= day).length;
+  const referred = new Set((input.referrals || []).filter((r) => upTo(r.createdAt) && studentIds.has(r.uid)).map((r) => r.uid)).size;
+  const learners = [...studentIds].filter((uid) => (acts.get(uid) || []).some((a) => a.area === 'learn')).length;
 
   let activatedEver = 0, repeat = 0;
   const sourceOf = new Map(students.map((u) => [u.id, u.source])), activatedBySource = {};
@@ -102,7 +110,9 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
     day,
     students: { total: students.length, new: students.filter((u) => dayOf(ms(u.createdAt)) === day).length,
       new7: students.filter((u) => dayOf(ms(u.createdAt)) >= windowStart(7)).length, byCollege, byFaculty },
-    active: { d1, d7, d30, stickiness: d30.opened ? Math.round((d1.opened / d30.opened) * 1000) / 10 : 0 },
+    active: { d1, d7, d30, stickiness: d30.opened ? Math.round((d1.opened / d30.opened) * 1000) / 10 : 0,
+      daysPerWeek: d7.opened ? Math.round((openDays7 / d7.opened) * 10) / 10 : 0 },
+    rates: { referral: pct(referred, studentIds.size), referred, quiz: pct(learners, studentIds.size), learners },
     activation: { ever: activatedEver, repeat, repeatRate: activatedEver ? Math.round((repeat / activatedEver) * 1000) / 10 : 0 },
     merchants: { total: merchants.length, verified: merchants.filter((m) => m.status === 'verified').length,
       pending: merchants.filter((m) => m.status === 'pending').length, byType, assessed: surveys.length, digitalMix },

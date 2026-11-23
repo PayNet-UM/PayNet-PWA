@@ -399,8 +399,9 @@ if (!/opening hours to shop pages/.test(await fbp.textContent('#fb-list .fb-repl
 await fbp.waitForFunction(() => !document.querySelector('#avatar.has-dot')); await fbp.screenshot({ path: `${shots}/f-student-reply.png`, fullPage: true });
 await fbp.close();
 ok('HEP replied to the feedback; the student saw a dot, "1 new reply" and the answer in the app');
-const ci = (await mpp.goto(ADMIN + '#/kpis'), await mpp.waitForTimeout(900), (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/));
-ok('all HEP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
+await mpp.goto(ADMIN + '#/kpis'); await mpp.waitForSelector('#scsv');
+if (/Transaction frequency/.test(await mpp.textContent('#view'))) throw new Error('transaction frequency should be gone');
+ok('all HEP screens rendered; Money check results no longer shows transaction frequency');
 const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(ADMIN + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
 await dl.saveAs(`${shots}/Lampiran1.xlsx`); ok('Lampiran 1 Excel exported: ' + dl.suggestedFilename());
 
@@ -458,6 +459,20 @@ await off.fill('#kf [name=retentionStillQr]', '8'); await off.fill('#kf [name=re
 await off.waitForSelector('.dash-kpis');
 if (!/80%/.test(await off.locator('.dash-kpis tbody tr', { hasText: 'Post-campaign retention' }).innerText())) throw new Error('retention should be 80%');
 ok('the Dashboard scores the 9 KPIs; HEP edited a target and entered figures');
+// Trends: pick a number and a period, read a day from the tooltip, and see it as a table.
+await off.waitForSelector('#tr-chart svg .trend-line, #tr-chart svg .trend-dot');
+await off.selectOption('#tr-metric', 'quizRate'); await off.click('[data-range="all"]');
+if ((await off.textContent('#tr-name')).trim() !== 'Quiz participation rate') throw new Error('the trend should switch metric');
+if (!/%$/.test((await off.textContent('#tr-value')).trim())) throw new Error('the quiz rate should be a percentage: ' + await off.textContent('#tr-value'));
+const trBox = await off.locator('#tr-chart svg').boundingBox();
+await off.mouse.move(trBox.x + trBox.width - 20, trBox.y + trBox.height / 2);
+await off.waitForSelector('.trend-tip:not([hidden])');
+if (!/[0-9]/.test(await off.textContent('.trend-tip'))) throw new Error('the tooltip should show a day and value');
+await off.click('.trend-table summary');
+const trDays = await off.locator('#tr-table tbody tr').count();
+if (trDays < 1) throw new Error('the table should list the days');
+if (!/Referral sign-up rate/.test(await off.textContent('#view')) || !/Days opened per week/.test(await off.textContent('#view'))) throw new Error('the new rate tiles should show');
+ok(`the Dashboard trend chart switches number and period, shows a tooltip and a table (${trDays} days), and the new rate tiles show`);
 const [report] = await Promise.all([off.waitForEvent('download'), off.click('#dash-xlsx')]);
 if (!/^Onz-report-\d{4}-\d{2}-\d{2}\.xlsx$/.test(report.suggestedFilename())) throw new Error('unexpected report name: ' + report.suggestedFilename());
 await report.saveAs(`${shots}/${report.suggestedFilename()}`);

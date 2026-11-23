@@ -2993,6 +2993,35 @@ Excel report|Laporan Excel
 Print or save as PDF|Cetak atau simpan sebagai PDF
 Report downloaded.|Laporan dimuat turun.
 There’s no summary to export yet.|Belum ada ringkasan untuk dieksport.
+Trends|Trend
+Pick a number to see how it changed day by day. Hover over the line, or use the arrow keys, to read each day.|Pilih satu angka untuk melihat perubahannya dari hari ke hari. Halakan tetikus pada garisan, atau guna kekunci anak panah, untuk membaca setiap hari.
+Number|Angka
+Last 90 days|90 hari lepas
+Programme to date|Program setakat ini
+All time|Sepanjang masa
+Show as table|Papar sebagai jadual
+No earlier period to compare yet|Belum ada tempoh terdahulu untuk dibandingkan
+No data|Tiada data
+New sign-ups per day|Pendaftaran baharu sehari
+Students who opened the app that day|Pelajar yang membuka aplikasi pada hari itu
+Days opened per week (average)|Hari dibuka seminggu (purata)
+Basic Active Users, last 7 days|Pengguna Aktif Asas, 7 hari lepas
+Engaged Active Users, last 7 days|Pengguna Aktif Terlibat, 7 hari lepas
+Referral sign-up rate|Kadar pendaftaran melalui rujukan
+Quiz participation rate|Kadar penyertaan kuiz
+Vouchers claimed (total)|Baucar dituntut (jumlah)
+Live-deal QR claims (total)|Tuntutan QR tawaran aktif (jumlah)
+Days opened per week|Hari dibuka seminggu
+Average over the last 7 days, among students who opened the app|Purata 7 hari lepas, dalam kalangan pelajar yang membuka aplikasi
+Shown after the next update|Dipaparkan selepas kemas kini seterusnya
+Share of all students who joined with a referral code|Peratusan pelajar yang mendaftar dengan kod rujukan
+How students and merchants did on the money check. Programme KPIs, targets and trends are on the Dashboard.|Prestasi pelajar dan peniaga dalam semakan kewangan. KPI program, sasaran dan trend ada di Papan Pemuka.
+Students who did the money check|Pelajar yang membuat semakan kewangan
+Average knowledge score|Purata skor pengetahuan
+Results by grade|Keputusan mengikut gred
+in this period|dalam tempoh ini
+a day on average|sehari secara purata
+now|kini
 Sign-in emails|E-mel log masuk
 Any of these opens this same account, with the same points and matric number.|Mana-mana e-mel ini membuka akaun yang sama, dengan mata dan nombor matrik yang sama.
 Add another Google account|Tambah akaun Google lain
