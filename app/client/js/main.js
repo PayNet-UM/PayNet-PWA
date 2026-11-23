@@ -5,6 +5,7 @@ import { captureSource } from './initiatives.js';
 import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
+import { trySignInByAlias } from './link-email.js';
 import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
@@ -77,6 +78,8 @@ async function onUser(user) {
   if (profile?.disabled) return Auth.renderBlocked(app);
   if (profile?.role === 'merchant' && !D.featureOn(app.rules, 'merchantSignup') && !D.featureOn(app.rules, 'merchantTools')) return Auth.renderComingSoon(app);
   if (isMpp && !profile) return Auth.renderAdminElsewhere(app, () => Auth.renderOnboarding(app, onboarded));
+  // An email a student added on Me > Sign-in emails: the server switches this sign-in to their account.
+  if (!profile && await trySignInByAlias(app, user)) return;
   if (!profile) return Auth.renderOnboarding(app, onboarded);
   // Terms of Use and Privacy Notice: shown once to anyone who hasn't accepted the current version.
   if (D.needsTerms(profile)) return Auth.renderTerms(app, () => startRole(profile.role));

@@ -10,6 +10,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Sign-in hand-off codes for the iPhone home-screen app: server only (functions/handoff.js).
     match /handoffs/{id} { allow read, write: if false; }
+    // Extra sign-in emails (Me > Sign-in emails): only the server reads and writes them (functions/email-alias.js).
+    match /emailAliases/{email} { allow read, write: if false; }
 
 
     // ---------- identity ----------

@@ -2,6 +2,7 @@
 // app.site is 'client' (students and merchants) or 'admin' (the Admin dashboard).
 import * as D from '../data.js';
 import { HEARD_FROM, getSource } from '../initiatives.js';
+import { removeEmptySignIn } from '../link-email.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
 import { langToggleHTML, tr } from '../i18n.js';
@@ -484,7 +485,9 @@ export function renderOnboarding(app, done) {
   const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
   const looksStudent = !merchantsOpen || /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
   frame(app, `<ol class="ob-steps" aria-label="Getting started"><li class="done">${icon('check')}<span>Sign in</span></li><li class="on" aria-current="step"><b>2</b><span>Your profile</span></li><li><b>3</b><span>Quick tour</span></li></ol>
-    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p></div>
+    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p>
+      <p class="notice ob-email-tip" role="note">${icon('info')}<span><b>Use the email you’ll keep.</b> Your siswa email is best. Each matric number can have only one account, and you can add more emails later on the Me page.</span></p>
+      <button class="btn ghost small" type="button" id="ob-have-account">I already have an account with another email</button></div>
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
@@ -524,6 +527,7 @@ export function renderOnboarding(app, done) {
   $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); f.heardFrom.onchange = sync; sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
+  $('#ob-have-account').onclick = () => haveAccountSheet(app, false);
   f.onsubmit = (e) => {
     e.preventDefault();
     busy($('button[type=submit]', f), async () => {
@@ -540,7 +544,7 @@ export function renderOnboarding(app, done) {
         if (err.notReady) toast('+Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
         else if (err.badReferral) toast('That referral code doesn’t exist. Check it with your friend, or choose No.', true);
-        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact the Admin team.', true);
+        else if (err.matricTaken) haveAccountSheet(app, true);
         else if (err.code === 'permission-denied' && role === 'student')
           toast('This email can’t join as a student. Use your Gmail or UM email, or ask the Admin team to add you as a tester.', true);
         else toast(errText(err), true);
@@ -551,3 +555,18 @@ export function renderOnboarding(app, done) {
 
 // localStorage can be blocked (private mode); the tracking code is optional, so fall back to nothing.
 function safeStorage() { try { return window.localStorage; } catch { return { getItem: () => null, setItem() {} }; } }
+
+// "I already have an account": removes the empty sign-in just made with this email, so the student can sign in with
+// their original email and add this one on the Me page. Also shown when the matric number is already registered.
+function haveAccountSheet(app, matricTaken) {
+  const el = sheet(`<h2>${matricTaken ? 'That matric number already has an account' : 'Already have an account?'}</h2>
+    ${matricTaken ? '<p class="muted">It was probably you, with a different email.</p>' : ''}
+    <p class="muted">Sign in with the email you used before. Then go to the Me page and tap “Add another Google account” to add this email to the same account.</p>
+    <p class="faint" style="margin-top:8px">We’ll remove this new, empty sign-in so the email can be added. Nothing else is deleted.</p>
+    <button class="btn primary block" id="hac-go" style="margin-top:14px">Remove this sign-in and go back</button>
+    ${matricTaken ? '<p class="faint" style="margin-top:10px">If it wasn’t you, contact the Admin team with your student ID.</p>' : ''}`);
+  $('#hac-go', el).onclick = (e) => busy(e.currentTarget, async () => {
+    try { await removeEmptySignIn(app); closeSheet(); toast('Sign in with the email you used before, then add this one on the Me page.'); }
+    catch (err) { toast(errText(err), true); }
+  });
+}

@@ -508,6 +508,38 @@ ok('HEP turned Overview back on, and the directory returned without Live deals')
 // Leaving a map straight after it opens must not leave work running against the removed map.
 await offStu.evaluate(async () => { const { createMap } = await import(new URL('js/map.js', location.href).href); const el = document.createElement('div'); el.style.cssText = 'width:200px;height:200px'; document.body.append(el); const m = await createMap(el); m.remove(); el.remove(); await new Promise((r) => setTimeout(r, 300)); });
 ok('a map closed straight after opening leaves nothing running');
+// Add another email: a student links a second Google account, then signs in with it to the same account.
+const linkPage = await ctx.newPage(); watch(linkPage, 'add email'); await fresh(linkPage);
+await linkPage.goto(BASE); await linkPage.waitForSelector('#google', { timeout: 60000 });
+await googleAs(linkPage, 'link.first@gmail.com'); await linkPage.waitForSelector('#ob', { timeout: 30000 });
+await linkPage.fill('#ob [name=name]', 'Link Tester'); await linkPage.fill('#ob [name=matric]', 'LINK00001');
+await linkPage.selectOption('#ob [name=college]', { index: 1 }); await linkPage.selectOption('#ob [name=faculty]', { index: 1 });
+await linkPage.check('#ob [name=terms]'); await linkPage.click('#ob button[type=submit]');
+await linkPage.waitForSelector('.guide [data-skip]', { timeout: 30000 }); await linkPage.click('.guide [data-skip]');
+await linkPage.waitForFunction(() => !document.querySelector('.guide'));
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#add-email');
+await linkPage.click('#add-email'); await linkPage.fill('#le [name=email]', 'link.second@siswa.um.edu.my'); await linkPage.click('#le button');
+await linkPage.waitForFunction(() => document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my');
+await linkPage.waitForFunction(() => !document.querySelector('#google') && !document.querySelector('#ob'), null, { timeout: 30000 });
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#signin-emails');
+if (!(await linkPage.locator('.me-card').innerText()).includes('Link Tester')) throw new Error('the second email should open the same account');
+ok('a student added a second Google account on Me, and it signs in to the same account');
+await linkPage.click('[data-remove-email="link.second@siswa.um.edu.my"]'); await linkPage.click('#sheet [data-yes]');
+await linkPage.waitForFunction(() => !document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my'); await linkPage.waitForSelector('#ob', { timeout: 30000 });
+await linkPage.click('#ob-have-account'); await linkPage.click('#hac-go'); await linkPage.waitForSelector('#google', { timeout: 20000 });
+ok('a removed email no longer opens the account');
+// "I already have an account": an empty new sign-in is removed so that email can be linked instead.
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.extra@siswa.um.edu.my'); await linkPage.waitForSelector('#ob');
+await linkPage.click('#ob-have-account'); await linkPage.click('#hac-go'); await linkPage.waitForSelector('#google', { timeout: 20000 });
+if (await linkPage.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('umc-demo-auth-v1') || '{}')).includes('link.extra@siswa.um.edu.my')))
+  throw new Error('the empty sign-in should have been removed');
+await linkPage.close();
+ok('“I already have an account” removed the empty sign-in and went back to sign-in');
 // The idle check, run as if 31 minutes had passed with no clicks or typing.
 await off.evaluate(() => window.__umc.checkSession(Date.now() + 31 * 60_000));
 await off.waitForSelector('#google', { timeout: 20000 });

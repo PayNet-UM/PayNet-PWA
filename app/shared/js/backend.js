@@ -40,5 +40,5 @@ export async function initBackend() {
   try {
     db = sdk.initializeFirestore(app, { localCache: sdk.persistentLocalCache({ tabManager: sdk.persistentMultipleTabManager() }) });
   } catch { db = sdk.getFirestore(app); }
-  return { sdk, mode: 'live', auth: sdk.getAuth(app), db };
+  return { sdk, mode: 'live', auth: sdk.getAuth(app), db, config: cfg };
 }

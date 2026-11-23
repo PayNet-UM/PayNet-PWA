@@ -822,6 +822,12 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot change KPI figures', () => D.saveConfig(stuA, 'kpiFigures', { reachExternal: 999999 }));
   await denied('KPI targets cannot be changed without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'config', 'kpiTargets'), { amberPct: 1 }, { merge: true }));
 
+  log('Sign-in emails (only the server adds them)');
+  await denied('a student cannot write their own sign-in emails', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'users', stuA.uid), { linkedEmails: ['someone.else@siswa.um.edu.my'] }));
+  await denied('a student cannot read the list of added emails', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'emailAliases', 'someone.else@siswa.um.edu.my')));
+  await denied('a student cannot add an email to the list themselves', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
+  await denied('HEP cannot write the list of added emails either', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
+
   log('Initiatives and KOL tracking');
   const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
   await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {

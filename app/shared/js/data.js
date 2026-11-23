@@ -416,6 +416,17 @@ export async function closeMyAccount(user, { reasons, comment }) {
   if (!res.ok) throw new Error(data.message || `The server didn’t answer (${res.status}). Try again, or email admin@addonz.my.`);
   return data;
 }
+// Extra sign-in emails (functions/email-alias.js). Each call sends the signed-in person's ID token.
+async function accountApi(path, idToken, body = {}) {
+  const res = await fetch('/api/account/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+    body: JSON.stringify(body) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) throw Object.assign(new Error(data.message || `The server didn’t answer (${res.status}). Try again later.`), { code: data.error || 'server', status: res.status });
+  return data;
+}
+export const addSignInEmail = (idToken, otherToken) => accountApi('add-email', idToken, { otherToken });
+export const removeSignInEmail = (idToken, email) => accountApi('remove-email', idToken, { email });
+export const signInByEmailAlias = (idToken) => accountApi('alias-sign-in', idToken);
 export async function listClosures(ctx) {
   return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
 }

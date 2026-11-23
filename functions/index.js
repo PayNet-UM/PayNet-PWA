@@ -5,12 +5,13 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldPath, FieldValue } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
 import { awardAppStreak } from './streaks.js';
 import { rebuildReferralBoard } from './referrals.js';
 import { closeAccount, patchFor } from './account.js';
+import { addEmail, aliasSignIn, removeEmail } from './email-alias.js';
 import { buildDays } from './daily-stats-load.js';
 import { dayOf, addDays } from './daily-stats.js';
 
@@ -102,6 +103,32 @@ const accountDeps = {
   now: () => Date.now(),
 };
 
+// Extra sign-in emails (functions/email-alias.js). The alias and the student's linkedEmails change together.
+const aliasRef = (email) => db.collection('emailAliases').doc(email);
+const aliasDeps = {
+  verifyIdToken: (t) => auth.verifyIdToken(t),
+  getProfile: accountDeps.getProfile,
+  getAlias: async (email) => { const s = await aliasRef(email).get(); return s.exists ? s.data() : null; },
+  saveAlias: (email, uid, max) => db.runTransaction(async (tx) => {
+    const userRef = db.doc(`users/${uid}`);
+    const [a, u] = await Promise.all([tx.get(aliasRef(email)), tx.get(userRef)]);
+    if (a.exists) return a.data().uid === uid ? 'already' : 'taken';
+    if ((u.get('linkedEmails') || []).length >= max) return 'full';
+    tx.create(aliasRef(email), { uid, createdAt: FieldValue.serverTimestamp() });
+    tx.update(userRef, { linkedEmails: FieldValue.arrayUnion(email) });
+    return 'added';
+  }),
+  removeAlias: (email, uid) => db.runTransaction(async (tx) => {
+    const a = await tx.get(aliasRef(email));
+    if (!a.exists || a.data().uid !== uid) return false;
+    tx.delete(aliasRef(email));
+    tx.update(db.doc(`users/${uid}`), { linkedEmails: FieldValue.arrayRemove(email) });
+    return true;
+  }),
+  deleteAuthUser: accountDeps.deleteAuthUser,
+  mintToken: (uid) => auth.createCustomToken(uid),
+};
+
 // Runs as the account named in functions/.env.<project-id> (HANDOFF_SERVICE_ACCOUNT): it needs the
 // "Service Account Token Creator" role to make sign-in tokens. Without the file it runs as the default compute account.
 const runAs = process.env.HANDOFF_SERVICE_ACCOUNT ? { serviceAccount: process.env.HANDOFF_SERVICE_ACCOUNT } : {};
@@ -120,6 +147,10 @@ export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', max
       const idToken = (req.get('Authorization') || '').replace(/^Bearer /, '');
       return res.json(await closeAccount(accountDeps, { idToken, reasons: body.reasons, comment: body.comment }));
     }
+    const bearer = () => (req.get('Authorization') || '').replace(/^Bearer /, '');
+    if (req.path.endsWith('/account/add-email')) return res.json(await addEmail(aliasDeps, { idToken: bearer(), otherToken: body.otherToken }));
+    if (req.path.endsWith('/account/alias-sign-in')) return res.json(await aliasSignIn(aliasDeps, { idToken: bearer() }));
+    if (req.path.endsWith('/account/remove-email')) return res.json(await removeEmail(aliasDeps, { idToken: bearer(), email: body.email }));
     return res.status(404).json({ error: 'not-found' });
   } catch (e) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.code, message: e.message });
