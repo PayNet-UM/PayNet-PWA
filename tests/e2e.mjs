@@ -526,6 +526,12 @@ await linkPage.waitForFunction(() => !document.querySelector('#google') && !docu
 await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#signin-emails');
 if (!(await linkPage.locator('.me-card').innerText()).includes('Link Tester')) throw new Error('the second email should open the same account');
 ok('a student added a second Google account on Me, and it signs in to the same account');
+await linkPage.click('[data-remove-email="link.second@siswa.um.edu.my"]'); await linkPage.click('#sheet [data-yes]');
+await linkPage.waitForFunction(() => !document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my'); await linkPage.waitForSelector('#ob', { timeout: 30000 });
+await linkPage.click('#ob-have-account'); await linkPage.click('#hac-go'); await linkPage.waitForSelector('#google', { timeout: 20000 });
+ok('a removed email no longer opens the account');
 // "I already have an account": an empty new sign-in is removed so that email can be linked instead.
 await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
 await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.extra@siswa.um.edu.my'); await linkPage.waitForSelector('#ob');

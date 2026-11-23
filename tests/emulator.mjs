@@ -11,10 +11,9 @@ const testEnv = await initializeTestEnvironment({
 });
 await testEnv.clearFirestore();
 // signedInHoursAgo sets the token's auth_time, which the rules use to require a recent sign-in for big HEP changes.
-const makeCtx = async ({ uid, email, emailVerified = true, signedInHoursAgo = 0, linkedEmails = [] }) => {
+const makeCtx = async ({ uid, email, emailVerified = true, signedInHoursAgo = 0 }) => {
   const auth_time = Math.floor(Date.now() / 1000) - Math.round(signedInHoursAgo * 3600);
-  const firebase = { sign_in_provider: 'google.com', identities: { email: [email, ...linkedEmails] } };
-  const db = testEnv.authenticatedContext(uid, { email, email_verified: emailVerified, auth_time, firebase }).firestore();
+  const db = testEnv.authenticatedContext(uid, { email, email_verified: emailVerified, auth_time }).firestore();
   return { sdk, db, uid, email, profile: null };
 };
 const adminEmail = (/function bootstrapAdmins\(\) \{ return \['([^']+)'/.exec(fs.readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8')) || [])[1];

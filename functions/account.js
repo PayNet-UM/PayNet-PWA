@@ -42,6 +42,8 @@ export function erasePlan(uid, profile = {}) {
   if (profile.matric) docs.push(`matrics/${profile.matric}`);
   if (profile.referralCode) docs.push(`referralCodes/${profile.referralCode}`);
   if (profile.username) docs.push(`usernames/${profile.username}`);
+  // Extra sign-in emails (functions/email-alias.js), so they can be used again.
+  for (const e of Array.isArray(profile.linkedEmails) ? profile.linkedEmails : []) if (typeof e === 'string' && e && !e.includes('/')) docs.push(`emailAliases/${e}`);
   return {
     docs,
     // Deleted with everything under them (points history, app days, waves sent to them).

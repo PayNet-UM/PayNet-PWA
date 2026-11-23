@@ -172,11 +172,9 @@ class FakeAuth {
   }
 }
 function makeUser(rec) {
-  const linked = rec.linked || [];
   return { uid: rec.uid, email: rec.email, emailVerified: rec.emailVerified !== false, displayName: rec.displayName || null,
-    isAnonymous: false, linkedEmails: linked, providerData: [rec.email, ...linked].map((email) => ({ providerId: 'google.com', email })),
+    isAnonymous: false, async getIdToken() { return 'demo-token'; },
     async delete() { const auth = getAuth(); const users = auth._users(); for (const [k, v] of Object.entries(users)) if (v.uid === rec.uid) delete users[k]; auth._saveUsers(users); auth._set(null); },
-    async getIdToken() { return 'demo-token'; },
     async getIdTokenResult() { return { authTime: new Date(env.now()).toUTCString() }; } };
 }
 let authSingleton = null;
@@ -219,18 +217,33 @@ export async function signInWithPopup(auth, provider) {
   auth._set(users[email]); return { user: auth.currentUser };
 }
 export const signInWithRedirect = signInWithPopup;
-// Demo version of Firebase account linking: the extra Google email signs in to the same account (same uid and primary email).
-export async function linkWithPopup(user, provider) {
-  const email = String(provider && provider.demoEmail || '').trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw authErr('auth/popup-closed-by-user');
+// Demo stand-in for the server's extra sign-in emails (functions/email-alias.js): the extra email is kept with the
+// demo sign-ins, pointing at the same account, so choosing it in the Google picker opens that account.
+const demoErr = (code, message) => Object.assign(new Error(message), { code });
+export async function _demoAddEmail(uid, email, max = 4) {
+  email = String(email || '').trim().toLowerCase();
+  if (!/^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/.test(email)) throw demoErr('bad-request', 'Enter a valid email.');
+  const auth = getAuth(); const users = auth._users(); const docs = getStore().docs;
+  const primary = Object.values(users).find((r) => r.uid === uid && !r.aliasOf);
+  if (!primary) throw demoErr('not-allowed', 'Sign in again, then try once more.');
+  if (primary.email === email) throw demoErr('same', 'That’s the email you’re signed in with. Choose a different Google account.');
+  const existing = users[email];
+  if (existing && existing.uid === uid) return { ok: true, email, already: true };
+  if (existing && docs.get('users/' + existing.uid)) throw demoErr('has-account', 'That email already has its own +Onz account. Sign in with it and delete that account first (Me > Delete my account), or ask the Admin team.');
+  const list = docs.get('users/' + uid)?.linkedEmails || [];
+  if (list.length >= max) throw demoErr('full', `You can add up to ${max} other emails. Remove one first.`);
+  users[email] = { ...primary, aliasOf: primary.email };
+  auth._saveUsers(users);
+  _rawUpdate((d) => d.set('users/' + uid, { ...d.get('users/' + uid), linkedEmails: [...list, email] }));
+  return { ok: true, email, already: false };
+}
+export async function _demoRemoveEmail(uid, email) {
+  email = String(email || '').trim().toLowerCase();
   const auth = getAuth(); const users = auth._users();
-  const primary = Object.values(users).find((r) => r.uid === user.uid && r.email === user.email);
-  if (!primary) throw authErr('auth/requires-recent-login');
-  if (users[email]) throw authErr(users[email].uid === user.uid ? 'auth/provider-already-linked' : 'auth/credential-already-in-use');
-  primary.linked = [...(primary.linked || []), email];
-  for (const [k, r] of Object.entries(users)) if (r.uid === user.uid) users[k] = { ...primary, provider: k === primary.email ? primary.provider : 'google' };
-  users[email] = { ...primary, provider: 'google' };
-  auth._saveUsers(users); auth._set(primary); return { user: auth.currentUser };
+  if (!users[email] || users[email].uid !== uid || !users[email].aliasOf) throw demoErr('not-found', 'That email isn’t added to this account.');
+  delete users[email]; auth._saveUsers(users);
+  _rawUpdate((d) => d.set('users/' + uid, { ...d.get('users/' + uid), linkedEmails: (d.get('users/' + uid)?.linkedEmails || []).filter((e) => e !== email) }));
+  return { ok: true };
 }
 export async function getRedirectResult() { return null; }
 export async function sendEmailVerification() { }
@@ -331,8 +344,7 @@ function applyUpdate(prev, data, time) {
 function authOf(db) {
   const u = db.auth.currentUser;
   // auth_time: when this session signed in, in whole seconds like real Firebase tokens (Demo sessions count as fresh).
-  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified, authTime: u.authTime ?? Math.floor(env.now() / 1000),
-    identityEmails: u.identityEmails || [u.email, ...(u.linkedEmails || [])].filter(Boolean) } : null;
+  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified, authTime: u.authTime ?? Math.floor(env.now() / 1000) } : null;
 }
 function denied(method, path, res) {
   const why = res && res.errors && res.errors.length ? ' (' + res.errors.slice(-2).join('; ') + ')' : '';

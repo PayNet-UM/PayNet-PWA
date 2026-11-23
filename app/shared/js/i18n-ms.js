@@ -3000,9 +3000,21 @@ For example, add your siswa email if you signed up with a personal Gmail.|Contoh
 Google email|E-mel Google
 Email added. You can sign in with either one.|E-mel ditambah. Anda boleh log masuk dengan mana-mana satu.
 Open addonz.my in Safari or Chrome to add an email, then come back to the app.|Buka addonz.my dalam Safari atau Chrome untuk menambah e-mel, kemudian kembali ke aplikasi.
-That Google account already has its own +Onz sign-in. Sign in with it, tap “I already have an account” on the sign-up screen to remove the empty one, then add it here again. If it’s a full account, ask the Admin team.|Akaun Google itu sudah mempunyai log masuk +Onz sendiri. Log masuk dengannya, ketik “Saya sudah mempunyai akaun” pada skrin pendaftaran untuk membuang log masuk kosong itu, kemudian tambahkannya di sini sekali lagi. Jika ia akaun penuh, hubungi pasukan Admin.
-This account already has a Google sign-in. To add a different Google account, sign out of Google in your browser first, then try again.|Akaun ini sudah mempunyai log masuk Google. Untuk menambah akaun Google lain, log keluar daripada Google dalam pelayar anda dahulu, kemudian cuba lagi.
-For your safety, sign out and sign in again, then add the email.|Demi keselamatan anda, log keluar dan log masuk semula, kemudian tambah e-mel itu.
+That email already has its own +Onz sign-in. Ask the Admin team to help you combine them.|E-mel itu sudah mempunyai log masuk +Onz sendiri. Minta pasukan Admin membantu menggabungkannya.
+Couldn’t add that account. Try again.|Akaun itu tidak dapat ditambah. Cuba lagi.
+That’s the email you’re signed in with. Choose a different Google account.|Itu e-mel yang anda gunakan untuk log masuk. Pilih akaun Google lain.
+Only student accounts can add another email.|Hanya akaun pelajar boleh menambah e-mel lain.
+That email already has its own +Onz account. Sign in with it and delete that account first (Me > Delete my account), or ask the Admin team.|E-mel itu sudah mempunyai akaun +Onz sendiri. Log masuk dengannya dan padam akaun itu dahulu (Saya > Padam akaun saya), atau hubungi pasukan Admin.
+That email is already added to another +Onz account.|E-mel itu sudah ditambah pada akaun +Onz lain.
+You can add up to 4 other emails. Remove one first.|Anda boleh menambah sehingga 4 e-mel lain. Buang satu dahulu.
+That email isn’t verified yet.|E-mel itu belum disahkan.
+That email isn’t added to this account.|E-mel itu tidak ditambah pada akaun ini.
+This is the account’s own email, so it can’t be removed.|Ini e-mel utama akaun, jadi ia tidak boleh dibuang.
+Enter a valid email.|Masukkan e-mel yang sah.
+Main email|E-mel utama
+Remove this email?|Buang e-mel ini?
+will no longer open this account.|tidak lagi akan membuka akaun ini.
+Email removed.|E-mel dibuang.
 Your browser blocked the Google window. Allow pop-ups for this site, then try again.|Pelayar anda menyekat tetingkap Google. Benarkan tetingkap timbul untuk laman ini, kemudian cuba lagi.
 Couldn’t add that account. Try again in Chrome or Safari.|Akaun itu tidak dapat ditambah. Cuba lagi dalam Chrome atau Safari.
 This account already has a profile, so it can’t be removed here.|Akaun ini sudah mempunyai profil, jadi ia tidak boleh dibuang di sini.
