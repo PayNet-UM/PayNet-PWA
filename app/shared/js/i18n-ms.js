@@ -2989,4 +2989,8 @@ Somewhere else|Tempat lain
 Sign-ups through tracking links|Pendaftaran melalui pautan penjejakan
 See each KOL and event|Lihat setiap KOL dan acara
 Deleted an initiative|Memadam inisiatif
+Excel report|Laporan Excel
+Print or save as PDF|Cetak atau simpan sebagai PDF
+Report downloaded.|Laporan dimuat turun.
+There’s no summary to export yet.|Belum ada ringkasan untuk dieksport.
 `;

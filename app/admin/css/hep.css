@@ -232,3 +232,17 @@
 .dash-kpis td:nth-child(5) { white-space:nowrap; }
 .dash-flags { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .dash-flags svg { width:18px; height:18px; flex-shrink:0; }
+
+/* Dashboard print / save as PDF: just the report, no menu or buttons */
+.print-only { display:none; }
+@media print {
+  body, body.mpp-mode { background:#fff !important; }
+  .mpp { display:block !important; }
+  .mpp .rail, .demo-ribbon, .no-print, .toast, #kpi-targets, #kpi-figures, .dash-section a { display:none !important; }
+  .mpp main, .mpp .view, main.view { padding:0 !important; max-width:none !important; margin:0 !important; }
+  .print-only { display:block; margin:0 0 8px; }
+  .dash-section, .dash-tile, .dash-kpis tr { break-inside:avoid; }
+  .dash-section { box-shadow:none !important; border:1px solid #ddd; }
+  .dash-grid { grid-template-columns:repeat(3, 1fr) !important; }
+  .dash-spark { color:#333 !important; }
+}
