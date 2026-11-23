@@ -821,6 +821,39 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot read KPI targets', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'config', 'kpiTargets')));
   await denied('a student cannot change KPI figures', () => D.saveConfig(stuA, 'kpiFigures', { reachExternal: 999999 }));
   await denied('KPI targets cannot be changed without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'config', 'kpiTargets'), { amberPct: 1 }, { merge: true }));
+
+  log('Initiatives and KOL tracking');
+  const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
+  await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {
+    await D.createProfile(tracked, { role: 'student', name: 'Tracked Student', matric: 'TRK00001', college: 'KK1', faculty: D.FACULTIES[0],
+      source: 'jtk-roundtable', heardFrom: 'kol', heardFromOther: 'A campus influencer' });
+    const p = await D.getProfile(tracked); eq(p.source, 'jtk-roundtable'); eq(p.heardFrom, 'kol'); eq(p.heardFromOther, 'A campus influencer');
+  });
+  await ok('the app drops a badly formed code or answer instead of failing the sign-up', async () => {
+    const odd = await makeCtx({ uid: 'trk2', email: 'odd@siswa.um.edu.my' });
+    await D.createProfile(odd, { role: 'student', name: 'Odd Student', matric: 'TRK00002', college: 'KK1', faculty: D.FACULTIES[0], source: 'Bad Code!', heardFrom: 'telepathy' });
+    const p = await D.getProfile(odd); eq('source' in p, false); eq('heardFrom' in p, false);
+  });
+  const rawSignup = async (uid, extra) => { const c = await makeCtx({ uid, email: uid + '@siswa.um.edu.my' }); const b = c.sdk.writeBatch(c.db);
+    b.set(c.sdk.doc(c.db, 'users', uid), { role: 'student', name: 'Raw Student', email: c.email, matric: uid.toUpperCase() + '1', college: 'KK1', faculty: D.FACULTIES[0],
+      points: 0, lastTx: '', referralCode: '', createdAt: c.sdk.serverTimestamp(), termsVersion: D.TERMS_VERSION, termsAcceptedAt: c.sdk.serverTimestamp(), ...extra });
+    b.set(c.sdk.doc(c.db, 'matrics', uid.toUpperCase() + '1'), { uid }); await b.commit(); };
+  await denied('the rules refuse a badly formed tracking code', () => rawSignup('trkbad', { source: 'Bad Code!' }));
+  await denied('the rules refuse an unknown "how did you hear" answer', () => rawSignup('trkodd', { heardFrom: 'telepathy' }));
+  await denied('the rules refuse a long free-text answer', () => rawSignup('trklong', { heardFromOther: 'x'.repeat(61) }));
+  await ok('HEP creates an initiative, and it is logged', async () => {
+    await D.saveInitiative(mpp, 'jtk-roundtable', { name: 'JTK Roundtable', type: 'roundtable', start: '2026-11-17', end: '' });
+    eq((await D.listInitiatives(mpp)).some((i) => i.code === 'jtk-roundtable'), true);
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative'), true);
+  });
+  await denied('a student cannot see initiatives', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'initiatives', 'jtk-roundtable')));
+  await denied('a student cannot create an initiative', () => D.saveInitiative(stuA, 'fake-kol', { name: 'Fake', type: 'kol', start: '2026-11-17' }));
+  await denied('an initiative cannot be saved without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'sneaky'), { code: 'sneaky', name: 'Sneaky' }));
+  await denied('an initiative code must match its tracking format', () => D.saveInitiative(mpp, 'Bad Code', { name: 'Bad', type: 'kol', start: '2026-11-17' }));
+  await ok('HEP deletes an initiative, and it is logged', async () => {
+    await D.deleteInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable');
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-delete'), true);
+  });
   await denied('nobody can write a daily summary from the app, not even HEP', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'), { students: { total: 99999 } }));
 
   log('Student event submissions');

@@ -1,6 +1,7 @@
 // Sign in, sign up, email verification and first-time profile. Shared by both websites:
 // app.site is 'client' (students and merchants) or 'admin' (the Admin dashboard).
 import * as D from '../data.js';
+import { HEARD_FROM, getSource } from '../initiatives.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
 import { langToggleHTML, tr } from '../i18n.js';
@@ -497,6 +498,8 @@ export function renderOnboarding(app, done) {
         <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
         <label class="field">Faculty<select name="faculty" aria-describedby="college-warn"><option value="" selected disabled>Choose your faculty</option>${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
         <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college or faculty later.</b> Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.</span></div>
+        <label class="field">How did you hear about +Onz? <span class="faint">(optional)</span><select name="heardFrom"><option value="">Choose one</option>${HEARD_FROM.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <label class="field hidden" id="ob-heard-other">Which one? <span class="faint">(optional)</span><input name="heardFromOther" maxlength="60" placeholder="e.g. the influencer’s name or the event"></label>
         <fieldset class="field ob-referral"><legend>Are you signing up with a friend’s referral code?</legend>
           <div class="row ob-referral-pick"><label class="check"><input type="radio" name="hasReferral" value="no" checked> No</label>
             <label class="check"><input type="radio" name="hasReferral" value="yes"> Yes</label></div>
@@ -516,8 +519,9 @@ export function renderOnboarding(app, done) {
     const student = f.role.value === 'student', referral = student && f.hasReferral.value === 'yes';
     $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student; f.faculty.required = student;
     $('#ob-referral-code').classList.toggle('hidden', !referral); f.referral.required = referral;
+    $('#ob-heard-other').classList.toggle('hidden', !['kol', 'event', 'other'].includes(f.heardFrom.value));
   };
-  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); sync();
+  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); f.heardFrom.onchange = sync; sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
   f.onsubmit = (e) => {
@@ -527,7 +531,8 @@ export function renderOnboarding(app, done) {
       try {
         const res = await D.createProfile(app.ctx, role === 'student'
           ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value,
-            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '' }
+            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '',
+            source: getSource(safeStorage()), heardFrom: f.heardFrom.value, heardFromOther: ['kol', 'event', 'other'].includes(f.heardFrom.value) ? f.heardFromOther.value : '' }
           : { role, name: f.name.value });
         if (res?.referralFailed) toast('Your account is ready, but the referral code couldn’t be added.', true);
         await done();
@@ -543,3 +548,6 @@ export function renderOnboarding(app, done) {
     });
   };
 }
+
+// localStorage can be blocked (private mode); the tracking code is optional, so fall back to nothing.
+function safeStorage() { try { return window.localStorage; } catch { return { getItem: () => null, setItem() {} }; } }

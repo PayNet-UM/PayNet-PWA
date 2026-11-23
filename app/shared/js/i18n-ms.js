@@ -2942,4 +2942,51 @@ Qualifying transactions|Transaksi yang layak
 Waiting for a baseline month|Menunggu bulan asas
 Entered by HEP at the end of the campaign|Dimasukkan oleh HEP pada akhir kempen
 No activated students yet|Belum ada pelajar diaktifkan
+Initiatives|Inisiatif
+Tracking links for KOLs, events and campaigns, and what changed after each one.|Pautan penjejakan untuk KOL, acara dan kempen, dan apa yang berubah selepas setiap satu.
+New initiative|Inisiatif baharu
+Edit initiative|Ubah inisiatif
+Delete initiative|Padam inisiatif
+Delete initiative?|Padam inisiatif?
+Its tracking link keeps working for students, but it won’t be listed here.|Pautan penjejakannya masih berfungsi untuk pelajar, tetapi tidak akan disenaraikan di sini.
+All initiatives|Semua inisiatif
+Initiative|Inisiatif
+Sign-ups via link|Pendaftaran melalui pautan
+Of them, active|Daripadanya, aktif
+Daily sign-ups before → after|Pendaftaran harian sebelum → selepas
+Estimated extra sign-ups|Anggaran pendaftaran tambahan
+“Estimated extra sign-ups” compares daily sign-ups after the start with the 14 days before it. Other things happening at the same time also move this number, so read it together with sign-ups through the link.|“Anggaran pendaftaran tambahan” membandingkan pendaftaran harian selepas tarikh mula dengan 14 hari sebelumnya. Perkara lain yang berlaku pada masa yang sama juga mempengaruhi angka ini, jadi bacalah bersama pendaftaran melalui pautan.
+No initiatives yet. Create one for each KOL, event or campaign you want to measure.|Belum ada inisiatif. Cipta satu bagi setiap KOL, acara atau kempen yang ingin diukur.
+KOL ranking|Kedudukan KOL
+Add initiatives with the type “KOL or influencer” to rank them.|Tambah inisiatif dengan jenis “KOL atau pempengaruh” untuk menyusunnya.
+How students heard about +Onz|Bagaimana pelajar mengetahui tentang +Onz
+No answers yet.|Belum ada jawapan.
+Tracking code|Kod penjejakan
+Start date|Tarikh mula
+End date|Tarikh tamat
+Initiative saved.|Inisiatif disimpan.
+Initiative deleted.|Inisiatif dipadam.
+Link|Pautan
+Copy link|Salin pautan
+Link copied.|Pautan disalin.
+Share this link or QR code. Students who sign up within 30 days of opening it are counted.|Kongsi pautan atau kod QR ini. Pelajar yang mendaftar dalam masa 30 hari selepas membukanya akan dikira.
+That code is already used by another initiative.|Kod itu sudah digunakan oleh inisiatif lain.
+Use 2–30 lower-case letters, numbers or dashes for the code.|Gunakan 2–30 huruf kecil, nombor atau sengkang untuk kod.
+KOL or influencer|KOL atau pempengaruh
+Event or booth|Acara atau gerai
+Roundtable or talk|Meja bulat atau ceramah
+Poster or flyer|Poster atau risalah
+Social media post|Hantaran media sosial
+How did you hear about +Onz?|Bagaimana anda mengetahui tentang +Onz?
+(optional)|(pilihan)
+Choose one|Pilih satu
+Which one?|Yang mana?
+A friend|Seorang rakan
+An event or booth|Acara atau gerai
+An influencer (KOL)|Pempengaruh (KOL)
+HEP, a lecturer or my college|HEP, pensyarah atau kolej saya
+Somewhere else|Tempat lain
+Sign-ups through tracking links|Pendaftaran melalui pautan penjejakan
+See each KOL and event|Lihat setiap KOL dan acara
+Deleted an initiative|Memadam inisiatif
 `;

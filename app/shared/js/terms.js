@@ -34,6 +34,7 @@ const T = {
           'Welfare requests: the amount you ask for and the reason you write. Only you and the Admin team can see them.',
           'Event submissions: event details, organiser, poster and contact email. Only you and the Admin team see pending submissions and review responses. Approved event details and posters are shown in the signed-in event gallery; your contact email and account identity stay private.',
           'Optional social features: your username, avatar, friends and friend requests, and who referred you to +Onz.',
+          'How you found +Onz: the tracking link you arrived from (if any) and your optional answer to “How did you hear about +Onz?”. The Admin team uses them only as counts, to see which campaigns work.',
           'Campus map (optional, off unless you switch it on): when on, your friends can see that you’re at a campus shop for 2 hours.',
           'Businesses: business name, type, location pin, logo, contact phone number, account name and DuitNow QR image, plus offers and deals you submit.'],
         'Your phone’s location is used on your phone only, to show where you are on the map. It isn’t saved to your account. (The first pilot version saved your location at each check-in; those records are kept for the Admin team’s programme records only.)',

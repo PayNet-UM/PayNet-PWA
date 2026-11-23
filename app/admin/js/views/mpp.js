@@ -12,11 +12,12 @@ import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseR
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
 import { dashboardRender, dashboardMount } from './dashboard.js';
+import { initiativesRender, initiativesMount } from './initiatives.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
+  ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['initiatives', 'Initiatives', 'target'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
   ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
@@ -662,6 +663,7 @@ export const routes = {
   points: { title:'Points guide',render:pointsPageRender },
   overview: { title: 'Overview', render: overviewRender, mount: overviewMount },
   dashboard: { title: 'Dashboard', render: dashboardRender, mount: dashboardMount, wide: true },
+  initiatives: { title: 'Initiatives', render: initiativesRender, mount: initiativesMount, wide: true },
   merchants: { title: 'Merchants', render: merchantsRender, mount: merchantsMount },
   approvals: { title: 'Approvals', render: approvalsRender, mount: approvalsMount },
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },
