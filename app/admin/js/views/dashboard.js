@@ -81,7 +81,7 @@ export async function dashboardRender(app) {
       ${tile('Event submissions', n(com.eventSubmissions), 'Student events sent to HEP', 'app', weekly((r) => r.community.eventSubmissions))}
       ${tile('Referral sign-ups', n(com.referrals), 'Friends who joined with a referral code', 'app', weekly((r) => r.community.referrals))}
       ${tile('Friend connections', n(com.friendships), 'Accepted friendships', 'app', weekly((r) => r.community.friendships))}
-      ${missing('Tracking links and KOLs', 'Coming in the Initiatives update')}
+      ${tile('Sign-ups through tracking links', n(Object.values(latest.sources?.bySource || {}).reduce((a, b) => a + b, 0)), '<a href="#/initiatives">See each KOL and event</a>', 'app')}
       </div>`)}
     ${section('5. Impact', '', `<div class="stats dash-grid">
       ${tile('Merchants accepting digital payments', n(m.verified), `${n(digital)} assessed as business QR or card ready`, 'app')}

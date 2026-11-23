@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "dev:demo": "node scripts/serve.mjs --demo",
-    "test": "node tests/local.mjs && node tests/stall-survey.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/daily-stats.mjs && node tests/kpis.mjs && node tests/account.mjs && node tests/safety.mjs && node tests/i18n.mjs && node tests/league.mjs && node tests/nearby.mjs && node tests/learning.mjs && node tests/app-activity.mjs && node tests/streak-rewards.mjs && node tests/guide.mjs && node tests/feskum.mjs && node tests/information.mjs && node tests/points-policy.mjs && node tests/events.mjs",
+    "test": "node tests/local.mjs && node tests/stall-survey.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/daily-stats.mjs && node tests/kpis.mjs && node tests/initiatives.mjs && node tests/account.mjs && node tests/safety.mjs && node tests/i18n.mjs && node tests/league.mjs && node tests/nearby.mjs && node tests/learning.mjs && node tests/app-activity.mjs && node tests/streak-rewards.mjs && node tests/guide.mjs && node tests/feskum.mjs && node tests/information.mjs && node tests/points-policy.mjs && node tests/events.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:responsive": "node tests/responsive.mjs",
     "test:experience": "node tests/experience.mjs && node tests/event-submissions.mjs && node tests/streak-browser.mjs && node tests/event-admin.mjs",

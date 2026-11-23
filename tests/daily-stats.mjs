@@ -79,6 +79,7 @@ test('commerce and community counts', () => {
 });
 test('sign-up sources are counted, and no names or emails are stored', () => {
   assert.deepEqual(s.sources.bySource, { jtk: 2 }); assert.deepEqual(s.sources.byHeardFrom, { friend: 1 });
+  assert.deepEqual(s.sources.activatedBySource, { jtk: 2 }, 'a and c both did a basic action');
   assert.ok(!/"(a|b|c)"/.test(JSON.stringify(s)), 'no student IDs in the summary');
 });
 test('days to build run from the first sign-up', () => {

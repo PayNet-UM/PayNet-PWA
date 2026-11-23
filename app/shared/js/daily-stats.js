@@ -78,9 +78,10 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
   const d1 = tiers(1), d7 = tiers(7), d30 = tiers(30);
 
   let activatedEver = 0, repeat = 0;
+  const sourceOf = new Map(students.map((u) => [u.id, u.source])), activatedBySource = {};
   for (const uid of studentIds) {
     const basicDays = new Set((acts.get(uid) || []).filter((a) => a.basic).map((a) => a.day));
-    if (basicDays.size >= 1) activatedEver++;
+    if (basicDays.size >= 1) { activatedEver++; bump(activatedBySource, sourceOf.get(uid)); }
     if (basicDays.size >= 2) repeat++;
   }
 
@@ -110,7 +111,7 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
     community: { referrals: (input.referrals || []).filter((r) => upTo(r.createdAt)).length,
       friendships: (input.friendships || []).filter((f) => f.status === 'accepted' && upTo(f.createdAt)).length,
       eventSubmissions: (input.events || []).filter((e) => upTo(e.submittedAt)).length },
-    sources: { bySource, byHeardFrom },
+    sources: { bySource, byHeardFrom, activatedBySource },
     settings: { engagedAreas },
   };
 }

@@ -116,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'change-faculty': 'Changed a student’s faculty',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -154,7 +154,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', termsVersion = TERMS_VERSION }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', source = '', heardFrom = '', heardFromOther = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -173,8 +173,13 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
   for (let attempt = 0; attempt < 4; attempt++) {
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
+    // How a student found +Onz (Initiatives): only well-formed values are saved.
+    const found = role !== 'student' ? {} : Object.fromEntries([
+      ['source', /^[a-z0-9-]{2,30}$/.test(source) ? source : ''],
+      ['heardFrom', ['instagram', 'tiktok', 'friend', 'event', 'kol', 'hep', 'other'].includes(heardFrom) ? heardFrom : ''],
+      ['heardFromOther', String(heardFromOther || '').trim().slice(0, 60)]].filter(([, v]) => v));
     b.set(r.user(ctx.uid), { role, name: name.trim(), email: ctx.email, matric, college, faculty, points: 0, lastTx: '',
-      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
+      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp(), ...found });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
     try { await b.commit(); } catch (e) {
@@ -854,6 +859,20 @@ export async function savePaynetCounts(ctx, month, rows) {
 }
 export async function paynetCounts(ctx, month) { return list(ctx, 'paynetCounts', eq(ctx, 'month', month)); }
 export async function allPaynetCounts(ctx) { return list(ctx, 'paynetCounts'); }
+// Initiatives and KOL tracking links (initiatives/{code}): HEP only, logged in the Activity log.
+export async function listInitiatives(ctx) { return (await list(ctx, 'initiatives')).sort((a, b) => (b.start || '').localeCompare(a.start || '')); }
+export async function saveInitiative(ctx, code, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, 'initiative', data.name || code, [data.type, data.start, data.end].filter(Boolean).join(', '));
+  b.set(ctx.sdk.doc(ctx.db, 'initiatives', code), { ...data, code, logId }, { merge: true });
+  await b.commit();
+}
+export async function deleteInitiative(ctx, code, name = '') {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  logAdmin(ctx, b, 'initiative-delete', name || code);
+  b.delete(ctx.sdk.doc(ctx.db, 'initiatives', code));
+  await b.commit();
+}
 
 // ------------------------------------------------------------- survey scoring (from the original demo)
 export const SURVEY_KNOWLEDGE = [

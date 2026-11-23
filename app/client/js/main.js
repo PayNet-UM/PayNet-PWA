@@ -1,6 +1,7 @@
 // Student and merchant app: backend choice, sign-in state, role shells and hash routing.
 // The Admin dashboard is a separate website (app/admin), linked from the account menu for Admin team members.
 import { initBackend } from './backend.js';
+import { captureSource } from './initiatives.js';
 import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
@@ -33,6 +34,8 @@ app.go = go;
 function stopWatchers() { app.watchers.forEach((u) => { try { u(); } catch { /* */ } }); app.watchers = []; }
 
 async function boot() {
+  // Remember a tracking-link code (addonz.my/?src=...) for 30 days, so a later sign-up is credited to that initiative.
+  try { captureSource(location.search, window.localStorage); } catch { /* storage blocked: tracking is optional */ }
   try {
     app.backend = await initBackend();
   } catch (e) {
