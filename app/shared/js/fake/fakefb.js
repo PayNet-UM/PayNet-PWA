@@ -172,8 +172,11 @@ class FakeAuth {
   }
 }
 function makeUser(rec) {
+  const linked = rec.linked || [];
   return { uid: rec.uid, email: rec.email, emailVerified: rec.emailVerified !== false, displayName: rec.displayName || null,
-    isAnonymous: false, async getIdToken() { return 'demo-token'; },
+    isAnonymous: false, linkedEmails: linked, providerData: [rec.email, ...linked].map((email) => ({ providerId: 'google.com', email })),
+    async delete() { const auth = getAuth(); const users = auth._users(); for (const [k, v] of Object.entries(users)) if (v.uid === rec.uid) delete users[k]; auth._saveUsers(users); auth._set(null); },
+    async getIdToken() { return 'demo-token'; },
     async getIdTokenResult() { return { authTime: new Date(env.now()).toUTCString() }; } };
 }
 let authSingleton = null;
@@ -216,6 +219,19 @@ export async function signInWithPopup(auth, provider) {
   auth._set(users[email]); return { user: auth.currentUser };
 }
 export const signInWithRedirect = signInWithPopup;
+// Demo version of Firebase account linking: the extra Google email signs in to the same account (same uid and primary email).
+export async function linkWithPopup(user, provider) {
+  const email = String(provider && provider.demoEmail || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw authErr('auth/popup-closed-by-user');
+  const auth = getAuth(); const users = auth._users();
+  const primary = Object.values(users).find((r) => r.uid === user.uid && r.email === user.email);
+  if (!primary) throw authErr('auth/requires-recent-login');
+  if (users[email]) throw authErr(users[email].uid === user.uid ? 'auth/provider-already-linked' : 'auth/credential-already-in-use');
+  primary.linked = [...(primary.linked || []), email];
+  for (const [k, r] of Object.entries(users)) if (r.uid === user.uid) users[k] = { ...primary, provider: k === primary.email ? primary.provider : 'google' };
+  users[email] = { ...primary, provider: 'google' };
+  auth._saveUsers(users); auth._set(primary); return { user: auth.currentUser };
+}
 export async function getRedirectResult() { return null; }
 export async function sendEmailVerification() { }
 export async function sendPasswordResetEmail(auth, email) {
@@ -315,7 +331,8 @@ function applyUpdate(prev, data, time) {
 function authOf(db) {
   const u = db.auth.currentUser;
   // auth_time: when this session signed in, in whole seconds like real Firebase tokens (Demo sessions count as fresh).
-  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified, authTime: u.authTime ?? Math.floor(env.now() / 1000) } : null;
+  return u ? { uid: u.uid, email: u.email, emailVerified: u.emailVerified, authTime: u.authTime ?? Math.floor(env.now() / 1000),
+    identityEmails: u.identityEmails || [u.email, ...(u.linkedEmails || [])].filter(Boolean) } : null;
 }
 function denied(method, path, res) {
   const why = res && res.errors && res.errors.length ? ' (' + res.errors.slice(-2).join('; ') + ')' : '';

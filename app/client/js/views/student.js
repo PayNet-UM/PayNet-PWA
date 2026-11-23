@@ -4,6 +4,7 @@ import { INFORMATION_ROUTES, informationLinks } from '../information.js';
 // Student app: +Onz hub, Overview directory, rewards, events, community,
 // cashless guide (Bayar Kita), learning, avatar and profile.
 import * as D from '../data.js';
+import { signInEmails, linkGoogleAccount, linkErrorText } from '../link-email.js';
 import { directoryArt } from '../directory-art.js';
 import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
 import { tr } from '../i18n.js';
@@ -708,6 +709,7 @@ async function meRender(app) {
       <div><h1 style="font-size:24px">${esc(p.name)}</h1><p class="muted">${esc(D.COLLEGES.find(([k]) => k === p.college)?.[1] || '')}</p>
       <p class="row" style="gap:6px;margin-top:6px"><span class="badge ok">${icon('medal')}${esc(lvl.name)}</span></p>
       <a class="btn small primary" href="#/avatar" style="margin-top:10px">${icon('palette')} Customise avatar</a></div></section>
+    ${signInEmailsCard(app)}
     <section class="section card invite-card" id="referral-card">
       <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Refer a friend</h2></div>
       <div class="invite-code">
@@ -776,6 +778,7 @@ function ledgerLabel(l) {
     offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by the Admin team' }[l.type] || l.type;
 }
 function meMount(root, app) {
+  mountSignInEmails(root, app);
   $('#copy-referral', root).onclick = async () => {
     try {
       await navigator.clipboard.writeText(app.profile.referralCode);
@@ -831,3 +834,30 @@ export const routes = {
   feedback: { title: 'Questions and feedback', render: feedbackRender, mount: feedbackMount, tab: 'me' },
   'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };
+
+// ------------------------------------------------------------- Me: emails that sign in to this account
+function signInEmailsCard(app) {
+  const user = app.backend?.auth?.currentUser;
+  const emails = user ? signInEmails(user) : [...new Set([app.ctx?.email, ...(app.profile?.linkedEmails || [])].filter(Boolean))];
+  return `<section class="section card pad-lg" id="signin-emails"><div class="row" style="gap:10px"><span class="tile-icon">${icon('mail')}</span><h2>Sign-in emails</h2></div>
+    <p class="faint">Any of these opens this same account, with the same points and matric number.</p>
+    <div class="list" style="margin-top:8px">${emails.map((e) => `<div class="item"><span data-no-i18n>${esc(e)}</span></div>`).join('')}</div>
+    <button class="btn small" id="add-email" style="margin-top:10px">${icon('plus')} Add another Google account</button>
+    <p class="faint" style="margin-top:6px">For example, add your siswa email if you signed up with a personal Gmail.</p></section>`;
+}
+function mountSignInEmails(root, app) {
+  const btn = $('#add-email', root); if (!btn) return;
+  const mode = app.backend?.mode;
+  btn.onclick = () => {
+    // The installed iPhone app can't open Google's window; adding an email works in Safari or Chrome.
+    if (mode === 'live' && window.matchMedia?.('(display-mode: standalone)').matches)
+      return toast('Open addonz.my in Safari or Chrome to add an email, then come back to the app.', true);
+    const run = (demoEmail) => busy(btn, async () => {
+      try { const emails = await linkGoogleAccount(app, demoEmail); if (emails) { toast('Email added. You can sign in with either one.'); app.render(); } }
+      catch (err) { toast(linkErrorText(err), true); }
+    });
+    if (mode !== 'demo') return run('');
+    const el = sheet(`<h2>Add another Google account</h2><form id="le" class="stack" style="margin-top:12px"><label class="field">Google email<input name="email" type="email" required placeholder="you@siswa.um.edu.my"></label><button class="btn primary block">Add</button></form>`);
+    $('#le', el).onsubmit = (e) => { e.preventDefault(); const v = e.target.email.value; closeSheet(); run(v); };
+  };
+}

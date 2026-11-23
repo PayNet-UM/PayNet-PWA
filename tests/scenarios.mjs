@@ -822,6 +822,17 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot change KPI figures', () => D.saveConfig(stuA, 'kpiFigures', { reachExternal: 999999 }));
   await denied('KPI targets cannot be changed without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'config', 'kpiTargets'), { amberPct: 1 }, { merge: true }));
 
+  log('Sign-in emails (add another Google account)');
+  const linker = await makeCtx({ uid: 'lnk1', email: 'lnk.personal@gmail.com', linkedEmails: ['lnk1@siswa.um.edu.my'] });
+  await D.createProfile(linker, { role: 'student', name: 'Linked Student', matric: 'LNK00001', college: 'KK1', faculty: D.FACULTIES[0] });
+  await ok('a student records the emails linked to their own sign-in', async () => {
+    await D.saveLinkedEmails(linker, ['lnk.personal@gmail.com', 'lnk1@siswa.um.edu.my']);
+    eq((await D.getProfile(linker)).linkedEmails.length, 2);
+  });
+  await denied('a student cannot claim an email that isn’t linked to them', () => D.saveLinkedEmails(linker, ['lnk.personal@gmail.com', 'someone.else@siswa.um.edu.my']));
+  await denied('the list of sign-in emails is capped', () => linker.sdk.updateDoc(linker.sdk.doc(linker.db, 'users', 'lnk1'), { linkedEmails: Array(6).fill('lnk.personal@gmail.com') }));
+  await denied('a student cannot set another student’s sign-in emails', () => linker.sdk.updateDoc(linker.sdk.doc(linker.db, 'users', 'stuA'), { linkedEmails: ['lnk.personal@gmail.com'] }));
+
   log('Initiatives and KOL tracking');
   const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
   await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {

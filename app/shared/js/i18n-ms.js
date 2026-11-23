@@ -2993,4 +2993,29 @@ Excel report|Laporan Excel
 Print or save as PDF|Cetak atau simpan sebagai PDF
 Report downloaded.|Laporan dimuat turun.
 There’s no summary to export yet.|Belum ada ringkasan untuk dieksport.
+Sign-in emails|E-mel log masuk
+Any of these opens this same account, with the same points and matric number.|Mana-mana e-mel ini membuka akaun yang sama, dengan mata dan nombor matrik yang sama.
+Add another Google account|Tambah akaun Google lain
+For example, add your siswa email if you signed up with a personal Gmail.|Contohnya, tambah e-mel siswa anda jika anda mendaftar dengan Gmail peribadi.
+Google email|E-mel Google
+Email added. You can sign in with either one.|E-mel ditambah. Anda boleh log masuk dengan mana-mana satu.
+Open addonz.my in Safari or Chrome to add an email, then come back to the app.|Buka addonz.my dalam Safari atau Chrome untuk menambah e-mel, kemudian kembali ke aplikasi.
+That Google account already has its own +Onz sign-in. Sign in with it, tap “I already have an account” on the sign-up screen to remove the empty one, then add it here again. If it’s a full account, ask the Admin team.|Akaun Google itu sudah mempunyai log masuk +Onz sendiri. Log masuk dengannya, ketik “Saya sudah mempunyai akaun” pada skrin pendaftaran untuk membuang log masuk kosong itu, kemudian tambahkannya di sini sekali lagi. Jika ia akaun penuh, hubungi pasukan Admin.
+This account already has a Google sign-in. To add a different Google account, sign out of Google in your browser first, then try again.|Akaun ini sudah mempunyai log masuk Google. Untuk menambah akaun Google lain, log keluar daripada Google dalam pelayar anda dahulu, kemudian cuba lagi.
+For your safety, sign out and sign in again, then add the email.|Demi keselamatan anda, log keluar dan log masuk semula, kemudian tambah e-mel itu.
+Your browser blocked the Google window. Allow pop-ups for this site, then try again.|Pelayar anda menyekat tetingkap Google. Benarkan tetingkap timbul untuk laman ini, kemudian cuba lagi.
+Couldn’t add that account. Try again in Chrome or Safari.|Akaun itu tidak dapat ditambah. Cuba lagi dalam Chrome atau Safari.
+This account already has a profile, so it can’t be removed here.|Akaun ini sudah mempunyai profil, jadi ia tidak boleh dibuang di sini.
+Sign in with that email once more, then tap “I already have an account” again.|Log masuk dengan e-mel itu sekali lagi, kemudian ketik “Saya sudah mempunyai akaun” semula.
+Use the email you’ll keep.|Gunakan e-mel yang akan anda kekalkan.
+Your siswa email is best. Each matric number can have only one account, and you can add more emails later on the Me page.|E-mel siswa anda paling sesuai. Setiap nombor matrik hanya boleh mempunyai satu akaun, dan anda boleh menambah e-mel lain kemudian di halaman Saya.
+I already have an account with another email|Saya sudah mempunyai akaun dengan e-mel lain
+That matric number already has an account|Nombor matrik itu sudah mempunyai akaun
+Already have an account?|Sudah mempunyai akaun?
+It was probably you, with a different email.|Mungkin itu anda, dengan e-mel yang berbeza.
+Sign in with the email you used before. Then go to the Me page and tap “Add another Google account” to add this email to the same account.|Log masuk dengan e-mel yang anda gunakan sebelum ini. Kemudian pergi ke halaman Saya dan ketik “Tambah akaun Google lain” untuk menambah e-mel ini ke akaun yang sama.
+We’ll remove this new, empty sign-in so the email can be added. Nothing else is deleted.|Kami akan membuang log masuk baharu yang kosong ini supaya e-mel itu boleh ditambah. Tiada data lain dipadamkan.
+Remove this sign-in and go back|Buang log masuk ini dan kembali
+If it wasn’t you, contact the Admin team with your student ID.|Jika itu bukan anda, hubungi pasukan Admin dengan kad pelajar anda.
+Sign in with the email you used before, then add this one on the Me page.|Log masuk dengan e-mel yang anda gunakan sebelum ini, kemudian tambah e-mel ini di halaman Saya.
 `;

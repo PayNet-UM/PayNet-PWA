@@ -517,7 +517,7 @@ async function peopleRender(app) {
 function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
-    $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
+    $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${(u.linkedEmails || []).join(' ')} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span>${(u.linkedEmails || []).filter((e) => e !== u.email).length ? `<br><span class="faint">Also signs in with ${esc((u.linkedEmails || []).filter((e) => e !== u.email).join(', '))}</span>` : ''}</td>
       <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {

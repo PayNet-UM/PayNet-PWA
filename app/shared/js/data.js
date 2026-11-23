@@ -196,6 +196,8 @@ export async function acceptTerms(ctx, version = TERMS_VERSION) {
   await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { termsVersion: version, termsAcceptedAt: ctx.sdk.serverTimestamp() });
 }
 export const needsTerms = (profile) => !!profile && profile.termsVersion !== TERMS_VERSION;
+// The emails that sign in to this account (Me > Sign-in emails); the rules only accept emails in the token.
+export async function saveLinkedEmails(ctx, emails) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { linkedEmails: emails.slice(0, 5) }); }
 export async function updateProfile(ctx, fields) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), fields); }
 export async function saveAvatar(ctx, avatar) { await ctx.sdk.updateDoc(R(ctx).user(ctx.uid), { avatar }); }
 

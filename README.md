@@ -154,6 +154,11 @@ HEP edits the targets and the period with **Edit targets**, and adds numbers the
 
 Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/DEPLOY.md#hep-dashboard-summaries-once-per-project).
 
+**More than one sign-in email** (`app/shared/js/link-email.js`): each matric number has one account, so a student who signed up with a personal Gmail can add their siswa email (or another Google account) under **Me > Sign-in emails**. Either email then opens the same account. It uses Firebase account linking, and the list is copied to the profile as `linkedEmails` so HEP can search Students by either email. The rules accept only emails that are really linked to the signed-in account (up to 5).
+- **Sign-up wording:** the profile form asks students to use the email they'll keep, and offers **I already have an account with another email**.
+- **Already signed in with the wrong email:** that button, or a "matric already has an account" error, removes the new, empty sign-in (only if it has no profile) so the student can sign in with their first email and add this one.
+- **iPhone home-screen app:** adding an email needs Google's pop-up window, so the app asks the student to do it in Safari or Chrome.
+
 ### HEP admin safety
 - **Sign-out after 30 idle minutes.** The HEP dashboard signs out after 30 minutes with no clicks, typing or scrolling in any of its tabs, so a shared office computer isn't left open.
 - **Big changes need a recent sign-in.** `firestore.rules` refuses changes to who can use the app, feature switches, points rules, the activation fund, rewards, blocks, point adjustments, matric releases, merchant reviews and welfare reviews unless the admin signed in within the last 12 hours. The dashboard signs the admin out just before that, so they simply sign in again.

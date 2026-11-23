@@ -125,7 +125,10 @@ service cloud.firestore {
         // correct them (below), so nobody can move KK League or Faculty League points.
         return changed().hasOnly(['name', 'faculty', 'goalCents', 'points', 'lastTx', 'avatar',
                                   'inviterUid', 'inviterCode',
-                                  'showOnMap', 'mapAudience', 'username', 'termsVersion', 'termsAcceptedAt'])
+                                  'showOnMap', 'mapAudience', 'username', 'termsVersion', 'termsAcceptedAt', 'linkedEmails'])
+          // Emails that sign in to this account: only ones in the student's own sign-in token.
+          && (!changed().hasAny(['linkedEmails']) || (D().linkedEmails is list && D().linkedEmails.size() <= 5
+              && D().linkedEmails.hasOnly(request.auth.token.firebase.identities.get('email', []))))
           && (!changed().hasAny(['termsVersion', 'termsAcceptedAt']) || termsOk())
           && (!changed().hasAny(['showOnMap']) || D().showOnMap == false)
           && (!changed().hasAny(['mapAudience']) || D().mapAudience == 'friends')
