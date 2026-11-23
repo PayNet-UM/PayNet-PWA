@@ -16,7 +16,7 @@ const sheets = reportSheets({ rows, settings: kpiSettings(), figures: { mappedOu
 const sheet = (name) => sheets.find((s) => s.name === name);
 
 console.log('Excel report');
-test('one sheet per area', () => assert.deepEqual(sheets.map((s) => s.name), ['KPIs', 'Students', 'Merchants and commerce', 'Initiatives', 'Daily trend']));
+test('one sheet per area', () => assert.deepEqual(sheets.map((s) => s.name), ['KPIs', 'Students', 'Merchants and commerce', 'Initiatives', 'Time in the app', 'Daily trend']));
 test('the KPI sheet lists the 9 KPIs with actual, target and status', () => {
   const k = sheet('KPIs'); assert.equal(k.rows.length, 9); assert.equal(k.columns.length, k.rows[0].length);
   const mapped = k.rows.find((r) => r[1] === 'Merchants mapped');

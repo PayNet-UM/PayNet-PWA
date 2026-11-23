@@ -3019,6 +3019,20 @@ How students and merchants did on the money check. Programme KPIs, targets and t
 Students who did the money check|Pelajar yang membuat semakan kewangan
 Average knowledge score|Purata skor pengetahuan
 Results by grade|Keputusan mengikut gred
+Time in the app|Masa dalam aplikasi
+Anonymous totals: only time while a page is on screen and the student was active in the last 2 minutes. No names or accounts.|Jumlah tanpa nama: hanya masa ketika halaman dipaparkan dan pelajar aktif dalam 2 minit terakhir. Tiada nama atau akaun.
+Minutes per student per day|Minit setiap pelajar sehari
+Minutes per student today|Minit setiap pelajar hari ini
+Today so far|Hari ini setakat ini
+Total time in the app, 7 days|Jumlah masa dalam aplikasi, 7 hari
+All students together|Semua pelajar bersama
+Page, last 7 days|Halaman, 7 hari lepas
+Visits|Lawatan
+Per visit|Setiap lawatan
+How far visits scrolled|Sejauh mana lawatan ditatal
+“End” is the share of visits that scrolled to the bottom. A big drop between steps shows where people stop reading.|“Akhir” ialah peratusan lawatan yang ditatal hingga ke bawah. Penurunan besar antara langkah menunjukkan di mana orang berhenti membaca.
+No page time recorded yet.|Belum ada masa halaman direkodkan.
+Minutes per student per day (7-day average)|Minit setiap pelajar sehari (purata 7 hari)
 in this period|dalam tempoh ini
 a day on average|sehari secara purata
 now|kini

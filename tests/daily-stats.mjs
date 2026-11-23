@@ -73,6 +73,20 @@ test('days opened per week, among students who opened in the last 7 days', () =>
   // 14-20 Nov: a opened on 14 and 20 (2 days), b on 18, c on 20 = 4 days over 3 students
   assert.equal(s.active.daysPerWeek, 1.3);
 });
+test('time in the app: minutes per student per day and each page over 7 days', () => {
+  const pageTime = [
+    { day: D0, page: 'about', ms: 120000, views: 2, r25: 2, r50: 1, r75: 1, r100: 0 },        // 2 min today
+    { day: '2026-11-18', page: 'home', ms: 360000, views: 3, r25: 3, r50: 3, r75: 2, r100: 2 }, // 6 min earlier this week
+    { day: '2026-11-10', page: 'home', ms: 999999, views: 9 },                                   // before the 7 days
+    { day: '2026-11-21', page: 'home', ms: 999999, views: 9 },                                   // after the day
+  ];
+  const t = dailyStats({ ...input, pageTime }, D0).time;
+  // today: 2 min ÷ 2 students who opened today = 1 min. 7 days: 8 min ÷ 4 student-days opened (a×2, b, c) = 2 min.
+  assert.equal(t.minutesPerStudent, 1); assert.equal(t.minutesPerStudent7, 2); assert.equal(t.minutes7, 8);
+  assert.deepEqual(t.pages7.about, { ms: 120000, views: 2, r25: 2, r50: 1, r75: 1, r100: 0 });
+  assert.equal(t.pages7.home.ms, 360000);
+  assert.deepEqual(dailyStats(input, D0).time, { minutesPerStudent: 0, minutesPerStudent7: 0, minutes7: 0, pages7: {} }, 'no page time yet');
+});
 test('referral sign-up rate and quiz participation rate', () => {
   // c joined with a's referral: 1 of 3. a and b did a lesson or the money check: 2 of 3.
   assert.deepEqual(s.rates, { referral: 33.3, referred: 1, quiz: 66.7, learners: 2 });

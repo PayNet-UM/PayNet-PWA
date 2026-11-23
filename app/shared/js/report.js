@@ -22,7 +22,7 @@ export function reportSheets({ rows, settings, figures = {}, months = {}, initia
   const breakdown = (obj, label = (k) => k) => Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => [label(k), v]);
   const trend = rows.map((r) => [r.day, r.students?.total ?? 0, r.students?.new ?? 0, r.active?.d1?.opened ?? 0, r.active?.d7?.basic ?? 0,
     r.active?.d7?.engaged ?? 0, r.activation?.ever ?? 0, r.merchants?.verified ?? 0, r.commerce?.vouchersUsed ?? 0, r.commerce?.dealClaims ?? 0,
-    r.active?.daysPerWeek ?? '', r.rates?.referral ?? '', r.rates?.quiz ?? '']);
+    r.active?.daysPerWeek ?? '', r.rates?.referral ?? '', r.rates?.quiz ?? '', r.time?.minutesPerStudent7 ?? '']);
   const ini = initiatives.map((it) => { const x = initiativeImpact(rows, it);
     return [it.name, labels.type?.(it.type) || it.type, it.code, it.start || '', it.end || '', x.viaLink, x.activatedViaLink, x.before ?? '', x.after ?? '', x.extra ?? ''];
   });
@@ -43,7 +43,13 @@ export function reportSheets({ rows, settings, figures = {}, months = {}, initia
         ['Transactions by month (PayNet + manual)'], ...Object.keys(months).sort().map((mo) => [mo, months[mo]])] },
     { name: 'Initiatives', columns: [['Initiative', 30], ['Type', 18], ['Code', 20], ['Start', 12], ['End', 12], ['Sign-ups via link', 16], ['Of them, active', 14], ['Daily sign-ups before', 18], ['Daily sign-ups after', 18], ['Estimated extra sign-ups', 20]],
       rows: ini.length ? [...ini, [], ['How students heard about +Onz'], ...breakdown(latest.sources?.byHeardFrom, labels.heard || ((k) => k))] : [['No initiatives yet']] },
-    { name: 'Daily trend', columns: [['Day', 12], ['Registered students', 18], ['New sign-ups', 14], ['Opened the app', 14], ['Basic active (7 days)', 18], ['Engaged active (7 days)', 20], ['Activated (ever)', 16], ['Verified merchants', 16], ['Vouchers used', 14], ['Live-deal claims', 14], ['Days opened per week', 18], ['Referral sign-up rate (%)', 20], ['Quiz participation (%)', 18]],
+    { name: 'Time in the app', columns: [['Page (last 7 days)', 26], ['Minutes', 12], ['Visits', 10], ['Reached 25% (%)', 16], ['Reached half (%)', 16], ['Reached 75% (%)', 16], ['Reached the end (%)', 18]],
+      rows: [['Minutes per student per day (7-day average)', latest.time?.minutesPerStudent7 ?? ''], ['Total minutes, 7 days', latest.time?.minutes7 ?? ''], [],
+        ...Object.entries(latest.time?.pages7 || {}).sort((a, b) => b[1].ms - a[1].ms).map(([k, p]) => {
+          const pc = (c) => (p.views ? Math.round((c / p.views) * 100) : '');
+          return [labels.page?.(k) || k, Math.round(p.ms / 60000), p.views, pc(p.r25), pc(p.r50), pc(p.r75), pc(p.r100)];
+        })] },
+    { name: 'Daily trend', columns: [['Day', 12], ['Registered students', 18], ['New sign-ups', 14], ['Opened the app', 14], ['Basic active (7 days)', 18], ['Engaged active (7 days)', 20], ['Activated (ever)', 16], ['Verified merchants', 16], ['Vouchers used', 14], ['Live-deal claims', 14], ['Days opened per week', 18], ['Referral sign-up rate (%)', 20], ['Quiz participation (%)', 18], ['Minutes per student per day', 22]],
       rows: trend },
   ];
 }

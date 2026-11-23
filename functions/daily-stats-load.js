@@ -6,11 +6,11 @@ const ms = (v) => (v && typeof v.toMillis === 'function' ? v.toMillis() : typeof
 const parentUid = (doc) => doc.ref.parent.parent?.id || '';
 
 export async function loadInput(db) {
-  const [users, appDays, ledger, vouchers, claims, friendships, referrals, events, merchants, stall, rules] = await Promise.all([
+  const [users, appDays, ledger, vouchers, claims, friendships, referrals, events, merchants, stall, rules, pageTime] = await Promise.all([
     db.collection('users').get(), db.collectionGroup('appDays').get(), db.collectionGroup('ledger').get(),
     db.collection('vouchers').get(), db.collection('liveDealClaims').get(), db.collection('friendships').get(),
     db.collection('referrals').get(), db.collection('eventSubmissions').get(), db.collection('merchants').get(),
-    db.collection('stallSurveys').get(), db.doc('config/rules').get()]);
+    db.collection('stallSurveys').get(), db.doc('config/rules').get(), db.collection('pageTime').get()]);
   const rows = (snap, f) => snap.docs.map((d) => f(d.data(), d));
   const input = {
     users: rows(users, (u, d) => ({ id: d.id, role: u.role, createdAt: ms(u.createdAt), college: u.college || '', faculty: u.faculty || '', source: u.source || '', heardFrom: u.heardFrom || '' })),
@@ -23,6 +23,7 @@ export async function loadInput(db) {
     events: rows(events, (e) => ({ uid: e.uid, submittedAt: ms(e.submittedAt), status: e.status })),
     merchants: rows(merchants, (m, d) => ({ id: d.id, status: m.status, type: m.type || '', submittedAt: ms(m.submittedAt) })),
     stallSurveys: rows(stall, (s, d) => ({ id: d.id, stallType: s.stallType || '', at: ms(s.at) })),
+    pageTime: rows(pageTime, (p) => ({ day: p.day, page: p.page, ms: p.ms || 0, views: p.views || 0, r25: p.r25 || 0, r50: p.r50 || 0, r75: p.r75 || 0, r100: p.r100 || 0 })),
   };
   const engagedAreas = Number.isInteger(rules.data()?.engagedAreas) ? rules.data().engagedAreas : DEFAULT_ENGAGED_AREAS;
   return { input, engagedAreas };

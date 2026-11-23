@@ -475,6 +475,30 @@ service cloud.firestore {
       allow delete: if adminChange();
     }
     // HEP Dashboard daily summaries: counts only, written by the server (functions/daily-stats-load.js).
+    // Time on each page, as anonymous daily totals (app/shared/js/page-time.js; privacy notice "How the app is used").
+    // Students only ever add a little to today's totals for a known page; nothing names who added it. Only HEP reads it.
+    function pageTimeFields() { return ['day', 'page', 'ms', 'views', 'r25', 'r50', 'r75', 'r100']; }
+    function pageTimeDoc(id) {
+      return D().keys().hasOnly(pageTimeFields()) && D().keys().hasAll(pageTimeFields())
+        && D().day == dayKey(request.time) && D().page in ['home', 'explore', 'merchant', 'rewards', 'feskum', 'events', 'bayar', 'learn', 'survey', 'community', 'leagues', 'avatar', 'me', 'feedback', 'delete-account', 'points', 'about', 'contact', 'other']
+        && id == D().day + '_' + D().page;
+    }
+    // A save adds between 0 and max (10 minutes of time, 30 visits) to one total.
+    function addsUpTo(f, base, max) { return D()[f] is int && D()[f] >= base && D()[f] - base <= max; }
+    function pageTimeAdds(m) {
+      return addsUpTo('ms', m.ms, 600000) && addsUpTo('views', m.views, 30)
+        && addsUpTo('r25', m.r25, 30) && addsUpTo('r50', m.r50, 30) && addsUpTo('r75', m.r75, 30) && addsUpTo('r100', m.r100, 30);
+    }
+    function pageTimeFirst() {
+      return addsUpTo('ms', 0, 600000) && addsUpTo('views', 0, 30)
+        && addsUpTo('r25', 0, 30) && addsUpTo('r50', 0, 30) && addsUpTo('r75', 0, 30) && addsUpTo('r100', 0, 30);
+    }
+    match /pageTime/{id} {
+      allow read: if isMpp();
+      allow create: if isStudent() && pageTimeDoc(id) && pageTimeFirst();
+      allow update: if isStudent() && pageTimeDoc(id) && changed().hasOnly(['ms', 'views', 'r25', 'r50', 'r75', 'r100']) && pageTimeAdds(resource.data);
+      allow delete: if false;
+    }
     match /dailyStats/{day} {
       allow read: if isMpp();
       allow write: if false;
