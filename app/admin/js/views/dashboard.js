@@ -1,7 +1,9 @@
 // HEP Dashboard: programme performance from the daily summaries (dailyStats, built by the server every 3 hours,
 // or by Demo mode). Sections follow the team lead's brief; every number says where it comes from.
 import * as D from '../data.js';
-import { $, esc, icon, n, rm, fmtDateTime, sheet, closeSheet, busy, toast, errText } from '../ui.js';
+import { $, esc, icon, n, rm, fmtDateTime, sheet, closeSheet, busy, toast, errText, loadExcel, downloadBlob } from '../ui.js';
+import { reportSheets } from '../report.js';
+import { INITIATIVE_TYPES, HEARD_FROM } from '../initiatives.js';
 import { hepHeading, hepEmpty } from '../hep-ui.js';
 import { addDays, dayOf } from '../daily-stats.js';
 import { STALL_TYPES } from '../stall-survey.js';
@@ -36,7 +38,10 @@ export async function dashboardRender(app) {
     D.getConfig(app.ctx, 'kpiTargets').catch(() => null), D.getConfig(app.ctx, 'kpiFigures').catch(() => null)]);
   const settings = kpiSettings(savedTargets || {}), figures = savedFigures || {}, months = monthlyTransactions(allPaynet, manualRows);
   app._kpi = { settings, figures };
-  const head = hepHeading('Dashboard', 'How +Onz is doing: students, merchants, transactions, campaigns and impact. Each number says where it comes from.', 'chart-column');
+  app._dash = { rows, settings, figures, months };
+  const head = hepHeading('Dashboard', 'How +Onz is doing: students, merchants, transactions, campaigns and impact. Each number says where it comes from.', 'chart-column',
+    `<div class="row no-print" style="gap:8px;flex-wrap:wrap"><button class="btn small" id="dash-xlsx">${icon('download')} Excel report</button><button class="btn small" id="dash-print">${icon('printer')} Print or save as PDF</button></div>`)
+    + `<p class="print-only faint">+Onz programme report · printed ${esc(fmtDateTime(Date.now()))}</p>`;
   if (!rows.length) return head + hepEmpty('No summary yet. It appears within 3 hours of the server update, or straight away after the backfill in docs/DEPLOY.md.', 'chart-column');
   const latest = rows[rows.length - 1], byDay = new Map(rows.map((r) => [r.day, r]));
   const weekly = (pick) => [8, 7, 6, 5, 4, 3, 2, 1, 0].map((i) => byDay.get(addDays(latest.day, -7 * i))).filter(Boolean).map(pick);
@@ -140,7 +145,31 @@ function figuresSheet(app) {
       closeSheet(); toast('Figures saved.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
 }
 export function dashboardMount(root, app) {
+  const x = $('#dash-xlsx', root), p = $('#dash-print', root);
+  if (x) x.onclick = (e) => busy(e.currentTarget, () => downloadReport(app));
+  if (p) p.onclick = () => window.print();
   const t = $('#kpi-targets', root), f = $('#kpi-figures', root);
   if (t) t.onclick = () => targetsSheet(app);
   if (f) f.onclick = () => figuresSheet(app);
+}
+
+// Excel report for PayNet and the team: counts only, one sheet per area (app/shared/js/report.js).
+async function downloadReport(app) {
+  try {
+    if (!app._dash?.rows?.length) return toast('There’s no summary to export yet.', true);
+    const initiatives = await D.listInitiatives(app.ctx).catch(() => []);
+    const sheets = reportSheets({ ...app._dash, initiatives, labels: {
+      type: (t) => (INITIATIVE_TYPES.find(([k]) => k === t) || [t, t])[1], heard: (k) => (HEARD_FROM.find(([key]) => key === k) || [k, k])[1],
+      stall: (k) => STALL_TYPES[k]?.en || k } });
+    const ExcelJS = await loadExcel(); const wb = new ExcelJS.Workbook();
+    for (const sh of sheets) {
+      const ws = wb.addWorksheet(sh.name);
+      ws.addRow(sh.columns.map(([h]) => h)); ws.getRow(1).font = { bold: true };
+      sh.columns.forEach(([, w], i) => { ws.getColumn(i + 1).width = w; });
+      sh.rows.forEach((r) => ws.addRow(r));
+    }
+    const day = app._dash.rows[app._dash.rows.length - 1].day;
+    downloadBlob(`Onz-report-${day}.xlsx`, new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    toast('Report downloaded.');
+  } catch (err) { toast('Excel export failed: ' + errText(err), true); }
 }

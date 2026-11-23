@@ -458,6 +458,10 @@ await off.fill('#kf [name=retentionStillQr]', '8'); await off.fill('#kf [name=re
 await off.waitForSelector('.dash-kpis');
 if (!/80%/.test(await off.locator('.dash-kpis tbody tr', { hasText: 'Post-campaign retention' }).innerText())) throw new Error('retention should be 80%');
 ok('the Dashboard scores the 9 KPIs; HEP edited a target and entered figures');
+const [report] = await Promise.all([off.waitForEvent('download'), off.click('#dash-xlsx')]);
+if (!/^Onz-report-\d{4}-\d{2}-\d{2}\.xlsx$/.test(report.suggestedFilename())) throw new Error('unexpected report name: ' + report.suggestedFilename());
+await report.saveAs(`${shots}/${report.suggestedFilename()}`);
+ok('the Dashboard Excel report downloads: ' + report.suggestedFilename());
 await off.goto(ADMIN + '#/initiatives'); await off.waitForSelector('#ini-new');
 await off.click('#ini-new'); await off.waitForSelector('#ini-form');
 await off.fill('#ini-form [name=name]', 'JTK Roundtable'); await off.fill('#ini-form [name=start]', '2026-11-17');
