@@ -8,6 +8,7 @@ import { hepHeading, hepEmpty } from '../hep-ui.js';
 import { addDays, dayOf } from '../daily-stats.js';
 import { STALL_TYPES } from '../stall-survey.js';
 import { KPIS, FIGURE_FIELDS, kpiSettings, kpiActuals, kpiStatus, monthlyTransactions, STATUS_LABEL } from '../kpis.js';
+import { PAGE_NAMES } from '../page-time.js';
 import { TREND_METRICS, TREND_RANGES, series, rangeDays, periodChange, periodValue, fmtValue, drawTrend } from '../trend-chart.js';
 
 const SOURCES = { app: ['From the app', 'ok'], hep: ['Entered by HEP', ''], none: ['Not tracked yet', 'warn'] };
@@ -72,6 +73,7 @@ export async function dashboardRender(app) {
       ${tile('Quiz participation rate', latest.rates ? `${latest.rates.quiz}%` : '—', latest.rates ? `${n(latest.rates.learners)} students did a lesson quiz or the money check` : 'Shown after the next update', 'app', weekly((r) => r.rates?.quiz))}
       </div>${tiers}
       <div class="grid-2" style="margin-top:14px"><div><h3>By residential college</h3>${top(s.byCollege)}</div><div><h3>By faculty</h3>${top(s.byFaculty)}</div></div>`)}
+    ${section('Time in the app', 'Anonymous totals: only time while a page is on screen and the student was active in the last 2 minutes. No names or accounts.', timeHTML(latest, weekly))}
     ${section('2. Merchants', '', `<div class="stats dash-grid">
       ${tile('Merchants onboarded', n(m.total), `${n(m.pending)} waiting for review`, 'app', weekly((r) => r.merchants.total))}
       ${tile('Verified merchants', n(m.verified), 'QR checked by HEP (KPI: merchants ready, target 50)', 'app', weekly((r) => r.merchants.verified))}
@@ -103,6 +105,29 @@ export async function dashboardRender(app) {
       kpiTable(latest, settings, figures, months) + `<div class="row" style="margin-top:12px;gap:8px"><button class="btn small" id="kpi-targets">${icon('pencil')} Edit targets</button><button class="btn small" id="kpi-figures">${icon('pencil')} Enter figures</button></div>`)}`;
 }
 
+// ------------------------------------------------------------- Time in the app (app/shared/js/page-time.js)
+const fmtDuration = (ms) => { const m = Math.round((ms || 0) / 60000); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : m >= 1 ? `${m} min` : `${Math.round((ms || 0) / 1000)} s`; };
+const share = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
+function timeHTML(latest, weekly) {
+  const t = latest.time;
+  if (!t) return '<p class="faint">Shown after the next update.</p>';
+  const pages = Object.entries(t.pages7 || {}).filter(([, p]) => p.ms > 0 || p.views > 0).sort((a, b) => b[1].ms - a[1].ms);
+  const reach = (p) => [['25%', p.r25], ['Half', p.r50], ['75%', p.r75], ['End', p.r100]].map(([label, c]) => {
+    const v = share(c, p.views);
+    return `<span class="reach-step" title="${label}: ${v}% of visits"><i style="height:${Math.max(2, v * 0.24)}px"></i><small>${label} ${v}%</small></span>`;
+  }).join('');
+  return `<div class="stats dash-grid">
+      ${tile('Minutes per student per day', `${t.minutesPerStudent7} min`, 'Average over the last 7 days, among students who opened the app', 'app', weekly((r) => r.time?.minutesPerStudent7))}
+      ${tile('Minutes per student today', `${t.minutesPerStudent} min`, 'Today so far', 'app')}
+      ${tile('Total time in the app, 7 days', fmtDuration(t.minutes7 * 60000), 'All students together', 'app', weekly((r) => r.time?.minutes7))}
+    </div>
+    ${pages.length ? `<div class="table-wrap" style="margin-top:14px"><table class="data dash-pages"><thead><tr><th>Page, last 7 days</th><th class="r">Time</th><th class="r">Visits</th><th class="r">Per visit</th><th>How far visits scrolled</th></tr></thead><tbody>
+      ${pages.map(([k, p]) => `<tr><td><b>${esc(PAGE_NAMES[k] || k)}</b></td><td class="r num">${fmtDuration(p.ms)}</td><td class="r num">${n(p.views)}</td>
+        <td class="r num">${p.views ? fmtDuration(p.ms / p.views) : '—'}</td><td><div class="reach">${p.views ? reach(p) : '<span class="faint">—</span>'}</div></td></tr>`).join('')}
+      </tbody></table></div><p class="faint" style="margin-top:6px">“End” is the share of visits that scrolled to the bottom. A big drop between steps shows where people stop reading.</p>`
+    : '<p class="faint" style="margin-top:12px">No page time recorded yet.</p>'}`;
+}
+
 // ------------------------------------------------------------- Trends (app/shared/js/trend-chart.js)
 const TREND_KEY = 'onz-dash-trend';
 const trendState = () => { try { return { metric: 'students', range: 'programme', ...JSON.parse(localStorage.getItem(TREND_KEY) || '{}') }; } catch { return { metric: 'students', range: 'programme' }; } };
@@ -128,7 +153,7 @@ function mountTrends(root, app) {
     $('#tr-of', root).textContent = metric.agg === 'sum' ? 'in this period' : metric.agg === 'avg' ? 'a day on average' : 'now';
     $('#tr-change', root).textContent = !ch ? 'No earlier period to compare yet'
       : `${ch.diff > 0 ? '▲ +' : ch.diff < 0 ? '▼ ' : ''}${ch.kind === 'pct' ? ch.diff + '%' : ch.kind === 'pts' ? ch.diff + ' pts'
-        : metric.unit === 'days' ? `${ch.diff} days` : fmtValue(ch.diff, '')} vs the previous ${ch.days} days`;
+        : metric.unit === 'days' || metric.unit === 'min' ? `${ch.diff} ${metric.unit}` : fmtValue(ch.diff, '')} vs the previous ${ch.days} days`;
     drawTrend(host, pts, metric);
     $('#tr-table', root).innerHTML = `<table class="data"><thead><tr><th>Day</th><th class="r">${esc(metric.label)}</th></tr></thead><tbody>${pts.slice().reverse()
       .map((p) => `<tr><td>${esc(p.day)}</td><td class="r num">${esc(fmtValue(p.value, metric.unit))}</td></tr>`).join('')}</tbody></table>`;
@@ -210,7 +235,7 @@ async function downloadReport(app) {
     const initiatives = await D.listInitiatives(app.ctx).catch(() => []);
     const sheets = reportSheets({ ...app._dash, initiatives, labels: {
       type: (t) => (INITIATIVE_TYPES.find(([k]) => k === t) || [t, t])[1], heard: (k) => (HEARD_FROM.find(([key]) => key === k) || [k, k])[1],
-      stall: (k) => STALL_TYPES[k]?.en || k } });
+      stall: (k) => STALL_TYPES[k]?.en || k, page: (k) => PAGE_NAMES[k] || k } });
     const ExcelJS = await loadExcel(); const wb = new ExcelJS.Workbook();
     for (const sh of sheets) {
       const ws = wb.addWorksheet(sh.name);

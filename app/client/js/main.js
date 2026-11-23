@@ -10,6 +10,7 @@ import { initI18n, langToggleHTML } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
+import { startPageTime } from './page-time.js';
 import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
 import { INFORMATION_ROUTES } from './information.js';
@@ -102,6 +103,8 @@ function startRole(role) {
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.ledgerLoaded = true; app.emit && app.emit('ledger'); }, () => {}));
     app.watchers.push(D.watchAppDays(app.ctx, (days) => { app.appDays = days; app.emit && app.emit('app-activity'); }, () => {}));
     app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
+    // Anonymous time on each page (privacy notice: "How the app is used").
+    app.pageTime = startPageTime(app.ctx); app.watchers.push(app.pageTime.stop);
   }
   if (role === 'merchant') {
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'config', 'rules'), (s) => {

@@ -556,6 +556,19 @@ if (await linkPage.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('u
   throw new Error('the empty sign-in should have been removed');
 await linkPage.close();
 ok('“I already have an account” removed the empty sign-in and went back to sign-in');
+// Anonymous page time: a student reads About us to the bottom; HEP sees it under Time in the app.
+const ptPage = await ctx.newPage(); watch(ptPage, 'page time'); await fresh(ptPage);
+await login(ptPage, 'aina@siswa.um.edu.my'); await ptPage.waitForSelector('#view', { timeout: 60000 });
+await ptPage.evaluate(() => { location.hash = '#/about'; }); await ptPage.waitForFunction(() => location.hash === '#/about' && !document.querySelector('#view[aria-busy]'));
+await ptPage.mouse.move(200, 400); await ptPage.mouse.wheel(0, 20000); await ptPage.waitForTimeout(6500);
+await ptPage.evaluate(() => { location.hash = '#/home'; }); await ptPage.waitForTimeout(300);
+await ptPage.evaluate(() => window.__umc.pageTime.flush());
+if (await ptPage.evaluate(() => Object.keys(window.__umc.pageTime).join(',')) !== 'flush,stop') throw new Error('page time should only expose flush and stop');
+await ptPage.close();
+await off.goto(ADMIN + '#/dashboard'); await off.reload(); await off.waitForSelector('.dash-pages', { timeout: 30000 });
+const aboutRow = await off.locator('.dash-pages tbody tr', { hasText: 'About us' }).innerText();
+if (!/End 100%/.test(aboutRow)) throw new Error('About us should show a visit read to the end: ' + aboutRow);
+ok('a student read About us to the bottom; HEP sees it under Time in the app, with no names');
 // HEP deletes a student's account from the Students page, typing the matric number to confirm.
 await off.goto(ADMIN + '#/people'); await off.waitForSelector('#pq'); await off.fill('#pq', 'Link Tester');
 await off.click('[data-del]'); await off.waitForSelector('#dla');

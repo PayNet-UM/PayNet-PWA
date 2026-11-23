@@ -855,6 +855,23 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('students cannot see deletion requests', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'accountDeletions')));
   await denied('nobody can change a deletion request from the app', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountDeletions', delId), { status: 'error' }));
 
+  log('Time on each page (anonymous totals)');
+  const ptDay = D.dayKey(stuA.now ? stuA.now() : Date.now());
+  const ptRef = (ctx, page, day = ptDay) => ctx.sdk.doc(ctx.db, 'pageTime', `${day}_${page}`);
+  const ptAdd = (ctx, page, ms, extra = {}, day = ptDay) => ctx.sdk.setDoc(ptRef(ctx, page, day), { day, page, ms: ctx.sdk.increment(ms), views: ctx.sdk.increment(1),
+    r25: ctx.sdk.increment(1), r50: ctx.sdk.increment(1), r75: ctx.sdk.increment(0), r100: ctx.sdk.increment(0), ...extra }, { merge: true });
+  await ok('a student adds time to today’s About us total', () => ptAdd(stuA, 'about', 45000));
+  await ok('another student adds to the same total', async () => { await ptAdd(stuB, 'about', 30000);
+    eq((await mpp.sdk.getDoc(ptRef(mpp, 'about'))).data().ms, 75000); });
+  await denied('more than 10 minutes in one save is refused', () => ptAdd(stuA, 'about', 11 * 60000));
+  await denied('a total can’t be lowered', () => stuA.sdk.updateDoc(ptRef(stuA, 'about'), { ms: 1 }));
+  await denied('only the known pages can be counted', () => ptAdd(stuA, 'secret-page', 1000));
+  await denied('only today’s totals can be added to', () => ptAdd(stuA, 'about', 1000, {}, '2020-01-01'));
+  await denied('nothing that names a student can be added', () => ptAdd(stuA, 'learn', 1000, { uid: stuA.uid }));
+  await denied('businesses don’t add page time', () => ptAdd(merch, 'home', 1000));
+  await denied('students can’t read the totals', () => stuA.sdk.getDoc(ptRef(stuA, 'about')));
+  await denied('nobody can delete the totals', () => mpp.sdk.deleteDoc(ptRef(mpp, 'about')));
+
   log('Initiatives and KOL tracking');
   const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
   await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {

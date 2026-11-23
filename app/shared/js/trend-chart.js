@@ -11,6 +11,7 @@ export const TREND_METRICS = [
   { id: 'signups', label: 'New sign-ups per day', unit: '', agg: 'sum', pick: (r) => r.students?.new },
   { id: 'opened', label: 'Students who opened the app that day', unit: '', agg: 'avg', pick: (r) => r.active?.d1?.opened },
   { id: 'daysPerWeek', label: 'Days opened per week (average)', unit: 'days', agg: 'last', pick: (r) => r.active?.daysPerWeek },
+  { id: 'minutes', label: 'Minutes per student per day (7-day average)', unit: 'min', agg: 'last', pick: (r) => r.time?.minutesPerStudent7 },
   { id: 'basic7', label: 'Basic Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.basic },
   { id: 'engaged7', label: 'Engaged Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.engaged },
   { id: 'activation', label: 'Student activation (ever)', unit: '', agg: 'last', pick: (r) => r.activation?.ever },
@@ -60,7 +61,7 @@ export function periodChange(rows, metric, from, to) {
   const now = summarise(series(rows, metric, from, to), metric.agg);
   const before = summarise(series(rows, metric, addDays(from, -len), addDays(from, -1)), metric.agg);
   if (now == null || before == null) return null;
-  if (metric.unit === '%' || metric.unit === 'days') return { now, before, diff: Math.round((now - before) * 10) / 10, kind: metric.unit === '%' ? 'pts' : 'abs', days: len };
+  if (metric.unit === '%' || metric.unit === 'days' || metric.unit === 'min') return { now, before, diff: Math.round((now - before) * 10) / 10, kind: metric.unit === '%' ? 'pts' : 'abs', days: len };
   if (before === 0) return { now, before, diff: now, kind: 'abs', days: len };
   return { now, before, diff: Math.round(((now - before) / before) * 1000) / 10, kind: 'pct', days: len };
 }
@@ -78,6 +79,7 @@ export const fmtValue = (v, unit) => {
   if (v == null) return '—';
   if (unit === '%') return `${v}%`;
   if (unit === 'days') return `${v} ${v === 1 ? 'day' : 'days'}`;
+  if (unit === 'min') return `${v} min`;
   return Math.round(v).toLocaleString('en-MY');
 };
 const fmtTick = (v, unit) => (unit === '%' ? `${v}%` : v >= 10000 ? `${Math.round(v / 1000)}K` : v.toLocaleString('en-MY'));

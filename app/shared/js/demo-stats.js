@@ -4,7 +4,7 @@ import { dailyStats, daysFrom, dayOf } from './daily-stats.js';
 
 const ms = (v) => (v && typeof v.toMillis === 'function' ? v.toMillis() : typeof v === 'number' ? v : 0);
 export function demoInput(docs) {
-  const input = { users: [], appDays: [], ledger: [], vouchers: [], dealClaims: [], friendships: [], referrals: [], events: [], merchants: [], stallSurveys: [] };
+  const input = { users: [], appDays: [], ledger: [], vouchers: [], dealClaims: [], friendships: [], referrals: [], events: [], merchants: [], stallSurveys: [], pageTime: [] };
   for (const [path, d] of docs) {
     const p = path.split('/');
     if (p[0] === 'users' && p.length === 2) input.users.push({ id: p[1], role: d.role, createdAt: ms(d.createdAt), college: d.college || '', faculty: d.faculty || '', source: d.source || '', heardFrom: d.heardFrom || '' });
@@ -18,6 +18,7 @@ export function demoInput(docs) {
       else if (p[0] === 'eventSubmissions') input.events.push({ uid: d.uid, submittedAt: ms(d.submittedAt), status: d.status });
       else if (p[0] === 'merchants') input.merchants.push({ id: p[1], status: d.status, type: d.type || '', submittedAt: ms(d.submittedAt) });
       else if (p[0] === 'stallSurveys') input.stallSurveys.push({ id: p[1], stallType: d.stallType || '', at: ms(d.at) });
+      else if (p[0] === 'pageTime') input.pageTime.push({ day: d.day, page: d.page, ms: d.ms || 0, views: d.views || 0, r25: d.r25 || 0, r50: d.r50 || 0, r75: d.r75 || 0, r100: d.r100 || 0 });
     }
   }
   return input;
