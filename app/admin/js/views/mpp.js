@@ -518,7 +518,22 @@ function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
     $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${(u.linkedEmails || []).join(' ')} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span>${(u.linkedEmails || []).filter((e) => e !== u.email).length ? `<br><span class="faint">Also signs in with ${esc((u.linkedEmails || []).filter((e) => e !== u.email).join(', '))}</span>` : ''}</td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button> <button class="btn small warn" data-del="${esc(u.id)}">Delete account</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+    // HEP deletes a student's account (e.g. a duplicate made with the wrong email). The rules check the typed matric number.
+    $$('[data-del]', root).forEach((b) => {
+      b.onclick = () => {
+        const u = app._pp.find((x) => x.id === b.dataset.del);
+        const el = sheet(`<h2>Delete ${esc(u.name)}’s account?</h2>
+          <p class="muted">This deletes their profile, points, friends and sign-in, cancels unused vouchers, and frees their matric number. Records the Admin team needs are kept without their name. This can’t be undone.</p>
+          <form id="dla" class="stack" style="margin-top:12px"><label class="field">Type their matric number to confirm<input name="m" required autocomplete="off" placeholder="${esc(u.matric || '')}"></label>
+          <button class="btn warn block">Delete account</button></form>`);
+        $('#dla', el).onsubmit = (e) => { e.preventDefault();
+          const typed = D.normMatric(e.target.m.value);
+          if (!u.matric || typed !== u.matric) return toast('That matric number doesn’t match this student.', true);
+          busy($('button', el), () => runDeletion(app, { uid: u.id, role: 'student', confirm: typed }));
+        };
+      };
+    });
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
@@ -561,6 +576,19 @@ function peopleMount(root, app) {
   $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(tr(`Release matric number ${m}?`))) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
 }
 
+// Sends HEP's deletion request and waits for the server to finish it.
+async function runDeletion(app, req) {
+  try {
+    const id = await D.requestAccountDeletion(app.ctx, req);
+    const res = await D.waitForDeletion(app.ctx, id);
+    if (res.status === 'error') return toast(res.message || 'The account couldn’t be deleted.', true);
+    closeSheet();
+    if (res.status === 'slow') toast('The deletion is taking longer than usual. Check Account closures in a minute.', true);
+    else toast(res.warning || 'Account deleted.', !!res.warning);
+    app.render();
+  } catch (err) { toast(errText(err), true); }
+}
+
 // ------------------------------------------------------------- account closures
 // Students who deleted their account (anonymous) and businesses asking the Admin team to close theirs, with their reasons.
 async function closuresRender(app) {
@@ -572,10 +600,10 @@ async function closuresRender(app) {
   const row = (r) => `<tr><td>${fmtDateTime(r.createdAt)}${r.seen ? '' : ' <span class="badge warn">New</span>'}</td>
     <td>${r.kind === 'request' ? `<b>${esc(r.businessName || r.name || 'Business')}</b><br><span class="faint">${esc(r.name || '')} · ${esc(r.email || '')}</span>`
     : `<b>Student account deleted</b><br><span class="faint">${esc(r.college || 'No college')}${r.faculty ? ' · ' + esc(r.faculty) : ''} · ${n(r.points || 0)} points lost</span>`}</td>
-    <td>${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
+    <td>${r.byAdmin ? `<span class="faint">Deleted by the Admin team (${esc(r.byAdmin)})</span>` : ''}${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
     <td class="r">${r.kind !== 'request' ? '<span class="badge ok">Deleted</span>' : r.status === 'open'
-    ? `<button class="btn small" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
-  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, block the account under Merchants, then mark it closed.', 'trash-2')}
+    ? `<button class="btn small warn" data-del-shop="${esc(r.id)}">Delete account</button> <button class="btn small ghost" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
+  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, then delete the account here. Use Mark as closed only if the account is already gone.', 'trash-2')}
     ${open.length ? `<div class="notice warn" style="margin-bottom:16px">${open.length} business closing ${open.length === 1 ? 'request is' : 'requests are'} waiting.</div>` : ''}
     ${top.length ? `<section class="card pad-lg" style="margin-bottom:16px"><h2>Why people leave</h2><table class="data" style="margin-top:10px"><tbody>
       ${top.map(([k, c]) => `<tr><td>${esc(D.closeReasonLabel(k))}</td><td class="r num">${c}</td></tr>`).join('')}</tbody></table></section>` : ''}
@@ -586,11 +614,25 @@ async function closuresRender(app) {
 function closuresMount(root, app) {
   const unseen = app._cl.filter((r) => !r.seen).map((r) => r.id);
   D.markClosuresSeen(app.ctx, unseen).then(() => refreshCounts(app)).catch(() => {});
+  $$('[data-del-shop]', root).forEach((b) => {
+    b.onclick = () => {
+      const r = app._cl.find((x) => x.id === b.dataset.delShop);
+      const el = sheet(`<h2>Delete ${esc(r.businessName || r.name || 'this business')}’s account?</h2>
+        <p class="muted">This deletes the business profile, its listing, deals and sign-in, and marks the request closed. Vouchers, claims and visits stay in the records. This can’t be undone.</p>
+        <form id="dls" class="stack" style="margin-top:12px">
+          <label class="check"><input type="checkbox" name="v" required> Their vouchers are settled</label>
+          <label class="check"><input type="checkbox" name="p" required> They’re removed from the PayNet list</label>
+          <button class="btn warn block">Delete account</button></form>`);
+      $('#dls', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), () => runDeletion(app, { uid: r.uid, role: 'merchant', label: r.businessName || r.name || '' }));
+      };
+    };
+  });
   $$('[data-done]', root).forEach((b) => {
     b.onclick = () => busy(b, async () => { try { await D.markClosureDone(app.ctx, b.dataset.done); toast('Marked as closed.'); app.render(); } catch (err) { toast(errText(err), true); } });
   });
   if ($('#clcsv', root)) $('#clcsv', root).onclick = () => downloadCSV('Account-closures.csv', [['Date', 'Type', 'College', 'Business', 'Reasons', 'Comment', 'Status'],
-    ...app._cl.map((r) => [r.createdAt ? new Date(toMs(r.createdAt)).toISOString() : '', r.kind === 'request' ? 'Business request' : 'Student deleted', r.college || '',
+    ...app._cl.map((r) => [r.createdAt ? new Date(toMs(r.createdAt)).toISOString() : '', r.kind === 'request' ? 'Business request' : r.byAdmin ? 'Deleted by Admin team' : 'Student deleted', r.college || '',
       r.businessName || '', (r.reasons || []).map(D.closeReasonLabel).join('; '), r.comment || '', r.kind === 'request' ? r.status : 'deleted'])]);
 }
 

@@ -3030,4 +3030,19 @@ We’ll remove this new, empty sign-in so the email can be added. Nothing else i
 Remove this sign-in and go back|Buang log masuk ini dan kembali
 If it wasn’t you, contact the Admin team with your student ID.|Jika itu bukan anda, hubungi pasukan Admin dengan kad pelajar anda.
 Sign in with the email you used before, then add this one on the Me page.|Log masuk dengan e-mel yang anda gunakan sebelum ini, kemudian tambah e-mel ini di halaman Saya.
+Delete account|Padam akaun
+This deletes their profile, points, friends and sign-in, cancels unused vouchers, and frees their matric number. Records the Admin team needs are kept without their name. This can’t be undone.|Ini memadamkan profil, mata, rakan dan log masuk mereka, membatalkan baucar yang belum digunakan, dan membebaskan nombor matrik mereka. Rekod yang diperlukan oleh pasukan Admin disimpan tanpa nama mereka. Tindakan ini tidak boleh dibuat asal.
+Type their matric number to confirm|Taip nombor matrik mereka untuk mengesahkan
+That matric number doesn’t match this student.|Nombor matrik itu tidak sepadan dengan pelajar ini.
+This deletes the business profile, its listing, deals and sign-in, and marks the request closed. Vouchers, claims and visits stay in the records. This can’t be undone.|Ini memadamkan profil perniagaan, penyenaraian, tawaran dan log masuknya, serta menandakan permintaan sebagai ditutup. Baucar, tuntutan dan lawatan kekal dalam rekod. Tindakan ini tidak boleh dibuat asal.
+Their vouchers are settled|Baucar mereka telah diselesaikan
+They’re removed from the PayNet list|Mereka telah dikeluarkan daripada senarai PayNet
+Account deleted.|Akaun telah dipadamkan.
+The account couldn’t be deleted.|Akaun tidak dapat dipadamkan.
+The deletion is taking longer than usual. Check Account closures in a minute.|Pemadaman mengambil masa lebih lama daripada biasa. Semak Penutupan akaun sebentar lagi.
+The account’s data is deleted, but its sign-in couldn’t be removed. Remove it under Firebase Authentication.|Data akaun telah dipadamkan, tetapi log masuknya tidak dapat dibuang. Buang di bawah Firebase Authentication.
+This account changed type. Refresh and try again.|Jenis akaun ini telah berubah. Muat semula dan cuba lagi.
+Only student and business accounts can be deleted here.|Hanya akaun pelajar dan perniagaan boleh dipadamkan di sini.
+Deleted an account|Memadam akaun
+Use Mark as closed only if the account is already gone.|Gunakan Tandakan sebagai ditutup hanya jika akaun sudah tiada.
 `;

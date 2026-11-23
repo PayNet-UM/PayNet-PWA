@@ -540,6 +540,19 @@ if (await linkPage.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('u
   throw new Error('the empty sign-in should have been removed');
 await linkPage.close();
 ok('“I already have an account” removed the empty sign-in and went back to sign-in');
+// HEP deletes a student's account from the Students page, typing the matric number to confirm.
+await off.goto(ADMIN + '#/people'); await off.waitForSelector('#pq'); await off.fill('#pq', 'Link Tester');
+await off.click('[data-del]'); await off.waitForSelector('#dla');
+await off.fill('#dla [name=m]', 'LINK00002'); await off.click('#dla button');
+await off.waitForFunction(() => /doesn’t match/.test(document.querySelector('#toast')?.textContent || ''));
+await off.fill('#dla [name=m]', 'link00001'); await off.click('#dla button');
+await off.waitForFunction(() => /Account deleted/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 30000 });
+await off.waitForFunction(() => !document.querySelector('#pt')?.textContent.includes('Link Tester'), null, { timeout: 20000 });
+await off.goto(ADMIN + '#/closures'); await off.waitForSelector('table.data');
+if (!/Deleted by the Admin team/.test(await off.textContent('#view'))) throw new Error('the deletion should be listed in Account closures');
+await off.goto(ADMIN + '#/activity'); await off.waitForSelector('table.data');
+if (!/Deleted an account/.test(await off.textContent('#view'))) throw new Error('the deletion should be in the Activity log');
+ok('HEP deleted a student’s account after typing their matric number; it shows in Account closures and the Activity log');
 // The idle check, run as if 31 minutes had passed with no clicks or typing.
 await off.evaluate(() => window.__umc.checkSession(Date.now() + 31 * 60_000));
 await off.waitForSelector('#google', { timeout: 20000 });
