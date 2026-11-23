@@ -69,6 +69,15 @@ test('activation and repeat participation (KPIs 5 and 6)', () => {
   assert.deepEqual(s.activation, { ever: 3, repeat: 1, repeatRate: 33.3 });
 });
 test('stickiness is today ÷ 30 days, as a percentage', () => assert.equal(s.active.stickiness, 66.7));
+test('days opened per week, among students who opened in the last 7 days', () => {
+  // 14-20 Nov: a opened on 14 and 20 (2 days), b on 18, c on 20 = 4 days over 3 students
+  assert.equal(s.active.daysPerWeek, 1.3);
+});
+test('referral sign-up rate and quiz participation rate', () => {
+  // c joined with a's referral: 1 of 3. a and b did a lesson or the money check: 2 of 3.
+  assert.deepEqual(s.rates, { referral: 33.3, referred: 1, quiz: 66.7, learners: 2 });
+  assert.deepEqual(dailyStats({ users: [] }, D0).rates, { referral: 0, referred: 0, quiz: 0, learners: 0 }, 'no students: 0, not NaN');
+});
 test('merchants, assessment and payment readiness', () => {
   assert.deepEqual([s.merchants.total, s.merchants.verified, s.merchants.pending, s.merchants.assessed], [2, 1, 1, 1]);
   assert.deepEqual(s.merchants.digitalMix, { businessQr: 1 });

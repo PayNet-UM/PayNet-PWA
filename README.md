@@ -145,6 +145,10 @@ The active-user tiers:
 
 HEP edits the targets and the period with **Edit targets**, and adds numbers the app can't see (stalls surveyed outside the app, outside reach, end-of-campaign retention) with **Enter figures**. Both are recorded in the Activity log.
 
+**Trends** (top of the Dashboard, `app/shared/js/trend-chart.js`): pick a number (sign-ups, active users, days opened per week, referral sign-up rate, quiz participation rate and more) and a period (30 or 90 days, programme to date, all time) to see it day by day, with a hover tooltip, a "vs the previous period" change and a table view. Days from before a number was recorded show as a gap until the backfill is re-run.
+
+**New rates** (`app/shared/js/daily-stats.js`): **days opened per week** (average days in the last 7 that a student opened the app, among those who opened it), **referral sign-up rate** (students who joined with a referral code ÷ all students) and **quiz participation rate** (students who did a lesson quiz or the money check ÷ all students). The old "KPIs and surveys" page is now **Money check results**; its KPIs, including transaction frequency, are replaced by the Dashboard.
+
 **Reports for PayNet:** on the Dashboard, **Excel report** downloads one sheet per area: KPIs, students, merchants and commerce, initiatives, and the daily trend. It holds counts only, with no names, emails or matric numbers. **Print or save as PDF** prints just the report, without the menu or buttons.
 
 **Initiatives** (admin site) gives each KOL, event or campaign a tracking link and QR code (`addonz.my/?src=<code>`), defined in `app/shared/js/initiatives.js`:

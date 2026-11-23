@@ -121,6 +121,8 @@ The **Dashboard** reads daily summaries (`dailyStats/{YYYY-MM-DD}`: counts only,
 
    It's safe to run again. Each day is recalculated from the records that exist now.
 
+   **Re-run it after a release that adds a new number** (for example the days-opened, referral and quiz rates), so past days get it too. Until then, those days show as a gap in the Trends chart.
+
 The calculation lives in `app/shared/js/daily-stats.js`, shared with Demo mode. `functions/daily-stats.js` must be an exact copy, and `npm test` fails if the two differ.
 
 ## Manual deploys

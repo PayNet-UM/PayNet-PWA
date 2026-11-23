@@ -219,6 +219,29 @@
 .dash-tile .s { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .dash-source { font-size:11px; }
 .dash-spark { display:block; color:var(--brand, #2420ff); margin:4px 0; }
+/* Trends chart (app/shared/js/trend-chart.js): one brand-blue line, hairline grid, muted axis text. */
+.trend-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-top:12px; }
+.trend-controls .field { flex:1 1 260px; max-width:420px; margin:0; }
+.trend-ranges { display:flex; flex-wrap:wrap; gap:6px; }
+.trend-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:16px 0 6px; }
+.trend-name { width:100%; font-size:13px; color:var(--ink-3); }
+.trend-head b { font-size:28px; line-height:1.1; color:var(--ink); }
+.trend-of { color:var(--ink-2); font-weight:600; margin-left:-6px; }
+.trend-chart { position:relative; width:100%; min-height:200px; outline:none; border-radius:10px; }
+.trend-chart:focus-visible { box-shadow:0 0 0 3px var(--blue-wash), 0 0 0 4px var(--blue); }
+.trend-svg { display:block; max-width:100%; height:auto; touch-action:pan-y; }
+.trend-grid { stroke:var(--line); stroke-width:1; }
+.trend-axis { fill:var(--ink-3); font-size:11px; font-variant-numeric:tabular-nums; }
+.trend-line { fill:none; stroke:var(--blue, #2420ff); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.trend-dot, .trend-end, .trend-hover { fill:var(--blue, #2420ff); stroke:var(--card, #fff); stroke-width:2; }
+.trend-cross { stroke:var(--ink-3); stroke-width:1; }
+.trend-tip { position:absolute; pointer-events:none; background:var(--card, #fff); border:1px solid var(--line-2, #c5c9ed); border-radius:8px; padding:6px 10px; box-shadow:var(--shadow); white-space:nowrap; display:flex; flex-direction:column; }
+.trend-tip[hidden] { display:none; }
+.trend-tip strong { font-size:14px; color:var(--ink); }
+.trend-tip span { font-size:12px; color:var(--ink-3); }
+.trend-table { margin-top:10px; }
+.trend-table summary { cursor:pointer; color:var(--ink-2); font-weight:600; }
+.trend-table .table-wrap { max-height:320px; overflow:auto; margin-top:8px; }
 .dash-tiers { margin-top:14px; }
 .dash-break td { padding:6px 8px; }
 
