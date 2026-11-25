@@ -81,8 +81,9 @@ test('time in the app: minutes per student per day and each page over 7 days', (
     { day: '2026-11-21', page: 'home', ms: 999999, views: 9 },                                   // after the day
   ];
   const t = dailyStats({ ...input, pageTime }, D0).time;
-  // today: 2 min ÷ 2 students who opened today = 1 min. 7 days: 8 min ÷ 4 student-days opened (a×2, b, c) = 2 min.
-  assert.equal(t.minutesPerStudent, 1); assert.equal(t.minutesPerStudent7, 2); assert.equal(t.minutes7, 8);
+  // today: 2 min ÷ 2 students who opened today = 1 min. 7 days: 8 min ÷ the 3 student-days opened on days that
+  // recorded page time (20 Nov: a and c; 18 Nov: b). a's 14 Nov open had no page time yet, so it doesn't count.
+  assert.equal(t.minutesPerStudent, 1); assert.equal(t.minutesPerStudent7, 2.7); assert.equal(t.minutes7, 8);
   assert.deepEqual(t.pages7.about, { ms: 120000, views: 2, r25: 2, r50: 1, r75: 1, r100: 0 });
   assert.equal(t.pages7.home.ms, 360000);
   assert.deepEqual(dailyStats(input, D0).time, { minutesPerStudent: 0, minutesPerStudent7: 0, minutes7: 0, pages7: {} }, 'no page time yet');

@@ -1,6 +1,6 @@
 // Tests for Initiatives and KOL tracking (app/shared/js/initiatives.js): link capture and before/after impact.
 import assert from 'node:assert/strict';
-import { captureSource, getSource, toCode, initiativeImpact, SOURCE_DAYS } from '../app/shared/js/initiatives.js';
+import { captureSource, getSource, toCode, initiativeImpact, SOURCE_DAYS, linkWithSource } from '../app/shared/js/initiatives.js';
 
 let pass = 0, fail = 0;
 const test = (name, fn) => { try { fn(); pass++; console.log('  ✓', name); } catch (e) { fail++; console.log('  ✗', name, '\n   ', e.message); } };
@@ -48,6 +48,17 @@ test('an end date limits the “after” window', () => {
 test('a future initiative has no before/after yet', () => {
   const x = initiativeImpact(rows, { code: 'jtk', start: '2026-12-25' });
   assert.equal(x.before, null); assert.equal(x.extra, null); assert.equal(x.viaLink, 7);
+});
+test('the open-in-browser link keeps the KOL code (Instagram/TikTok → Chrome/Safari)', () => {
+  assert.equal(linkWithSource('https://addonz.my/', 'kol-aina'), 'https://addonz.my/?src=kol-aina');
+  assert.equal(linkWithSource('intent://addonz.my/', 'kol-aina'), 'intent://addonz.my/?src=kol-aina');
+  assert.equal(linkWithSource('https://addonz.my/', ''), 'https://addonz.my/', 'no code: plain link');
+  assert.equal(linkWithSource('https://addonz.my/', 'bad code&x=1'), 'https://addonz.my/', 'only valid codes go in the link');
+  // The full journey: code saved in Instagram, carried in the link, saved again in Chrome.
+  const insta = new Map(), chrome = new Map(); const store = (m) => ({ getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) });
+  captureSource('?src=kol-aina', store(insta));
+  const link = linkWithSource('https://addonz.my/', getSource(store(insta)));
+  assert.equal(captureSource(new URL(link).search, store(chrome)), 'kol-aina');
 });
 test('an unknown code has no sign-ups', () => assert.equal(initiativeImpact(rows, { code: 'nobody', start: '2026-11-10' }).viaLink, 0));
 console.log(`\n${pass} passed, ${fail} failed`);

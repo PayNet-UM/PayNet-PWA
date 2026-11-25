@@ -481,7 +481,7 @@ service cloud.firestore {
     function pageTimeDoc(id) {
       return D().keys().hasOnly(pageTimeFields()) && D().keys().hasAll(pageTimeFields())
         && D().day == dayKey(request.time) && D().page in ['home', 'explore', 'merchant', 'rewards', 'feskum', 'events', 'bayar', 'learn', 'survey', 'community', 'leagues', 'avatar', 'me', 'feedback', 'delete-account', 'points', 'about', 'contact', 'other']
-        && id == D().day + '_' + D().page;
+        && id.matches(D().day + '_' + D().page + '_[0-9]'); // 10 shards per page per day (page-time.js SHARDS)
     }
     // A save adds between 0 and max (10 minutes of time, 30 visits) to one total.
     function addsUpTo(f, base, max) { return D()[f] is int && D()[f] >= base && D()[f] - base <= max; }
