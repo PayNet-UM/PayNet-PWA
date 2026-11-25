@@ -663,6 +663,7 @@ service cloud.firestore {
 
     // Merchant assessment, the "stall survey" (app/shared/js/stall-survey.js): merchants answer about their own business; only they and the Admin
     // team can read it (it may hold a WhatsApp number). Nobody else can write it, and it can't be deleted from the app.
+    function otherText(k) { return !(k in D().answers) || (D().answers[k] is string && D().answers[k].size() <= 120); }
     match /stallSurveys/{u} {
       allow read: if signedIn() && (uid() == u || isMpp());
       allow create, update: if isMerchantRole() && uid() == u
@@ -681,7 +682,10 @@ service cloud.firestore {
         && D().answers.challenges is list && D().answers.challenges.size() <= 3
         && D().answers.priorities is list && D().answers.priorities.size() <= 2
         && D().answers.support is list && D().answers.support.size() <= 3
-        && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20));
+        && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20))
+        // "Other" boxes: short text only (the app allows 80 characters).
+        && otherText('locationOther') && otherText('typeOther') && otherText('banksOther')
+        && otherText('challengesOther') && otherText('financingPurposeOther') && otherText('supportOther');
     }
 
     match /missionClaims/{id} {
