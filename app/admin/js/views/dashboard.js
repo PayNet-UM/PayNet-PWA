@@ -9,7 +9,8 @@ import { addDays, dayOf } from '../daily-stats.js';
 import { STALL_TYPES } from '../stall-survey.js';
 import { KPIS, FIGURE_FIELDS, kpiSettings, kpiActuals, kpiStatus, monthlyTransactions, STATUS_LABEL } from '../kpis.js';
 import { PAGE_NAMES } from '../page-time.js';
-import { TREND_METRICS, TREND_RANGES, series, rangeDays, periodChange, periodValue, fmtValue, drawTrend } from '../trend-chart.js';
+import { TREND_METRICS, TREND_RANGES, TREND_GROUPS, series, rangeDays, periodChange, periodValue, fmtValue, drawTrend } from '../trend-chart.js';
+import { COMPARE_MAX, COMPARE_DEFAULT, KPI_PREFIX, kpiFor, cleanSelection, cleanRange, compareLink, fromRouteArgs, compareSheet } from '../dash-compare.js';
 
 const SOURCES = { app: ['From the app', 'ok'], hep: ['Entered by HEP', ''], none: ['Not tracked yet', 'warn'] };
 const badge = (kind) => `<span class="badge ${SOURCES[kind][1]} dash-source">${SOURCES[kind][0]}</span>`;
@@ -31,9 +32,20 @@ const top = (obj, label = (k) => (k === 'none' ? 'Not set' : k), max = 6) => {
   return rows.length ? `<table class="data dash-break"><tbody>${rows.map(([k, c]) => `<tr><td data-no-i18n>${esc(label(k))}</td><td class="r num">${n(c)}</td></tr>`).join('')}</tbody></table>`
     : '<p class="faint">No data yet.</p>';
 };
-const section = (title, intro, body) => `<section class="card pad-lg dash-section"><h2>${title}</h2>${intro ? `<p class="faint">${intro}</p>` : ''}${body}</section>`;
+const sectionId = (title) => 'dash-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const section = (title, intro, body) => `<section class="card pad-lg dash-section" id="${sectionId(title)}"><h2 tabindex="-1">${title}</h2>${intro ? `<p class="faint">${intro}</p>` : ''}${body}</section>`;
+// The Dashboard's sections, in page order, for the jump bar (team request: get to section 6 without scrolling).
+const SECTIONS = ['Key metrics', 'Trends', '1. Students and engagement', 'Time in the app', '2. Merchants', '3. Commerce and transactions', '4. Campaigns', '5. Impact', '6. KPI tracking'];
+function jumpHTML() {
+  return `<nav class="dash-jump no-print" aria-label="Dashboard sections">
+    <div class="dash-jump-chips">${SECTIONS.map((t) => `<button type="button" class="dash-jump-chip" data-jump="${sectionId(t)}">${esc(t)}</button>`).join('')}</div>
+    <label class="dash-jump-select"><span class="sr">Jump to section</span><select id="dash-jump">${SECTIONS.map((t) => `<option value="${sectionId(t)}">${esc(t)}</option>`).join('')}</select></label>
+  </nav>`;
+}
 
-export async function dashboardRender(app) {
+export async function dashboardRender(app, args = []) {
+  const shared = fromRouteArgs(args);
+  if (shared) saveCompare(shared);
   const today = dayOf(Date.now());
   const [rows, paynet, allPaynet, manualRows, savedTargets, savedFigures] = await Promise.all([D.listDailyStats(app.ctx),
     D.paynetCounts(app.ctx, D.monthKey()).catch(() => []), D.allPaynetCounts(app.ctx).catch(() => []), D.listManualVolumes(app.ctx).catch(() => []),
@@ -61,6 +73,8 @@ export async function dashboardRender(app) {
   return `${head}
     ${kpiFlags(latest, settings, figures, months)}
     <p class="faint dash-updated">${icon('clock')} Updated every 3 hours. Last update: ${fmtDateTime(latest.generatedAt)}. Figures up to ${esc(latest.day)}.</p>
+    ${jumpHTML()}
+    ${section('Key metrics', `Your picks, side by side over the same dates (up to ${COMPARE_MAX}). Saved on this computer; Copy link shares this view.`, compareHTML())}
     ${section('Trends', 'Pick a number to see how it changed day by day. Hover over the line, or use the arrow keys, to read each day.', trendsHTML())}
     ${section('1. Students and engagement', '', `<div class="stats dash-grid">
       ${tile('Registered students', n(s.total), `+${n(s.new7)} in the last 7 days`, 'app', weekly((r) => r.students.total))}
@@ -128,6 +142,145 @@ function timeHTML(latest, weekly) {
     : '<p class="faint" style="margin-top:12px">No page time recorded yet.</p>'}`;
 }
 
+// How a number compares with the previous period, and what the headline number means.
+const changeText = (ch, metric) => (!ch ? 'No earlier period to compare yet'
+  : `${ch.diff > 0 ? '▲ +' : ch.diff < 0 ? '▼ ' : ''}${ch.kind === 'pct' ? ch.diff + '%' : ch.kind === 'pts' ? ch.diff + ' pts'
+    : metric.unit === 'days' || metric.unit === 'min' ? `${ch.diff} ${metric.unit}` : fmtValue(ch.diff, '')} vs the previous ${ch.days} days`);
+const ofText = (metric) => (metric.agg === 'sum' ? 'in this period' : metric.agg === 'avg' ? 'a day on average' : 'now');
+
+// ------------------------------------------------------------- Key metrics (app/shared/js/dash-compare.js)
+const COMPARE_KEY = 'onz-dash-compare';
+function compareState() {
+  try { const s = JSON.parse(localStorage.getItem(COMPARE_KEY) || 'null'); if (s) return { ids: cleanSelection(s.ids), range: cleanRange(s.range) }; } catch { /* not saved */ }
+  return { ids: [...COMPARE_DEFAULT], range: 'programme' };
+}
+function saveCompare(state) { try { localStorage.setItem(COMPARE_KEY, JSON.stringify({ ids: cleanSelection(state.ids), range: cleanRange(state.range) })); } catch { /* not saved: still works */ } }
+function compareHTML() {
+  const st = compareState();
+  return `<div class="cmp-bar no-print"><div class="trend-ranges" role="group" aria-label="Period for my key metrics">${TREND_RANGES.map(([k, label]) => `<button type="button" class="btn small ${k === st.range ? 'primary' : 'ghost'}" data-cmp-range="${k}" aria-pressed="${k === st.range}">${esc(label)}</button>`).join('')}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn small" id="cmp-pick">${icon('list-checks')} Pick metrics</button><button type="button" class="btn small ghost" id="cmp-link">${icon('copy')} Copy link</button></div></div>
+    <p class="cmp-caption" id="cmp-caption"></p><div class="cmp-grid" id="cmp-grid"></div>`;
+}
+// A KPI card: actual against target, how far along, and the status (KPIs aren't day by day, so no chart).
+function kpiCard({ k, a, s }, settings) {
+  const target = settings.targets[k.id];
+  const bar = s.pctOfTarget == null ? 0 : Math.min(100, s.pctOfTarget);
+  return `<article class="cmp-card cmp-kpi"><h3 class="cmp-name">${esc(k.name)}</h3>
+    <div class="cmp-head"><b class="num cmp-value">${fmtKpi(k, a.value)}</b><span class="trend-of">of ${fmtKpi(k, target)} target</span></div>
+    <p class="cmp-status"><span class="badge ${STATUS_CLASS[s.status]}">${STATUS_LABEL[s.status]}</span>${s.pctOfTarget == null ? '' : ` <span class="faint">${s.pctOfTarget}% of target</span>`}</p>
+    <div class="cmp-bar-track" role="img" aria-label="${s.pctOfTarget ?? 0}% of target"><i style="width:${bar}%"></i>${k.type === 'cumulative' && s.expected != null && target ? `<b class="cmp-pace" style="left:${Math.min(100, (s.expected / target) * 100)}%" title="Where it should be by today"></b>` : ''}</div>
+    <p class="faint cmp-note">${a.pending ? esc(a.pending) : k.type === 'cumulative' && s.expected != null ? `${n(s.expected)} expected by today (the line)` : esc(k.component)}</p></article>`;
+}
+function mountCompare(root, app) {
+  const grid = $('#cmp-grid', root); if (!grid) return () => {};
+  const { rows, settings } = app._dash; const latest = rows[rows.length - 1];
+  const draw = () => {
+    const st = compareState();
+    const { from, to } = rangeDays(st.range, rows, latest.day, settings.start);
+    // A caption that travels with a screenshot into a slide: what, which dates, and how fresh.
+    const nice = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    $('#cmp-caption', root).textContent = `+Onz · Key metrics · ${nice(from)} – ${nice(to)} · updated ${fmtDateTime(latest.generatedAt)}. Each chart has its own scale.`;
+    const kpiScores = new Map(scored(latest, app._dash.settings, app._dash.figures, app._dash.months).map((x) => [KPI_PREFIX + x.k.id, x]));
+    if (!st.ids.length) { grid.innerHTML = '<p class="faint">No metrics picked. Use Pick metrics to choose up to 6.</p>'; return; }
+    grid.innerHTML = st.ids.map((id) => kpiFor(id) ? kpiCard(kpiScores.get(id), app._dash.settings) : `<article class="cmp-card" data-cmp="${id}"><h3 class="cmp-name"></h3><div class="cmp-head"><b class="num cmp-value"></b><span class="trend-of cmp-of"></span></div><p class="faint cmp-change"></p><div class="trend-chart cmp-chart"></div></article>`).join('');
+    for (const card of $$('[data-cmp]', grid)) { // the daily-number cards (KPI cards are complete already)
+      const metric = TREND_METRICS.find((m) => m.id === card.dataset.cmp);
+      $('.cmp-name', card).textContent = metric.label;
+      $('.cmp-value', card).textContent = fmtValue(periodValue(rows, metric, from, to), metric.unit);
+      $('.cmp-of', card).textContent = ofText(metric);
+      $('.cmp-change', card).textContent = changeText(periodChange(rows, metric, from, to), metric);
+      drawTrend($('.cmp-chart', card), series(rows, metric, from, to), metric, { compact: true });
+    }
+  };
+  $$('[data-cmp-range]', root).forEach((b) => { b.onclick = () => {
+    saveCompare({ ...compareState(), range: b.dataset.cmpRange });
+    $$('[data-cmp-range]', root).forEach((x) => { const on = x === b; x.classList.toggle('primary', on); x.classList.toggle('ghost', !on); x.setAttribute('aria-pressed', String(on)); });
+    draw();
+  }; });
+  $('#cmp-pick', root).onclick = () => pickSheet(draw);
+  $('#cmp-link', root).onclick = async () => {
+    const st = compareState(); const url = compareLink(location.origin + location.pathname, st.ids, st.range);
+    try { await navigator.clipboard.writeText(url); toast('Link copied. It opens the Dashboard with these metrics.'); } catch { prompt('Copy this link', url); }
+  };
+  draw();
+  let w = grid.clientWidth;
+  if (typeof ResizeObserver !== 'function') return () => {};
+  const ro = new ResizeObserver(() => { if (Math.abs(grid.clientWidth - w) > 8) { w = grid.clientWidth; draw(); } }); ro.observe(grid);
+  return () => ro.disconnect();
+}
+// The picker: metrics listed by Dashboard section, up to COMPARE_MAX ticked.
+function pickSheet(onSaved) {
+  const chosen = new Set(compareState().ids);
+  const el = sheet(`<h2>Pick your key metrics</h2><p class="muted">Tick up to ${COMPARE_MAX}. They show side by side at the top of the Dashboard.</p>
+    <form id="cmp-form" class="stack" style="margin-top:12px">
+      <fieldset class="cmp-group"><legend>KPI targets</legend>${KPIS.map((k) => `<label class="check"><input type="checkbox" name="m" value="${KPI_PREFIX + k.id}" ${chosen.has(KPI_PREFIX + k.id) ? 'checked' : ''}> ${esc(k.name)}</label>`).join('')}</fieldset>
+      ${TREND_GROUPS.map((g) => `<fieldset class="cmp-group"><legend>${esc(g)}</legend>${TREND_METRICS.filter((m) => m.group === g).map((m) => `<label class="check"><input type="checkbox" name="m" value="${m.id}" ${chosen.has(m.id) ? 'checked' : ''}> ${esc(m.label)}</label>`).join('')}</fieldset>`).join('')}
+      <p class="faint" id="cmp-count" role="status"></p>
+      <div class="row" style="gap:8px"><button class="btn primary">Show these</button><button type="button" class="btn ghost" id="cmp-reset">Back to the usual four</button></div>
+    </form>`);
+  const boxes = $$('input[name=m]', el);
+  // Order of ticking is kept, so the cards appear in the order picked.
+  const order = [...chosen];
+  const sync = () => {
+    const n = boxes.filter((b) => b.checked).length;
+    $('#cmp-count', el).textContent = `${n} of ${COMPARE_MAX} picked${n >= COMPARE_MAX ? '. Untick one to pick another.' : ''}`;
+    boxes.forEach((b) => { b.disabled = !b.checked && n >= COMPARE_MAX; });
+  };
+  boxes.forEach((b) => { b.onchange = () => { if (b.checked) order.push(b.value); else order.splice(order.indexOf(b.value), 1); sync(); }; });
+  sync();
+  $('#cmp-reset', el).onclick = () => { boxes.forEach((b) => { b.checked = COMPARE_DEFAULT.includes(b.value); }); order.splice(0, order.length, ...COMPARE_DEFAULT); sync(); };
+  $('#cmp-form', el).onsubmit = (e) => { e.preventDefault(); saveCompare({ ...compareState(), ids: order }); closeSheet(); onSaved(); };
+}
+
+// ------------------------------------------------------------- Jump to section (sticky, highlights where you are)
+function mountJump(root) {
+  const nav = $('.dash-jump', root); if (!nav) return () => {};
+  const select = $('#dash-jump', nav), chips = $$('[data-jump]', nav), row = $('.dash-jump-chips', nav);
+  let lock = '', lockUntil = 0; // while a jump scrolls the page, keep the chosen section highlighted
+  const targets = SECTIONS.map((t) => $('#' + sectionId(t), root)).filter(Boolean);
+  // On phones the admin menu bar sticks to the top, so the jump bar sits under it.
+  const topBar = () => { const rail = document.querySelector('.mpp .rail'); return rail && rail.getBoundingClientRect().width > window.innerWidth * 0.9 ? rail.offsetHeight : 0; };
+  const offset = () => topBar() + nav.offsetHeight + 8;
+  const place = () => { nav.style.top = topBar() + 'px'; };
+  const go = (id) => {
+    const el = $('#' + id, root); if (!el) return;
+    const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    lock = id; lockUntil = Date.now() + 1500;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset(), behavior: smooth ? 'smooth' : 'auto' });
+    $('h2', el)?.focus({ preventScroll: true });
+    mark(id);
+  };
+  const mark = (id) => {
+    chips.forEach((c) => { const on = c.dataset.jump === id; c.classList.toggle('on', on); if (on) c.setAttribute('aria-current', 'true'); else c.removeAttribute('aria-current'); });
+    if (select.value !== id) select.value = id;
+    // Bring the highlighted button into view in its own row (scrollIntoView would also move, and so stop, the page).
+    const chip = chips.find((c) => c.dataset.jump === id);
+    if (chip && row.clientWidth && (chip.offsetLeft < row.scrollLeft || chip.offsetLeft + chip.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = chip.offsetLeft - 16;
+  };
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (Date.now() < lockUntil) return mark(lock);
+      const line = offset() + 4;
+      let current = targets[0];
+      for (const t of targets) if (t.getBoundingClientRect().top <= line) current = t;
+      // At the very bottom the last sections can't reach the top, so the last one on screen counts.
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        for (const t of targets) if (t.getBoundingClientRect().top < window.innerHeight * 0.6) current = t;
+      }
+      if (current) mark(current.id);
+    });
+  };
+  chips.forEach((c) => { c.onclick = () => go(c.dataset.jump); });
+  select.onchange = () => go(select.value);
+  place(); onScroll();
+  const onResize = () => { place(); onScroll(); };
+  window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onResize);
+  return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); };
+}
+
 // ------------------------------------------------------------- Trends (app/shared/js/trend-chart.js)
 const TREND_KEY = 'onz-dash-trend';
 const trendState = () => { try { return { metric: 'students', range: 'programme', ...JSON.parse(localStorage.getItem(TREND_KEY) || '{}') }; } catch { return { metric: 'students', range: 'programme' }; } };
@@ -150,10 +303,8 @@ function mountTrends(root, app) {
     $('#tr-name', root).textContent = metric.label;
     // Per-day counts show the period's total, day-to-day figures their daily average, the rest today's value.
     $('#tr-value', root).textContent = fmtValue(periodValue(rows, metric, from, to), metric.unit);
-    $('#tr-of', root).textContent = metric.agg === 'sum' ? 'in this period' : metric.agg === 'avg' ? 'a day on average' : 'now';
-    $('#tr-change', root).textContent = !ch ? 'No earlier period to compare yet'
-      : `${ch.diff > 0 ? '▲ +' : ch.diff < 0 ? '▼ ' : ''}${ch.kind === 'pct' ? ch.diff + '%' : ch.kind === 'pts' ? ch.diff + ' pts'
-        : metric.unit === 'days' || metric.unit === 'min' ? `${ch.diff} ${metric.unit}` : fmtValue(ch.diff, '')} vs the previous ${ch.days} days`;
+    $('#tr-of', root).textContent = ofText(metric);
+    $('#tr-change', root).textContent = changeText(ch, metric);
     drawTrend(host, pts, metric);
     $('#tr-table', root).innerHTML = `<table class="data"><thead><tr><th>Day</th><th class="r">${esc(metric.label)}</th></tr></thead><tbody>${pts.slice().reverse()
       .map((p) => `<tr><td>${esc(p.day)}</td><td class="r num">${esc(fmtValue(p.value, metric.unit))}</td></tr>`).join('')}</tbody></table>`;
@@ -218,14 +369,14 @@ function figuresSheet(app) {
       closeSheet(); toast('Figures saved.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
 }
 export function dashboardMount(root, app) {
-  const stopTrends = mountTrends(root, app);
+  const stops = [mountTrends(root, app), mountCompare(root, app), mountJump(root)];
   const x = $('#dash-xlsx', root), p = $('#dash-print', root);
   if (x) x.onclick = (e) => busy(e.currentTarget, () => downloadReport(app));
   if (p) p.onclick = () => window.print();
   const t = $('#kpi-targets', root), f = $('#kpi-figures', root);
   if (t) t.onclick = () => targetsSheet(app);
   if (f) f.onclick = () => figuresSheet(app);
-  return stopTrends; // the admin site calls this when leaving the page
+  return () => stops.forEach((stop) => stop?.()); // the admin site calls this when leaving the page
 }
 
 // Excel report for PayNet and the team: counts only, one sheet per area (app/shared/js/report.js).
@@ -236,6 +387,13 @@ async function downloadReport(app) {
     const sheets = reportSheets({ ...app._dash, initiatives, labels: {
       type: (t) => (INITIATIVE_TYPES.find(([k]) => k === t) || [t, t])[1], heard: (k) => (HEARD_FROM.find(([key]) => key === k) || [k, k])[1],
       stall: (k) => STALL_TYPES[k]?.en || k, page: (k) => PAGE_NAMES[k] || k } });
+    const cmp = compareState();
+    if (cmp.ids.length) {
+      const last = app._dash.rows[app._dash.rows.length - 1].day;
+      const { from, to } = rangeDays(cmp.range, app._dash.rows, last, app._dash.settings.start);
+      const sheet = compareSheet(app._dash.rows, cmp.ids, from, to);
+      if (sheet) sheets.splice(1, 0, sheet);
+    }
     const ExcelJS = await loadExcel(); const wb = new ExcelJS.Workbook();
     for (const sh of sheets) {
       const ws = wb.addWorksheet(sh.name);
