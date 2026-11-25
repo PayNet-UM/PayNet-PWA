@@ -116,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'change-faculty': 'Changed a student’s faculty', 'delete-account': 'Deleted an account',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'initiative-archive': 'Archived an initiative', 'initiative-restore': 'Restored an initiative', 'change-faculty': 'Changed a student’s faculty', 'delete-account': 'Deleted an account',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -900,10 +900,11 @@ export async function saveInitiative(ctx, code, data) {
   b.set(ctx.sdk.doc(ctx.db, 'initiatives', code), { ...data, code, logId }, { merge: true });
   await b.commit();
 }
-export async function deleteInitiative(ctx, code, name = '') {
+// Archive hides an initiative from the active list (its link keeps working, its history stays); restore brings it back.
+export async function archiveInitiative(ctx, code, name = '', archived = true) {
   const b = ctx.sdk.writeBatch(ctx.db);
-  logAdmin(ctx, b, 'initiative-delete', name || code);
-  b.delete(ctx.sdk.doc(ctx.db, 'initiatives', code));
+  const logId = logAdmin(ctx, b, archived ? 'initiative-archive' : 'initiative-restore', name || code);
+  b.set(ctx.sdk.doc(ctx.db, 'initiatives', code), { code, archived, logId }, { merge: true });
   await b.commit();
 }
 

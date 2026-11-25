@@ -919,10 +919,19 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('a student cannot create an initiative', () => D.saveInitiative(stuA, 'fake-kol', { name: 'Fake', type: 'kol', start: '2026-11-17' }));
   await denied('an initiative cannot be saved without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'sneaky'), { code: 'sneaky', name: 'Sneaky' }));
   await denied('an initiative code must match its tracking format', () => D.saveInitiative(mpp, 'Bad Code', { name: 'Bad', type: 'kol', start: '2026-11-17' }));
-  await ok('HEP deletes an initiative, and it is logged', async () => {
-    await D.deleteInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable');
-    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-delete'), true);
+  await ok('HEP archives an initiative: it stays in the records, and it is logged', async () => {
+    await D.archiveInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable', true);
+    const it = (await D.listInitiatives(mpp)).find((i) => i.code === 'jtk-roundtable');
+    eq(it.archived, true); eq(it.name, 'JTK Roundtable');
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-archive'), true);
   });
+  await ok('HEP restores an archived initiative, and it is logged', async () => {
+    await D.archiveInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable', false);
+    eq((await D.listInitiatives(mpp)).find((i) => i.code === 'jtk-roundtable').archived, false);
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-restore'), true);
+  });
+  await denied('an initiative can never be deleted, even by HEP', () => mpp.sdk.deleteDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'jtk-roundtable')));
+  await denied('an initiative cannot be archived without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'jtk-roundtable'), { archived: true }));
   await denied('nobody can write a daily summary from the app, not even HEP', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'), { students: { total: 99999 } }));
 
   log('Student event submissions');

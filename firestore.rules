@@ -79,7 +79,7 @@ service cloud.firestore {
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
                           'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures',
-                          'initiative', 'initiative-delete', 'delete-account']
+                          'initiative', 'initiative-delete', 'initiative-archive', 'initiative-restore', 'delete-account']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -466,13 +466,15 @@ service cloud.firestore {
     }
     // Referral leaderboard: the 10 students whose codes were used most. Written only by the server
     // (functions/referrals.js); everyone signed in can see it.
-    // Initiatives and KOL tracking links: HEP only, and every change is logged.
+    // Initiatives and KOL tracking links: HEP only, and every change is logged. They're archived, never deleted, so a
+    // KOL's sign-up history stays for the ranking and reports, and nothing disappears without an Activity log entry.
     match /initiatives/{code} {
       allow read: if isMpp();
       allow create, update: if adminChange() && code.matches('^[a-z0-9-]{2,30}$') && D().code == code
         && D().name is string && D().name.size() > 1 && D().name.size() <= 80
+        && (!('archived' in D()) || D().archived is bool)
         && loggedBy(D().get('logId', null));
-      allow delete: if adminChange();
+      allow delete: if false;
     }
     // HEP Dashboard daily summaries: counts only, written by the server (functions/daily-stats-load.js).
     // Time on each page, as anonymous daily totals (app/shared/js/page-time.js; privacy notice "How the app is used").

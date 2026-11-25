@@ -3024,6 +3024,16 @@ How students and merchants did on the money check. Programme KPIs, targets and t
 Students who did the money check|Pelajar yang membuat semakan kewangan
 Average knowledge score|Purata skor pengetahuan
 Results by grade|Keputusan mengikut gred
+Archive initiative|Arkibkan inisiatif
+Archive initiative?|Arkibkan inisiatif?
+It moves to Archived. Its link keeps working, its sign-ups stay in the KOL ranking and reports, and you can restore it any time.|Ia dipindahkan ke Arkib. Pautannya terus berfungsi, pendaftarannya kekal dalam kedudukan KOL dan laporan, dan anda boleh memulihkannya bila-bila masa.
+Archive|Arkibkan
+Initiative archived.|Inisiatif diarkibkan.
+Initiative restored.|Inisiatif dipulihkan.
+Hidden from the list above. Their links still work, and their sign-ups still count in the KOL ranking and reports.|Disembunyikan daripada senarai di atas. Pautannya masih berfungsi, dan pendaftarannya masih dikira dalam kedudukan KOL dan laporan.
+No active initiatives. Archived ones are listed below.|Tiada inisiatif aktif. Yang diarkibkan disenaraikan di bawah.
+Archived an initiative|Mengarkibkan inisiatif
+Restored an initiative|Memulihkan inisiatif
 Time in the app|Masa dalam aplikasi
 Anonymous totals: only time while a page is on screen and the student was active in the last 2 minutes. No names or accounts.|Jumlah tanpa nama: hanya masa ketika halaman dipaparkan dan pelajar aktif dalam 2 minit terakhir. Tiada nama atau akaun.
 Minutes per student per day|Minit setiap pelajar sehari

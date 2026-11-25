@@ -158,6 +158,7 @@ HEP edits the targets and the period with **Edit targets**, and adds numbers the
 - **How it counts:** the app remembers the first link a student opens for 30 days, and saves the code when they sign up. The sign-up form also asks an optional "How did you hear about +Onz?".
 - **What the page shows:** sign-ups through each link, how many of them became active, daily sign-ups before and after the start (against the 14 days before), and a KOL ranking.
 - **What's stored:** only counts appear on the page, and changes are recorded in the Activity log.
+- **Archive, never delete:** an initiative that's finished is archived (and can be restored). Its link keeps working and its sign-ups stay in the KOL ranking and reports. The rules refuse deletes, and archiving needs an Activity log entry.
 
 Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/DEPLOY.md#hep-dashboard-summaries-once-per-project).
 
