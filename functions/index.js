@@ -80,6 +80,10 @@ async function erase(uid, plan) {
     const snap = await db.collection(collection).orderBy(FieldPath.documentId()).startAt(prefix).endAt(prefix + '\uf8ff').get();
     snap.docs.forEach((d) => ops.push((b) => b.delete(d.ref)));
   }
+  for (const { path, fields } of plan.clears || []) {
+    const ref = db.doc(path);
+    if ((await ref.get()).exists) ops.push((b) => b.update(ref, Object.fromEntries(fields.map((f) => [f, FieldValue.delete()]))));
+  }
   for (const q of plan.queries) {
     const snap = await db.collection(q.collection).where(q.field, '==', uid).get();
     snap.docs.forEach((d) => ops.push((b) => (q.action === 'delete' ? b.delete(d.ref) : b.update(d.ref, patchFor(q, d.data())))));
