@@ -24,6 +24,9 @@ export function captureSource(search, storage, now = Date.now()) {
     return code;
   } catch { return ''; }
 }
+// A link to this app that keeps the tracking code. Used when a student has to leave Instagram or TikTok for
+// Chrome or Safari to sign in: the code saved inside those apps can't be seen there, so it travels in the link.
+export const linkWithSource = (base, src) => base + (src && SOURCE_RE.test(src) ? '?src=' + src : '');
 export function getSource(storage, now = Date.now()) {
   try {
     const saved = JSON.parse(storage.getItem(SOURCE_KEY) || 'null');

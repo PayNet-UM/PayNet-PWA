@@ -857,7 +857,7 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
 
   log('Time on each page (anonymous totals)');
   const ptDay = D.dayKey(stuA.now ? stuA.now() : Date.now());
-  const ptRef = (ctx, page, day = ptDay) => ctx.sdk.doc(ctx.db, 'pageTime', `${day}_${page}`);
+  const ptRef = (ctx, page, day = ptDay, shard = '3') => ctx.sdk.doc(ctx.db, 'pageTime', `${day}_${page}_${shard}`);
   const ptAdd = (ctx, page, ms, extra = {}, day = ptDay) => ctx.sdk.setDoc(ptRef(ctx, page, day), { day, page, ms: ctx.sdk.increment(ms), views: ctx.sdk.increment(1),
     r25: ctx.sdk.increment(1), r50: ctx.sdk.increment(1), r75: ctx.sdk.increment(0), r100: ctx.sdk.increment(0), ...extra }, { merge: true });
   await ok('a student adds time to today’s About us total', () => ptAdd(stuA, 'about', 45000));
@@ -866,6 +866,8 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('more than 10 minutes in one save is refused', () => ptAdd(stuA, 'about', 11 * 60000));
   await denied('a total can’t be lowered', () => stuA.sdk.updateDoc(ptRef(stuA, 'about'), { ms: 1 }));
   await denied('only the known pages can be counted', () => ptAdd(stuA, 'secret-page', 1000));
+  await denied('only shards 0 to 9 can be written', () => stuA.sdk.setDoc(ptRef(stuA, 'learn', ptDay, '10'), { day: ptDay, page: 'learn', ms: 1000, views: 1, r25: 0, r50: 0, r75: 0, r100: 0 }));
+  await denied('the address must match the day and page inside', () => stuA.sdk.setDoc(ptRef(stuA, 'learn'), { day: ptDay, page: 'about', ms: 1000, views: 1, r25: 0, r50: 0, r75: 0, r100: 0 }));
   await denied('only today’s totals can be added to', () => ptAdd(stuA, 'about', 1000, {}, '2020-01-01'));
   await denied('nothing that names a student can be added', () => ptAdd(stuA, 'learn', 1000, { uid: stuA.uid }));
   await denied('businesses don’t add page time', () => ptAdd(merch, 'home', 1000));

@@ -86,13 +86,17 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
   const referred = new Set((input.referrals || []).filter((r) => upTo(r.createdAt) && studentIds.has(r.uid)).map((r) => r.uid)).size;
   const learners = [...studentIds].filter((uid) => (acts.get(uid) || []).some((a) => a.area === 'learn')).length;
   // Time in the app: minutes per student per day (time ÷ students who opened the app), and each page over 7 days.
-  const pages7 = {}; let msToday = 0, ms7 = 0;
+  const pages7 = {}, timedDays = new Set(); let msToday = 0, ms7 = 0;
   for (const p of input.pageTime || []) {
     if (!p.day || p.day > day || p.day < windowStart(7) || !p.page) continue;
     const t = (pages7[p.page] ||= { ms: 0, views: 0, r25: 0, r50: 0, r75: 0, r100: 0 });
     for (const k of Object.keys(t)) t[k] += Number(p[k]) || 0;
     ms7 += Number(p.ms) || 0; if (p.day === day) msToday += Number(p.ms) || 0;
+    timedDays.add(p.day);
   }
+  // Only days that recorded page time count in the average, so days before tracking started don't pull it down.
+  let timedOpenDays = 0;
+  for (const uid of studentIds) for (const d of opens.get(uid) || []) if (timedDays.has(d)) timedOpenDays++;
   const minutes = (msTotal, people) => (people ? Math.round((msTotal / 60000 / people) * 10) / 10 : 0);
 
   let activatedEver = 0, repeat = 0;
@@ -123,7 +127,7 @@ export function dailyStats(input, day, { engagedAreas = DEFAULT_ENGAGED_AREAS } 
     active: { d1, d7, d30, stickiness: d30.opened ? Math.round((d1.opened / d30.opened) * 1000) / 10 : 0,
       daysPerWeek: d7.opened ? Math.round((openDays7 / d7.opened) * 10) / 10 : 0 },
     rates: { referral: pct(referred, studentIds.size), referred, quiz: pct(learners, studentIds.size), learners },
-    time: { minutesPerStudent: minutes(msToday, d1.opened), minutesPerStudent7: minutes(ms7, openDays7), minutes7: Math.round(ms7 / 60000), pages7 },
+    time: { minutesPerStudent: minutes(msToday, d1.opened), minutesPerStudent7: minutes(ms7, timedOpenDays), minutes7: Math.round(ms7 / 60000), pages7 },
     activation: { ever: activatedEver, repeat, repeatRate: activatedEver ? Math.round((repeat / activatedEver) * 1000) / 10 : 0 },
     merchants: { total: merchants.length, verified: merchants.filter((m) => m.status === 'verified').length,
       pending: merchants.filter((m) => m.status === 'pending').length, byType, assessed: surveys.length, digitalMix },

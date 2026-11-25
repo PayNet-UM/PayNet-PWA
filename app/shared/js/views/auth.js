@@ -1,7 +1,7 @@
 // Sign in, sign up, email verification and first-time profile. Shared by both websites:
 // app.site is 'client' (students and merchants) or 'admin' (the Admin dashboard).
 import * as D from '../data.js';
-import { HEARD_FROM, getSource } from '../initiatives.js';
+import { HEARD_FROM, getSource, linkWithSource } from '../initiatives.js';
 import { removeEmptySignIn } from '../link-email.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
@@ -40,12 +40,14 @@ const isStandalone = () => !handoffHash() && displayStandalone();
 const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
 
 function openInBrowserSheet() {
-  const url = location.origin + location.pathname;
+  let src = ''; try { src = getSource(window.localStorage); } catch { /* storage blocked */ }
+  // Keeps the KOL tracking code: Chrome or Safari can't see the code saved inside Instagram or TikTok.
+  const url = linkWithSource(location.origin + location.pathname, src);
   const android = /Android/i.test(UA);
   const el = sheet(`<h2>Open in ${android ? 'Chrome' : 'Safari'} to sign in</h2>
     <p class="muted">You opened +Onz inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.</p>
     <div class="stack" style="margin-top:14px">
-      ${android ? `<a class="btn primary block" href="intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
+      ${android ? `<a class="btn primary block" href="${linkWithSource(`intent://${location.host}${location.pathname}`, src)}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
       <button class="btn block ${android ? '' : 'primary'}" id="copy-link">Copy the link</button>
       <p class="faint">${android ? 'Or tap ⋮ at the top right and choose “Open in browser”.' : 'Then open Safari, paste it in the address bar and sign in. Or tap ••• / the share button and choose “Open in Safari”.'}</p>
       <p class="faint">You can also use “Use email and password instead” below.</p>

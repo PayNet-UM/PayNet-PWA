@@ -2,6 +2,7 @@
 // Approved by the team lead on 24 Nov 2026: no names, uids or emails. Each signed-in student's app adds its time to
 // pageTime/{day}_{page} with Firestore increments, so the documents only ever hold totals for everyone together.
 //
+// Each total is split over SHARDS documents (see below); the daily summary adds them up.
 // What counts: time while the page is on screen AND the student did something (tap, key, scroll) in the last
 // 2 minutes, so a phone left open on a page doesn't count. A visit also records how far down the page they scrolled:
 // r25/r50/r75/r100 count visits that reached at least that far (r100 = the bottom, 95% or more).
@@ -21,6 +22,9 @@ export const TICK_MS = 5000;              // how often time is added up
 export const FLUSH_MS = 60 * 1000;        // how often totals are saved
 export const MAX_VIEW_MS = 30 * 60 * 1000; // one visit never counts for more than 30 minutes
 export const MIN_VIEW_MS = 1000;          // a visit shorter than this (a redirect) isn't counted as a visit
+// Firestore takes about 1 write a second per document, so each day's total for a page is split over SHARDS documents
+// (pageTime/{day}_{page}_{0-9}) and the daily summary adds them up. 10 shards ≈ 600 students saving every minute.
+export const SHARDS = 10;
 export const pageKey = (hash) => { const k = String(hash || '').replace(/^#\/?/, '').split(/[/?]/)[0] || 'home'; return PAGE_KEYS.includes(k) ? k : 'other'; };
 const REACH = [['r25', 25], ['r50', 50], ['r75', 75], ['r100', 95]];
 
@@ -80,7 +84,7 @@ export function startPageTime(ctx, { doc = document, host = window, now = Date.n
     if (!writes.length) return saving;
     const { sdk, db } = ctx;
     const inc = (v) => sdk.increment(v);
-    saving = saving.then(() => Promise.all(writes.map(([page, t]) => sdk.setDoc(sdk.doc(db, 'pageTime', `${day}_${page}`),
+    saving = saving.then(() => Promise.all(writes.map(([page, t]) => sdk.setDoc(sdk.doc(db, 'pageTime', `${day}_${page}_${Math.floor(Math.random() * SHARDS)}`),
       { day, page, ms: inc(Math.round(t.ms)), views: inc(t.views), r25: inc(t.r25), r50: inc(t.r50), r75: inc(t.r75), r100: inc(t.r100) }, { merge: true })
       .catch(() => {})))); // analytics only: a refused or offline save is simply skipped
     return saving;
