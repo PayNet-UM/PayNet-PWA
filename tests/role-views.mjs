@@ -32,7 +32,7 @@ let passed = 0;
 for (const [role, mod, app, routes] of [
   ['Student', S, await makeApp(student), ['home', 'rewards', 'me', 'community', 'leagues', 'events', 'explore', 'delete-account', 'about', 'contact', 'points']],
   ['Merchant', M, await makeApp(merchant), ['home', 'scan', 'shop', 'insights', 'promote', 'poster', 'survey', 'stall-survey', 'delete-account', 'about', 'contact', 'points']],
-  ['HEP', H, await makeApp(hep), ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'stall-survey', 'people', 'closures', 'activity', 'settings', 'points']],
+  ['HEP', H, await makeApp(hep), ['overview', 'dashboard', 'initiatives', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'stall-survey', 'people', 'closures', 'activity', 'settings', 'points']],
 ]) {
   for (const route of routes) {
     const html = await mod.routes[route].render(app, []);
@@ -43,7 +43,7 @@ for (const [role, mod, app, routes] of [
       assert.equal((html.match(/<h1\b/g) || []).length, 1, `${route} needs one page heading`);
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
       assert.equal(new Set(ids).size, ids.length, `${route} has duplicate form IDs`);
-      const controls = { scan: [], shop: ['app-form', 'logo-form', 'pin-form', 'ready-form'], promote: ['seats', 'new-deal'] }[route] || [];
+      const controls = { scan: [], shop: ['shop-details', 'logo-form', 'pin-form', 'ready-form'], promote: ['seats', 'new-deal'] }[route] || [];
       for (const id of controls) assert.ok(ids.includes(id), `Merchant ${route} lost its ${id} control`);
     }
     if (role === 'HEP') {
@@ -51,7 +51,7 @@ for (const [role, mod, app, routes] of [
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
       assert.equal(new Set(ids).size, ids.length, `HEP ${route} has duplicate form IDs`);
       const controls = { overview: ['month'], paynet: ['month', 'csv1', 'xlsx1', 'add2', 'xlsx2'], recon: ['month', 'imp', 'exp'],
-        rewards: ['alloc', 'new-rw', 'vfind'], campaigns: ['new'], kpis: ['month', 'kcsv', 'scsv'], people: ['pq', 'pt', 'rel'],
+        rewards: ['alloc', 'new-rw', 'vfind'], campaigns: ['new'], kpis: ['scsv'], people: ['pq', 'pt', 'rel'],
         settings: ['features', 'rules', 'access', 'readiness-update'] }[route] || [];
       for (const id of controls) assert.ok(ids.includes(id), `HEP ${route} lost its ${id} control`);
     }
@@ -96,8 +96,17 @@ readyApp.merchant.readyAt = sdk.Timestamp.fromMillis(2000);
 assert.ok(!(await M.routes.home.render(readyApp, [])).includes('mer-setup-title'), 'Confirming the new update should hide readiness again');
 console.log('  ✓ Completed shop readiness hides, returns for a new HEP update, and hides after confirmation'); passed++;
 
+// While the Admin team reviews the application, "Start here" sends the merchant to finish the assessment (part of step 1).
+const waitingApp = await makeApp(merchant);
+waitingApp.merchant = { ...waitingApp.merchant, status: 'pending', ready: false };
+const waitingHome = await M.routes.home.render(waitingApp, []);
+const nextStep = /<li class="is-next"[^>]*>[\s\S]*?<\/li>/.exec(waitingHome)?.[0] || '';
+assert.ok(nextStep.includes('Finish the merchant assessment') && nextStep.includes('href="#/stall-survey"'), 'While waiting for approval, the next step should be the stall survey');
+assert.ok(waitingHome.includes('class="is-waiting"') && waitingHome.includes('In progress') && waitingHome.includes('Next: Finish the merchant assessment') && (waitingHome.match(/<li class=/g) || []).length <= 5, 'The approval step should show as in progress, not as the next step');
+console.log('  ✓ While waiting for approval, Start here points to the stall survey'); passed++;
+
 const promotion = await M.routes.promote.render(await makeApp(merchant), []);
-assert.ok(promotion.includes('28 seats free') && promotion.includes('--progress:30%'), 'Occupancy visual should use recorded seats');
+assert.ok(!promotion.includes('seats free') && promotion.includes('--progress:30%') && promotion.includes('data-step="1"'), 'Café occupancy should use recorded seats');
 assert.ok(promotion.includes('Live now') && promotion.includes('Paused') && promotion.includes('Ready to publish'), 'Deal states should remain distinct');
 assert.ok(promotion.includes('data-toggle="live" data-en="0"') && promotion.includes('data-toggle="paused" data-en="1"'), 'Pause/resume controls should retain their intent');
 assert.ok(promotion.includes('href="#/scan/live"') && promotion.includes('&lt;Study break&gt;') && !promotion.includes('new-offer'), 'Live-deal QR and escaping should replace standalone offers');
@@ -153,10 +162,18 @@ console.log('  ✓ Disabled live deals hide merchant claim/promotion actions whi
 // Stall survey: the form first, then the stall type once answered; the Admin team sees it in the analysis.
 const stallApp = await makeApp(merchant);
 const stallForm = await M.routes['stall-survey'].render(stallApp, []);
-assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Kedai anda jenis apa?'), 'Merchants get the bilingual stall survey form');
+assert.ok(stallForm.includes('id="stall-survey"') && stallForm.includes('data-ss-lang="ms"') && stallForm.includes('lang="ms">Penilaian Peniaga +Onz') && stallForm.includes('value="Test Shop"'), 'Merchants get the bilingual stall survey form');
 assert.ok((await M.routes.home.render(stallApp, [])).includes('href="#/stall-survey"'), 'Merchant home links to the stall survey');
-await D.submitStallSurvey(merchant, { area: 'KK3', sell: 'food', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['dontKnow'], help: ['qrSetup'], trade: 'daily', listing: 'yes', bankHelp: 'yes' }, 'ms');
+// Required: until it's answered, every page but the survey, shop details and closing the account leads to the survey.
+for (const r of ['home', 'insights', 'promote', 'scan', 'survey']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), 'stall-survey', `${r} waits for the stall survey`);
+for (const r of ['stall-survey', 'shop', 'delete-account']) assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, r), null, `${r} stays open before the survey`);
+assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: null }, 'home'), null, 'merchants who haven’t sent shop details aren’t sent to the survey yet');
+assert.ok(stallForm.includes('ss-required') && !stallForm.includes('class="back"') && stallForm.includes('id="ss-help"'), 'the unanswered survey says it’s required, has no way back, and offers the screen guide');
+await D.submitStallSurvey(merchant, { name: 'Test Shop', location: 'KK3', type: 'food', age: 'u6m', registered: 'no', payments: ['cash'], banks: ['bsn'], bizAccount: 'personal', records: 'manual',
+  customers: 'u50', challenges: ['traffic'], financing: 'no', priorities: ['sales'], support: ['qr'], listing: 'yes', ownerName: 'Test Owner', consentContact: true, consentPartners: false }, 'ms');
 const stallResult = await M.routes['stall-survey'].render(stallApp, []);
+assert.equal(await M.gateRoute({ ctx: stallApp.ctx, merchant: stallApp.merchant }, 'insights'), null, 'answering the survey opens the rest of the app');
+assert.ok(!stallResult.includes('ss-required') && stallResult.includes('class="back"'), 'the answered survey is no longer marked required');
 assert.ok(stallResult.includes('id="ss-result"') && stallResult.includes('Cash Classic') && stallResult.includes('Klasik Tunai') && !stallResult.includes('id="stall-survey"'), 'Answered surveys show the stall type');
 const stallAdmin = await H.routes['stall-survey'].render(await makeApp(hep), []);
 assert.ok(stallAdmin.includes('id="ss-xlsx"') && stallAdmin.includes('id="ss-csv"') && stallAdmin.includes('Cash Classic') && stallAdmin.includes('All responses (1)'), 'Admin team sees the analysis with exports');

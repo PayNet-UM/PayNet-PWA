@@ -1,6 +1,8 @@
 // Sign in, sign up, email verification and first-time profile. Shared by both websites:
 // app.site is 'client' (students and merchants) or 'admin' (the Admin dashboard).
 import * as D from '../data.js';
+import { HEARD_FROM, getSource, linkWithSource } from '../initiatives.js';
+import { removeEmptySignIn } from '../link-email.js';
 import { $, $$, esc, icon, toast, busy, errText, chevron, sheet, closeSheet } from '../ui.js';
 import { mppBootstrapEmails, firebaseConfig, siteUrls } from '../firebase-config.js';
 import { langToggleHTML, tr } from '../i18n.js';
@@ -38,12 +40,14 @@ const isStandalone = () => !handoffHash() && displayStandalone();
 const isIOS = () => /iPhone|iPad|iPod/.test(UA) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(UA));
 
 function openInBrowserSheet() {
-  const url = location.origin + location.pathname;
+  let src = ''; try { src = getSource(window.localStorage); } catch { /* storage blocked */ }
+  // Keeps the KOL tracking code: Chrome or Safari can't see the code saved inside Instagram or TikTok.
+  const url = linkWithSource(location.origin + location.pathname, src);
   const android = /Android/i.test(UA);
   const el = sheet(`<h2>Open in ${android ? 'Chrome' : 'Safari'} to sign in</h2>
     <p class="muted">You opened +Onz inside another app (like WhatsApp, Instagram or Telegram). Google doesn’t allow sign-in there.</p>
     <div class="stack" style="margin-top:14px">
-      ${android ? `<a class="btn primary block" href="intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
+      ${android ? `<a class="btn primary block" href="${linkWithSource(`intent://${location.host}${location.pathname}`, src)}#Intent;scheme=https;package=com.android.chrome;end">Open in Chrome</a>` : ''}
       <button class="btn block ${android ? '' : 'primary'}" id="copy-link">Copy the link</button>
       <p class="faint">${android ? 'Or tap ⋮ at the top right and choose “Open in browser”.' : 'Then open Safari, paste it in the address bar and sign in. Or tap ••• / the share button and choose “Open in Safari”.'}</p>
       <p class="faint">You can also use “Use email and password instead” below.</p>
@@ -483,7 +487,9 @@ export function renderOnboarding(app, done) {
   const merchantsOpen = D.featureOn(app.rules, 'merchantSignup');
   const looksStudent = !merchantsOpen || /@((siswa\.)?um\.edu\.my|gmail\.com|googlemail\.com)$/i.test(email);
   frame(app, `<ol class="ob-steps" aria-label="Getting started"><li class="done">${icon('check')}<span>Sign in</span></li><li class="on" aria-current="step"><b>2</b><span>Your profile</span></li><li><b>3</b><span>Quick tour</span></li></ol>
-    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p></div>
+    <div><h1>Set up your profile</h1><p class="lede">Signed in as ${esc(email)}. One quick step, then we’ll show you around.</p>
+      <p class="notice ob-email-tip" role="note">${icon('info')}<span><b>Use the email you’ll keep.</b> Your siswa email is best. Each matric number can have only one account, and you can add more emails later on the Me page.</span></p>
+      <button class="btn ghost small" type="button" id="ob-have-account">I already have an account with another email</button></div>
     <form id="ob" class="stack">
       <div class="role-pick">
         <label><input type="radio" name="role" value="student" ${looksStudent ? 'checked' : ''}><span class="tile-icon">${icon('graduation-cap')}</span>
@@ -497,6 +503,8 @@ export function renderOnboarding(app, done) {
         <label class="field">Residential college<select name="college" aria-describedby="college-warn"><option value="" selected disabled>Choose your college</option>${D.COLLEGES.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
         <label class="field">Faculty<select name="faculty" aria-describedby="college-warn"><option value="" selected disabled>Choose your faculty</option>${D.FACULTIES.map((f) => `<option>${esc(f)}</option>`).join('')}</select></label>
         <div class="notice warn" id="college-warn" role="note">${icon('lock')}<span><b>You can’t change your college or faculty later.</b> Your points count towards them in the KK League and Faculty League, so check you’ve picked the right ones.</span></div>
+        <label class="field">How did you hear about +Onz? <span class="faint">(optional)</span><select name="heardFrom"><option value="">Choose one</option>${HEARD_FROM.map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <label class="field hidden" id="ob-heard-other">Which one? <span class="faint">(optional)</span><input name="heardFromOther" maxlength="60" placeholder="e.g. the influencer’s name or the event"></label>
         <fieldset class="field ob-referral"><legend>Are you signing up with a friend’s referral code?</legend>
           <div class="row ob-referral-pick"><label class="check"><input type="radio" name="hasReferral" value="no" checked> No</label>
             <label class="check"><input type="radio" name="hasReferral" value="yes"> Yes</label></div>
@@ -516,10 +524,12 @@ export function renderOnboarding(app, done) {
     const student = f.role.value === 'student', referral = student && f.hasReferral.value === 'yes';
     $('#student-fields').classList.toggle('hidden', !student); f.matric.required = student; f.college.required = student; f.faculty.required = student;
     $('#ob-referral-code').classList.toggle('hidden', !referral); f.referral.required = referral;
+    $('#ob-heard-other').classList.toggle('hidden', !['kol', 'event', 'other'].includes(f.heardFrom.value));
   };
-  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); sync();
+  $$('input[name=role], input[name=hasReferral]', f).forEach((r) => { r.onchange = sync; }); f.heardFrom.onchange = sync; sync();
   $('#out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
   $('#ob-terms').onclick = () => termsSheet();
+  $('#ob-have-account').onclick = () => haveAccountSheet(app, false);
   f.onsubmit = (e) => {
     e.preventDefault();
     busy($('button[type=submit]', f), async () => {
@@ -527,7 +537,8 @@ export function renderOnboarding(app, done) {
       try {
         const res = await D.createProfile(app.ctx, role === 'student'
           ? { role, name: f.name.value, matric: f.matric.value.trim(), college: f.college.value, faculty: f.faculty.value,
-            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '' }
+            referralCode: f.hasReferral.value === 'yes' ? f.referral.value.trim() : '',
+            source: getSource(safeStorage()), heardFrom: f.heardFrom.value, heardFromOther: ['kol', 'event', 'other'].includes(f.heardFrom.value) ? f.heardFromOther.value : '' }
           : { role, name: f.name.value });
         if (res?.referralFailed) toast('Your account is ready, but the referral code couldn’t be added.', true);
         await done();
@@ -535,11 +546,29 @@ export function renderOnboarding(app, done) {
         if (err.notReady) toast('+Onz isn’t open for students yet. The Admin team needs to sign in once to set it up.', true);
         else if (err.badMatric) toast('Enter your matric number using letters and numbers only (5–15 characters).', true);
         else if (err.badReferral) toast('That referral code doesn’t exist. Check it with your friend, or choose No.', true);
-        else if (err.matricTaken) toast('That matric number is already registered. If it’s yours, contact the Admin team.', true);
+        else if (err.matricTaken) haveAccountSheet(app, true);
         else if (err.code === 'permission-denied' && role === 'student')
           toast('This email can’t join as a student. Use your Gmail or UM email, or ask the Admin team to add you as a tester.', true);
         else toast(errText(err), true);
       }
     });
   };
+}
+
+// localStorage can be blocked (private mode); the tracking code is optional, so fall back to nothing.
+function safeStorage() { try { return window.localStorage; } catch { return { getItem: () => null, setItem() {} }; } }
+
+// "I already have an account": removes the empty sign-in just made with this email, so the student can sign in with
+// their original email and add this one on the Me page. Also shown when the matric number is already registered.
+function haveAccountSheet(app, matricTaken) {
+  const el = sheet(`<h2>${matricTaken ? 'That matric number already has an account' : 'Already have an account?'}</h2>
+    ${matricTaken ? '<p class="muted">It was probably you, with a different email.</p>' : ''}
+    <p class="muted">Sign in with the email you used before. Then go to the Me page and tap “Add another Google account” to add this email to the same account.</p>
+    <p class="faint" style="margin-top:8px">We’ll remove this new, empty sign-in so the email can be added. Nothing else is deleted.</p>
+    <button class="btn primary block" id="hac-go" style="margin-top:14px">Remove this sign-in and go back</button>
+    ${matricTaken ? '<p class="faint" style="margin-top:10px">If it wasn’t you, contact the Admin team with your student ID.</p>' : ''}`);
+  $('#hac-go', el).onclick = (e) => busy(e.currentTarget, async () => {
+    try { await removeEmptySignIn(app); closeSheet(); toast('Sign in with the email you used before, then add this one on the Me page.'); }
+    catch (err) { toast(errText(err), true); }
+  });
 }

@@ -1,5 +1,10 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+React to event|Reaksi kepada acara
+Love|Suka
+Excited|Teruja
+Interested|Berminat
+Choose an event reaction.|Pilih reaksi kepada acara.
 Review, edit and publish events.|Semak, sunting dan terbitkan acara.
 Event gallery|Galeri acara
 New event|Acara baharu
@@ -2493,6 +2498,163 @@ This is your college, its rank and its total points. All the points you collect 
 The leaderboard|Papan kedudukan
 See how your KK compares with the others. The KK with the most points wins prizes!|Lihat kedudukan KK anda berbanding KK lain. KK dengan mata tertinggi akan memenangi hadiah!
 How the KK League works|Cara Liga KK berfungsi
+How live deals work|Cara tawaran aktif berfungsi
+A live deal is a discount students can claim at your counter during your quiet hours.|Tawaran aktif ialah diskaun yang boleh dituntut pelajar di kaunter anda pada waktu lengang.
+Create a deal|Cipta tawaran
+Choose the discount, the hours it runs and how full your café can be. It goes live straight away, with no approval needed.|Pilih diskaun, waktu tawaran berjalan dan tahap kepenuhan kafe anda. Tawaran terus aktif tanpa perlu kelulusan.
+Students see it|Pelajar melihatnya
+Your deal shows under Live deals in the student app, but only during its hours and while your café is less full than your limit.|Tawaran anda dipaparkan di bawah Tawaran aktif dalam aplikasi pelajar, tetapi hanya dalam waktunya dan semasa kafe anda kurang penuh daripada had anda.
+They scan your QR|Mereka mengimbas QR anda
+At the counter, tap Show deal QR. The student scans it with +Onz.|Di kaunter, ketik Paparkan QR tawaran. Pelajar mengimbasnya dengan +Onz.
+You apply the discount|Anda memberikan diskaun
+Their claim appears on your screen. Tap Apply discount, give them the discount and take payment as usual.|Tuntutan mereka dipaparkan pada skrin anda. Ketik Berikan diskaun, beri diskaun dan terima bayaran seperti biasa.
+Good to know|Perlu tahu
+Each student can claim each deal once a day.|Setiap pelajar boleh menuntut setiap tawaran sekali sehari.
+A claim is valid for 15 minutes after scanning.|Tuntutan sah selama 15 minit selepas imbasan.
+The QR changes every 90 seconds, so a screenshot won’t work.|QR bertukar setiap 90 saat, jadi tangkap layar tidak akan berfungsi.
+Keep your seats up to date. A deal won’t show until you set your seat count.|Kemas kini tempat duduk anda. Tawaran tidak akan dipaparkan sehingga anda menetapkan bilangan tempat duduk.
+You set the discount and give it at your counter. +Onz records the claim, not the payment.|Anda menetapkan diskaun dan memberikannya di kaunter. +Onz merekodkan tuntutan, bukan bayaran.
+Pause or resume a deal at any time.|Jeda atau sambung semula tawaran pada bila-bila masa.
+Voucher program|Program baucar
+Students collect +Onz points around campus and swap them for vouchers in the Rewards tab. Join the voucher program and your shop’s voucher could be one of them, bringing students to your counter.|Pelajar mengumpul mata +Onz di sekitar kampus dan menukarnya dengan baucar dalam tab Ganjaran. Sertai program baucar dan baucar kedai anda boleh menjadi salah satu daripadanya, sekali gus membawa pelajar ke kaunter anda.
+Tell us your voucher idea|Kongsi idea baucar anda
+What students get, its value and how many you can honour a month.|Apa yang pelajar dapat, nilainya dan berapa banyak yang boleh anda tunaikan sebulan.
+The Admin team reviews it|Pasukan Admin menyemaknya
+We contact you to agree the details with you.|Kami akan menghubungi anda untuk bersetuju tentang butirannya.
+Students swap points for it|Pelajar menukar mata dengannya
+Once it’s set up, your voucher appears in Rewards.|Setelah disediakan, baucar anda dipaparkan dalam Ganjaran.
+Applying is free and doesn’t commit you to anything. We’ll agree all the details with you before your voucher goes live.|Permohonan adalah percuma dan tidak mengikat anda. Kami akan bersetuju tentang semua butiran dengan anda sebelum baucar anda dilancarkan.
+Your application|Permohonan anda
+Not this time|Belum kali ini
+a month|sebulan
+Note from the Admin team:|Nota daripada pasukan Admin:
+The Admin team will contact you to set up your voucher.|Pasukan Admin akan menghubungi anda untuk menyediakan baucar anda.
+We’ll contact you within a few working days.|Kami akan menghubungi anda dalam beberapa hari bekerja.
+Apply to join|Mohon untuk menyertai
+Edit application|Sunting permohonan
+Apply again|Mohon semula
+Voucher value (RM)|Nilai baucar (RM)
+Vouchers you can honour a month|Baucar yang boleh anda tunaikan sebulan
+Conditions (optional)|Syarat (pilihan)
+Contact person|Orang untuk dihubungi
+Send updated application|Hantar permohonan yang dikemas kini
+Send application|Hantar permohonan
+Application sent. The Admin team will be in touch.|Permohonan dihantar. Pasukan Admin akan menghubungi anda.
+e.g. RM5 off any meal|cth. Diskaun RM5 untuk sebarang hidangan
+e.g. 5|cth. 5
+e.g. 50|cth. 50
+e.g. Minimum spend RM10. Weekdays only, 2–5 pm.|cth. Belanja minimum RM10. Hari bekerja sahaja, 2–5 petang.
+e.g. 012-345 6789|cth. 012-345 6789
+Describe your voucher in 3 to 160 characters.|Terangkan baucar anda dalam 3 hingga 160 aksara.
+Voucher value must be between RM0.50 and RM1,000.|Nilai baucar mesti antara RM0.50 dan RM1,000.
+Enter how many vouchers you can honour each month.|Masukkan bilangan baucar yang boleh anda tunaikan setiap bulan.
+Keep the conditions under 500 characters.|Pastikan syarat kurang daripada 500 aksara.
+Enter a contact name.|Masukkan nama untuk dihubungi.
+Enter a contact phone number.|Masukkan nombor telefon untuk dihubungi.
+Merchants who want to offer a voucher that students can swap points for. Approving only records your decision. Agree the details with the merchant first, then add the voucher in Rewards and budget.|Peniaga yang ingin menawarkan baucar yang boleh ditukar pelajar dengan mata. Kelulusan hanya merekodkan keputusan anda. Bersetuju tentang butiran dengan peniaga dahulu, kemudian tambah baucar dalam Ganjaran dan bajet.
+Conditions:|Syarat:
+Your note|Nota anda
+No applications waiting.|Tiada permohonan yang menunggu.
+Note to the merchant (optional)|Nota kepada peniaga (pilihan)
+The merchant sees this on their Promote your shop page.|Peniaga melihat nota ini pada halaman Promosikan kedai mereka.
+Approve application|Luluskan permohonan
+Decline application|Tolak permohonan
+Application approved.|Permohonan diluluskan.
+Application declined.|Permohonan ditolak.
+Approved|Diluluskan
+e.g. We’ll call you this week to agree the details.|cth. Kami akan menghubungi anda minggu ini untuk bersetuju tentang butirannya.
+e.g. We’re not adding new vouchers this semester.|cth. Kami tidak menambah baucar baharu semester ini.
+Today|Hari ini
+See insights|Lihat analisis
+Waiting at the counter|Menunggu di kaunter
+How full are you?|Berapa penuh kedai anda?
+of|daripada
+One fewer seat taken|Kurang satu tempat duduk diambil
+One more seat taken|Tambah satu tempat duduk diambil
+Tap − or + as people come and go.|Ketik − atau + apabila pelanggan datang dan pergi.
+Change total seats|Tukar jumlah tempat duduk
+Set how many seats you have. Live deals only show while you have free seats.|Tetapkan bilangan tempat duduk anda. Tawaran aktif hanya dipaparkan semasa ada tempat duduk kosong.
+Set my seats|Tetapkan tempat duduk saya
+Saving…|Menyimpan…
+Saved just now|Baru sahaja disimpan
+Your seats|Tempat duduk anda
+Save seats|Simpan tempat duduk
+See your application and shop details.|Lihat permohonan dan butiran kedai anda.
+Apply to join +Onz.|Mohon untuk menyertai +Onz.
+7 questions about the help your shop needs.|7 soalan tentang bantuan yang diperlukan kedai anda.
+How student points work|Cara mata pelajar berfungsi
+What students earn, and how vouchers are paid.|Apa yang pelajar peroleh, dan cara baucar dibayar.
+More|Lagi
+More for your shop|Lagi untuk kedai anda
+Your live deals|Tawaran aktif anda
+paused|dijeda
+Publish instantly, with no approval needed.|Terbitkan serta-merta, tanpa perlu kelulusan.
+Tap New deal to fill your quiet hours. “How live deals work” below explains each step.|Ketik Tawaran baharu untuk mengisi waktu lengang anda. “Cara tawaran aktif berfungsi” di bawah menerangkan setiap langkah.
+Students swap their +Onz points for vouchers in Rewards. Offer one for your shop and bring more students to your counter.|Pelajar menukar mata +Onz mereka dengan baucar dalam Ganjaran. Tawarkan baucar untuk kedai anda dan bawa lebih ramai pelajar ke kaunter anda.
+How it works|Cara ia berfungsi
+When students claim your live deals, and how many become sales.|Bila pelajar menuntut tawaran aktif anda, dan berapa banyak yang menjadi jualan.
+7 days|7 hari
+30 days|30 hari
+Period|Tempoh
+Claims used at the counter|Tuntutan digunakan di kaunter
+Claims in the last 7 days|Tuntutan dalam 7 hari lepas
+No claims in the last 7 days yet.|Belum ada tuntutan dalam 7 hari lepas.
+Busiest times|Waktu paling sibuk
+No deal claims in this period.|Tiada tuntutan tawaran dalam tempoh ini.
+Expired|Tamat tempoh
+Start here|Mula di sini
+Get your shop ready for students|Sediakan kedai anda untuk pelajar
+Follow these steps in order. Each one ticks off when it’s done.|Ikut langkah ini mengikut urutan. Setiap langkah ditandakan apabila selesai.
+Apply and get verified|Mohon dan dapatkan pengesahan
+Send your shop details. The Admin team checks them in 1–2 working days.|Hantar butiran kedai anda. Pasukan Admin akan menyemaknya dalam 1–2 hari bekerja.
+Wait for the Admin team to verify you|Tunggu pasukan Admin mengesahkan anda
+You’ve applied. We check your details in 1–2 working days.|Anda telah memohon. Kami akan menyemak butiran anda dalam 1–2 hari bekerja.
+Update your application|Kemas kini permohonan anda
+The Admin team asked for changes. Fix them and send it again.|Pasukan Admin meminta beberapa perubahan. Betulkan dan hantar semula.
+Add your logo and map pin|Tambah logo dan pin peta anda
+So students can recognise your shop and walk straight to it.|Supaya pelajar mengenali kedai anda dan boleh terus berjalan ke sana.
+Get your staff ready|Sediakan kakitangan anda
+A short checklist so everyone at the counter knows what to do.|Senarai semak ringkas supaya semua orang di kaunter tahu apa yang perlu dilakukan.
+Create your first live deal|Cipta tawaran aktif pertama anda
+A discount for your quiet hours. It goes live straight away.|Diskaun untuk waktu lengang anda. Ia terus aktif.
+Show your deal QR at the counter|Paparkan QR tawaran anda di kaunter
+Students scan it to claim the discount. You’ll see the claim on your screen.|Pelajar mengimbasnya untuk menuntut diskaun. Anda akan melihat tuntutan itu pada skrin anda.
+Everything for your shop. You can also find these in the menu.|Semua untuk kedai anda. Anda juga boleh menemuinya dalam menu.
+Your shop details, logo, map pin and counter poster.|Butiran kedai, logo, pin peta dan poster kaunter anda.
+Show this at your counter. Students scan it to claim your deal.|Paparkan ini di kaunter anda. Pelajar mengimbasnya untuk menuntut tawaran anda.
+Create discounts for quiet hours, and join the voucher program.|Cipta diskaun untuk waktu lengang, dan sertai program baucar.
+7 quick questions so we know how to help your shop.|7 soalan ringkas supaya kami tahu cara membantu kedai anda.
+What has happened with your live deals so far.|Apa yang telah berlaku dengan tawaran aktif anda setakat ini.
+Students who scanned your deal QR.|Pelajar yang mengimbas QR tawaran anda.
+Claims you gave the discount for.|Tuntutan yang telah anda berikan diskaun.
+Open Deal QR and tap Apply discount.|Buka QR tawaran dan ketik Berikan diskaun.
+Students waiting for their discount right now.|Pelajar yang sedang menunggu diskaun mereka.
+No claims yet. Create a live deal, then show its QR at your counter.|Belum ada tuntutan. Cipta tawaran aktif, kemudian paparkan QR-nya di kaunter anda.
+Two ways to bring students to your shop|Dua cara untuk membawa pelajar ke kedai anda
+Live deal|Tawaran aktif
+earn|kumpul
+spend|belanja
+A discount you give at your counter during your quiet hours.|Diskaun yang anda berikan di kaunter semasa waktu lengang.
+You set it up yourself. It goes live straight away.|Anda sediakan sendiri. Ia terus aktif.
+Students scan your deal QR.|Pelajar mengimbas QR tawaran anda.
+You give the discount at your counter.|Anda memberikan diskaun di kaunter anda.
+Create another deal|Cipta tawaran lain
+A voucher for your shop that students swap their points for in Rewards.|Baucar untuk kedai anda yang ditukar oleh pelajar dengan mata mereka dalam Ganjaran.
+You apply. The Admin team agrees the details with you.|Anda memohon. Pasukan Admin akan bersetuju tentang butirannya dengan anda.
+Students spend their points to get your voucher.|Pelajar membelanjakan mata mereka untuk mendapatkan baucar anda.
+Applying is free and doesn’t commit you to anything.|Permohonan adalah percuma dan tidak mengikat anda.
+Tap Create a deal at the top to fill your quiet hours.|Ketik Cipta tawaran di atas untuk mengisi waktu lengang anda.
+A live deal only shows while your café is less full than the deal’s limit.|Tawaran aktif hanya dipaparkan semasa kafe anda kurang penuh daripada had tawaran.
+Set how many seats you have. A live deal only shows while your café is less full than the deal’s limit.|Tetapkan bilangan tempat duduk anda. Tawaran aktif hanya dipaparkan semasa kafe anda kurang penuh daripada had tawaran.
+A claim lasts 15 minutes. Apply the discount before then.|Tuntutan sah selama 15 minit. Berikan diskaun sebelum itu.
+Live deals, where students earn points, and the voucher program, where they spend them.|Tawaran aktif, tempat pelajar mengumpul mata, dan program baucar, tempat mereka membelanjakannya.
+Promote your shop|Promosikan kedai anda
+Two ways to bring students to your counter.|Dua cara untuk membawa pelajar ke kaunter anda.
+Ways to promote your shop|Cara mempromosikan kedai anda
+Students earn points|Pelajar mengumpul mata
+Students spend points|Pelajar membelanjakan mata
+Open the Live deals tab above and tap Create a deal.|Buka tab Tawaran aktif di atas dan ketik Cipta tawaran.
+Live deals and the voucher program: two ways to bring students in.|Tawaran aktif dan program baucar: dua cara untuk membawa pelajar.
 Your campus perks are on the way…|Manfaat kampus anda sedang disediakan…
 A little more campus life, coming up…|Lebih banyak pengalaman kampus menanti anda…
 Events loading…|Memuatkan acara…
@@ -2575,4 +2737,387 @@ Bank help|Bantuan bank
 WhatsApp|WhatsApp
 Submitted|Dihantar
 Stall survey exported.|Tinjauan kedai dieksport.
+Tell us about your stall|Ceritakan tentang kedai anda
+10 quick questions, about 3 minutes. Find your stall type and what we can set up for you, free.|10 soalan ringkas, kira-kira 3 minit. Ketahui jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
+In progress|Sedang diproses
+Pick your language|Pilih bahasa anda
+Answer in English or Bahasa Melayu. You can switch any time and keep your answers.|Jawab dalam Bahasa Inggeris atau Bahasa Melayu. Anda boleh tukar bila-bila masa dan jawapan anda kekal.
+About your stall|Tentang kedai anda
+Where you trade, and your Merchant or Terminal ID if you have one. The peak counts are optional.|Di mana anda berniaga, dan Merchant ID atau Terminal ID jika ada. Kiraan waktu puncak adalah pilihan.
+10 quick questions|10 soalan pantas
+How you sell and get paid. Questions marked * need an answer.|Cara anda berniaga dan menerima bayaran. Soalan bertanda * perlu dijawab.
+Get your stall type|Dapatkan jenis kedai anda
+Send your answers to see your stall type and what the team can set up for you, free. Finish this to open the rest of +Onz for Business.|Hantar jawapan anda untuk melihat jenis kedai anda dan apa yang pasukan boleh bantu, percuma. Lengkapkan ini untuk membuka bahagian lain +Onz for Business.
+Finish the stall survey first. It takes about 3 minutes.|Lengkapkan tinjauan kedai dahulu. Ia mengambil masa kira-kira 3 minit.
+Merchant assessment|Penilaian peniaga
+About 5 minutes|Kira-kira 5 minit
+Send your shop details first, then tell us about your business.|Hantar butiran kedai anda dahulu, kemudian ceritakan tentang perniagaan anda.
+15 questions about your business, in four short sections. See your stall type and how +Onz can help.|15 soalan tentang perniagaan anda, dalam empat bahagian ringkas. Lihat jenis kedai anda dan bagaimana +Onz boleh membantu.
+15 questions about your business. See your stall type.|15 soalan tentang perniagaan anda. Lihat jenis kedai anda.
+Finish the merchant assessment first. It takes about 5 minutes.|Lengkapkan penilaian peniaga dahulu. Ia mengambil masa kira-kira 5 minit.
+Sent to the Admin team. Next, a short assessment about your business.|Dihantar kepada pasukan Admin. Seterusnya, penilaian ringkas tentang perniagaan anda.
+Sent to the Admin team. You haven’t done the merchant assessment yet.|Dihantar kepada pasukan Admin. Anda belum menjawab penilaian peniaga.
+Four short sections|Empat bahagian ringkas
+Your business profile, how you take payments and keep records, what you need to grow, and how we can contact you. Questions marked * need an answer.|Profil perniagaan anda, cara anda menerima bayaran dan menyimpan rekod, apa yang anda perlukan untuk berkembang, dan cara kami boleh menghubungi anda. Soalan bertanda * perlu dijawab.
+You choose|Anda yang tentukan
+Tick whether +Onz may contact you, and whether to be introduced to financial partners. Saying no doesn’t affect your merchant registration.|Tandakan sama ada +Onz boleh menghubungi anda, dan sama ada anda mahu diperkenalkan kepada rakan kewangan. Menolak tidak menjejaskan pendaftaran peniaga anda.
+See your stall type|Lihat jenis kedai anda
+Send your answers to see your stall type and how +Onz can help. Finish this to open the rest of +Onz for Business.|Hantar jawapan anda untuk melihat jenis kedai anda dan bagaimana +Onz boleh membantu. Lengkapkan ini untuk membuka bahagian lain +Onz for Business.
+The +Onz Merchant Assessment (digital and financial readiness), answered by merchants after sending their shop details.|Penilaian Peniaga +Onz (kesediaan digital dan kewangan), dijawab oleh peniaga selepas menghantar butiran kedai.
+No merchant assessments yet. Merchants are asked to fill it in right after they send their shop details.|Belum ada penilaian peniaga. Peniaga diminta mengisinya sejurus selepas menghantar butiran kedai.
+Take Business QR or card|Terima Business QR atau kad
+No business bank account|Tiada akaun bank perniagaan
+Personal account, opening one or not sure|Akaun peribadi, sedang membuka atau tidak pasti
+Interested in financing|Berminat dengan pembiayaan
+Partner introductions OK|Setuju diperkenalkan kepada rakan kongsi
+From the most digital way each stall takes payment.|Berdasarkan cara bayaran paling digital yang diterima setiap kedai.
+Owner|Pemilik
+Business account|Akaun perniagaan
+Financing|Pembiayaan
+Contact OK|Setuju dihubungi
+Partners OK|Setuju dengan rakan kongsi
+Merchant assessment exported.|Penilaian peniaga dieksport.
+Do the merchant assessment|Jawab penilaian peniaga
+15 questions about your business, about 5 minutes. See your stall type and what we can set up for you, free.|15 soalan tentang perniagaan anda, kira-kira 5 minit. Lihat jenis kedai anda dan apa yang boleh kami sediakan untuk anda, percuma.
+How students see your shop, and what you need at the counter.|Cara pelajar melihat kedai anda, dan apa yang anda perlukan di kaunter.
+Choose a new photo|Pilih foto baharu
+Choose a photo|Pilih foto
+No photo chosen yet|Belum ada foto dipilih
+Photo uploaded|Foto telah dimuat naik
+Choose a new logo|Pilih logo baharu
+Choose your logo|Pilih logo anda
+Change your shop logo|Tukar logo kedai anda
+Change logo|Tukar logo
+Tap your logo to change it. Square works best.|Ketik logo anda untuk menukarnya. Bentuk segi empat sama paling sesuai.
+Save new logo|Simpan logo baharu
+Where students find you|Di mana pelajar menemui anda
+Save new location|Simpan lokasi baharu
+Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.|Cetak dan letakkannya di sebelah QR DuitNow anda. Pelajar mengimbasnya untuk membuka kedai anda dalam +Onz.
+Business name|Nama perniagaan
+Ambassador ID|ID Duta
+Your DuitNow QR|QR DuitNow anda
+These were checked by the Admin team, so they’re locked. Need to change something?|Butiran ini telah disemak oleh pasukan Admin, jadi ia dikunci. Perlu menukar sesuatu?
+Contact the Admin team|Hubungi pasukan Admin
+Show QR to students|Paparkan QR kepada pelajar
+No deal is live right now.|Tiada tawaran yang aktif sekarang.
+A deal shows here during its hours, while your café has space.|Tawaran dipaparkan di sini dalam waktunya, semasa kafe anda masih ada ruang.
+Not live right now|Tidak aktif sekarang
+Update café occupancy|Kemas kini kepadatan kafe
+Set your seat count first, so students know you have space.|Tetapkan bilangan tempat duduk dahulu, supaya pelajar tahu anda ada ruang.
+You paused this deal.|Anda telah menjeda tawaran ini.
+Resume it|Sambung semula
+Not published yet.|Belum diterbitkan.
+Publish it|Terbitkan
+Create a live deal in Promote your shop to start showing its QR.|Cipta tawaran aktif dalam Promosikan kedai anda untuk mula memaparkan QR-nya.
+New claim|Tuntutan baharu
+Give them the discount, then tap the button.|Berikan diskaun, kemudian ketik butang ini.
+min left|minit lagi
+waiting for a discount|menunggu diskaun
+Your screen stays on while this is open.|Skrin anda kekal hidup semasa ini dibuka.
+This deal isn’t live any more. Close this and check Promote your shop.|Tawaran ini tidak aktif lagi. Tutup ini dan semak Promosikan kedai anda.
+Apply to join +Onz|Mohon untuk menyertai +Onz
+Send your shop details, logo and map pin, then answer the merchant assessment (about 5 minutes).|Hantar butiran kedai, logo dan pin peta anda, kemudian jawab penilaian peniaga (kira-kira 5 minit).
+Finish the merchant assessment|Lengkapkan penilaian peniaga
+Your details are sent. Answer 15 questions about your business (about 5 minutes).|Butiran anda telah dihantar. Jawab 15 soalan tentang perniagaan anda (kira-kira 5 minit).
+Shop details sent and merchant assessment done.|Butiran kedai dihantar dan penilaian peniaga selesai.
+Get verified by the Admin team|Dapatkan pengesahan daripada pasukan Admin
+The Admin team checks your details in 1–2 working days.|Pasukan Admin menyemak butiran anda dalam 1–2 hari bekerja.
+Your pin is set. Students can walk straight to you.|Pin anda telah ditetapkan. Pelajar boleh terus berjalan ke kedai anda.
+No pin yet. Tap the map or use your current location.|Belum ada pin. Ketik peta atau gunakan lokasi semasa anda.
+Pin placed. Students will walk straight to this spot.|Pin diletakkan. Pelajar akan terus berjalan ke tempat ini.
+This spot is outside the UM campus. Drag the pin to your shop.|Tempat ini di luar kampus UM. Seret pin ke kedai anda.
+Open your poster|Buka poster anda
+Preview as a student|Pratonton sebagai pelajar
+This is what students see|Inilah yang pelajar lihat
+Your shop page in the student app, with your logo, location and live deals. Buttons are switched off in this preview.|Halaman kedai anda dalam aplikasi pelajar, dengan logo, lokasi dan tawaran aktif anda. Butang dimatikan dalam pratonton ini.
+Student app|Aplikasi pelajar
+Preview|Pratonton
+Something looks wrong? Change your logo or map pin in|Ada yang tidak kena? Tukar logo atau pin peta anda dalam
+For other details,|Untuk butiran lain,
+contact the Admin team|hubungi pasukan Admin
+Students can see your shop once the Admin team has verified it.|Pelajar boleh melihat kedai anda setelah pasukan Admin mengesahkannya.
+Your shop page, as students see it|Halaman kedai anda, seperti yang dilihat pelajar
+What is a deal QR?|Apakah QR tawaran?
+First, create a live deal: a discount for your quiet hours. Its QR then appears here.|Mula-mula, cipta tawaran aktif: diskaun untuk waktu lengang anda. QR-nya kemudian dipaparkan di sini.
+Create your first deal|Cipta tawaran pertama anda
+Create, pause or change your deals in Promote your shop|Cipta, jeda atau ubah tawaran anda dalam Promosikan kedai anda
+Go to Promote your shop|Pergi ke Promosikan kedai anda
+Remove deal|Buang tawaran
+Students won’t see it any more, and it disappears from your list. Claims students already made stay in your Insights.|Pelajar tidak akan melihatnya lagi, dan ia hilang daripada senarai anda. Tuntutan yang telah dibuat pelajar kekal dalam Analisis anda.
+Deal removed.|Tawaran dibuang.
+Deal updated.|Tawaran dikemas kini.
+Change your deal|Ubah tawaran anda
+Edit live deal|Sunting tawaran aktif
+Changes show to students straight away|Perubahan terus dipaparkan kepada pelajar
+1. Students and engagement|1. Pelajar dan penglibatan
+2. Merchants|2. Peniaga
+3. Commerce and transactions|3. Perdagangan dan transaksi
+4. Campaigns|4. Kempen
+5. Impact|5. Impak
+6. KPI tracking|6. Penjejakan KPI
+Registered students|Pelajar berdaftar
+Basic Active Users, 30 days|Pengguna Aktif Asas, 30 hari
+Engaged Active Users, 30 days|Pengguna Aktif Terlibat, 30 hari
+Daily vs monthly opens|Buka harian berbanding bulanan
+Student activation (ever)|Pengaktifan pelajar (keseluruhan)
+Repeat participation|Penyertaan berulang
+Students who…|Pelajar yang…
+Last 7 days|7 hari lepas
+Last 30 days|30 hari lepas
+Opened the app|Membuka aplikasi
+Opened +Onz at least once|Membuka +Onz sekurang-kurangnya sekali
+Basic Active Users|Pengguna Aktif Asas
+Did a lesson, the money check or an event submission|Membuat pelajaran, semakan wang atau penghantaran acara
+Engaged Active Users|Pengguna Aktif Terlibat
+By residential college|Mengikut kolej kediaman
+By faculty|Mengikut fakulti
+By category|Mengikut kategori
+Payment readiness|Kesediaan pembayaran
+Not set|Belum ditetapkan
+No data yet.|Belum ada data.
+Merchants onboarded|Peniaga yang menyertai
+Merchants assessed|Peniaga dinilai
+Merchant assessments done in the app|Penilaian peniaga dalam aplikasi
+Shop page views|Paparan halaman kedai
+The app doesn’t record views yet|Aplikasi belum merekod paparan
+DuitNow QR transactions this month|Transaksi DuitNow QR bulan ini
+Vouchers claimed|Baucar dituntut
+Gross transaction value|Nilai transaksi kasar
+Needs PayNet or merchant reporting|Memerlukan laporan PayNet atau peniaga
+Bookings and conversion|Tempahan dan penukaran
+Bookings aren’t in +Onz yet|Tempahan belum ada dalam +Onz
+Live-deal QR claims|Tuntutan QR tawaran langsung
+Event submissions|Penghantaran acara
+Student events sent to HEP|Acara pelajar dihantar kepada HEP
+Friends who joined with a referral code|Rakan yang menyertai dengan kod rujukan
+Friend connections|Hubungan rakan
+Accepted friendships|Persahabatan diterima
+Tracking links and KOLs|Pautan penjejakan dan KOL
+Coming in the Initiatives update|Akan datang dalam kemas kini Inisiatif
+Merchants accepting digital payments|Peniaga yang menerima bayaran digital
+Cashless transactions facilitated|Transaksi tanpa tunai yang dibantu
+This month, from PayNet’s count|Bulan ini, daripada kiraan PayNet
+Merchant sales through +Onz|Jualan peniaga melalui +Onz
+Needs merchant reporting|Memerlukan laporan peniaga
+Student gigs and bookings|Gig dan tempahan pelajar
+Planned feature|Ciri yang dirancang
+From the app|Daripada aplikasi
+Entered by HEP|Dimasukkan oleh HEP
+Not tracked yet|Belum dijejak
+The app never handles payments, so purchase amounts come from PayNet or merchants.|Aplikasi tidak mengendalikan bayaran, jadi jumlah pembelian datang daripada PayNet atau peniaga.
+Targets and on-track status for the 9 approved KPIs arrive in the next update.|Sasaran dan status bagi 9 KPI yang diluluskan akan tiba dalam kemas kini seterusnya.
+Actual|Sebenar
+Target|Sasaran
+% of target|% daripada sasaran
+How it’s measured, or what to try|Cara diukur, atau apa yang boleh dicuba
+On track|Di landasan
+Watch|Pantau
+Behind|Ketinggalan
+Not available yet|Belum tersedia
+No target set|Tiada sasaran ditetapkan
+Edit targets|Ubah sasaran
+Enter figures|Masukkan angka
+Edit KPI targets|Ubah sasaran KPI
+From the approved KPI sheet. Changes are recorded in the Activity log.|Daripada helaian KPI yang diluluskan. Perubahan direkodkan dalam Log aktiviti.
+Programme start|Mula program
+Programme end|Tamat program
+Amber below (% of where it should be)|Kuning di bawah (% daripada sepatutnya)
+Save targets|Simpan sasaran
+KPI targets saved.|Sasaran KPI disimpan.
+Numbers the app can’t see. They’re labelled “Entered by HEP” and recorded in the Activity log.|Angka yang tidak dapat dilihat oleh aplikasi. Ia dilabel “Dimasukkan oleh HEP” dan direkodkan dalam Log aktiviti.
+Save figures|Simpan angka
+Figures saved.|Angka disimpan.
+The end date must be after the start date.|Tarikh tamat mesti selepas tarikh mula.
+Stalls surveyed outside the app|Gerai yang ditinjau di luar aplikasi
+Merchants submitted to PayNet outside the app|Peniaga yang dihantar kepada PayNet di luar aplikasi
+Reach outside the app (circulars, roadshows, KOL and Instagram)|Capaian di luar aplikasi (pekeliling, jelajah, KOL dan Instagram)
+Stalls still taking QR at the end of the campaign|Gerai yang masih menerima QR pada akhir kempen
+Stalls listed (the base for retention)|Gerai yang disenaraikan (asas untuk pengekalan)
+KPI targets|Sasaran KPI
+KPI figures|Angka KPI
+Behind target:|Ketinggalan sasaran:
+Merchants mapped|Peniaga dipetakan
+Merchants listed with PayNet|Peniaga disenaraikan dengan PayNet
+Merchants ready (verified QR)|Peniaga bersedia (QR disahkan)
+Student reach|Capaian pelajar
+Student activation|Pengaktifan pelajar
+Transaction growth (month on month)|Pertumbuhan transaksi (bulan ke bulan)
+Post-campaign retention|Pengekalan selepas kempen
+Qualifying transactions|Transaksi yang layak
+Waiting for a baseline month|Menunggu bulan asas
+Entered by HEP at the end of the campaign|Dimasukkan oleh HEP pada akhir kempen
+No activated students yet|Belum ada pelajar diaktifkan
+Initiatives|Inisiatif
+Tracking links for KOLs, events and campaigns, and what changed after each one.|Pautan penjejakan untuk KOL, acara dan kempen, dan apa yang berubah selepas setiap satu.
+New initiative|Inisiatif baharu
+Edit initiative|Ubah inisiatif
+Delete initiative|Padam inisiatif
+Delete initiative?|Padam inisiatif?
+Its tracking link keeps working for students, but it won’t be listed here.|Pautan penjejakannya masih berfungsi untuk pelajar, tetapi tidak akan disenaraikan di sini.
+All initiatives|Semua inisiatif
+Initiative|Inisiatif
+Sign-ups via link|Pendaftaran melalui pautan
+Of them, active|Daripadanya, aktif
+Daily sign-ups before → after|Pendaftaran harian sebelum → selepas
+Estimated extra sign-ups|Anggaran pendaftaran tambahan
+“Estimated extra sign-ups” compares daily sign-ups after the start with the 14 days before it. Other things happening at the same time also move this number, so read it together with sign-ups through the link.|“Anggaran pendaftaran tambahan” membandingkan pendaftaran harian selepas tarikh mula dengan 14 hari sebelumnya. Perkara lain yang berlaku pada masa yang sama juga mempengaruhi angka ini, jadi bacalah bersama pendaftaran melalui pautan.
+No initiatives yet. Create one for each KOL, event or campaign you want to measure.|Belum ada inisiatif. Cipta satu bagi setiap KOL, acara atau kempen yang ingin diukur.
+KOL ranking|Kedudukan KOL
+Add initiatives with the type “KOL or influencer” to rank them.|Tambah inisiatif dengan jenis “KOL atau pempengaruh” untuk menyusunnya.
+How students heard about +Onz|Bagaimana pelajar mengetahui tentang +Onz
+No answers yet.|Belum ada jawapan.
+Tracking code|Kod penjejakan
+Start date|Tarikh mula
+End date|Tarikh tamat
+Initiative saved.|Inisiatif disimpan.
+Initiative deleted.|Inisiatif dipadam.
+Link|Pautan
+Copy link|Salin pautan
+Link copied.|Pautan disalin.
+Share this link or QR code. Students who sign up within 30 days of opening it are counted.|Kongsi pautan atau kod QR ini. Pelajar yang mendaftar dalam masa 30 hari selepas membukanya akan dikira.
+That code is already used by another initiative.|Kod itu sudah digunakan oleh inisiatif lain.
+Use 2–30 lower-case letters, numbers or dashes for the code.|Gunakan 2–30 huruf kecil, nombor atau sengkang untuk kod.
+KOL or influencer|KOL atau pempengaruh
+Event or booth|Acara atau gerai
+Roundtable or talk|Meja bulat atau ceramah
+Poster or flyer|Poster atau risalah
+Social media post|Hantaran media sosial
+How did you hear about +Onz?|Bagaimana anda mengetahui tentang +Onz?
+(optional)|(pilihan)
+Choose one|Pilih satu
+Which one?|Yang mana?
+A friend|Seorang rakan
+An event or booth|Acara atau gerai
+An influencer (KOL)|Pempengaruh (KOL)
+HEP, a lecturer or my college|HEP, pensyarah atau kolej saya
+Somewhere else|Tempat lain
+Sign-ups through tracking links|Pendaftaran melalui pautan penjejakan
+See each KOL and event|Lihat setiap KOL dan acara
+Deleted an initiative|Memadam inisiatif
+Excel report|Laporan Excel
+Print or save as PDF|Cetak atau simpan sebagai PDF
+Report downloaded.|Laporan dimuat turun.
+There’s no summary to export yet.|Belum ada ringkasan untuk dieksport.
+Trends|Trend
+Pick a number to see how it changed day by day. Hover over the line, or use the arrow keys, to read each day.|Pilih satu angka untuk melihat perubahannya dari hari ke hari. Halakan tetikus pada garisan, atau guna kekunci anak panah, untuk membaca setiap hari.
+Number|Angka
+Last 90 days|90 hari lepas
+Programme to date|Program setakat ini
+All time|Sepanjang masa
+Show as table|Papar sebagai jadual
+No earlier period to compare yet|Belum ada tempoh terdahulu untuk dibandingkan
+No data|Tiada data
+New sign-ups per day|Pendaftaran baharu sehari
+Students who opened the app that day|Pelajar yang membuka aplikasi pada hari itu
+Days opened per week (average)|Hari dibuka seminggu (purata)
+Basic Active Users, last 7 days|Pengguna Aktif Asas, 7 hari lepas
+Engaged Active Users, last 7 days|Pengguna Aktif Terlibat, 7 hari lepas
+Referral sign-up rate|Kadar pendaftaran melalui rujukan
+Quiz participation rate|Kadar penyertaan kuiz
+Vouchers claimed (total)|Baucar dituntut (jumlah)
+Live-deal QR claims (total)|Tuntutan QR tawaran aktif (jumlah)
+Days opened per week|Hari dibuka seminggu
+Average over the last 7 days, among students who opened the app|Purata 7 hari lepas, dalam kalangan pelajar yang membuka aplikasi
+Shown after the next update|Dipaparkan selepas kemas kini seterusnya
+Share of all students who joined with a referral code|Peratusan pelajar yang mendaftar dengan kod rujukan
+How students and merchants did on the money check. Programme KPIs, targets and trends are on the Dashboard.|Prestasi pelajar dan peniaga dalam semakan kewangan. KPI program, sasaran dan trend ada di Papan Pemuka.
+Students who did the money check|Pelajar yang membuat semakan kewangan
+Average knowledge score|Purata skor pengetahuan
+Results by grade|Keputusan mengikut gred
+Archive initiative|Arkibkan inisiatif
+Archive initiative?|Arkibkan inisiatif?
+It moves to Archived. Its link keeps working, its sign-ups stay in the KOL ranking and reports, and you can restore it any time.|Ia dipindahkan ke Arkib. Pautannya terus berfungsi, pendaftarannya kekal dalam kedudukan KOL dan laporan, dan anda boleh memulihkannya bila-bila masa.
+Archive|Arkibkan
+Initiative archived.|Inisiatif diarkibkan.
+Initiative restored.|Inisiatif dipulihkan.
+Hidden from the list above. Their links still work, and their sign-ups still count in the KOL ranking and reports.|Disembunyikan daripada senarai di atas. Pautannya masih berfungsi, dan pendaftarannya masih dikira dalam kedudukan KOL dan laporan.
+No active initiatives. Archived ones are listed below.|Tiada inisiatif aktif. Yang diarkibkan disenaraikan di bawah.
+Archived an initiative|Mengarkibkan inisiatif
+Restored an initiative|Memulihkan inisiatif
+↑ Top|↑ Atas
+Back to the top of the page|Kembali ke bahagian atas halaman
+Key metrics|Metrik utama
+Your picks, side by side over the same dates (up to 6). Saved on this computer; Copy link shares this view.|Pilihan anda, bersebelahan untuk tarikh yang sama (sehingga 6). Disimpan pada komputer ini; Salin pautan untuk berkongsi paparan ini.
+Pick metrics|Pilih metrik
+Pick your key metrics|Pilih metrik utama anda
+Tick up to 6. They show side by side at the top of the Dashboard.|Tandakan sehingga 6. Ia dipaparkan bersebelahan di bahagian atas Papan Pemuka.
+Show these|Papar ini
+Back to the usual four|Kembali kepada empat biasa
+No metrics picked. Use Pick metrics to choose up to 6.|Tiada metrik dipilih. Guna Pilih metrik untuk memilih sehingga 6.
+Link copied. It opens the Dashboard with these metrics.|Pautan disalin. Ia membuka Papan Pemuka dengan metrik ini.
+Jump to section|Lompat ke bahagian
+Dashboard sections|Bahagian Papan Pemuka
+Vouchers used (total)|Baucar digunakan (jumlah)
+Referral sign-ups (total)|Pendaftaran rujukan (jumlah)
+Event submissions (total)|Acara dihantar (jumlah)
+Friend connections (total)|Hubungan rakan (jumlah)
+Time in the app|Masa dalam aplikasi
+Anonymous totals: only time while a page is on screen and the student was active in the last 2 minutes. No names or accounts.|Jumlah tanpa nama: hanya masa ketika halaman dipaparkan dan pelajar aktif dalam 2 minit terakhir. Tiada nama atau akaun.
+Minutes per student per day|Minit setiap pelajar sehari
+Minutes per student today|Minit setiap pelajar hari ini
+Today so far|Hari ini setakat ini
+Total time in the app, 7 days|Jumlah masa dalam aplikasi, 7 hari
+All students together|Semua pelajar bersama
+Page, last 7 days|Halaman, 7 hari lepas
+Visits|Lawatan
+Per visit|Setiap lawatan
+How far visits scrolled|Sejauh mana lawatan ditatal
+“End” is the share of visits that scrolled to the bottom. A big drop between steps shows where people stop reading.|“Akhir” ialah peratusan lawatan yang ditatal hingga ke bawah. Penurunan besar antara langkah menunjukkan di mana orang berhenti membaca.
+No page time recorded yet.|Belum ada masa halaman direkodkan.
+Minutes per student per day (7-day average)|Minit setiap pelajar sehari (purata 7 hari)
+in this period|dalam tempoh ini
+a day on average|sehari secara purata
+now|kini
+Sign-in emails|E-mel log masuk
+Any of these opens this same account, with the same points and matric number.|Mana-mana e-mel ini membuka akaun yang sama, dengan mata dan nombor matrik yang sama.
+Add another Google account|Tambah akaun Google lain
+For example, add your siswa email if you signed up with a personal Gmail.|Contohnya, tambah e-mel siswa anda jika anda mendaftar dengan Gmail peribadi.
+Google email|E-mel Google
+Email added. You can sign in with either one.|E-mel ditambah. Anda boleh log masuk dengan mana-mana satu.
+Open addonz.my in Safari or Chrome to add an email, then come back to the app.|Buka addonz.my dalam Safari atau Chrome untuk menambah e-mel, kemudian kembali ke aplikasi.
+That email already has its own +Onz sign-in. Ask the Admin team to help you combine them.|E-mel itu sudah mempunyai log masuk +Onz sendiri. Minta pasukan Admin membantu menggabungkannya.
+Couldn’t add that account. Try again.|Akaun itu tidak dapat ditambah. Cuba lagi.
+That’s the email you’re signed in with. Choose a different Google account.|Itu e-mel yang anda gunakan untuk log masuk. Pilih akaun Google lain.
+Only student accounts can add another email.|Hanya akaun pelajar boleh menambah e-mel lain.
+That email already has its own +Onz account. Sign in with it and delete that account first (Me > Delete my account), or ask the Admin team.|E-mel itu sudah mempunyai akaun +Onz sendiri. Log masuk dengannya dan padam akaun itu dahulu (Saya > Padam akaun saya), atau hubungi pasukan Admin.
+That email is already added to another +Onz account.|E-mel itu sudah ditambah pada akaun +Onz lain.
+You can add up to 4 other emails. Remove one first.|Anda boleh menambah sehingga 4 e-mel lain. Buang satu dahulu.
+That email isn’t verified yet.|E-mel itu belum disahkan.
+That email isn’t added to this account.|E-mel itu tidak ditambah pada akaun ini.
+This is the account’s own email, so it can’t be removed.|Ini e-mel utama akaun, jadi ia tidak boleh dibuang.
+Enter a valid email.|Masukkan e-mel yang sah.
+Main email|E-mel utama
+Remove this email?|Buang e-mel ini?
+will no longer open this account.|tidak lagi akan membuka akaun ini.
+Email removed.|E-mel dibuang.
+Your browser blocked the Google window. Allow pop-ups for this site, then try again.|Pelayar anda menyekat tetingkap Google. Benarkan tetingkap timbul untuk laman ini, kemudian cuba lagi.
+Couldn’t add that account. Try again in Chrome or Safari.|Akaun itu tidak dapat ditambah. Cuba lagi dalam Chrome atau Safari.
+This account already has a profile, so it can’t be removed here.|Akaun ini sudah mempunyai profil, jadi ia tidak boleh dibuang di sini.
+Sign in with that email once more, then tap “I already have an account” again.|Log masuk dengan e-mel itu sekali lagi, kemudian ketik “Saya sudah mempunyai akaun” semula.
+Use the email you’ll keep.|Gunakan e-mel yang akan anda kekalkan.
+Your siswa email is best. Each matric number can have only one account, and you can add more emails later on the Me page.|E-mel siswa anda paling sesuai. Setiap nombor matrik hanya boleh mempunyai satu akaun, dan anda boleh menambah e-mel lain kemudian di halaman Saya.
+I already have an account with another email|Saya sudah mempunyai akaun dengan e-mel lain
+That matric number already has an account|Nombor matrik itu sudah mempunyai akaun
+Already have an account?|Sudah mempunyai akaun?
+It was probably you, with a different email.|Mungkin itu anda, dengan e-mel yang berbeza.
+Sign in with the email you used before. Then go to the Me page and tap “Add another Google account” to add this email to the same account.|Log masuk dengan e-mel yang anda gunakan sebelum ini. Kemudian pergi ke halaman Saya dan ketik “Tambah akaun Google lain” untuk menambah e-mel ini ke akaun yang sama.
+We’ll remove this new, empty sign-in so the email can be added. Nothing else is deleted.|Kami akan membuang log masuk baharu yang kosong ini supaya e-mel itu boleh ditambah. Tiada data lain dipadamkan.
+Remove this sign-in and go back|Buang log masuk ini dan kembali
+If it wasn’t you, contact the Admin team with your student ID.|Jika itu bukan anda, hubungi pasukan Admin dengan kad pelajar anda.
+Sign in with the email you used before, then add this one on the Me page.|Log masuk dengan e-mel yang anda gunakan sebelum ini, kemudian tambah e-mel ini di halaman Saya.
+Delete account|Padam akaun
+This deletes their profile, points, friends and sign-in, cancels unused vouchers, and frees their matric number. Records the Admin team needs are kept without their name. This can’t be undone.|Ini memadamkan profil, mata, rakan dan log masuk mereka, membatalkan baucar yang belum digunakan, dan membebaskan nombor matrik mereka. Rekod yang diperlukan oleh pasukan Admin disimpan tanpa nama mereka. Tindakan ini tidak boleh dibuat asal.
+Type their matric number to confirm|Taip nombor matrik mereka untuk mengesahkan
+That matric number doesn’t match this student.|Nombor matrik itu tidak sepadan dengan pelajar ini.
+This deletes the business profile, its listing, deals and sign-in, and marks the request closed. Vouchers, claims and visits stay in the records. This can’t be undone.|Ini memadamkan profil perniagaan, penyenaraian, tawaran dan log masuknya, serta menandakan permintaan sebagai ditutup. Baucar, tuntutan dan lawatan kekal dalam rekod. Tindakan ini tidak boleh dibuat asal.
+Their vouchers are settled|Baucar mereka telah diselesaikan
+They’re removed from the PayNet list|Mereka telah dikeluarkan daripada senarai PayNet
+Account deleted.|Akaun telah dipadamkan.
+The account couldn’t be deleted.|Akaun tidak dapat dipadamkan.
+The deletion is taking longer than usual. Check Account closures in a minute.|Pemadaman mengambil masa lebih lama daripada biasa. Semak Penutupan akaun sebentar lagi.
+The account’s data is deleted, but its sign-in couldn’t be removed. Remove it under Firebase Authentication.|Data akaun telah dipadamkan, tetapi log masuknya tidak dapat dibuang. Buang di bawah Firebase Authentication.
+This account changed type. Refresh and try again.|Jenis akaun ini telah berubah. Muat semula dan cuba lagi.
+Only student and business accounts can be deleted here.|Hanya akaun pelajar dan perniagaan boleh dipadamkan di sini.
+Deleted an account|Memadam akaun
+Use Mark as closed only if the account is already gone.|Gunakan Tandakan sebagai ditutup hanya jika akaun sudah tiada.
 `;

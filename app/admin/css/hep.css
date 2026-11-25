@@ -209,3 +209,96 @@
 .hep-fb-status.is-replied { color: var(--green); }
 .hep-fb-reply { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--mint-wash); border-left: 3px solid var(--green); }
 .hep-fb-reply p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* HEP Dashboard */
+.dash-updated { display:flex; align-items:center; gap:6px; margin:-4px 0 14px; }
+.dash-updated svg { width:16px; height:16px; }
+.dash-section { margin-top:16px; }
+.dash-section h2 { margin-bottom:4px; }
+.dash-grid { grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); margin-top:12px; }
+.dash-tile .s { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.dash-source { font-size:11px; }
+.dash-spark { display:block; color:var(--brand, #2420ff); margin:4px 0; }
+/* Trends chart (app/shared/js/trend-chart.js): one brand-blue line, hairline grid, muted axis text. */
+.trend-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-top:12px; }
+.trend-controls .field { flex:1 1 260px; max-width:420px; margin:0; }
+.trend-ranges { display:flex; flex-wrap:wrap; gap:6px; }
+.trend-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:16px 0 6px; }
+.trend-name { width:100%; font-size:13px; color:var(--ink-3); }
+.trend-head b { font-size:28px; line-height:1.1; color:var(--ink); }
+.trend-of { color:var(--ink-2); font-weight:600; margin-left:-6px; }
+.trend-chart { position:relative; width:100%; min-height:200px; outline:none; border-radius:10px; }
+.trend-chart:focus-visible { box-shadow:0 0 0 3px var(--blue-wash), 0 0 0 4px var(--blue); }
+.trend-svg { display:block; max-width:100%; height:auto; touch-action:pan-y; }
+.trend-grid { stroke:var(--line); stroke-width:1; }
+.trend-axis { fill:var(--ink-3); font-size:11px; font-variant-numeric:tabular-nums; }
+.trend-line { fill:none; stroke:var(--blue, #2420ff); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.trend-dot, .trend-end, .trend-hover { fill:var(--blue, #2420ff); stroke:var(--card, #fff); stroke-width:2; }
+.trend-cross { stroke:var(--ink-3); stroke-width:1; }
+.trend-tip { position:absolute; pointer-events:none; background:var(--card, #fff); border:1px solid var(--line-2, #c5c9ed); border-radius:8px; padding:6px 10px; box-shadow:var(--shadow); white-space:nowrap; display:flex; flex-direction:column; }
+.trend-tip[hidden] { display:none; }
+.trend-tip strong { font-size:14px; color:var(--ink); }
+.trend-tip span { font-size:12px; color:var(--ink-3); }
+.trend-table { margin-top:10px; }
+/* Time in the app: how far visits scrolled, as four small columns (one brand hue, labels in text colour). */
+.reach { display:flex; gap:10px; align-items:flex-end; }
+.reach-step { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:46px; }
+.reach-step i { display:block; width:18px; background:var(--blue, #2420ff); border-radius:4px 4px 0 0; }
+.reach-step small { font-size:11px; color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.dash-pages td { vertical-align:bottom; }
+.dash-pages td.num, .dash-pages th { white-space:nowrap; }
+/* Jump to section: sticks under the admin top bar (phones) or the top of the page (computers), and highlights where you are. */
+.dash-jump { position:sticky; top:0; z-index:15; margin:0 -4px 4px; padding:8px 4px; background:var(--paper, #f7f8ff); box-shadow:0 6px 12px -12px #080d6855; display:flex; gap:6px; align-items:center; }
+.dash-jump-top { flex:0 0 auto; border:1px dashed var(--line-2, #c5c9ed); background:transparent; color:var(--ink-2); border-radius:99px; padding:6px 12px; min-height:44px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.dash-jump-top:hover { border-color:var(--blue); color:var(--ink); }
+.dash-jump-select { display:block; margin:0; flex:1; min-width:0; max-width:360px; }
+.dash-jump-select select { width:100%; min-height:44px; }
+/* Key metrics: up to 6 cards side by side, one small chart each, with a caption that survives a screenshot. */
+.cmp-bar { display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center; margin-top:12px; }
+.cmp-caption { margin:12px 0 0; font-size:12px; color:var(--ink-3); }
+.cmp-grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); margin-top:10px; }
+.cmp-card { border:1px solid var(--line, #e0e2f5); border-radius:14px; padding:14px 14px 8px; background:var(--card, #fff); min-width:0; }
+.cmp-name { font-size:14px; margin:0 0 6px; color:var(--ink-2); font-weight:700; }
+.cmp-head { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.cmp-head b { font-size:24px; line-height:1.1; color:var(--ink); }
+.cmp-head .trend-of { margin-left:0; }
+.cmp-change { margin:4px 0 0; font-size:12px; }
+.cmp-chart { min-height:120px; margin-top:6px; }
+.cmp-status { margin:8px 0 6px; }
+.cmp-bar-track { position:relative; height:10px; border-radius:99px; background:var(--blue-wash, #eeedff); overflow:visible; }
+.cmp-bar-track i { display:block; height:100%; border-radius:99px; background:var(--blue, #2420ff); }
+.cmp-pace { position:absolute; top:-4px; width:2px; height:18px; background:var(--ink); border-radius:1px; transform:translateX(-1px); }
+.cmp-note { margin:8px 0 6px; font-size:12px; }
+.cmp-group { border:0; padding:0; margin:0 0 6px; display:grid; gap:4px; }
+.cmp-group legend { font-weight:700; font-size:13px; color:var(--ink-2); margin-bottom:4px; padding:0; }
+.dash-section h2:focus { outline:none; }
+@media print { .dash-jump { display:none !important; } .cmp-grid { grid-template-columns:repeat(3, 1fr) !important; } .cmp-card { break-inside:avoid; } }
+.trend-table summary { cursor:pointer; color:var(--ink-2); font-weight:600; }
+.trend-table .table-wrap { max-height:320px; overflow:auto; margin-top:8px; }
+.dash-tiers { margin-top:14px; }
+.dash-break td { padding:6px 8px; }
+
+/* Sidebar menu: scroll up and down only (items nudge right on hover), with a thin scrollbar that suits the blue rail. */
+.mpp .rail nav { overflow-x:hidden; scrollbar-width:thin; scrollbar-color:#ffffff59 transparent; }
+.mpp .rail nav::-webkit-scrollbar { width:6px; height:0; }
+.mpp .rail nav::-webkit-scrollbar-track { background:transparent; }
+.mpp .rail nav::-webkit-scrollbar-thumb { background:#ffffff59; border-radius:99px; }
+.mpp .rail nav::-webkit-scrollbar-button { display:none; }
+.dash-kpis .badge { white-space:nowrap; }
+.dash-kpis td:nth-child(5) { white-space:nowrap; }
+.dash-flags { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.dash-flags svg { width:18px; height:18px; flex-shrink:0; }
+
+/* Dashboard print / save as PDF: just the report, no menu or buttons */
+.print-only { display:none; }
+@media print {
+  body, body.mpp-mode { background:#fff !important; }
+  .mpp { display:block !important; }
+  .mpp .rail, .demo-ribbon, .no-print, .toast, #kpi-targets, #kpi-figures, .dash-section a { display:none !important; }
+  .mpp main, .mpp .view, main.view { padding:0 !important; max-width:none !important; margin:0 !important; }
+  .print-only { display:block; margin:0 0 8px; }
+  .dash-section, .dash-tile, .dash-kpis tr { break-inside:avoid; }
+  .dash-section { box-shadow:none !important; border:1px solid #ddd; }
+  .dash-grid { grid-template-columns:repeat(3, 1fr) !important; }
+  .dash-spark { color:#333 !important; }
+}

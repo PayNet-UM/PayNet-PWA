@@ -51,7 +51,7 @@ test('replaying the tour skips the first-time welcome wording', () => {
 test('tabs HEP has switched off are left out of the tour', () => {
   const titles = G.stepsFor(merchant(), { has: only('scan', 'promote', 'insights') }).map((s) => s.title);
   assert.ok(titles.includes('My shop'));
-  for (const off of ['Deal QR', 'Promote live deals', 'Insights']) assert.ok(!titles.includes(off), off);
+  for (const off of ['Deal QR', 'Promote your shop', 'Insights']) assert.ok(!titles.includes(off), off);
 });
 test('every highlighted element is named once', () => {
   const targets = G.stepsFor(student, { has: all }).filter((s) => s.target).map((s) => s.target);

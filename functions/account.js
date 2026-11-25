@@ -42,6 +42,8 @@ export function erasePlan(uid, profile = {}) {
   if (profile.matric) docs.push(`matrics/${profile.matric}`);
   if (profile.referralCode) docs.push(`referralCodes/${profile.referralCode}`);
   if (profile.username) docs.push(`usernames/${profile.username}`);
+  // Extra sign-in emails (functions/email-alias.js), so they can be used again.
+  for (const e of Array.isArray(profile.linkedEmails) ? profile.linkedEmails : []) if (typeof e === 'string' && e && !e.includes('/')) docs.push(`emailAliases/${e}`);
   return {
     docs,
     // Deleted with everything under them (points history, app days, waves sent to them).
@@ -101,4 +103,52 @@ export async function closeAccount(deps, { idToken, reasons, comment }) {
   await deps.erase(user.uid, erasePlan(user.uid, profile || {}));
   await deps.deleteAuthUser(user.uid);
   return { ok: true, kind: 'deleted' };
+}
+
+// ---------------------------------------------------------------- HEP deletes an account
+// HEP deletes a student from the Students page, or a business after settling its closing request (Account closures).
+// The dashboard writes accountDeletions/{id}; firestore.rules has already checked the admin, their recent sign-in,
+// the activity-log entry, the typed matric number (students) and the open closing request (businesses).
+// The server trigger then calls adminDelete.
+
+// What to remove for a business. Records students and HEP still need (vouchers, live-deal claims, visits) are kept.
+// The merchant assessment (stallSurveys) is kept too, because it counts toward the "Merchants mapped" KPI, but its
+// personal details are removed: the business and owner's names and the WhatsApp number (PDPA).
+export const ASSESSMENT_PERSONAL = ['answers.name', 'answers.ownerName', 'answers.whatsapp'];
+export function merchantErasePlan(uid) {
+  return {
+    docs: [`merchants/${uid}`, `merchantPrivate/${uid}`, `voucherApplications/${uid}`, `presence/${uid}`],
+    trees: [`users/${uid}`],
+    prefixes: [],
+    // Fields removed from documents that are otherwise kept (only if the document exists).
+    clears: [{ path: `stallSurveys/${uid}`, fields: ASSESSMENT_PERSONAL }],
+    queries: [
+      { collection: 'deals', field: 'merchantId', action: 'delete' },
+      { collection: 'offers', field: 'merchantId', action: 'delete' },
+      { collection: 'liveDealQRs', field: 'merchantId', action: 'delete' },
+    ],
+  };
+}
+
+// deps: { getProfile(uid), addClosure(id|null, data), updateClosure(id, data), erase(uid, plan), deleteAuthUser(uid), now() }
+// Returns the status to save on the request: { status: 'done' } or { status: 'error', message }.
+export async function adminDelete(deps, { uid, role, by }) {
+  if (typeof uid !== 'string' || !uid || uid.includes('/')) return { status: 'error', message: 'No account was chosen.' };
+  const profile = await deps.getProfile(uid);
+  if (!profile) { await deps.deleteAuthUser(uid).catch(() => {}); return { status: 'done' }; } // already gone: just make sure the sign-in is too
+  if (profile.role !== role) return { status: 'error', message: 'This account changed type. Refresh and try again.' };
+  if (role === 'student') {
+    // An anonymous note, like when a student deletes their own account, so HEP's list stays complete.
+    await deps.addClosure(null, { kind: 'deleted', role, reasons: [], comment: '', byAdmin: by || '', createdAt: deps.now(), seen: true,
+      college: profile.college || '', faculty: profile.faculty || '', points: Number(profile.points) || 0 });
+    await deps.erase(uid, erasePlan(uid, profile));
+  } else if (role === 'merchant') {
+    await deps.erase(uid, merchantErasePlan(uid));
+    await deps.updateClosure(`request_${uid}`, { status: 'done', seen: true, handledBy: by || '', handledAt: deps.now() });
+  } else {
+    return { status: 'error', message: 'Only student and business accounts can be deleted here.' };
+  }
+  // The data is gone at this point; a sign-in that couldn't be removed just leads to an empty sign-up form.
+  try { await deps.deleteAuthUser(uid); } catch { return { status: 'done', warning: 'The account’s data is deleted, but its sign-in couldn’t be removed. Remove it under Firebase Authentication.' }; }
+  return { status: 'done' };
 }

@@ -1,15 +1,19 @@
 // Kampus Kita+ server functions. Firebase Hosting sends /api/** here (see firebase.json), so the app calls
 // them on its own address with no cross-site setup.
 import { onRequest } from 'firebase-functions/v2/https';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentWritten, onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, FieldPath } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldPath, FieldValue } from 'firebase-admin/firestore';
 import { create, redeem, HttpError } from './handoff.js';
 import { syncLeagueStudent } from './league.js';
 import { awardAppStreak } from './streaks.js';
 import { rebuildReferralBoard } from './referrals.js';
-import { closeAccount, patchFor } from './account.js';
+import { closeAccount, patchFor, adminDelete } from './account.js';
+import { addEmail, aliasSignIn, removeEmail } from './email-alias.js';
+import { buildDays } from './daily-stats-load.js';
+import { dayOf, addDays } from './daily-stats.js';
 
 initializeApp();
 const db = getFirestore();
@@ -29,6 +33,10 @@ export const kkLeagueCollege = onDocumentWritten({ ...leagueOptions, document: '
   if (before?.college === after?.college && before?.faculty === after?.faculty && before?.role === after?.role) return;
   return syncLeagueStudent(db, event.params.uid);
 });
+// HEP Dashboard: every 3 hours, recount yesterday (to close it) and today so far into dailyStats/{day}.
+// Needs the Cloud Scheduler API on the project (docs/DEPLOY.md). Backfill past days with functions/rebuild-daily.js.
+export const dailyStatsSummary = onSchedule({ schedule: '0 */3 * * *', timeZone: 'Asia/Kuala_Lumpur', region: 'asia-southeast1', retryCount: 2, memory: '512MiB', timeoutSeconds: 300 },
+  async () => { const today = dayOf(Date.now()); await buildDays(db, [addDays(today, -1), today]); });
 // Referral leaderboard (stats/referrals): recounted whenever a referral is added or removed.
 export const referralBoard = onDocumentWritten({ ...leagueOptions, document: 'referrals/{friend}' }, () => rebuildReferralBoard(db));
 
@@ -72,6 +80,10 @@ async function erase(uid, plan) {
     const snap = await db.collection(collection).orderBy(FieldPath.documentId()).startAt(prefix).endAt(prefix + '\uf8ff').get();
     snap.docs.forEach((d) => ops.push((b) => b.delete(d.ref)));
   }
+  for (const { path, fields } of plan.clears || []) {
+    const ref = db.doc(path);
+    if ((await ref.get()).exists) ops.push((b) => b.update(ref, Object.fromEntries(fields.map((f) => [f, FieldValue.delete()]))));
+  }
   for (const q of plan.queries) {
     const snap = await db.collection(q.collection).where(q.field, '==', uid).get();
     snap.docs.forEach((d) => ops.push((b) => (q.action === 'delete' ? b.delete(d.ref) : b.update(d.ref, patchFor(q, d.data())))));
@@ -95,9 +107,56 @@ const accountDeps = {
   now: () => Date.now(),
 };
 
+// Extra sign-in emails (functions/email-alias.js). The alias and the student's linkedEmails change together.
+const aliasRef = (email) => db.collection('emailAliases').doc(email);
+const aliasDeps = {
+  verifyIdToken: (t) => auth.verifyIdToken(t),
+  getProfile: accountDeps.getProfile,
+  getAlias: async (email) => { const s = await aliasRef(email).get(); return s.exists ? s.data() : null; },
+  saveAlias: (email, uid, max) => db.runTransaction(async (tx) => {
+    const userRef = db.doc(`users/${uid}`);
+    const [a, u] = await Promise.all([tx.get(aliasRef(email)), tx.get(userRef)]);
+    if (a.exists) return a.data().uid === uid ? 'already' : 'taken';
+    if ((u.get('linkedEmails') || []).length >= max) return 'full';
+    tx.create(aliasRef(email), { uid, createdAt: FieldValue.serverTimestamp() });
+    tx.update(userRef, { linkedEmails: FieldValue.arrayUnion(email) });
+    return 'added';
+  }),
+  removeAlias: (email, uid) => db.runTransaction(async (tx) => {
+    const a = await tx.get(aliasRef(email));
+    if (!a.exists || a.data().uid !== uid) return false;
+    tx.delete(aliasRef(email));
+    tx.update(db.doc(`users/${uid}`), { linkedEmails: FieldValue.arrayRemove(email) });
+    return true;
+  }),
+  deleteAuthUser: accountDeps.deleteAuthUser,
+  mintToken: (uid) => auth.createCustomToken(uid),
+};
+
 // Runs as the account named in functions/.env.<project-id> (HANDOFF_SERVICE_ACCOUNT): it needs the
 // "Service Account Token Creator" role to make sign-in tokens. Without the file it runs as the default compute account.
 const runAs = process.env.HANDOFF_SERVICE_ACCOUNT ? { serviceAccount: process.env.HANDOFF_SERVICE_ACCOUNT } : {};
+
+// HEP deletes an account (functions/account.js adminDelete). The rules already checked who asked; this carries it out
+// and saves the result on the request, which the dashboard is watching. No retry: a half-done deletion is reported, not looped.
+export const hepAccountDeletion = onDocumentCreated({ region: 'asia-southeast1', retry: false, maxInstances: 2, timeoutSeconds: 120, document: 'accountDeletions/{id}' },
+  async (event) => {
+    const req = event.data?.data(); if (!req || req.status !== 'pending') return;
+    let result;
+    try {
+      result = await adminDelete({
+        ...accountDeps,
+        updateClosure: async (id, data) => {
+          const ref = db.collection('accountClosures').doc(id);
+          if ((await ref.get()).exists) await ref.update({ ...data, handledAt: Timestamp.fromMillis(data.handledAt) });
+        },
+      }, { uid: req.uid, role: req.role, by: req.by });
+    } catch (e) {
+      console.error(e);
+      result = { status: 'error', message: 'Something went wrong part-way. Try again, or check the account under Students or Merchants.' };
+    }
+    await event.data.ref.update({ ...result, doneAt: FieldValue.serverTimestamp() });
+  });
 
 export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', maxInstances: 5, memory: '256MiB', timeoutSeconds: 60, ...runAs }, async (req, res) => {
   res.set('Cache-Control', 'no-store');
@@ -113,6 +172,10 @@ export const api = onRequest({ region: 'asia-southeast1', invoker: 'public', max
       const idToken = (req.get('Authorization') || '').replace(/^Bearer /, '');
       return res.json(await closeAccount(accountDeps, { idToken, reasons: body.reasons, comment: body.comment }));
     }
+    const bearer = () => (req.get('Authorization') || '').replace(/^Bearer /, '');
+    if (req.path.endsWith('/account/add-email')) return res.json(await addEmail(aliasDeps, { idToken: bearer(), otherToken: body.otherToken }));
+    if (req.path.endsWith('/account/alias-sign-in')) return res.json(await aliasSignIn(aliasDeps, { idToken: bearer() }));
+    if (req.path.endsWith('/account/remove-email')) return res.json(await removeEmail(aliasDeps, { idToken: bearer(), email: body.email }));
     return res.status(404).json({ error: 'not-found' });
   } catch (e) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.code, message: e.message });

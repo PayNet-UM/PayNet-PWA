@@ -1,6 +1,6 @@
 // Tests for "Delete my account" (functions/account.js), with in-memory stand-ins for Firebase.
 import assert from 'node:assert/strict';
-import { closeAccount, erasePlan, cleanAnswers, patchFor, REASONS, DELETED } from '../functions/account.js';
+import { closeAccount, erasePlan, cleanAnswers, patchFor, REASONS, DELETED, adminDelete, merchantErasePlan } from '../functions/account.js';
 import { HttpError } from '../functions/handoff.js';
 import { CLOSE_REASONS } from '../app/shared/js/data.js';
 
@@ -103,6 +103,52 @@ await test('requests need a valid sign-in and at least one known reason', async 
 await test('the app offers exactly the reasons the server accepts', async () => {
   assert.deepEqual(CLOSE_REASONS.map(([k]) => k).sort(), Object.keys(REASONS).sort());
   for (const [k, label] of CLOSE_REASONS) assert.equal(label, REASONS[k], k);
+});
+
+// ---- HEP deletes an account (the rules have already checked the admin, matric and request)
+function adminSetup() {
+  const { deps, s } = setup();
+  s.updated = [];
+  return { deps: { ...deps, updateClosure: async (id, data) => { s.updated.push([id, data]); } }, s };
+}
+await test('HEP deletes a student: anonymous note, full erase, sign-in removed', async () => {
+  const { deps, s } = adminSetup();
+  assert.deepEqual(await adminDelete(deps, { uid: 'aina', role: 'student', by: 'hep@um.edu.my' }), { status: 'done' });
+  const note = [...s.closures.values()][0];
+  assert.equal(note.kind, 'deleted'); assert.equal(note.byAdmin, 'hep@um.edu.my'); assert.equal(note.points, 120);
+  assert.ok(!('name' in note) && !('matric' in note) && !('email' in note), 'the note must not name the student');
+  assert.deepEqual(s.erased[0], ['aina', erasePlan('aina', { role: 'student', name: 'Aina Ali', matric: 'S2012345', college: 'KK3', faculty: 'Science', points: 120, referralCode: 'AINA-7K', username: 'aina_a' })]);
+  assert.deepEqual(s.authDeleted, ['aina']);
+});
+await test('HEP deletes a business: shop data erased, request marked closed', async () => {
+  const { deps, s } = adminSetup();
+  assert.equal((await adminDelete(deps, { uid: 'shop1', role: 'merchant', by: 'hep@um.edu.my' })).status, 'done');
+  assert.deepEqual(s.erased[0], ['shop1', merchantErasePlan('shop1')]);
+  assert.equal(s.updated[0][0], 'request_shop1'); assert.equal(s.updated[0][1].status, 'done'); assert.equal(s.updated[0][1].handledBy, 'hep@um.edu.my');
+  assert.equal(s.closures.size, 0); assert.deepEqual(s.authDeleted, ['shop1']);
+});
+await test('a business erase keeps the records students and HEP need', () => {
+  const plan = merchantErasePlan('shop1');
+  assert.ok(plan.docs.includes('merchants/shop1') && plan.docs.includes('merchantPrivate/shop1'));
+  const queried = plan.queries.map((q) => q.collection);
+  for (const keep of ['vouchers', 'liveDealClaims', 'visits']) assert.ok(!queried.includes(keep), keep + ' should be kept');
+  assert.ok(!plan.docs.some((p) => p.startsWith('stallSurveys/')), 'the merchant assessment counts toward a KPI');
+  // ...but the owner's personal details in it are removed (PDPA).
+  assert.deepEqual(plan.clears, [{ path: 'stallSurveys/shop1', fields: ['answers.name', 'answers.ownerName', 'answers.whatsapp'] }]);
+});
+await test('a changed account type, an admin profile or a missing uid is not deleted', async () => {
+  const { deps, s } = adminSetup();
+  assert.equal((await adminDelete(deps, { uid: 'aina', role: 'merchant', by: 'x' })).status, 'error');
+  assert.equal((await adminDelete(deps, { uid: 'hep1', role: 'mpp', by: 'x' })).status, 'error');
+  assert.equal((await adminDelete(deps, { uid: '', role: 'student', by: 'x' })).status, 'error');
+  assert.equal(s.erased.length, 0); assert.equal(s.authDeleted.length, 0);
+});
+await test('an account that is already gone just finishes; a stuck sign-in is reported', async () => {
+  const { deps, s } = adminSetup();
+  assert.deepEqual(await adminDelete(deps, { uid: 'nobody', role: 'student', by: 'x' }), { status: 'done' });
+  assert.equal(s.erased.length, 0);
+  const r = await adminDelete({ ...deps, deleteAuthUser: async () => { throw new Error('no permission'); } }, { uid: 'aina', role: 'student', by: 'x' });
+  assert.equal(r.status, 'done'); assert.match(r.warning, /sign-in/);
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);

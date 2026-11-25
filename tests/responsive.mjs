@@ -12,7 +12,7 @@ const TILE=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4
 const ROLES=[
   ['student','aina@siswa.um.edu.my',['home','community','leagues','events','feskum','rewards','me','avatar','learn','survey','explore','explore/deals','feedback','about','contact','points']],
   ['merchant','kopikolej@demo.my',['home','scan','shop','promote','insights','poster','survey','about','contact','points']],
-  ['admin',null,['overview','merchants','approvals','rewards','campaigns','kpis','people','paynet','recon','feedback','closures','activity','settings','points']],
+  ['admin',null,['overview','dashboard','initiatives','merchants','approvals','rewards','campaigns','kpis','people','paynet','recon','feedback','closures','activity','settings','points']],
 ];
 const VIEWPORTS=[{width:320,height:740},{width:390,height:844},{width:768,height:1024},{width:844,height:390},{width:1360,height:960}];
 const browser=await chromium.launch(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{});

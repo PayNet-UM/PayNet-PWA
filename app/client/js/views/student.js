@@ -4,6 +4,7 @@ import { INFORMATION_ROUTES, informationLinks } from '../information.js';
 // Student app: +Onz hub, Overview directory, rewards, events, community,
 // cashless guide (Bayar Kita), learning, avatar and profile.
 import * as D from '../data.js';
+import { signInEmails, addSignInEmail, removeSignInEmail, linkErrorText } from '../link-email.js';
 import { directoryArt } from '../directory-art.js';
 import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
 import { tr } from '../i18n.js';
@@ -135,6 +136,9 @@ async function merchantRender(app, [id]) {
     ${deals.length ? `<section class="section"><div class="head"><h2>Live deals</h2></div><div class="stack">${deals.map((d) => `<div class="card row between"><div><h3>${esc(d.title)}</h3><p class="faint">${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</p></div><a class="btn primary small" href="#/claim-deal/${esc(d.id)}">${icon('qr-code')} Scan to claim</a></div>`).join('')}</div></section>` : ''}
     <div style="position:sticky;bottom:calc(var(--nav-h) + 12px);margin-top:20px"><a class="btn primary block" href="#/explore/${esc(m.id)}">${icon('map')} View nearby shops</a></div>`;
 }
+// The merchant app reuses this page for "Preview as a student".
+export const studentShopRender = (app, args) => merchantRender(app, args);
+export const studentShopMount = (root, app, args) => merchantMount(root, app, args);
 function merchantMount(root, app, [id]) {
   const el = $('#shop-map', root); if (!el) return;
   let map = null;
@@ -705,6 +709,7 @@ async function meRender(app) {
       <div><h1 style="font-size:24px">${esc(p.name)}</h1><p class="muted">${esc(D.COLLEGES.find(([k]) => k === p.college)?.[1] || '')}</p>
       <p class="row" style="gap:6px;margin-top:6px"><span class="badge ok">${icon('medal')}${esc(lvl.name)}</span></p>
       <a class="btn small primary" href="#/avatar" style="margin-top:10px">${icon('palette')} Customise avatar</a></div></section>
+    ${signInEmailsCard(app)}
     <section class="section card invite-card" id="referral-card">
       <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Refer a friend</h2></div>
       <div class="invite-code">
@@ -773,6 +778,7 @@ function ledgerLabel(l) {
     offpeak: 'Quiet-hour bonus', redeem: 'Swapped for a voucher', donate: 'Given to the welfare fund', welfare: 'Welfare support received', adjust: l.note || 'Adjustment by the Admin team' }[l.type] || l.type;
 }
 function meMount(root, app) {
+  mountSignInEmails(root, app);
   $('#copy-referral', root).onclick = async () => {
     try {
       await navigator.clipboard.writeText(app.profile.referralCode);
@@ -828,3 +834,43 @@ export const routes = {
   feedback: { title: 'Questions and feedback', render: feedbackRender, mount: feedbackMount, tab: 'me' },
   'delete-account': { title: 'Delete my account', render: closeRender, mount: closeMount, tab: 'me' },
 };
+
+// ------------------------------------------------------------- Me: emails that sign in to this account
+function signInEmailsCard(app) {
+  const { own, added } = signInEmails(app);
+  const row = (e, removable) => `<div class="item row" style="justify-content:space-between;gap:8px"><span data-no-i18n style="overflow-wrap:anywhere">${esc(e)}</span>${removable
+    ? `<button class="btn small ghost" data-remove-email="${esc(e)}" aria-label="Remove ${esc(e)}">Remove</button>` : '<span class="faint">Main email</span>'}</div>`;
+  return `<section class="section card pad-lg" id="signin-emails"><div class="row" style="gap:10px"><span class="tile-icon">${icon('mail')}</span><h2>Sign-in emails</h2></div>
+    <p class="faint">Any of these opens this same account, with the same points and matric number.</p>
+    <div class="list" style="margin-top:8px">${[own && row(own, false), ...added.map((e) => row(e, true))].filter(Boolean).join('')}</div>
+    ${added.length < 4 ? `<button class="btn small" id="add-email" style="margin-top:10px">${icon('plus')} Add another Google account</button>
+    <p class="faint" style="margin-top:6px">For example, add your siswa email if you signed up with a personal Gmail.</p>` : ''}</section>`;
+}
+function mountSignInEmails(root, app) {
+  const mode = app.backend?.mode;
+  // The server saves the change; show it straight away instead of waiting for the profile to refresh.
+  const show = (list) => { if (app.profile) app.profile.linkedEmails = list; app.render(); };
+  $$('[data-remove-email]', root).forEach((b) => { b.onclick = async () => {
+    const email = b.dataset.removeEmail;
+    if (!(await confirmSheet('Remove this email?', `<span data-no-i18n>${esc(email)}</span> will no longer open this account.`, 'Remove', true))) return;
+    await busy(b, async () => {
+      try { await removeSignInEmail(app, email); toast('Email removed.'); show((app.profile?.linkedEmails || []).filter((e) => e !== email)); }
+      catch (err) { toast(linkErrorText(err), true); }
+    });
+  }; });
+  const btn = $('#add-email', root); if (!btn) return;
+  btn.onclick = () => {
+    // The installed iPhone app can't open Google's window; adding an email works in Safari or Chrome.
+    if (mode === 'live' && window.matchMedia?.('(display-mode: standalone)').matches)
+      return toast('Open addonz.my in Safari or Chrome to add an email, then come back to the app.', true);
+    const run = (demoEmail) => busy(btn, async () => {
+      try {
+        const email = await addSignInEmail(app, demoEmail);
+        if (email) { toast('Email added. You can sign in with either one.'); show([...new Set([...(app.profile?.linkedEmails || []), email])]); }
+      } catch (err) { toast(linkErrorText(err), true); }
+    });
+    if (mode !== 'demo') return run('');
+    const el = sheet(`<h2>Add another Google account</h2><form id="le" class="stack" style="margin-top:12px"><label class="field">Google email<input name="email" type="email" required placeholder="you@siswa.um.edu.my"></label><button class="btn primary block">Add</button></form>`);
+    $('#le', el).onsubmit = (e) => { e.preventDefault(); const v = e.target.email.value; closeSheet(); run(v); };
+  };
+}

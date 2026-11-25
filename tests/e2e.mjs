@@ -167,10 +167,13 @@ ok(`student swapped 300 points for voucher ${vcode}`);
 const fresh = async (pg) => pg.addInitScript(() => { if (sessionStorage.getItem('umc-demo-session') === null) sessionStorage.setItem('umc-demo-session', ''); });
 const mer = await ctx.newPage(); watch(mer, 'merchant'); await fresh(mer);
 await login(mer, 'kopikolej@demo.my'); await mer.waitForSelector('#merchant-wallet .stat', { timeout: 30000 });
+// A shop with no claims yet sees "Start here" with the deal QR as the next step.
+if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here li.is-next'))) throw new Error('Start here should point to the deal QR next');
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-redeem-steps');
+await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-intro');
+if (!(await mer.locator('.mer-qr-manage[href="#/promote"]').count())) throw new Error('Deal QR should point to Promote your shop');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
 await login(counter, adminEmail, ADMIN); await counter.goto(ADMIN + '#/rewards'); await counter.waitForSelector('#vfind');
@@ -184,7 +187,9 @@ const liveId = await mer.evaluate(async () => {
   return D.createDeal(a.ctx,{title:'Campus QR special',benefit:'20% off any coffee',startMin:0,endMin:1440,threshold:60});
 });
 const pointsBeforeScan = await pointsOf(stu);
-await mer.goto(BASE + '#/scan/' + liveId); await mer.waitForSelector('#live-deal-qr canvas');
+// The QR library draws a canvas, then may swap it for an image, so either one counts as the QR showing.
+await mer.goto(BASE + '#/scan/' + liveId);
+await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
 // Feed the actual merchant QR image through the student's camera pipeline.
@@ -198,13 +203,16 @@ await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmati
 if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
 await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
 if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
-await mer.waitForSelector('[data-apply-claim]'); await mer.click('[data-apply-claim]');
+await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `${shots}/m-deal-qr-claim.png` });
+// The claim shows above the QR, so staff see it without scrolling.
+if (!(await mer.evaluate(() => document.querySelector('.mer-claim').getBoundingClientRect().top < document.querySelector('#live-deal-qr').getBoundingClientRect().top))) throw new Error('the new claim should appear above the QR');
+await mer.click('[data-apply-claim]');
 await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
-await mer.click('#locate'); await mer.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.10994'));
+await mer.click('#locate'); await mer.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
 if (!/Location saved/.test(await mer.textContent('#toast'))) throw new Error('pin not saved');
 const png = fs.readFileSync(new URL('../app/shared/icons/icon-192.png', import.meta.url));
@@ -220,7 +228,25 @@ await mer.fill('#df [name=title]', 'Campus study break'); await mer.fill('#df [n
 await mer.waitForFunction(() => document.querySelector('#deal-preview-title')?.textContent === 'Campus study break' && document.querySelector('#deal-preview-threshold')?.textContent === '45%');
 await mer.screenshot({ path: `${shots}/m-deal-builder.png`, fullPage: true });
 await mer.click('#sheet [data-close]');
+// Promote has two tabs: Live deals ("students earn points") and Voucher program ("students spend points").
+if (!/earn/.test(await mer.textContent('.mer-way.is-deal .mer-way-title')) || !/spend/.test(await mer.textContent('.mer-seg .is-voucher'))) throw new Error('Promote should contrast earning and spending points');
+await mer.click('.mer-seg .is-voucher'); await mer.waitForSelector('#voucher-apply', { state: 'visible' });
+if (!(await mer.isVisible('#seats'))) throw new Error('Café occupancy should stay visible on the voucher tab');
+await mer.screenshot({ path: `${shots}/m-promote-how.png`, fullPage: true });
+await mer.click('#voucher-apply'); await mer.waitForSelector('#vf');
+await mer.fill('#vf [name=offer]', 'RM5 off any meal'); await mer.fill('#vf [name=value]', '5'); await mer.fill('#vf [name=perMonth]', '40');
+await mer.fill('#vf [name=contactPhone]', '012-345 6789'); await mer.click('#vf button');
+await mer.waitForSelector('.mer-voucher-status.is-pending', { timeout: 20000 });
+await mer.screenshot({ path: `${shots}/m-voucher-pending.png`, fullPage: true });
+ok('Promote splits live deals and the voucher program into two tabs, and the merchant applied to the voucher program');
+// Insights switches period and shows the week as a chart.
+await mer.goto(BASE + '#/insights'); await mer.waitForSelector('.mer-chart .bars');
+await mer.click('[data-period="today"]'); await mer.waitForSelector('[data-period="today"][aria-pressed="true"]');
+await mer.click('[data-period="month"]'); await mer.screenshot({ path: `${shots}/m-insights-month.png`, fullPage: true });
+ok('Insights switches between today, 7 and 30 days and charts claims per day');
 await mer.goto(BASE + '#/home'); await mer.setViewportSize({ width: 1360, height: 900 }); await mer.waitForSelector('.mer-actions');
+const sideOrder = await mer.evaluate(() => [...document.querySelectorAll('.tabbar a')].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map((a) => a.dataset.tab));
+if (sideOrder[0] !== 'home' || sideOrder.at(-1) !== 'about') throw new Error('merchant sidebar should start with Home and end with About us: ' + sideOrder.join(', '));
 await mer.screenshot({ path: `${shots}/m-home-desktop.png`, fullPage: true });
 await mer.setViewportSize({ width: 390, height: 844 });
 if (await mer.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('merchant home overflows on mobile');
@@ -296,7 +322,7 @@ await nm.click('#app-form button.primary'); await nm.waitForSelector('#toast.sho
 const noLogo = await nm.textContent('#toast');
 if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caught: ' + noLogo);
 await nm.waitForTimeout(3500);
-await nm.click('#locate'); await nm.waitForFunction(() => document.querySelector('#pin-read').textContent.startsWith('3.1'));
+await nm.click('#locate'); await nm.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
 await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
@@ -337,7 +363,16 @@ if (await mpp.locator('script[src*="views/student"], .tabbar').count() !== 0) th
 await mpp.goto(ADMIN + '#/merchants'); await mpp.waitForSelector('[data-review]'); await mpp.click('[data-review]');
 await mpp.waitForSelector('#sheet img.logo'); for (const c of await mpp.$$('#rv [name=c]')) await c.check(); await mpp.click('#rv [data-s="verified"]');
 await mpp.waitForSelector('#toast.show'); ok('HEP reviewed a merchant with its logo and pin: ' + (await mpp.textContent('#toast')));
-for (const r of ['overview', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings']) {
+// HEP approves the voucher program application; the merchant sees it on Promote.
+await mpp.goto(ADMIN + '#/vouchers'); await mpp.waitForSelector('.hep-va');
+if ((await mpp.textContent('[data-count="vouchers"]')).trim() !== '1') throw new Error('Voucher program menu should count 1 waiting application');
+await mpp.screenshot({ path: `${shots}/p-vouchers.png`, fullPage: true });
+await mpp.click('[data-va][data-st="approved"]'); await mpp.fill('#vaf [name=note]', 'We’ll call you this week.'); await mpp.click('#vaf button');
+await mpp.waitForSelector('text=No applications waiting.');
+await mer.goto(BASE + '#/promote/vouchers'); await mer.waitForSelector('.mer-voucher-status.is-approved');
+if (!/We’ll call you this week/.test(await mer.textContent('.mer-voucher-status'))) throw new Error('merchant should see the Admin note');
+ok('HEP approved the voucher application with a note, and the merchant sees it');
+for (const r of ['overview', 'dashboard', 'initiatives', 'merchants', 'approvals', 'paynet', 'recon', 'rewards', 'campaigns', 'kpis', 'people', 'settings', 'vouchers']) {
   await mpp.goto(ADMIN + '#/' + r); await mpp.waitForTimeout(900); await mpp.screenshot({ path: `${shots}/p-${r}.png`, fullPage: true });
   if (await mpp.$('text=This page didn’t load')) throw new Error('HEP page failed: ' + r);
 }
@@ -364,8 +399,9 @@ if (!/opening hours to shop pages/.test(await fbp.textContent('#fb-list .fb-repl
 await fbp.waitForFunction(() => !document.querySelector('#avatar.has-dot')); await fbp.screenshot({ path: `${shots}/f-student-reply.png`, fullPage: true });
 await fbp.close();
 ok('HEP replied to the feedback; the student saw a dot, "1 new reply" and the answer in the app');
-const ci = (await mpp.goto(ADMIN + '#/kpis'), await mpp.waitForTimeout(900), (await mpp.textContent('#view')).match(/Campus visits\s*([\d,]+)/));
-ok('all HEP screens rendered' + (ci ? `; KPI campus visits = ${ci[1]}` : ''));
+await mpp.goto(ADMIN + '#/kpis'); await mpp.waitForSelector('#scsv');
+if (/Transaction frequency/.test(await mpp.textContent('#view'))) throw new Error('transaction frequency should be gone');
+ok('all HEP screens rendered; Money check results no longer shows transaction frequency');
 const [dl] = await Promise.all([mpp.waitForEvent('download', { timeout: 30000 }), (async () => { await mpp.goto(ADMIN + '#/paynet'); await mpp.waitForSelector('#xlsx1'); await mpp.click('#xlsx1'); })()]);
 await dl.saveAs(`${shots}/Lampiran1.xlsx`); ok('Lampiran 1 Excel exported: ' + dl.suggestedFilename());
 
@@ -391,6 +427,8 @@ const off = await ctx.newPage(); watch(off, 'switches'); await fresh(off); await
 await login(off, adminEmail, ADMIN); await off.waitForSelector('#mpp-rail', { timeout: 30000 });
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 await mer.goto(BASE + '#/home'); await mer.waitForSelector('.mer-home-grid.is-ready');
+await mer.waitForSelector('#merchant-wallet .stat'); await mer.waitForTimeout(500);
+if (await mer.locator('#start-here').count()) throw new Error('Start here should go once a student has claimed a deal');
 await off.fill('#readiness-update [name=message]', 'Review the refreshed counter poster with your team.');
 await off.click('#readiness-update button');
 await mer.waitForSelector('.mer-setup');
@@ -409,6 +447,78 @@ await off.goto(ADMIN + '#/activity'); await off.waitForSelector('#view table.dat
 const activity = await off.locator('#view table.data').innerText();
 for (const text of ['Feature switches', 'All off', 'Readiness update', adminEmail]) if (!activity.includes(text)) throw new Error('activity log is missing: ' + text);
 ok('the Activity log lists those changes and the admin who made them');
+await off.goto(ADMIN + '#/dashboard'); await off.waitForSelector('.dash-kpis');
+if (await off.locator('.dash-kpis tbody tr').count() !== 9) throw new Error('expected the 9 approved KPIs');
+await off.click('#kpi-targets'); await off.waitForSelector('#kt');
+await off.fill('#kt [name=t_reach]', '1'); await off.click('#kt button'); await off.waitForSelector('#toast.show');
+await off.waitForSelector('.dash-kpis');
+const reachRow = await off.locator('.dash-kpis tbody tr', { hasText: 'Student reach' }).innerText();
+if (!/On track/.test(reachRow)) throw new Error('a target of 1 should be on track: ' + reachRow);
+await off.click('#kpi-figures'); await off.waitForSelector('#kf');
+await off.fill('#kf [name=retentionStillQr]', '8'); await off.fill('#kf [name=retentionBase]', '10'); await off.click('#kf button'); await off.waitForSelector('#toast.show');
+await off.waitForSelector('.dash-kpis');
+if (!/80%/.test(await off.locator('.dash-kpis tbody tr', { hasText: 'Post-campaign retention' }).innerText())) throw new Error('retention should be 80%');
+ok('the Dashboard scores the 9 KPIs; HEP edited a target and entered figures');
+// Trends: pick a number and a period, read a day from the tooltip, and see it as a table.
+// A flat line has no height, which Playwright counts as hidden, so check the chart is visible and the line exists.
+await off.waitForSelector('#tr-chart svg'); await off.waitForSelector('#tr-chart svg .trend-line, #tr-chart svg .trend-dot', { state: 'attached' });
+await off.selectOption('#tr-metric', 'quizRate'); await off.click('[data-range="all"]');
+if ((await off.textContent('#tr-name')).trim() !== 'Quiz participation rate') throw new Error('the trend should switch metric');
+if (!/%$/.test((await off.textContent('#tr-value')).trim())) throw new Error('the quiz rate should be a percentage: ' + await off.textContent('#tr-value'));
+await off.locator('#tr-chart').scrollIntoViewIfNeeded(); const trBox = await off.locator('#tr-chart svg').boundingBox();
+await off.mouse.move(trBox.x + trBox.width - 20, trBox.y + trBox.height / 2);
+await off.waitForSelector('#tr-chart .trend-tip:not([hidden])');
+if (!/[0-9]/.test(await off.textContent('#tr-chart .trend-tip'))) throw new Error('the tooltip should show a day and value');
+await off.click('.trend-table summary');
+const trDays = await off.locator('#tr-table tbody tr').count();
+if (trDays < 1) throw new Error('the table should list the days');
+if (!/Referral sign-up rate/.test(await off.textContent('#view')) || !/Days opened per week/.test(await off.textContent('#view'))) throw new Error('the new rate tiles should show');
+ok(`the Dashboard trend chart switches number and period, shows a tooltip and a table (${trDays} days), and the new rate tiles show`);
+// Team requests: jump straight to a section, and pick key metrics (including KPIs) to see side by side.
+await off.selectOption('#dash-jump', 'dash-6-kpi-tracking');
+await off.waitForFunction(() => { const r = document.querySelector('#dash-6-kpi-tracking').getBoundingClientRect(); return r.top >= 0 && r.top < 200; }, null, { timeout: 5000 });
+await off.waitForTimeout(1600); if (await off.inputValue('#dash-jump') !== 'dash-6-kpi-tracking') throw new Error('the dropdown should show the section you are in');
+await off.click('[data-jump="top"]'); await off.waitForFunction(() => window.scrollY < 5, null, { timeout: 5000 });
+await off.selectOption('#dash-jump', 'dash-key-metrics');
+await off.click('#cmp-pick'); await off.waitForSelector('#cmp-form');
+for (const box of await off.$$('#cmp-form input[name=m]:checked')) await box.uncheck();
+await off.check('#cmp-form input[value="kpi-reach"]'); await off.check('#cmp-form input[value="quizRate"]'); await off.check('#cmp-form input[value="minutes"]');
+await off.click('#cmp-form button.primary');
+await off.waitForFunction(() => document.querySelectorAll('#cmp-grid .cmp-card').length === 3);
+const cmpText = await off.textContent('#cmp-grid');
+if (!/Student reach/.test(cmpText) || !/of [\d,]+ target/.test(cmpText) || !/Quiz participation rate/.test(cmpText)) throw new Error('the picked metrics should show: ' + cmpText.slice(0, 200));
+if (!/\+Onz · Key metrics ·/.test(await off.textContent('#cmp-caption'))) throw new Error('the caption should name the metrics and dates for screenshots');
+await off.click('#cmp-pick'); await off.waitForSelector('#cmp-form');
+for (const v of ['students', 'opened', 'basic7']) await off.check('#cmp-form input[value="' + v + '"]');
+if (!(await off.isDisabled('#cmp-form input[value="activation"]'))) throw new Error('no more than 6 metrics can be picked');
+await off.keyboard.press('Escape');
+await off.goto(ADMIN + '#/dashboard/compare/kpi-listed,verified/30'); await off.reload();
+await off.waitForFunction(() => document.querySelectorAll('#cmp-grid .cmp-card').length === 2, null, { timeout: 30000 });
+if (!/Merchants listed/.test(await off.textContent('#cmp-grid'))) throw new Error('a shared link should open with its metrics');
+ok('the Dashboard jumps to section 6, shows picked key metrics and KPIs side by side (up to 6), and opens a shared link');
+const [report] = await Promise.all([off.waitForEvent('download'), off.click('#dash-xlsx')]);
+if (!/^Onz-report-\d{4}-\d{2}-\d{2}\.xlsx$/.test(report.suggestedFilename())) throw new Error('unexpected report name: ' + report.suggestedFilename());
+await report.saveAs(`${shots}/${report.suggestedFilename()}`);
+ok('the Dashboard Excel report downloads: ' + report.suggestedFilename());
+await off.goto(ADMIN + '#/initiatives'); await off.waitForSelector('#ini-new');
+await off.click('#ini-new'); await off.waitForSelector('#ini-form');
+await off.fill('#ini-form [name=name]', 'JTK Roundtable'); await off.fill('#ini-form [name=start]', '2026-11-17');
+if (await off.inputValue('#ini-form [name=code]') !== 'jtk-roundtable') throw new Error('the code should be filled in from the name');
+await off.click('#ini-form button.primary'); await off.waitForSelector('#toast.show'); await off.waitForSelector('.ini-table');
+await off.click('[data-ini-link="jtk-roundtable"]'); await off.waitForSelector('#ini-qr canvas, #ini-qr img', { state: 'attached' });
+if (!(await off.inputValue('#ini-url')).endsWith('?src=jtk-roundtable')) throw new Error('wrong tracking link');
+await off.keyboard.press('Escape');
+const visitor = await ctx.newPage(); watch(visitor, 'tracking link'); await visitor.goto(BASE + '?src=jtk-roundtable'); await visitor.waitForTimeout(800);
+if (!(await visitor.evaluate(() => localStorage.getItem('onz-src') || '')).includes('jtk-roundtable')) throw new Error('the tracking code was not remembered');
+await visitor.close();
+ok('HEP created an initiative with a tracking link and QR, and opening the link remembers its code');
+await off.goto(ADMIN + '#/initiatives'); await off.waitForSelector('[data-ini-edit]');
+await off.click('[data-ini-edit]'); await off.click('#ini-archive'); await off.click('#sheet [data-yes]');
+await off.waitForSelector('.ini-archived summary', { timeout: 20000 });
+if (!/Archived \(1\)/.test(await off.textContent('.ini-archived summary'))) throw new Error('the initiative should move to Archived');
+await off.click('.ini-archived summary'); await off.click('[data-ini-restore]');
+await off.waitForFunction(() => !document.querySelector('.ini-archived') && document.querySelector('[data-ini-edit]'), null, { timeout: 20000 });
+ok('HEP archived an initiative (kept in the records) and restored it');
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
@@ -443,6 +553,64 @@ ok('HEP turned Overview back on, and the directory returned without Live deals')
 // Leaving a map straight after it opens must not leave work running against the removed map.
 await offStu.evaluate(async () => { const { createMap } = await import(new URL('js/map.js', location.href).href); const el = document.createElement('div'); el.style.cssText = 'width:200px;height:200px'; document.body.append(el); const m = await createMap(el); m.remove(); el.remove(); await new Promise((r) => setTimeout(r, 300)); });
 ok('a map closed straight after opening leaves nothing running');
+// Add another email: a student links a second Google account, then signs in with it to the same account.
+const linkPage = await ctx.newPage(); watch(linkPage, 'add email'); await fresh(linkPage);
+await linkPage.goto(BASE); await linkPage.waitForSelector('#google', { timeout: 60000 });
+await googleAs(linkPage, 'link.first@gmail.com'); await linkPage.waitForSelector('#ob', { timeout: 30000 });
+await linkPage.fill('#ob [name=name]', 'Link Tester'); await linkPage.fill('#ob [name=matric]', 'LINK00001');
+await linkPage.selectOption('#ob [name=college]', { index: 1 }); await linkPage.selectOption('#ob [name=faculty]', { index: 1 });
+await linkPage.check('#ob [name=terms]'); await linkPage.click('#ob button[type=submit]');
+await linkPage.waitForSelector('.guide [data-skip]', { timeout: 30000 }); await linkPage.click('.guide [data-skip]');
+await linkPage.waitForFunction(() => !document.querySelector('.guide'));
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#add-email');
+await linkPage.click('#add-email'); await linkPage.fill('#le [name=email]', 'link.second@siswa.um.edu.my'); await linkPage.click('#le button');
+await linkPage.waitForFunction(() => document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my');
+await linkPage.waitForFunction(() => !document.querySelector('#google') && !document.querySelector('#ob'), null, { timeout: 30000 });
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#signin-emails');
+if (!(await linkPage.locator('.me-card').innerText()).includes('Link Tester')) throw new Error('the second email should open the same account');
+ok('a student added a second Google account on Me, and it signs in to the same account');
+await linkPage.click('[data-remove-email="link.second@siswa.um.edu.my"]'); await linkPage.click('#sheet [data-yes]');
+await linkPage.waitForFunction(() => !document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my'); await linkPage.waitForSelector('#ob', { timeout: 30000 });
+await linkPage.click('#ob-have-account'); await linkPage.click('#hac-go'); await linkPage.waitForSelector('#google', { timeout: 20000 });
+ok('a removed email no longer opens the account');
+// "I already have an account": an empty new sign-in is removed so that email can be linked instead.
+await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
+await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.extra@siswa.um.edu.my'); await linkPage.waitForSelector('#ob');
+await linkPage.click('#ob-have-account'); await linkPage.click('#hac-go'); await linkPage.waitForSelector('#google', { timeout: 20000 });
+if (await linkPage.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('umc-demo-auth-v1') || '{}')).includes('link.extra@siswa.um.edu.my')))
+  throw new Error('the empty sign-in should have been removed');
+await linkPage.close();
+ok('“I already have an account” removed the empty sign-in and went back to sign-in');
+// Anonymous page time: a student reads About us to the bottom; HEP sees it under Time in the app.
+const ptPage = await ctx.newPage(); watch(ptPage, 'page time'); await fresh(ptPage);
+await login(ptPage, 'aina@siswa.um.edu.my'); await ptPage.waitForSelector('#view', { timeout: 60000 });
+await ptPage.evaluate(() => { location.hash = '#/about'; }); await ptPage.waitForFunction(() => location.hash === '#/about' && !document.querySelector('#view[aria-busy]'));
+await ptPage.mouse.move(200, 400); await ptPage.mouse.wheel(0, 20000); await ptPage.waitForTimeout(6500);
+await ptPage.evaluate(() => { location.hash = '#/home'; }); await ptPage.waitForTimeout(300);
+await ptPage.evaluate(() => window.__umc.pageTime.flush());
+if (await ptPage.evaluate(() => Object.keys(window.__umc.pageTime).join(',')) !== 'flush,stop') throw new Error('page time should only expose flush and stop');
+await ptPage.close();
+await off.goto(ADMIN + '#/dashboard'); await off.reload(); await off.waitForSelector('.dash-pages', { timeout: 30000 });
+const aboutRow = await off.locator('.dash-pages tbody tr', { hasText: 'About us' }).innerText();
+if (!/End 100%/.test(aboutRow)) throw new Error('About us should show a visit read to the end: ' + aboutRow);
+ok('a student read About us to the bottom; HEP sees it under Time in the app, with no names');
+// HEP deletes a student's account from the Students page, typing the matric number to confirm.
+await off.goto(ADMIN + '#/people'); await off.waitForSelector('#pq'); await off.fill('#pq', 'Link Tester');
+await off.click('[data-del]'); await off.waitForSelector('#dla');
+await off.fill('#dla [name=m]', 'LINK00002'); await off.click('#dla button');
+await off.waitForFunction(() => /doesn’t match/.test(document.querySelector('#toast')?.textContent || ''));
+await off.fill('#dla [name=m]', 'link00001'); await off.click('#dla button');
+await off.waitForFunction(() => /Account deleted/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 30000 });
+await off.waitForFunction(() => !document.querySelector('#pt')?.textContent.includes('Link Tester'), null, { timeout: 20000 });
+await off.goto(ADMIN + '#/closures'); await off.waitForSelector('table.data');
+if (!/Deleted by the Admin team/.test(await off.textContent('#view'))) throw new Error('the deletion should be listed in Account closures');
+await off.goto(ADMIN + '#/activity'); await off.waitForSelector('table.data');
+if (!/Deleted an account/.test(await off.textContent('#view'))) throw new Error('the deletion should be in the Activity log');
+ok('HEP deleted a student’s account after typing their matric number; it shows in Account closures and the Activity log');
 // The idle check, run as if 31 minutes had passed with no clicks or typing.
 await off.evaluate(() => window.__umc.checkSession(Date.now() + 31 * 60_000));
 await off.waitForSelector('#google', { timeout: 20000 });

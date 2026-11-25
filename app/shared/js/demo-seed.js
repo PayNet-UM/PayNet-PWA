@@ -1,5 +1,7 @@
 // Demo mode only: builds a small, realistic campus (through the same rules as live) on first open.
+import { stallType as stallTypeOf } from './stall-survey.js';
 import * as D from './data.js';
+import { seedDemoDailyStats } from './demo-stats.js';
 import { sheet, closeSheet, toast, esc, icon, $, $$ } from './ui.js';
 import { mppBootstrapEmails, siteUrls } from './firebase-config.js';
 const MPP_EMAIL = mppBootstrapEmails[0];
@@ -72,23 +74,34 @@ function retireDemoAttendance(sdk) {
   });
 }
 
-// Sample stall survey answers for four demo merchants, so the Admin team's Stall survey page has something to show.
-// Roti by Hana is left out: sign in as her to try the survey. Added once, also to demo campuses made before it existed.
+// Sample merchant assessment answers, so the Admin team's Merchant assessment page has something to show. Three demo
+// merchants answered the current questions; Laundry Bersih answered the earlier version, so signing in as them shows
+// the "We've updated the assessment" step. Roti by Hana has none: sign in as her to try it from the start.
 const DEMO_STALL_SURVEYS = {
-  'kopikolej@demo.my': { lang: 'ms', answers: { area: 'KK3', peakQr: 9, peakCash: 6, peakCard: 0, sell: 'coffee', customers: '100to200', style: 'businessQr', payments: ['cash', 'businessQr', 'ewallet'], bank: 'maybank', barriers: ['internet'], help: ['students', 'socials'], trade: 'semester', listing: 'yes', bankHelp: 'no' } },
-  'dailybowl@demo.my': { lang: 'en', answers: { area: 'other', areaOther: 'Kompleks Perdanasiswa', peakQr: 7, peakCash: 12, peakCard: 2, sell: 'food', customers: 'o200', style: 'card', payments: ['cash', 'businessQr', 'card'], bank: 'cimb', barriers: ['none'], help: ['students'], trade: 'daily', listing: 'yes', bankHelp: 'no' } },
-  'print@demo.my': { lang: 'en', answers: { area: 'FS', peakQr: 2, peakCash: 8, sell: 'printing', customers: '50to100', style: 'personalQr', payments: ['cash', 'personalQr'], bank: 'publicbank', barriers: ['fees', 'tax'], help: ['qrSetup', 'records'], trade: 'weekdays', listing: 'maybe', bankHelp: 'yes' } },
-  'laundry@demo.my': { lang: 'ms', answers: { area: 'outside', peakCash: 5, sell: 'services', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['cashCustomers', 'dontKnow'], help: ['qrSetup', 'zeroFees'], trade: 'daily', listing: 'yes', bankHelp: 'yes', whatsapp: '012-345 6789' } },
+  'kopikolej@demo.my': { v: 2, lang: 'ms', answers: { name: 'Kopi Kolej', location: 'KK3', type: 'coffee', age: '1to3y', registered: 'sole', payments: ['cash', 'businessQr', 'ewallet'],
+    banks: ['maybank', 'tng'], bizAccount: 'yes', records: 'bank', customers: '101to200', challenges: ['costs', 'labour'], financing: 'later', financingPurpose: ['equipment'], financingAmount: '5to10k',
+    priorities: ['sales', 'online'], support: ['marketing', 'bookkeeping'], listing: 'yes', ownerName: 'Hafiz Rahman', consentContact: true, consentPartners: true } },
+  'dailybowl@demo.my': { v: 2, lang: 'en', answers: { name: 'Daily Bowl', location: 'other', locationOther: 'Kompleks Perdanasiswa food court', type: 'food', age: 'o5y', registered: 'sdnbhd',
+    payments: ['cash', 'businessQr', 'card'], banks: ['cimb'], bizAccount: 'yes', records: 'pos', customers: 'o200', challenges: ['costs', 'inventory'], financing: 'no',
+    priorities: ['expand'], support: ['operations'], listing: 'yes', ownerName: 'Mei Ling Tan', consentContact: true, consentPartners: false } },
+  'print@demo.my': { v: 2, lang: 'en', answers: { name: 'Print Corner', location: 'FS', type: 'printing', age: '6to12m', registered: 'no', payments: ['cash', 'personalQr'],
+    banks: ['publicbank'], bizAccount: 'personal', records: 'manual', customers: '50to100', challenges: ['traffic', 'records', 'financing'], financing: 'looking',
+    financingPurpose: ['working', 'equipment'], financingAmount: 'u5k', priorities: ['sales', 'register'], support: ['qr', 'registration', 'financing'], listing: 'maybe',
+    ownerName: 'Arjun Nair', whatsapp: '013-222 1188', consentContact: true, consentPartners: true } },
+  'laundry@demo.my': { v: 1, lang: 'ms', answers: { area: 'outside', peakCash: 5, sell: 'services', customers: 'u50', style: 'cash', payments: ['cash'], bank: 'bsn', barriers: ['cashCustomers', 'dontKnow'],
+    help: ['qrSetup', 'zeroFees'], trade: 'daily', listing: 'yes', bankHelp: 'yes', whatsapp: '012-345 6789' } },
 };
 function seedDemoStallSurveys(sdk) {
   if (!sdk._rawUpdate) return;
   sdk._rawUpdate((docs, Timestamp) => {
-    if (docs.has('stats/demoStallSurveys')) return;
+    if (docs.get('stats/demoStallSurveys')?.version >= 2) return;
     for (const [path, p] of docs) {
       const seed = /^users\/[^/]+$/.test(path) && DEMO_STALL_SURVEYS[p.email];
-      if (seed) docs.set('stallSurveys/' + path.split('/')[1], { v: 1, ...seed, stallType: seed.answers.style, at: Timestamp.now() });
+      if (!seed) continue;
+      const stallType = seed.v === 1 ? seed.answers.style : stallTypeOf(seed.answers);
+      docs.set('stallSurveys/' + path.split('/')[1], { ...seed, stallType, at: Timestamp.now() });
     }
-    docs.set('stats/demoStallSurveys', { version: 1 });
+    docs.set('stats/demoStallSurveys', { version: 2 });
   });
 }
 
@@ -158,7 +171,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
         ...Object.fromEntries(D.FEATURES.map(([key]) => [key, typeof rules.features?.[key] === 'boolean' ? rules.features[key] : true])),
       } }));
     }
-    retireDemoAttendance(sdk); seedDemoFriends(sdk); seedDemoStallSurveys(sdk); return;
+    retireDemoAttendance(sdk); seedDemoFriends(sdk); seedDemoStallSurveys(sdk); seedDemoDailyStats(sdk); return;
   }
   progress('Setting up the demo campus…');
   const as = async (email) => {
@@ -206,7 +219,7 @@ export async function ensureDemoData(backend, progress = () => {}) {
     }
     const admin = await as(MPP_EMAIL);
     await D.adjustPoints(admin, aina.uid, 300, 'Pilot tester welcome bonus');
-    seedDemoFriends(sdk); seedDemoStallSurveys(sdk);
+    seedDemoFriends(sdk); seedDemoStallSurveys(sdk); seedDemoDailyStats(sdk);
   } catch (e) {
     console.error('Demo setup failed', e);
     toast('Demo setup hit a problem: ' + e.message, true);

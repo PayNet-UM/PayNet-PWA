@@ -116,7 +116,7 @@ export async function signedInRecently(user, now = Date.now()) {
 export const ADMIN_ACTIONS = {
   'programme-setup': 'Set up the programme', access: 'Who can use the app', features: 'Feature switches', 'points-rules': 'Points rules',
   budget: 'Activation fund', 'merchant-readiness': 'Readiness update', reward: 'Reward', block: 'Blocked a student', unblock: 'Unblocked a student',
-  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'change-faculty': 'Changed a student’s faculty',
+  'adjust-points': 'Adjusted points', 'release-matric': 'Released a matric number', 'merchant-review': 'Merchant review', 'welfare-review': 'Welfare request', 'change-college': 'Changed a student’s college', event: 'Campus event', 'event-delete': 'Deleted an event', 'event-review': 'Event submission', 'kpi-targets': 'KPI targets', 'kpi-figures': 'KPI figures', initiative: 'Initiative', 'initiative-delete': 'Deleted an initiative', 'initiative-archive': 'Archived an initiative', 'initiative-restore': 'Restored an initiative', 'change-faculty': 'Changed a student’s faculty', 'delete-account': 'Deleted an account',
 };
 export function logAdmin(ctx, batch, action, target = '', summary = '') {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'adminLog'));
@@ -128,6 +128,11 @@ export async function listAdminLog(ctx, max = 200) {
 }
 const FEATURE_NAMES = () => Object.fromEntries(FEATURES.map(([k, label]) => [k, label]));
 function configLog(name, data) {
+  if (name === 'kpiTargets') {
+    const t = data.targets || {};
+    return ['kpi-targets', 'KPI targets', `${data.start || ''} to ${data.end || ''}, amber at ${data.amberPct ?? ''}%; ` + Object.entries(t).map(([k, v]) => `${k} ${v}`).join(', ')];
+  }
+  if (name === 'kpiFigures') return ['kpi-figures', 'KPI figures', Object.entries(data).filter(([k]) => k !== 'updatedAt').map(([k, v]) => `${k} ${v}`).join(', ')];
   if (name === 'access') {
     const c = (k) => (data[k] || []).length;
     return ['access', 'Who can use the app', `${c('mppEmails')} Admin team members, ${c('studentDomains')} student domains, ${c('testerEmails')} testers`];
@@ -149,7 +154,7 @@ function makeReferralCode(name) {
   return `${base}-${rand}`;
 }
 export const normMatric = (m) => String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', termsVersion = TERMS_VERSION }) {
+export async function createProfile(ctx, { role, name, matric = '', college = '', faculty = '', referralCode = '', source = '', heardFrom = '', heardFromOther = '', termsVersion = TERMS_VERSION }) {
   const { sdk } = ctx; const r = R(ctx);
   matric = role === 'student' ? normMatric(matric) : '';
   if (role === 'student') {
@@ -168,8 +173,13 @@ export async function createProfile(ctx, { role, name, matric = '', college = ''
   for (let attempt = 0; attempt < 4; attempt++) {
     const code = role === 'student' ? makeReferralCode(name) : '';
     const b = sdk.writeBatch(ctx.db);
+    // How a student found +Onz (Initiatives): only well-formed values are saved.
+    const found = role !== 'student' ? {} : Object.fromEntries([
+      ['source', /^[a-z0-9-]{2,30}$/.test(source) ? source : ''],
+      ['heardFrom', ['instagram', 'tiktok', 'friend', 'event', 'kol', 'hep', 'other'].includes(heardFrom) ? heardFrom : ''],
+      ['heardFromOther', String(heardFromOther || '').trim().slice(0, 60)]].filter(([, v]) => v));
     b.set(r.user(ctx.uid), { role, name: name.trim(), email: ctx.email, matric, college, faculty, points: 0, lastTx: '',
-      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp() });
+      referralCode: code, createdAt: sdk.serverTimestamp(), termsVersion, termsAcceptedAt: sdk.serverTimestamp(), ...found });
     if (code) b.set(sdk.doc(ctx.db, 'referralCodes', code), { uid: ctx.uid });
     if (matric) b.set(sdk.doc(ctx.db, 'matrics', matric), { uid: ctx.uid });
     try { await b.commit(); } catch (e) {
@@ -406,6 +416,39 @@ export async function closeMyAccount(user, { reasons, comment }) {
   if (!res.ok) throw new Error(data.message || `The server didn’t answer (${res.status}). Try again, or email admin@addonz.my.`);
   return data;
 }
+// Extra sign-in emails (functions/email-alias.js). Each call sends the signed-in person's ID token.
+async function accountApi(path, idToken, body = {}) {
+  const res = await fetch('/api/account/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
+    body: JSON.stringify(body) });
+  let data = {}; try { data = await res.json(); } catch { /* not JSON: server not deployed */ }
+  if (!res.ok) throw Object.assign(new Error(data.message || `The server didn’t answer (${res.status}). Try again later.`), { code: data.error || 'server', status: res.status });
+  return data;
+}
+export const addSignInEmail = (idToken, otherToken) => accountApi('add-email', idToken, { otherToken });
+export const removeSignInEmail = (idToken, email) => accountApi('remove-email', idToken, { email });
+export const signInByEmailAlias = (idToken) => accountApi('alias-sign-in', idToken);
+// HEP deletes an account (firestore.rules accountDeletions; carried out by the server trigger hepAccountDeletion).
+// confirm: the student's matric number as HEP typed it; empty for a business. Returns the request id to watch.
+export async function requestAccountDeletion(ctx, { uid, role, confirm = '', label = '' }) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  // The log keeps no name or matric number, since the point is to remove them.
+  const logId = logAdmin(ctx, b, 'delete-account', uid, role === 'merchant' ? `Business account: ${label}` : 'Student account');
+  const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'accountDeletions'));
+  b.set(ref, { uid, role, by: ctx.email, at: ctx.sdk.serverTimestamp(), logId, status: 'pending', confirm: String(confirm) });
+  await b.commit();
+  return ref.id;
+}
+// Resolves with the finished request ({ status: 'done' | 'error', message?, warning? }), or { status: 'slow' } after a minute.
+export function waitForDeletion(ctx, id, ms = 60000) {
+  return new Promise((resolve) => {
+    let stop = () => {};
+    const timer = setTimeout(() => { stop(); resolve({ status: 'slow' }); }, ms);
+    stop = ctx.sdk.onSnapshot(ctx.sdk.doc(ctx.db, 'accountDeletions', id), (s) => {
+      const d = s.exists() ? s.data() : null;
+      if (d && d.status !== 'pending') { clearTimeout(timer); stop(); resolve(d); }
+    }, () => { clearTimeout(timer); resolve({ status: 'slow' }); });
+  });
+}
 export async function listClosures(ctx) {
   return (await list(ctx, 'accountClosures')).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
 }
@@ -632,6 +675,34 @@ export async function markFeedbackDone(ctx, id) {
   await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'feedback', id), { status: 'done', repliedBy: ctx.email, repliedAt: ctx.sdk.serverTimestamp() });
 }
 
+// ------------------------------------------------------------- voucher program: verified merchants apply to offer a voucher
+// One application per merchant, named after the merchant. They can edit it while it's waiting or after a "not this time".
+// Approving it only records the decision: the Admin team agrees the details with the merchant before anything is listed.
+export const VOUCHER_APP_STATUS = { pending: 'The Admin team is reviewing', approved: 'Approved', declined: 'Not this time' };
+export async function applyVoucherProgram(ctx, form) {
+  const t = (v) => String(v ?? '').trim();
+  const a = { offer: t(form.offer), conditions: t(form.conditions), contactName: t(form.contactName), contactPhone: t(form.contactPhone),
+    valueCents: Math.round(Number(form.value) * 100), perMonth: Math.floor(Number(form.perMonth)) };
+  if (a.offer.length < 3 || a.offer.length > 160) throw new Error('Describe your voucher in 3 to 160 characters.');
+  if (!Number.isSafeInteger(a.valueCents) || a.valueCents < 50 || a.valueCents > 100000) throw new Error('Voucher value must be between RM0.50 and RM1,000.');
+  if (!Number.isSafeInteger(a.perMonth) || a.perMonth < 1 || a.perMonth > 10000) throw new Error('Enter how many vouchers you can honour each month.');
+  if (a.conditions.length > 500) throw new Error('Keep the conditions under 500 characters.');
+  if (a.contactName.length < 2 || a.contactName.length > 80) throw new Error('Enter a contact name.');
+  if (!/^\+?[0-9 -]{8,20}$/.test(a.contactPhone)) throw new Error('Enter a contact phone number.');
+  const m = await getMerchant(ctx, ctx.uid);
+  await ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'voucherApplications', ctx.uid), { ...a, merchantId: ctx.uid, merchantName: m?.name || '',
+    status: 'pending', submittedAt: ctx.sdk.serverTimestamp() });
+}
+export async function myVoucherApplication(ctx) { return one(ctx, ctx.sdk.doc(ctx.db, 'voucherApplications', ctx.uid)); }
+export async function listVoucherApplications(ctx) {
+  return (await list(ctx, 'voucherApplications')).sort((a, b) => (toMs(b.submittedAt) || 0) - (toMs(a.submittedAt) || 0));
+}
+export async function reviewVoucherApplication(ctx, id, status, note = '') {
+  if (!['approved', 'declined'].includes(status)) throw new Error('Choose approve or decline.');
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'voucherApplications', id), { status, reviewNote: String(note || '').trim().slice(0, 500),
+    reviewedBy: ctx.email, reviewedAt: ctx.sdk.serverTimestamp() });
+}
+
 export function watchMyWelfareRequests(ctx, cb, err) {
   return ctx.sdk.onSnapshot(ctx.sdk.query(ctx.sdk.collection(ctx.db, 'welfareRequests'), eq(ctx, 'studentUid', ctx.uid)),
     (s) => cb(snapList(s).sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0))), err);
@@ -675,8 +746,15 @@ export async function createDeal(ctx, d) {
     minSpendCents: 0, limit: 1, status: 'published', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
 }
-export async function myDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid)); }
-export async function approvedDeals(ctx) { return list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published'])); }
+// Removed deals are kept (claims and reports still point to them) but hidden everywhere in the app.
+export async function myDeals(ctx) { return (await list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid))).filter((d) => !d.removed); }
+export async function approvedDeals(ctx) { return (await list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published']))).filter((d) => !d.removed); }
+export async function editDeal(ctx, id, d) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold });
+}
+export async function removeDeal(ctx, id) {
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { removed: true, enabled: false, removedAt: ctx.sdk.serverTimestamp() });
+}
 export async function publishDeal(ctx, id) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { status: 'published' }); }
 export async function pendingDeals(ctx) { return list(ctx, 'deals', eq(ctx, 'status', 'pending')); }
 export async function toggleDeal(ctx, id, enabled) { await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { enabled }); }
@@ -757,6 +835,10 @@ export async function saveConfig(ctx, name, data) {
   await b.commit();
 }
 export async function listUsers(ctx) { return list(ctx, 'users'); }
+// HEP Dashboard daily summaries (dailyStats/{YYYY-MM-DD}, written by the server), oldest first, from `fromDay`.
+export async function listDailyStats(ctx, fromDay = '0000-00-00') {
+  return (await list(ctx, 'dailyStats')).filter((r) => (r.day || r.id) >= fromDay).sort((a, b) => (a.day || a.id).localeCompare(b.day || b.id));
+}
 export async function setBlocked(ctx, uid, blocked) {
   const b = ctx.sdk.writeBatch(ctx.db);
   const adminLogId = logAdmin(ctx, b, blocked ? 'block' : 'unblock', uid);
@@ -809,6 +891,22 @@ export async function savePaynetCounts(ctx, month, rows) {
   await b.commit();
 }
 export async function paynetCounts(ctx, month) { return list(ctx, 'paynetCounts', eq(ctx, 'month', month)); }
+export async function allPaynetCounts(ctx) { return list(ctx, 'paynetCounts'); }
+// Initiatives and KOL tracking links (initiatives/{code}): HEP only, logged in the Activity log.
+export async function listInitiatives(ctx) { return (await list(ctx, 'initiatives')).sort((a, b) => (b.start || '').localeCompare(a.start || '')); }
+export async function saveInitiative(ctx, code, data) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, 'initiative', data.name || code, [data.type, data.start, data.end].filter(Boolean).join(', '));
+  b.set(ctx.sdk.doc(ctx.db, 'initiatives', code), { ...data, code, logId }, { merge: true });
+  await b.commit();
+}
+// Archive hides an initiative from the active list (its link keeps working, its history stays); restore brings it back.
+export async function archiveInitiative(ctx, code, name = '', archived = true) {
+  const b = ctx.sdk.writeBatch(ctx.db);
+  const logId = logAdmin(ctx, b, archived ? 'initiative-archive' : 'initiative-restore', name || code);
+  b.set(ctx.sdk.doc(ctx.db, 'initiatives', code), { code, archived, logId }, { merge: true });
+  await b.commit();
+}
 
 // ------------------------------------------------------------- survey scoring (from the original demo)
 export const SURVEY_KNOWLEDGE = [

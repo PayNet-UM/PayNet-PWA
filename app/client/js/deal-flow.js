@@ -3,52 +3,96 @@ import * as L from './live-deals.js';
 import { $, $$, esc, icon, n, sheet, closeSheet, onSheetClose, renderQR, busy, toast, errText, startScanner, confetti } from './ui.js';
 import { merchantHeading, merchantEmpty } from './merchant-ui.js';
 
+// Why a deal can't show its QR right now, in the merchant's words, and where to fix it.
+function whyNotLive(deal, status) {
+  if (/^Opens /.test(status)) return [`Runs ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} each day. Come back then.`, ''];
+  if (status === 'Busy right now') return [`Hidden while your café is more than ${deal.threshold}% full.`, ['promote', 'Update café occupancy']];
+  if (status === 'Seat count not set') return ['Set your seat count first, so students know you have space.', ['promote', 'Set my seats']];
+  if (status === 'Paused') return ['You paused this deal.', ['promote', 'Resume it']];
+  if (status === 'Ready to publish') return ['Not published yet.', ['promote', 'Publish it']];
+  return [status, ''];
+}
 export async function merchantDealQRRender(app) {
   if (app.merchant?.status !== 'verified') return `<div class="card empty"><h1>Deal QR</h1><p>The Admin team must verify your shop before you can show a deal QR.</p><a class="btn primary" href="#/shop">My shop</a></div>`;
-  const deals = await D.myDeals(app.ctx);
-  const rows = await D.dealOverview(app.ctx, deals, [app.merchant]);
+  const [deals, shop] = await Promise.all([D.myDeals(app.ctx), D.getMerchant(app.ctx, app.ctx.uid).catch(() => null)]);
+  const rows = await D.dealOverview(app.ctx, deals, [shop || app.merchant]);
   app._dealQRRows = rows;
-  return `<div class="merchant-page mer-redeem">${merchantHeading('Deal QR', 'Show your QR. Students scan. Apply the discount.', 'qr-code', 'At the counter')}
-    <div class="mer-redeem-steps"><span><b>1</b>Show deal QR</span><span><b>2</b>Student scans</span><span><b>3</b>Apply discount</span></div>
-    <div class="notice"><span>${icon('sparkles')}</span><p>+${n(app.rules.liveDealPoints ?? 10)} <span>points once per student, per deal, per day after a successful QR scan.</span></p></div>
-    <section class="section"><div class="mer-section-head"><h2>Choose a live deal</h2><a href="#/promote">Promote live deals ${icon('arrow-right')}</a></div><div class="mer-deal-grid">${rows.map(({ deal, status }) => `<article class="card mer-deal-card"><div class="mer-deal-top"><span class="mer-panel-emblem">${icon('qr-code')}</span><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span></div><h3>${esc(deal.title)}</h3><p class="faint">${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><button class="btn primary block" style="margin-top:18px" data-deal-qr="${esc(deal.id)}" ${status === 'Available' ? '' : 'disabled'}>${icon('qr-code')} Show deal QR</button></article>`).join('') || merchantEmpty('qr-code', 'No live deals yet.', 'Publish a live deal to start showing its QR.')}</div></section></div>`;
+  const live = rows.filter((r) => r.status === 'Available'), other = rows.filter((r) => r.status !== 'Available' && r.deal.status !== 'rejected');
+  const pts = n(app.rules.liveDealPoints ?? 10);
+  // Merchants often open Deal QR before Promote your shop, so say what it is and where deals are made.
+  // Big when they have no deals yet, a box when none is live, one expandable line while a deal is live.
+  const what = `Each live deal has its own QR code. Show it at your counter. Students scan it with +Onz to claim your discount and earn ${pts} points. Then you tap Apply discount.`;
+  const manage = `<a class="mer-qr-manage" href="#/promote">${icon('badge-percent')} Create, pause or change your deals in Promote your shop ${icon('arrow-right')}</a>`;
+  const intro = !rows.length ? `<section class="mer-qr-intro is-full"><h2>What is a deal QR?</h2><p>${what}</p><p>First, create a live deal: a discount for your quiet hours. Its QR then appears here.</p>
+        <a class="btn mer-way-cta" href="#/promote">${icon('plus')} Create your first deal ${icon('arrow-right')}</a></section>`
+    : !live.length ? `<section class="mer-qr-intro"><h2>What is a deal QR?</h2><p>${what}</p>${manage}</section>`
+    : `<details class="mer-qr-intro is-mini"><summary>${icon('info')}<span>What is a deal QR?</span>${icon('chevron-right')}</summary><p>${what}</p></details><p class="mer-qr-manage-line">${manage}</p>`;
+  return `<div class="merchant-page mer-redeem">${merchantHeading('Deal QR', 'Show this at your counter. Students scan it to claim your deal.', 'qr-code')}
+    ${intro}
+    ${live.length ? `<p class="mer-qr-tip">${icon('sparkles')}<span>Tell customers: “Scan this to get ${pts} points and the discount.”</span></p>` : ''}
+    ${live.length ? `<section class="section"><h2 class="mer-qr-h">Live now</h2><div class="mer-qr-live">${live.map(({ deal }) => `<article class="mer-qr-deal">
+        <div><h3 data-no-i18n>${esc(deal.title)}</h3>${deal.benefit ? `<p class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}<p class="mer-qr-hours">${icon('clock')} ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)}</p></div>
+        <button class="btn mer-qr-show" data-deal-qr="${esc(deal.id)}">${icon('qr-code')} Show QR to students</button></article>`).join('')}</div></section>`
+      : rows.length ? `<div class="mer-qr-none">${icon('clock')}<div><b>No deal is live right now.</b><p>A deal shows here during its hours, while your café has space.</p></div></div>` : ''}
+    ${other.length ? `<section class="section"><h2 class="mer-qr-h">Not live right now</h2><div class="mer-qr-other">${other.map(({ deal, status }) => { const [why, act] = whyNotLive(deal, status);
+      return `<article class="card mer-qr-off"><div><h3 data-no-i18n>${esc(deal.title)}</h3><p>${why}</p></div>${act ? `<a class="btn small" href="#/${act[0]}">${act[1]} ${icon('arrow-right')}</a>` : ''}</article>`; }).join('')}</div></section>` : ''}
+    </div>`;
 }
 export function merchantDealQRMount(root, app, [requested] = []) {
   let alive = true, stopSheet = () => {};
   async function show(id) {
     try {
-      const session = await L.issueDealQR(app.ctx, id);
+      let session = await L.issueDealQR(app.ctx, id);
       if (!alive) return;
       const deal = app._dealQRRows.find((row) => row.deal.id === id)?.deal;
-      const el = sheet(`<div class="mer-sheet-head"><span class="mer-panel-emblem">${icon('qr-code')}</span><div><span class="mer-eyebrow">Students scan this QR</span><h2 data-no-i18n>${esc(deal?.title || '')}</h2>${deal?.benefit ? `<p class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}</div></div>
-        <div class="deal-qr-stage"><div id="live-deal-qr" data-code="${esc(session.code)}"></div><p role="status" id="deal-qr-clock"></p><p class="faint">QR codes expire automatically. Show a fresh QR when needed.</p></div>
-        <button class="btn block" id="refresh-deal-qr">${icon('refresh-cw')} Refresh QR</button>
-        <section class="section"><div class="mer-section-head"><h3>Student claims</h3><span id="deal-claim-total" class="mer-count">0</span></div><div id="deal-claim-list" class="stack" aria-live="polite"></div></section>`);
-      let disposed = false, currentClaims = [], renderedClaims = '';
+      const canWake = 'wakeLock' in navigator;
+      const el = sheet(`<div class="mer-qr-sheet"><div class="mer-sheet-head"><span class="mer-panel-emblem">${icon('qr-code')}</span><div><span class="mer-eyebrow">Students scan this QR</span><h2 data-no-i18n>${esc(deal?.title || '')}</h2>${deal?.benefit ? `<p class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}</div></div>
+        <div id="deal-claim-list" class="mer-claims" aria-live="polite"></div>
+        <div class="deal-qr-stage"><div id="live-deal-qr" data-code="${esc(session.code)}"></div>
+          <div class="mer-qr-timer" aria-hidden="true"><i id="deal-qr-bar"></i></div>
+          <p role="status" id="deal-qr-clock" class="mer-qr-auto"></p></div>
+        <div class="mer-qr-foot"><span><b id="deal-claim-total" class="num">0</b> <span>waiting for a discount</span></span>${canWake ? `<span>${icon('sun')} Your screen stays on while this is open.</span>` : ''}</div></div>`);
+      let disposed = false, currentClaims = [], renderedClaims = '', seen = new Set(), refreshing = false, lock = null;
+      const total = L.QR_LIFETIME_MS / 1000;
       const drawClaims = () => {
         if (disposed) return;
-        const claims = currentClaims.filter((c) => c.dealId === id && !L.claimExpired(c, D.clock(app.ctx)) && c.status === 'claimed');
+        const now = D.clock(app.ctx);
+        const claims = currentClaims.filter((c) => c.dealId === id && !L.claimExpired(c, now) && c.status === 'claimed');
         $('#deal-claim-total', el).textContent = n(claims.length);
-        const html = claims.map((c) => `<div class="deal-counter-claim"><div><strong data-no-i18n>${esc(c.studentName)}</strong><p class="faint">Claim confirmed</p></div><button class="btn small go" data-apply-claim="${esc(c.id)}">${icon('check')} Apply discount</button></div>`).join('') || '<p class="faint">Waiting for students to scan…</p>';
-        if (html === renderedClaims) return;
-        renderedClaims = html; $('#deal-claim-list', el).innerHTML = html;
+        // A new claim: buzz the phone so staff notice, even while serving.
+        const fresh = claims.filter((c) => !seen.has(c.id)); claims.forEach((c) => seen.add(c.id));
+        if (fresh.length && renderedClaims !== '' && navigator.vibrate) navigator.vibrate([120, 60, 120]);
+        const html = claims.map((c) => { const left = Math.max(0, Math.ceil((D.toMs(c.createdAt) + L.CLAIM_LIFETIME_MS - now) / 60000));
+          return `<div class="deal-counter-claim mer-claim"><div><span class="mer-claim-tag">${icon('bell')} New claim</span><strong data-no-i18n>${esc(c.studentName)}</strong><p>Give them the discount, then tap the button. <span class="num">${left}</span> <span>min left</span></p></div><button class="btn go" data-apply-claim="${esc(c.id)}">${icon('check')} Apply discount</button></div>`; }).join('');
+        if (html === renderedClaims && renderedClaims !== '') return;
+        renderedClaims = html || ' '; $('#deal-claim-list', el).innerHTML = html;
         $$('[data-apply-claim]', el).forEach((button) => { button.onclick = () => busy(button, async () => {
           try { await L.applyDealClaim(app.ctx, button.dataset.applyClaim); toast('Discount marked as applied.'); }
           catch (error) { toast(error.message || errText(error), true); }
         }); });
       };
+      // The QR changes by itself a few seconds before it expires, so staff never need to refresh it.
+      const refresh = async () => {
+        refreshing = true;
+        try { session = await L.issueDealQR(app.ctx, id); if (disposed) return; const box = $('#live-deal-qr', el); box.innerHTML = ''; box.dataset.code = session.code; await renderQR(box, session.code, 256); }
+        catch (error) { if (!disposed) { $('#live-deal-qr', el).hidden = true; $('#deal-qr-clock', el).textContent = 'This deal isn’t live any more. Close this and check Promote your shop.'; } }
+        finally { refreshing = false; }
+      };
       const tick = () => {
         if (disposed) return;
         const seconds = Math.max(0, Math.ceil((session.expiresAt - D.clock(app.ctx)) / 1000));
-        $('#live-deal-qr', el).hidden = seconds === 0;
-        $('#deal-qr-clock', el).textContent = seconds ? `QR expires in ${seconds}s` : 'QR expired. Show a fresh QR.';
+        if (seconds <= 5 && !refreshing) refresh();
+        $('#deal-qr-bar', el).style.width = `${Math.round(seconds / total * 100)}%`;
+        if (!$('#live-deal-qr', el).hidden) $('#deal-qr-clock', el).textContent = `New code in ${seconds}s. It changes by itself, so screenshots won’t work.`;
         drawClaims();
       };
+      const wake = async () => { try { if (canWake && !disposed) lock = await navigator.wakeLock.request('screen'); } catch { /* not allowed (e.g. battery saver) */ } };
+      const onVisible = () => { if (document.visibilityState === 'visible') wake(); };
+      document.addEventListener('visibilitychange', onVisible); wake();
       const off = L.watchMerchantClaims(app.ctx, (claims) => { currentClaims = claims; drawClaims(); }, (e) => toast(errText(e), true));
       const interval = setInterval(tick, 1000);
-      const stop = () => { if (disposed) return; disposed = true; clearInterval(interval); off(); };
+      const stop = () => { if (disposed) return; disposed = true; clearInterval(interval); off(); document.removeEventListener('visibilitychange', onVisible); lock?.release?.().catch(() => {}); };
       stopSheet(); stopSheet = stop; onSheetClose(stop);
-      $('#refresh-deal-qr', el).onclick = () => busy($('#refresh-deal-qr', el), () => show(id));
       await renderQR($('#live-deal-qr', el), session.code, 256); tick();
     } catch (error) { if (alive) toast(error.message || errText(error), true); }
   }
@@ -56,7 +100,6 @@ export function merchantDealQRMount(root, app, [requested] = []) {
   if (requested && app._dealQRRows?.some(({ deal, status }) => deal.id === requested && status === 'Available')) show(requested);
   return () => { alive = false; stopSheet(); };
 }
-
 export async function studentDealClaimRender(app, [id] = []) {
   if (!id) return `<div class="card empty"><h1>Scan a live deal</h1><a class="btn primary" href="#/explore/deals">Live deals</a></div>`;
   const snap = await app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'deals', id));

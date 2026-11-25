@@ -2,6 +2,7 @@
 // so these tests check that the app's writes satisfy firestore.rules and that abuse is blocked.
 // Backends: the local rules evaluator (default) or the official emulator (tests/emulator.mjs).
 import * as D from '../app/shared/js/data.js';
+import {setEventReaction} from '../app/shared/js/event-reactions.js';
 import * as L from '../app/shared/js/live-deals.js';
 
 export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
@@ -84,6 +85,22 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('student cannot read another student', () => D.getProfile(stuA, 'stuB'));
   await denied('student cannot read lesson answer keys', () => D.getConfig(stuA, 'lessonKeys'));
   await denied('student cannot give themselves points', () => D.updateProfile(stuA, { points: 999 }));
+
+  log('Event reactions');
+  await ok('student reacts to an event',()=>setEventReaction(stuA,'poster-3','❤️'));
+  await ok('changing a reaction keeps just one vote',async()=>{
+    await setEventReaction(stuA,'poster-3','🔥');
+    const votes=await stuA.sdk.getDocs(stuA.sdk.collection(stuA.db,'eventReactions','poster-3','votes'));
+    eq(votes.docs.length,1);eq(votes.docs[0].data().emoji,'🔥');
+  });
+  const voteRef=(ctx,uid)=>ctx.sdk.doc(ctx.db,'eventReactions','poster-3','votes',uid);
+  await denied('student cannot impersonate another reaction',()=>stuA.sdk.setDoc(voteRef(stuA,'stuB'),{emoji:'❤️'}));
+  await denied('student cannot erase another reaction',()=>stuB.sdk.deleteDoc(voteRef(stuB,'stuA')));
+  await denied('reaction emoji whitelist is enforced',()=>stuA.sdk.setDoc(voteRef(stuA,'stuA'),{emoji:'invalid'}));
+  await denied('reaction cannot carry extra fields',()=>stuA.sdk.setDoc(voteRef(stuA,'stuA'),{emoji:'❤️',points:100}));
+  await denied('merchant cannot submit student reactions',()=>setEventReaction(merch,'poster-3','❤️'));
+  await denied('unknown events reject reactions',()=>setEventReaction(stuA,'missing-event','❤️'));
+  await ok('student can remove their own reaction',()=>setEventReaction(stuA,'poster-3',null));
 
   log('Merchant onboarding');
   const qr = 'data:image/jpeg;base64,' + 'A'.repeat(2000);
@@ -362,6 +379,24 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     await D.publishDeal(merch, 'legacy_pending');
     eq((await D.approvedDeals(stuA)).some((d) => d.id === 'legacy_pending'), true);
   });
+  const editInput = { title: 'Evening study break', benefit: 'RM2 off any drink', startMin: 18 * 60, endMin: 21 * 60, threshold: 70 };
+  await ok('a merchant edits its own deal', async () => {
+    await D.editDeal(merch, 'legacy_pending', editInput);
+    const d = (await D.myDeals(merch)).find((x) => x.id === 'legacy_pending');
+    eq(d.title, 'Evening study break', 'title'); eq(d.startMin, 18 * 60, 'start'); eq(d.threshold, 70, 'threshold');
+  });
+  await denied('another merchant cannot edit it', () => D.editDeal(merch2, 'legacy_pending', editInput));
+  await denied('an edit cannot set impossible hours', () => D.editDeal(merch, 'legacy_pending', { ...editInput, startMin: 20 * 60, endMin: 19 * 60 }));
+  await denied('an edit cannot move the deal to another shop', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'deals', 'legacy_pending'), { merchantId: 'mer2' }));
+  await denied('another merchant cannot remove it', () => D.removeDeal(merch2, 'legacy_pending'));
+  await ok('a merchant removes its own deal: hidden from its list and from students', async () => {
+    await D.removeDeal(merch, 'legacy_pending');
+    eq((await D.myDeals(merch)).some((x) => x.id === 'legacy_pending'), false, 'merchant list');
+    eq((await D.approvedDeals(stuA)).some((x) => x.id === 'legacy_pending'), false, 'student list');
+  });
+  await denied('a removed deal cannot be resumed', () => D.toggleDeal(merch, 'legacy_pending', true));
+  await denied('a removed deal cannot be edited', () => D.editDeal(merch, 'legacy_pending', editInput));
+  await denied('a removed deal cannot show a QR', () => L.issueDealQR(merch, 'legacy_pending'));
   log('Merchant QR → student claim → merchant discount');
   let qrSession, liveClaim;
   await ok('only the deal owner can issue its short-lived QR', async () => {
@@ -596,6 +631,45 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   });
   await denied('HEP cannot change what the student wrote', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'feedback', firstFeedback), { message: 'Edited by an admin.' }));
 
+  log('Voucher program');
+  const voucherForm = { offer: 'RM5 off any meal', value: 5, perMonth: 50, conditions: 'Minimum spend RM10.', contactName: 'Hafiz Rahman', contactPhone: '012-345 6789' };
+  const vdoc = (who, id, extra = {}) => who.sdk.setDoc(who.sdk.doc(who.db, 'voucherApplications', id), { merchantId: id, merchantName: 'Kopi Kolej', offer: 'RM5 off any meal',
+    valueCents: 500, perMonth: 50, conditions: '', contactName: 'Hafiz Rahman', contactPhone: '0123456789', status: 'pending', submittedAt: who.sdk.serverTimestamp(), ...extra });
+  await ok('a verified merchant applies to the voucher program and sees it waiting', async () => {
+    await D.applyVoucherProgram(merch, voucherForm);
+    const a = await D.myVoucherApplication(merch);
+    eq(a.status, 'pending', 'status'); eq(a.valueCents, 500, 'value'); eq(a.merchantName, 'Kopi Kolej', 'shop name');
+  });
+  await ok('they can edit it while it’s waiting', async () => {
+    await D.applyVoucherProgram(merch, { ...voucherForm, perMonth: 80 });
+    eq((await D.myVoucherApplication(merch)).perMonth, 80, 'per month');
+  });
+  await denied('a merchant cannot apply in another shop’s name', () => vdoc(merch, 'mer2', { merchantName: 'Fresh Laundry' }));
+  await denied('a merchant cannot approve their own application', () => vdoc(merch, 'mer1', { status: 'approved' }));
+  await denied('a merchant cannot read another shop’s application', () => merch2.sdk.getDoc(merch2.sdk.doc(merch2.db, 'voucherApplications', 'mer1')));
+  await denied('a student cannot apply to the voucher program', () => vdoc(stuA, 'stuA', { merchantName: '' }));
+  await ok('the app refuses a voucher with no value', async () => {
+    try { await D.applyVoucherProgram(merch2, { ...voucherForm, value: 0 }); } catch (e) { if (/between RM0.50/.test(e.message)) return; throw e; }
+    throw new Error('a voucher worth RM0 was accepted');
+  });
+  await denied('the rules also refuse a voucher with no value', () => vdoc(merch2, 'mer2', { merchantName: 'Fresh Laundry', valueCents: 0 }));
+  await ok('the Admin team sees the application and approves it with a note', async () => {
+    const all = await D.listVoucherApplications(mpp);
+    eq(all.length, 1, 'applications'); eq(all[0].contactPhone, '012-345 6789', 'phone');
+    await D.reviewVoucherApplication(mpp, 'mer1', 'approved', 'We’ll call you this week.');
+    const a = await D.myVoucherApplication(merch);
+    eq(a.status, 'approved', 'status'); eq(a.reviewNote, 'We’ll call you this week.', 'note');
+  });
+  await denied('once approved, the merchant cannot change it', () => D.applyVoucherProgram(merch, { ...voucherForm, value: 50 }));
+  await denied('the Admin team cannot change what the merchant offered', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'voucherApplications', 'mer1'), { valueCents: 100 }));
+  await ok('after a decline, the merchant can apply again', async () => {
+    await D.applyVoucherProgram(merch2, { ...voucherForm, offer: 'Free wash and fold' });
+    await D.reviewVoucherApplication(mpp, 'mer2', 'declined', 'Not this semester.');
+    await D.applyVoucherProgram(merch2, { ...voucherForm, offer: 'RM3 off a wash and fold' });
+    const a = await D.myVoucherApplication(merch2);
+    eq(a.status, 'pending', 'status'); eq(a.offer, 'RM3 off a wash and fold', 'offer');
+  });
+
   const fakeCollege = await makeCtx({ uid: 'stuKK', email: 'fake.kk@gmail.com' });
   await denied('a student cannot sign up with a college that isn’t on the list', () => D.createProfile(fakeCollege, { role: 'student', name: 'Fake College', matric: 'FAKEKK001', college: 'KK99' }));
   await ok('signing up with Off campus is allowed', () => D.createProfile(fakeCollege, { role: 'student', name: 'Off Campus', matric: 'OFFCAMP01', college: 'OFF' }));
@@ -745,6 +819,129 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await ok('HEP marks a business closing request as done', async () => { await D.markClosureDone(mpp, 'request_mer1'); eq((await D.listClosures(mpp)).find((r) => r.id === 'request_mer1').status, 'done', 'status'); });
   await denied('HEP can’t change the reasons someone gave', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1'), { reasons: ['rewards'] }));
   await denied('HEP can’t delete a closure note', () => mpp.sdk.deleteDoc(mpp.sdk.doc(mpp.db, 'accountClosures', 'c1')));
+
+  log('HEP Dashboard summaries');
+  await seedHistory([['dailyStats/2026-11-20', { day: '2026-11-20', students: { total: 3 } }]]);
+  await ok('HEP can open a daily summary', async () => eq((await mpp.sdk.getDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'))).data().students.total, 3));
+  await denied('a student cannot open a daily summary', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'dailyStats', '2026-11-20')));
+  await ok('HEP can read the daily summaries', () => mpp.sdk.getDocs(mpp.sdk.collection(mpp.db, 'dailyStats')));
+  await denied('a student cannot read the daily summaries', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'dailyStats')));
+  await denied('a merchant cannot read the daily summaries', () => merch.sdk.getDocs(merch.sdk.collection(merch.db, 'dailyStats')));
+  await ok('HEP saves KPI targets, and the change is logged', async () => {
+    await D.saveConfig(mpp, 'kpiTargets', { start: '2026-11-11', end: '2026-12-31', amberPct: 90, targets: { reach: 8000 } });
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'kpi-targets'), true);
+  });
+  await ok('HEP enters KPI figures, and the change is logged', async () => {
+    await D.saveConfig(mpp, 'kpiFigures', { mappedOutside: 40, reachExternal: 2000 });
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'kpi-figures'), true);
+  });
+  await denied('a student cannot read KPI targets', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'config', 'kpiTargets')));
+  await denied('a student cannot change KPI figures', () => D.saveConfig(stuA, 'kpiFigures', { reachExternal: 999999 }));
+  await denied('KPI targets cannot be changed without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'config', 'kpiTargets'), { amberPct: 1 }, { merge: true }));
+
+  log('Sign-in emails (only the server adds them)');
+  await denied('a student cannot write their own sign-in emails', () => stuA.sdk.updateDoc(stuA.sdk.doc(stuA.db, 'users', stuA.uid), { linkedEmails: ['someone.else@siswa.um.edu.my'] }));
+  await denied('a student cannot read the list of added emails', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'emailAliases', 'someone.else@siswa.um.edu.my')));
+  await denied('a student cannot add an email to the list themselves', () => stuA.sdk.setDoc(stuA.sdk.doc(stuA.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
+  await denied('HEP cannot write the list of added emails either', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'emailAliases', 'someone.else@siswa.um.edu.my'), { uid: stuA.uid }));
+
+  log('HEP deletes an account');
+  const leaving = await makeCtx({ uid: 'del1', email: 'leaving@siswa.um.edu.my' });
+  await D.createProfile(leaving, { role: 'student', name: 'Leaving Student', matric: 'DEL00001', college: 'KK1', faculty: D.FACULTIES[0] });
+  await seedHistory([
+    ['users/del2', { role: 'merchant', name: 'Closing Owner', email: 'closing@shop.my' }],
+    ['users/del3', { role: 'merchant', name: 'Open Owner', email: 'open@shop.my' }],
+    ['accountClosures/request_del2', { kind: 'request', status: 'open', uid: 'del2', seen: false }],
+    ['users/adm2', { role: 'student', name: 'Admin Who Studies', email: adminEmail, matric: 'ADM00001' }],
+  ]);
+  const delReq = (ctx, over) => ctx.sdk.setDoc(ctx.sdk.doc(ctx.db, 'accountDeletions', 'manual1'),
+    { uid: 'del1', role: 'student', by: ctx.email, at: ctx.sdk.serverTimestamp(), logId: 'no-such-log', status: 'pending', confirm: 'DEL00001', ...over });
+  await denied('a student cannot delete someone’s account', () => D.requestAccountDeletion(stuA, { uid: 'del1', role: 'student', confirm: 'DEL00001' }));
+  await denied('HEP must type the student’s matric number', () => D.requestAccountDeletion(mpp, { uid: 'del1', role: 'student', confirm: 'DEL00002' }));
+  await denied('HEP cannot delete without an activity-log entry', () => delReq(mpp));
+  await denied('HEP needs a recent sign-in to delete an account', async () => {
+    const staleAdmin = await makeCtx({ uid: 'mpp1', email: adminEmail, signedInHoursAgo: 13 });
+    await D.requestAccountDeletion(staleAdmin, { uid: 'del1', role: 'student', confirm: 'DEL00001' });
+  });
+  await denied('the account type must match', () => D.requestAccountDeletion(mpp, { uid: 'del1', role: 'merchant' }));
+  await denied('a business without a closing request cannot be deleted', () => D.requestAccountDeletion(mpp, { uid: 'del3', role: 'merchant' }));
+  await denied('an admin’s own profile cannot be deleted here', () => D.requestAccountDeletion(mpp, { uid: 'adm2', role: 'student', confirm: 'ADM00001' }));
+  let delId = '';
+  await ok('HEP deletes a student after typing their matric number', async () => { delId = await D.requestAccountDeletion(mpp, { uid: 'del1', role: 'student', confirm: 'DEL00001' }); });
+  await ok('HEP deletes a business that asked to close', () => D.requestAccountDeletion(mpp, { uid: 'del2', role: 'merchant', label: 'Closing Shop' }));
+  await denied('students cannot see deletion requests', () => stuA.sdk.getDocs(stuA.sdk.collection(stuA.db, 'accountDeletions')));
+  await denied('nobody can change a deletion request from the app', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'accountDeletions', delId), { status: 'error' }));
+
+  log('Time on each page (anonymous totals)');
+  const ptDay = D.dayKey(stuA.now ? stuA.now() : Date.now());
+  const ptRef = (ctx, page, day = ptDay, shard = '3') => ctx.sdk.doc(ctx.db, 'pageTime', `${day}_${page}_${shard}`);
+  const ptAdd = (ctx, page, ms, extra = {}, day = ptDay) => ctx.sdk.setDoc(ptRef(ctx, page, day), { day, page, ms: ctx.sdk.increment(ms), views: ctx.sdk.increment(1),
+    r25: ctx.sdk.increment(1), r50: ctx.sdk.increment(1), r75: ctx.sdk.increment(0), r100: ctx.sdk.increment(0), ...extra }, { merge: true });
+  await ok('a student adds time to today’s About us total', () => ptAdd(stuA, 'about', 45000));
+  await ok('another student adds to the same total', async () => { await ptAdd(stuB, 'about', 30000);
+    eq((await mpp.sdk.getDoc(ptRef(mpp, 'about'))).data().ms, 75000); });
+  await denied('more than 10 minutes in one save is refused', () => ptAdd(stuA, 'about', 11 * 60000));
+  await denied('a total can’t be lowered', () => stuA.sdk.updateDoc(ptRef(stuA, 'about'), { ms: 1 }));
+  await denied('only the known pages can be counted', () => ptAdd(stuA, 'secret-page', 1000));
+  await denied('only shards 0 to 9 can be written', () => stuA.sdk.setDoc(ptRef(stuA, 'learn', ptDay, '10'), { day: ptDay, page: 'learn', ms: 1000, views: 1, r25: 0, r50: 0, r75: 0, r100: 0 }));
+  await denied('the address must match the day and page inside', () => stuA.sdk.setDoc(ptRef(stuA, 'learn'), { day: ptDay, page: 'about', ms: 1000, views: 1, r25: 0, r50: 0, r75: 0, r100: 0 }));
+  await denied('only today’s totals can be added to', () => ptAdd(stuA, 'about', 1000, {}, '2020-01-01'));
+  await denied('nothing that names a student can be added', () => ptAdd(stuA, 'learn', 1000, { uid: stuA.uid }));
+  await denied('businesses don’t add page time', () => ptAdd(merch, 'home', 1000));
+  await denied('students can’t read the totals', () => stuA.sdk.getDoc(ptRef(stuA, 'about')));
+  await denied('nobody can delete the totals', () => mpp.sdk.deleteDoc(ptRef(mpp, 'about')));
+
+  log('Merchant assessment answers');
+  const assessment = { name: 'Kopi Kolej', location: 'KK3', type: 'coffee', age: '1to3y', registered: 'no', payments: ['cash', 'personalQr'], banks: ['maybank', 'tng'],
+    bizAccount: 'personal', records: 'manual', customers: '50to100', challenges: ['traffic', 'cashflow'], financing: 'looking', financingPurpose: ['working'], financingAmount: 'u5k',
+    priorities: ['sales', 'digital'], support: ['qr', 'bookkeeping', 'financing'], listing: 'yes', ownerName: 'Hafiz Rahman', whatsapp: '012-345 6789', consentContact: true, consentPartners: true };
+  await ok('a business saves its merchant assessment', () => D.submitStallSurvey(merch, { ...assessment, type: 'other', typeOther: 'Kopi and kuih stall' }));
+  const rawAssessment = (answers) => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'stallSurveys', merch.uid), { v: 2, lang: 'en', answers, stallType: 'personalQr', at: merch.sdk.serverTimestamp() });
+  await denied('a very long "Other" answer is refused, even sent straight to the database', () => rawAssessment({ ...assessment, type: 'other', typeOther: 'x'.repeat(500) }));
+  await denied('an "Other" answer must be text', () => rawAssessment({ ...assessment, location: 'other', locationOther: { html: '<b>' } }));
+
+  log('Initiatives and KOL tracking');
+  const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
+  await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {
+    await D.createProfile(tracked, { role: 'student', name: 'Tracked Student', matric: 'TRK00001', college: 'KK1', faculty: D.FACULTIES[0],
+      source: 'jtk-roundtable', heardFrom: 'kol', heardFromOther: 'A campus influencer' });
+    const p = await D.getProfile(tracked); eq(p.source, 'jtk-roundtable'); eq(p.heardFrom, 'kol'); eq(p.heardFromOther, 'A campus influencer');
+  });
+  await ok('the app drops a badly formed code or answer instead of failing the sign-up', async () => {
+    const odd = await makeCtx({ uid: 'trk2', email: 'odd@siswa.um.edu.my' });
+    await D.createProfile(odd, { role: 'student', name: 'Odd Student', matric: 'TRK00002', college: 'KK1', faculty: D.FACULTIES[0], source: 'Bad Code!', heardFrom: 'telepathy' });
+    const p = await D.getProfile(odd); eq('source' in p, false); eq('heardFrom' in p, false);
+  });
+  const rawSignup = async (uid, extra) => { const c = await makeCtx({ uid, email: uid + '@siswa.um.edu.my' }); const b = c.sdk.writeBatch(c.db);
+    b.set(c.sdk.doc(c.db, 'users', uid), { role: 'student', name: 'Raw Student', email: c.email, matric: uid.toUpperCase() + '1', college: 'KK1', faculty: D.FACULTIES[0],
+      points: 0, lastTx: '', referralCode: '', createdAt: c.sdk.serverTimestamp(), termsVersion: D.TERMS_VERSION, termsAcceptedAt: c.sdk.serverTimestamp(), ...extra });
+    b.set(c.sdk.doc(c.db, 'matrics', uid.toUpperCase() + '1'), { uid }); await b.commit(); };
+  await denied('the rules refuse a badly formed tracking code', () => rawSignup('trkbad', { source: 'Bad Code!' }));
+  await denied('the rules refuse an unknown "how did you hear" answer', () => rawSignup('trkodd', { heardFrom: 'telepathy' }));
+  await denied('the rules refuse a long free-text answer', () => rawSignup('trklong', { heardFromOther: 'x'.repeat(61) }));
+  await ok('HEP creates an initiative, and it is logged', async () => {
+    await D.saveInitiative(mpp, 'jtk-roundtable', { name: 'JTK Roundtable', type: 'roundtable', start: '2026-11-17', end: '' });
+    eq((await D.listInitiatives(mpp)).some((i) => i.code === 'jtk-roundtable'), true);
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative'), true);
+  });
+  await denied('a student cannot see initiatives', () => stuA.sdk.getDoc(stuA.sdk.doc(stuA.db, 'initiatives', 'jtk-roundtable')));
+  await denied('a student cannot create an initiative', () => D.saveInitiative(stuA, 'fake-kol', { name: 'Fake', type: 'kol', start: '2026-11-17' }));
+  await denied('an initiative cannot be saved without an activity-log entry', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'sneaky'), { code: 'sneaky', name: 'Sneaky' }));
+  await denied('an initiative code must match its tracking format', () => D.saveInitiative(mpp, 'Bad Code', { name: 'Bad', type: 'kol', start: '2026-11-17' }));
+  await ok('HEP archives an initiative: it stays in the records, and it is logged', async () => {
+    await D.archiveInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable', true);
+    const it = (await D.listInitiatives(mpp)).find((i) => i.code === 'jtk-roundtable');
+    eq(it.archived, true); eq(it.name, 'JTK Roundtable');
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-archive'), true);
+  });
+  await ok('HEP restores an archived initiative, and it is logged', async () => {
+    await D.archiveInitiative(mpp, 'jtk-roundtable', 'JTK Roundtable', false);
+    eq((await D.listInitiatives(mpp)).find((i) => i.code === 'jtk-roundtable').archived, false);
+    eq((await D.listAdminLog(mpp)).some((e) => e.action === 'initiative-restore'), true);
+  });
+  await denied('an initiative can never be deleted, even by HEP', () => mpp.sdk.deleteDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'jtk-roundtable')));
+  await denied('an initiative cannot be archived without an activity-log entry', () => mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db, 'initiatives', 'jtk-roundtable'), { archived: true }));
+  await denied('nobody can write a daily summary from the app, not even HEP', () => mpp.sdk.setDoc(mpp.sdk.doc(mpp.db, 'dailyStats', '2026-11-20'), { students: { total: 99999 } }));
 
   log('Student event submissions');
   const eventInput={name:'Student innovation summit',description:'Talks and student projects.',category:'summits',start:'2026-12-01',end:'2026-12-02',time:'10 am – 4 pm',location:'Dewan Tunku Canselor',organiser:'UM Student Society',contactEmail:'organiser@example.test',posterImage:'data:image/png;base64,AAAA'};

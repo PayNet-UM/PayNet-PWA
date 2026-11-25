@@ -8,16 +8,18 @@ import { hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML, tr, getLang } from '../i18n.js';
-import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallAnalysisRows } from '../stall-survey.js';
+import { STALL_TYPES, STALL_QUESTIONS, stallLabel, stallAnalysis, stallResponseRows, stallResponseRowsV1, stallAnalysisRows, isCurrentStallSurvey } from '../stall-survey.js';
 import { shopPinMap, hasPin, googleMapsPinUrl } from '../map.js';
 import { siteUrls } from '../firebase-config.js';
+import { dashboardRender, dashboardMount } from './dashboard.js';
+import { initiativesRender, initiativesMount } from './initiatives.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
 const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'],
+  ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['initiatives', 'Initiatives', 'target'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'KPIs and surveys', 'chart-column'], ['stall-survey', 'Stall survey', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -46,13 +48,14 @@ export async function renderShell(app, route) {
 }
 async function refreshCounts(app) {
   try {
-    const [m, c, w, x, fb, events] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
-      D.listFeedback(app.ctx).catch(() => []),D.listEventSubmissions(app.ctx).catch(()=>[])]);
+    const [m, c, w, x, fb, events, va] = await Promise.all([D.listMerchantsAll(app.ctx), D.pendingMissionClaims(app.ctx), D.pendingWelfareRequests(app.ctx), D.listClosures(app.ctx).catch(() => []),
+      D.listFeedback(app.ctx).catch(() => []), D.listEventSubmissions(app.ctx).catch(() => []), D.listVoucherApplications(app.ctx).catch(() => [])]);
     const set = (k, v) => { const el = $(`[data-count=${k}]`); if (el) { el.textContent = v; el.classList.toggle('hidden', !v); } };
     set('merchants', m.filter((x) => x.status === 'pending').length); set('approvals', c.length + w.length);
     set('closures', x.filter((r) => !r.seen || r.status === 'open').length);
     set('feedback', fb.filter((f) => f.status === 'new').length);
-    set('campaigns',events.length);
+    set('campaigns', events.length);
+    set('vouchers', va.filter((a) => a.status === 'pending').length);
   } catch { /* not initialised yet */ }
 }
 
@@ -345,39 +348,25 @@ function rewardsMount(root, app) {
 const campaignsRender=eventAdminRender;
 const campaignsMount=eventAdminMount;
 
-// ------------------------------------------------------------- KPIs and surveys
+// ------------------------------------------------------------- money check results
+// The KPIs moved to the Dashboard (with targets and trends), so this page keeps only the money check results.
 async function kpisRender(app) {
-  const [users, merchants, surveys, refs, vouchers, counts] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx), D.listSurveys(app.ctx), D.listReferrals(app.ctx), D.listVouchers(app.ctx), D.paynetCounts(app.ctx, month)]);
+  const [users, surveys] = await Promise.all([D.listUsers(app.ctx), D.listSurveys(app.ctx)]);
   app._sv = { surveys, users };
-  const students = users.filter((u) => u.role === 'student');
-  const verified = merchants.filter((m) => m.status === 'verified'), ready = verified.filter((m) => D.merchantReadinessCurrent(m, app.rules));
-  const sStu = surveys.filter((s) => s.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((s, x) => s + x.knowledge, 0) / sStu.length) : 0;
-  const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((s) => s.grade === g).length, surveys.filter((s) => s.role === 'merchant' && s.grade === g).length]);
-  const kpi = [
-    ['Eligible merchants onboarded', n(verified.length), 'Verified merchants on the PayNet list'],
-    ['Merchant readiness', verified.length ? Math.round((ready.length / verified.length) * 100) + '%' : '—', `${ready.length} of ${verified.length} finished the staff checklist`],
-    ['Transaction frequency', n(counts.reduce((s, c) => s + c.count, 0)), `DuitNow QR transactions PayNet counted at listed merchants in ${monthLabel(month)} (import on Activity check)`],
-    ['Students enrolled', n(students.length), 'Registered student accounts'],
-    ['Financial capability', sStu.length ? avgK + '%' : '—', `Average knowledge score across ${sStu.length} student money checks`],
-    ['Referral sign-ups', n(refs.length), 'Referral codes linked to student accounts'],
-    ['Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), `${rm(vouchers.filter((v) => v.status === 'used').reduce((s, v) => s + v.valueCents, 0))} paid out`],
-  ];
-  return `${hepHeading('KPIs and surveys', 'The solution map’s KPIs, calculated live from app records.', 'chart-column', monthPicker())}
-    <div class="stats" style="margin-bottom:22px">${hepMetric('Students enrolled', n(students.length), 'users', 'violet')}${hepMetric('Merchant readiness', verified.length ? Math.round(ready.length / verified.length * 100) + '%' : '—', 'shield-check', 'lime')}${hepMetric('Referral sign-ups', n(refs.length), 'user-plus', 'peach')}${hepMetric('Vouchers redeemed', n(vouchers.filter((v) => v.status === 'used').length), 'gift', 'sky')}</div>
-    <section class="card pad-lg"><div class="table-wrap"><table class="data kpi-table"><thead><tr><th>KPI</th><th class="r">Value</th><th>How it’s measured</th></tr></thead><tbody>${kpi.map(([k, v, h]) => `<tr><td>${k}</td><td class="r num" style="font-size:18px;font-weight:800">${v}</td><td class="faint">${h}</td></tr>`).join('')}</tbody></table></div>
-      <div class="row end" style="margin-top:10px"><button class="btn small" id="kcsv">${icon('download')} Export KPIs</button></div></section>
-    <section class="card pad-lg" style="margin-top:16px"><div class="row between"><h2>Money check results</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
+  const sStu = surveys.filter((x) => x.role === 'student'); const avgK = sStu.length ? Math.round(sStu.reduce((a, x) => a + x.knowledge, 0) / sStu.length) : 0;
+  const grades = ['A', 'B', 'C', 'D'].map((g) => [g, sStu.filter((x) => x.grade === g).length, surveys.filter((x) => x.role === 'merchant' && x.grade === g).length]);
+  return `${hepHeading('Money check results', 'How students and merchants did on the money check. Programme KPIs, targets and trends are on the Dashboard.', 'piggy-bank')}
+    <div class="stats" style="margin-bottom:22px">${hepMetric('Students who did the money check', n(sStu.length), 'users', 'violet')}${hepMetric('Average knowledge score', sStu.length ? avgK + '%' : '—', 'graduation-cap', 'lime')}</div>
+    <section class="card pad-lg"><div class="row between"><h2>Results by grade</h2><button class="btn small" id="scsv">${icon('download')} Export responses</button></div>
       <div class="table-wrap"><table class="data" style="margin-top:10px"><thead><tr><th>Grade</th><th class="r">Students</th><th class="r">Merchants</th><th>Suggested support</th></tr></thead><tbody>
-      ${grades.map(([g, s, m]) => `<tr><td><b>${g}</b></td><td class="r num">${s}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></div></section>`;
+      ${grades.map(([g, st, m]) => `<tr><td><b>${g}</b></td><td class="r num">${st}</td><td class="r num">${m}</td><td class="faint">${{ A: 'Ready; promote missions and deals', B: 'Targeted tips', C: 'Lessons and ambassador support', D: 'Assisted onboarding' }[g]}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function kpisMount(root, app) {
-  bindMonth(root, app);
-  $('#kcsv', root).onclick = () => downloadCSV(`KPIs-UM-${month}.csv`, [['KPI', 'Value', 'Measure'], ...$$('.kpi-table tbody tr', root).map((tr) => $$('td', tr).map((td) => td.textContent))]);
   $('#scsv', root).onclick = () => downloadCSV('Money-check-responses.csv', [['Role', 'Name', 'Grade', 'Score', 'Knowledge', 'Digital', 'Completed'],
-    ...app._sv.surveys.map((s) => [s.role, app._sv.users.find((u) => u.id === s.id)?.name || '', s.grade, s.score, s.knowledge, s.digital, s.at ? new Date(toMs(s.at)).toISOString() : ''])]);
+    ...app._sv.surveys.map((x) => [x.role, app._sv.users.find((u) => u.id === x.id)?.name || '', x.grade, x.score, x.knowledge, x.digital, x.at ? new Date(toMs(x.at)).toISOString() : ''])]);
 }
 
-// ------------------------------------------------------------- stall survey (merchants, app/shared/js/stall-survey.js)
+// ------------------------------------------------------------- merchant assessment, the "stall survey" (app/shared/js/stall-survey.js)
 async function stallSurveyData(app) {
   const [surveys, merchants] = await Promise.all([D.listStallSurveys(app.ctx), D.listMerchantsAll(app.ctx)]);
   return surveys.map((s) => { const m = merchants.find((x) => x.id === s.id);
@@ -386,34 +375,37 @@ async function stallSurveyData(app) {
 }
 const hbars = (rows) => `<ul class="ss-hbars">${rows.map((r) => `<li><span data-no-i18n>${esc(r.label)}</span><span class="num">${n(r.count)} · ${r.pct}%</span><span class="bar"><i style="width:${r.pct}%"></i></span></li>`).join('')}</ul>`;
 async function stallSurveyAdminRender(app) {
-  const rows = await stallSurveyData(app); app._ss = rows;
+  const all = await stallSurveyData(app);
+  const rows = all.filter(isCurrentStallSurvey); const older = all.filter((r) => !isCurrentStallSurvey(r));
+  app._ss = rows; app._ssOld = older;
   const lang = getLang() === 'ms' ? 'ms' : 'en'; const a = stallAnalysis(rows, lang);
-  const head = hepHeading('Stall survey', 'What merchants told us after sending their shop details: stall type, payments, barriers and what would help.', 'target',
-    rows.length ? `<div class="row"><button class="btn small" id="ss-xlsx">${icon('file-spreadsheet')} Export to Excel</button><button class="btn small" id="ss-csv">${icon('download')} Responses CSV</button><button class="btn small" id="ss-acsv">${icon('download')} Analysis CSV</button></div>` : '');
-  if (!rows.length) return head + hepEmpty('No stall surveys yet. Merchants are asked to fill it in right after they send their shop details.', 'target');
-  return `${head}
-    <div class="stats" style="margin-bottom:6px">${hepMetric('Responses', n(a.total), 'target', 'violet')}${hepMetric('QR-ready stalls', a.headline.qrReady + '%', 'qr-code', 'lime', 'Business QR or card machine')}${hepMetric('Happy to be listed', a.headline.listYes + '%', 'store', 'peach')}${hepMetric('Need bank help', a.headline.bankHelpYes + '%', 'landmark', 'sky', 'For an SME or business account')}</div>
+  const head = hepHeading('Merchant assessment', 'The +Onz Merchant Assessment (digital and financial readiness), answered by merchants after sending their shop details.', 'target',
+    all.length ? `<div class="row"><button class="btn small" id="ss-xlsx">${icon('file-spreadsheet')} Export to Excel</button><button class="btn small" id="ss-csv">${icon('download')} Responses CSV</button><button class="btn small" id="ss-acsv">${icon('download')} Analysis CSV</button></div>` : '');
+  const olderNote = older.length ? `<p class="notice" style="margin-bottom:12px">${icon('info')} <span>${n(older.length)} ${older.length === 1 ? 'merchant' : 'merchants'} answered the earlier stall survey and will be asked the new questions. Their old answers are in the Excel export (Earlier version sheet).</span></p>` : '';
+  if (!rows.length) return head + olderNote + hepEmpty('No merchant assessments yet. Merchants are asked to fill it in right after they send their shop details.', 'target');
+  const label = (x, id) => { const q = STALL_QUESTIONS.find((y) => y.id === id); return x[id] === 'other' ? x[id + 'Other'] || '' : x[id] ? stallLabel(q, x[id], lang) : '—'; };
+  const yes = (v) => (v === true ? `${icon('check')} Yes` : 'No');
+  return `${head}${olderNote}
+    <div class="stats" style="margin-bottom:6px">${hepMetric('Responses', n(a.total), 'target', 'violet')}${hepMetric('Take Business QR or card', a.headline.qrReady + '%', 'qr-code', 'lime')}${hepMetric('No business bank account', a.headline.noBizAccount + '%', 'landmark', 'sky', 'Personal account, opening one or not sure')}${hepMetric('Interested in financing', a.headline.financing + '%', 'wallet', 'peach')}${hepMetric('Partner introductions OK', a.headline.partners + '%', 'handshake', 'violet', `Contact OK: ${a.headline.contact}%`)}</div>
     <div class="ss-admin-grid">
-      <section class="card pad-lg"><h2>Stall types</h2>${hbars(a.types)}</section>
-      <section class="card pad-lg"><h2>10-minute peak counts</h2><p class="faint">Payments counted in a busy 10 minutes, across stalls that answered.</p>
-        ${hbars(a.peak.map((p) => ({ label: `${p.label} (${n(p.stalls)} stalls)`, count: p.total, pct: p.share })))}</section>
-      ${a.questions.map((q) => `<section class="card pad-lg"><h2 data-no-i18n>${esc(q.title)}</h2><p class="faint">${n(q.answered)} answered${q.type === 'multi' ? ' · could pick more than one' : ''}</p>${hbars(q.rows.length > 10 ? q.rows.filter((r) => r.count) : q.rows)}
+      <section class="card pad-lg"><h2>Stall types</h2><p class="faint">From the most digital way each stall takes payment.</p>${hbars(a.types)}</section>
+      ${a.questions.map((q) => `<section class="card pad-lg"><h2 data-no-i18n>${q.n}. ${esc(q.title)}</h2><p class="faint">${n(q.answered)} answered${q.type === 'multi' ? ' · could pick more than one' : ''}</p>${hbars(q.rows.length > 10 ? q.rows.filter((r) => r.count) : q.rows)}
         ${q.others.length ? `<p class="faint ss-others" data-no-i18n><b>${lang === 'ms' ? 'Lain-lain' : 'Other'}:</b> ${esc(q.others.join(' · '))}</p>` : ''}</section>`).join('')}
     </div>
     <section class="card" style="margin-top:16px"><div class="row between" style="padding:12px 16px"><h2 style="margin:0">All responses (${n(rows.length)})</h2></div>
-      <div class="table-wrap"><table class="data"><thead><tr><th>Stall</th><th>Stall type</th><th>Area</th><th>Listing</th><th>Bank help</th><th>WhatsApp</th><th>Submitted</th></tr></thead><tbody>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Business</th><th>Owner</th><th>Stall type</th><th>Location</th><th>Business account</th><th>Financing</th><th>Listing</th><th>Contact OK</th><th>Partners OK</th><th>WhatsApp</th><th>Submitted</th></tr></thead><tbody>
       ${rows.map((r) => { const x = r.answers || {};
-        const label = (id) => { const q = STALL_QUESTIONS.find((y) => y.id === id); return x[id] === 'other' ? x[id + 'Other'] || '' : x[id] ? stallLabel(q, x[id], lang) : '—'; };
-        return `<tr><td data-no-i18n>${esc(r.merchantName)}</td><td data-no-i18n>${esc(STALL_TYPES[r.stallType]?.[lang] || '')}</td><td data-no-i18n>${esc(label('area'))}</td>
-          <td data-no-i18n>${esc(label('listing'))}</td><td data-no-i18n>${esc(label('bankHelp'))}</td>
+        return `<tr><td data-no-i18n>${esc(x.name || r.merchantName)}${x.name && x.name !== r.merchantName ? `<br><span class="faint">${esc(r.merchantName)}</span>` : ''}</td><td data-no-i18n>${esc(x.ownerName || '')}</td>
+          <td data-no-i18n>${esc(STALL_TYPES[r.stallType]?.[lang] || '')}</td><td data-no-i18n>${esc(label(x, 'location'))}</td><td data-no-i18n>${esc(label(x, 'bizAccount'))}</td>
+          <td data-no-i18n>${esc(label(x, 'financing'))}</td><td data-no-i18n>${esc(label(x, 'listing'))}</td><td>${yes(x.consentContact)}</td><td>${yes(x.consentPartners)}</td>
           <td data-no-i18n>${x.whatsapp ? `<a href="https://wa.me/${esc(x.whatsapp.replace(/\D/g, '').replace(/^0/, '60'))}" target="_blank" rel="noopener">${esc(x.whatsapp)}</a>` : '—'}</td><td>${r.at ? fmtDate(r.at) : ''}</td></tr>`; }).join('')}
       </tbody></table></div></section>`;
 }
 function stallSurveyAdminMount(root, app) {
   if (!$('#ss-csv', root)) return;
   const stamp = new Date().toISOString().slice(0, 10);
-  $('#ss-csv', root).onclick = () => downloadCSV(`Stall-survey-responses-${stamp}.csv`, stallResponseRows(app._ss));
-  $('#ss-acsv', root).onclick = () => downloadCSV(`Stall-survey-analysis-${stamp}.csv`, stallAnalysisRows(stallAnalysis(app._ss)));
+  $('#ss-csv', root).onclick = () => downloadCSV(`Merchant-assessment-responses-${stamp}.csv`, stallResponseRows(app._ss));
+  $('#ss-acsv', root).onclick = () => downloadCSV(`Merchant-assessment-analysis-${stamp}.csv`, stallAnalysisRows(stallAnalysis(app._ss)));
   $('#ss-xlsx', root).onclick = (e) => busy(e.currentTarget, async () => {
     try {
       const ExcelJS = await loadExcel(); const wb = new ExcelJS.Workbook();
@@ -422,8 +414,9 @@ function stallSurveyAdminMount(root, app) {
       const resp = add('Responses', stallResponseRows(app._ss), [18, 26, 14, 14, 16, 24]); resp.views = [{ state: 'frozen', xSplit: 2, ySplit: 1 }];
       const an = add('Analysis', stallAnalysisRows(stallAnalysis(app._ss)), [58, 14, 18]);
       an.eachRow((row) => { if (row.cellCount >= 3 && typeof row.getCell(2).value === 'string' && !/^\d/.test(row.getCell(2).value)) row.font = { bold: true }; });
-      downloadBlob(`Stall-survey-${stamp}.xlsx`, new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-      toast('Stall survey exported.');
+      if (app._ssOld?.length) add('Earlier version', stallResponseRowsV1(app._ssOld), [18, 26, 14, 14, 16, 24]);
+      downloadBlob(`Merchant-assessment-${stamp}.xlsx`, new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      toast('Merchant assessment exported.');
     } catch (err) { toast(errText(err), true); }
   });
 }
@@ -464,6 +457,41 @@ function feedbackMount(root, app) {
   });
 }
 
+// ------------------------------------------------------------- voucher program (merchant applications)
+let vaFilter = 'pending';
+async function vouchersRender(app) {
+  const all = await D.listVoucherApplications(app.ctx); app._va = all;
+  const count = (k) => (k === 'all' ? all.length : all.filter((a) => a.status === k).length);
+  const shown = vaFilter === 'all' ? all : all.filter((a) => a.status === vaFilter);
+  return `${hepHeading('Voucher program', 'Merchants who want to offer a voucher that students can swap points for. Approving only records your decision. Agree the details with the merchant first, then add the voucher in Rewards and budget.', 'ticket')}
+    <div class="chips" role="group" aria-label="Show">${[['pending', 'Waiting'], ['approved', 'Approved'], ['declined', 'Declined'], ['all', 'All']].map(([k, l]) =>
+      `<button type="button" data-vaf="${k}" class="${vaFilter === k ? 'on' : ''}" aria-pressed="${vaFilter === k}">${l} <span data-no-i18n>(${count(k)})</span></button>`).join('')}</div>
+    <div class="list hep-fb-list">${shown.map((a) => `<article class="card pad-lg hep-fb hep-va is-${esc(a.status)}">
+      <div class="row between"><div class="row" style="gap:8px"><b data-no-i18n>${esc(a.merchantName || 'Merchant')}</b><span class="faint">${fmtDateTime(a.submittedAt)}</span></div>
+        <span class="badge ${a.status === 'approved' ? 'ok' : a.status === 'declined' ? 'bad' : 'warn'}">${a.status === 'approved' ? 'Approved' : a.status === 'declined' ? 'Declined' : 'Waiting'}</span></div>
+      <p class="hep-fb-msg" data-no-i18n>${esc(a.offer)}</p>
+      <p><span>Value</span> <b>${rm(a.valueCents)}</b> · <b data-no-i18n>${n(a.perMonth)}</b> <span>a month</span></p>
+      ${a.conditions ? `<p class="faint"><span>Conditions:</span> <span data-no-i18n>${esc(a.conditions)}</span></p>` : ''}
+      <p class="faint"><span data-no-i18n>${esc(a.contactName)}</span> · <a data-no-i18n href="tel:${esc(String(a.contactPhone || '').replace(/[^+0-9]/g, ''))}">${esc(a.contactPhone)}</a></p>
+      ${a.reviewNote ? `<div class="hep-fb-reply"><b>Your note</b> <span class="faint" data-no-i18n>${esc(a.reviewedBy || '')} · ${fmtDateTime(a.reviewedAt)}</span><p data-no-i18n>${esc(a.reviewNote)}</p></div>` : ''}
+      ${a.status === 'pending' ? `<div class="row" style="gap:8px;margin-top:10px"><button class="btn small go" data-va="${esc(a.id)}" data-st="approved">${icon('check')} Approve</button>
+        <button class="btn small" data-va="${esc(a.id)}" data-st="declined">${icon('x')} Decline</button></div>` : ''}</article>`).join('')
+      || `<div class="card empty">${icon('ticket')}<p>${vaFilter === 'pending' ? 'No applications waiting.' : 'Nothing here yet.'}</p></div>`}</div>`;
+}
+function vouchersMount(root, app) {
+  $$('[data-vaf]', root).forEach((b) => { b.onclick = () => { vaFilter = b.dataset.vaf; app.render(); }; });
+  $$('[data-va]', root).forEach((b) => {
+    b.onclick = () => {
+      const a = app._va.find((x) => x.id === b.dataset.va), approve = b.dataset.st === 'approved';
+      const el = sheet(`<h2>${approve ? 'Approve' : 'Decline'} <span data-no-i18n>${esc(a.merchantName)}</span></h2><p class="muted hep-fb-quote" data-no-i18n>${esc(a.offer)}</p>
+        <form id="vaf" class="stack" style="margin-top:12px"><label class="field">Note to the merchant (optional)<textarea name="note" rows="4" maxlength="500" placeholder="${approve ? 'e.g. We’ll call you this week to agree the details.' : 'e.g. We’re not adding new vouchers this semester.'}"></textarea>
+          <small>The merchant sees this on their Promote your shop page.</small></label><button class="btn ${approve ? 'go' : 'primary'}">${approve ? 'Approve application' : 'Decline application'}</button></form>`);
+      $('#vaf', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), async () => { try { await D.reviewVoucherApplication(app.ctx, a.id, b.dataset.st, e.target.note.value); closeSheet(); toast(approve ? 'Application approved.' : 'Application declined.'); app.render(); } catch (err) { toast(errText(err), true); } }); };
+    };
+  });
+}
+
 // ------------------------------------------------------------- students (people)
 let peopleQ = '';
 async function peopleRender(app) {
@@ -475,8 +503,23 @@ async function peopleRender(app) {
 function peopleMount(root, app) {
   const draw = () => {
     const q = peopleQ.toLowerCase();
-    $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span></td>
-      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+    $('#pt', root).innerHTML = app._pp.filter((u) => `${u.name} ${u.email} ${(u.linkedEmails || []).join(' ')} ${u.matric}`.toLowerCase().includes(q)).slice(0, 200).map((u) => `<tr><td><b>${esc(u.name)}</b><br><span class="faint">${esc(u.email)} · ${esc(u.matric || '')}</span>${(u.linkedEmails || []).filter((e) => e !== u.email).length ? `<br><span class="faint">Also signs in with ${esc((u.linkedEmails || []).filter((e) => e !== u.email).join(', '))}</span>` : ''}</td>
+      <td>${esc(u.college)}</td><td class="r num">${n(u.points)}</td><td>${fmtDate(u.createdAt)}</td><td class="r"><button class="btn small" data-adj="${esc(u.id)}">Adjust</button> <button class="btn small ghost" data-col="${esc(u.id)}">Change college or faculty</button> <button class="btn small ghost" data-block="${esc(u.id)}">${u.disabled ? 'Unblock' : 'Block'}</button> <button class="btn small warn" data-del="${esc(u.id)}">Delete account</button>${u.disabled ? ' <span class="badge bad">Blocked</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="faint">No students match.</td></tr>';
+    // HEP deletes a student's account (e.g. a duplicate made with the wrong email). The rules check the typed matric number.
+    $$('[data-del]', root).forEach((b) => {
+      b.onclick = () => {
+        const u = app._pp.find((x) => x.id === b.dataset.del);
+        const el = sheet(`<h2>Delete ${esc(u.name)}’s account?</h2>
+          <p class="muted">This deletes their profile, points, friends and sign-in, cancels unused vouchers, and frees their matric number. Records the Admin team needs are kept without their name. This can’t be undone.</p>
+          <form id="dla" class="stack" style="margin-top:12px"><label class="field">Type their matric number to confirm<input name="m" required autocomplete="off" placeholder="${esc(u.matric || '')}"></label>
+          <button class="btn warn block">Delete account</button></form>`);
+        $('#dla', el).onsubmit = (e) => { e.preventDefault();
+          const typed = D.normMatric(e.target.m.value);
+          if (!u.matric || typed !== u.matric) return toast('That matric number doesn’t match this student.', true);
+          busy($('button', el), () => runDeletion(app, { uid: u.id, role: 'student', confirm: typed }));
+        };
+      };
+    });
     $$('[data-block]', root).forEach((b) => {
       b.onclick = () => {
         const u = app._pp.find((x) => x.id === b.dataset.block); const next = !u.disabled;
@@ -519,6 +562,19 @@ function peopleMount(root, app) {
   $('#rel', root).onsubmit = (e) => { e.preventDefault(); const m = e.target.m.value.trim(); if (!confirm(tr(`Release matric number ${m}?`))) return; busy($('button', e.target), async () => { try { await D.releaseMatric(app.ctx, m); e.target.reset(); toast('Matric number released.'); } catch (err) { toast(errText(err), true); } }); };
 }
 
+// Sends HEP's deletion request and waits for the server to finish it.
+async function runDeletion(app, req) {
+  try {
+    const id = await D.requestAccountDeletion(app.ctx, req);
+    const res = await D.waitForDeletion(app.ctx, id);
+    if (res.status === 'error') return toast(res.message || 'The account couldn’t be deleted.', true);
+    closeSheet();
+    if (res.status === 'slow') toast('The deletion is taking longer than usual. Check Account closures in a minute.', true);
+    else toast(res.warning || 'Account deleted.', !!res.warning);
+    app.render();
+  } catch (err) { toast(errText(err), true); }
+}
+
 // ------------------------------------------------------------- account closures
 // Students who deleted their account (anonymous) and businesses asking the Admin team to close theirs, with their reasons.
 async function closuresRender(app) {
@@ -530,10 +586,10 @@ async function closuresRender(app) {
   const row = (r) => `<tr><td>${fmtDateTime(r.createdAt)}${r.seen ? '' : ' <span class="badge warn">New</span>'}</td>
     <td>${r.kind === 'request' ? `<b>${esc(r.businessName || r.name || 'Business')}</b><br><span class="faint">${esc(r.name || '')} · ${esc(r.email || '')}</span>`
     : `<b>Student account deleted</b><br><span class="faint">${esc(r.college || 'No college')}${r.faculty ? ' · ' + esc(r.faculty) : ''} · ${n(r.points || 0)} points lost</span>`}</td>
-    <td>${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
+    <td>${r.byAdmin ? `<span class="faint">Deleted by the Admin team (${esc(r.byAdmin)})</span>` : ''}${chips(r)}${r.comment ? `<p class="faint" style="margin:6px 0 0">“${esc(r.comment)}”</p>` : ''}</td>
     <td class="r">${r.kind !== 'request' ? '<span class="badge ok">Deleted</span>' : r.status === 'open'
-    ? `<button class="btn small" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
-  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, block the account under Merchants, then mark it closed.', 'trash-2')}
+    ? `<button class="btn small warn" data-del-shop="${esc(r.id)}">Delete account</button> <button class="btn small ghost" data-done="${esc(r.id)}">Mark as closed</button>` : `<span class="badge ok">Closed</span><br><span class="faint">${esc(r.handledBy || '')}</span>`}</td></tr>`;
+  return `${hepHeading('Account closures', 'Students delete their own account from the app; their personal data is removed straight away and this list shows only their college and reasons. Businesses send a request: settle their vouchers and remove them from the PayNet list, then delete the account here. Use Mark as closed only if the account is already gone.', 'trash-2')}
     ${open.length ? `<div class="notice warn" style="margin-bottom:16px">${open.length} business closing ${open.length === 1 ? 'request is' : 'requests are'} waiting.</div>` : ''}
     ${top.length ? `<section class="card pad-lg" style="margin-bottom:16px"><h2>Why people leave</h2><table class="data" style="margin-top:10px"><tbody>
       ${top.map(([k, c]) => `<tr><td>${esc(D.closeReasonLabel(k))}</td><td class="r num">${c}</td></tr>`).join('')}</tbody></table></section>` : ''}
@@ -544,11 +600,25 @@ async function closuresRender(app) {
 function closuresMount(root, app) {
   const unseen = app._cl.filter((r) => !r.seen).map((r) => r.id);
   D.markClosuresSeen(app.ctx, unseen).then(() => refreshCounts(app)).catch(() => {});
+  $$('[data-del-shop]', root).forEach((b) => {
+    b.onclick = () => {
+      const r = app._cl.find((x) => x.id === b.dataset.delShop);
+      const el = sheet(`<h2>Delete ${esc(r.businessName || r.name || 'this business')}’s account?</h2>
+        <p class="muted">This deletes the business profile, its listing, deals and sign-in, and marks the request closed. Vouchers, claims and visits stay in the records. This can’t be undone.</p>
+        <form id="dls" class="stack" style="margin-top:12px">
+          <label class="check"><input type="checkbox" name="v" required> Their vouchers are settled</label>
+          <label class="check"><input type="checkbox" name="p" required> They’re removed from the PayNet list</label>
+          <button class="btn warn block">Delete account</button></form>`);
+      $('#dls', el).onsubmit = (e) => { e.preventDefault();
+        busy($('button', el), () => runDeletion(app, { uid: r.uid, role: 'merchant', label: r.businessName || r.name || '' }));
+      };
+    };
+  });
   $$('[data-done]', root).forEach((b) => {
     b.onclick = () => busy(b, async () => { try { await D.markClosureDone(app.ctx, b.dataset.done); toast('Marked as closed.'); app.render(); } catch (err) { toast(errText(err), true); } });
   });
   if ($('#clcsv', root)) $('#clcsv', root).onclick = () => downloadCSV('Account-closures.csv', [['Date', 'Type', 'College', 'Business', 'Reasons', 'Comment', 'Status'],
-    ...app._cl.map((r) => [r.createdAt ? new Date(toMs(r.createdAt)).toISOString() : '', r.kind === 'request' ? 'Business request' : 'Student deleted', r.college || '',
+    ...app._cl.map((r) => [r.createdAt ? new Date(toMs(r.createdAt)).toISOString() : '', r.kind === 'request' ? 'Business request' : r.byAdmin ? 'Deleted by Admin team' : 'Student deleted', r.college || '',
       r.businessName || '', (r.reasons || []).map(D.closeReasonLabel).join('; '), r.comment || '', r.kind === 'request' ? r.status : 'deleted'])]);
 }
 
@@ -620,15 +690,18 @@ function settingsMount(root, app) {
 export const routes = {
   points: { title:'Points guide',render:pointsPageRender },
   overview: { title: 'Overview', render: overviewRender, mount: overviewMount },
+  dashboard: { title: 'Dashboard', render: dashboardRender, mount: dashboardMount, wide: true },
+  initiatives: { title: 'Initiatives', render: initiativesRender, mount: initiativesMount, wide: true },
   merchants: { title: 'Merchants', render: merchantsRender, mount: merchantsMount },
   approvals: { title: 'Approvals', render: approvalsRender, mount: approvalsMount },
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },
   recon: { title: 'Reconciliation', render: reconRender, mount: reconMount },
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
   campaigns: { title: 'Campus events', render: campaignsRender, mount: campaignsMount },
-  kpis: { title: 'KPIs and surveys', render: kpisRender, mount: kpisMount },
-  'stall-survey': { title: 'Stall survey', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
+  kpis: { title: 'Money check results', render: kpisRender, mount: kpisMount },
+  'stall-survey': { title: 'Merchant assessment', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },
   feedback: { title: 'Feedback', render: feedbackRender, mount: feedbackMount, wide: true },
+  vouchers: { title: 'Voucher program', render: vouchersRender, mount: vouchersMount, wide: true },
   people: { title: 'Students', render: peopleRender, mount: peopleMount },
   closures: { title: 'Account closures', render: closuresRender, mount: closuresMount },
   activity: { title: 'Activity log', render: activityRender },

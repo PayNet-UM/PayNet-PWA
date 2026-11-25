@@ -96,6 +96,35 @@ gcloud projects add-iam-policy-binding <project> --member=serviceAccount:service
 
 **A failed deploy can leave a project half updated.** The rules can be live before the website, so old screens may fail until a retry succeeds. Don't demo during this.
 
+## HEP Dashboard summaries (once per project)
+
+The **Dashboard** reads daily summaries (`dailyStats/{YYYY-MM-DD}`: counts only, no names) that the `dailyStatsSummary` function rebuilds **every 3 hours**. Only HEP admins can read them.
+
+1. **Turn on Cloud Scheduler** before the first deploy that includes it. A project Owner runs this once in [Cloud Shell](https://shell.cloud.google.com/):
+
+   ```bash
+   gcloud services enable cloudscheduler.googleapis.com --project=<project>
+   ```
+
+   Without it, the deploy stops while creating `dailyStatsSummary`. Enable it and re-run the failed job.
+
+   The deploy account also needs permission to create the schedule. Without it, the deploy stops with `lacks IAM permission "cloudscheduler.jobs.update"`. Grant it once, too:
+
+   ```bash
+   gcloud projects add-iam-policy-binding <project> --member=serviceAccount:github-deploy@<project>.iam.gserviceaccount.com --role=roles/cloudscheduler.admin
+   ```
+2. **Backfill past days** once, so the Dashboard shows trends from the first sign-up rather than only from the deploy. An Owner runs this in Cloud Shell, in a checkout of the repo, with `npm ci --prefix functions` done first:
+
+   ```bash
+   node functions/rebuild-daily.js --project <project>
+   ```
+
+   It's safe to run again. Each day is recalculated from the records that exist now.
+
+   **Re-run it after a release that adds a new number** (for example the days-opened, referral and quiz rates), so past days get it too. Until then, those days show as a gap in the Trends chart.
+
+The calculation lives in `app/shared/js/daily-stats.js`, shared with Demo mode. `functions/daily-stats.js` must be an exact copy, and `npm test` fails if the two differ.
+
 ## Manual deploys
 
 GitHub Actions is the normal route. These commands are the fallback:

@@ -130,6 +130,56 @@ firebase.json        Hosting (client and admin sites), Firestore and emulator se
 - **Admin emails are publicly readable.** They appear in the site's JavaScript and at `/firestore.rules`, so use a shared team mailbox rather than a personal address.
 - **Keep staging free of real personal data.** It has weaker controls and more people with access.
 
+### HEP Dashboard
+The **Dashboard** page shows students, merchants, transactions, campaigns and impact from daily summaries the server rebuilds every 3 hours. Every number is labelled **From the app**, **Entered by HEP** or **Not tracked yet**.
+
+The active-user tiers:
+- **Opened the app**: opened +Onz at least once.
+- **Basic Active User**: did a lesson, the money check or an event submission.
+- **Engaged Active User**: used at least 3 of the 4 areas, Learn, Rewards, Community and Habit (a 7-day streak).
+
+**KPI tracking** (section 6) scores the 9 approved KPIs, from the team's KPI sheet, in `app/shared/js/kpis.js`:
+- **Counts** are compared with where they should be by today.
+- **Percentages** are compared with the target.
+- Each KPI shows **On track**, **Watch** or **Behind**, and the sheet's "steps to improve" appear when one slips.
+
+HEP edits the targets and the period with **Edit targets**, and adds numbers the app can't see (stalls surveyed outside the app, outside reach, end-of-campaign retention) with **Enter figures**. Both are recorded in the Activity log.
+
+**Getting around the Dashboard** (team request, 25 Nov 2026):
+- **Jump to section:** a bar that stays at the top while scrolling (a dropdown on phones) and highlights the section you're in.
+- **Key metrics** (`app/shared/js/dash-compare.js`): **Pick metrics** to show up to 6 side by side over the same dates. Each card shows the number, its change against the previous period and a small chart. The 9 KPIs can be picked too, shown against their target with status. A caption with the dates and last update travels with a screenshot into slides. The choice is saved on that computer. **Copy link** shares the same view (`#/dashboard/compare/<metrics>/<period>`), and the picked metrics are added to the Excel report as a "Key metrics" sheet.
+
+**Trends** (top of the Dashboard, `app/shared/js/trend-chart.js`): pick a number (sign-ups, active users, days opened per week, referral sign-up rate, quiz participation rate and more) and a period (30 or 90 days, programme to date, all time) to see it day by day, with a hover tooltip, a "vs the previous period" change and a table view. Days from before a number was recorded show as a gap until the backfill is re-run.
+
+**New rates** (`app/shared/js/daily-stats.js`): **days opened per week** (average days in the last 7 that a student opened the app, among those who opened it), **referral sign-up rate** (students who joined with a referral code ÷ all students) and **quiz participation rate** (students who did a lesson quiz or the money check ÷ all students). The old "KPIs and surveys" page is now **Money check results**; its KPIs, including transaction frequency, are replaced by the Dashboard.
+
+**Time in the app** (`app/shared/js/page-time.js`, approved by the team lead on 24 Nov 2026): the student app adds up how long each page is on screen and how far it's scrolled, as **anonymous daily totals** in `pageTime/{day}_{page}_{0-9}` (each total is split over 10 documents, because Firestore handles about 1 write a second per document; the daily summary adds them up). No uid, name or email is saved. Time only counts while the page is visible and the student tapped, typed or scrolled in the last 2 minutes, and one visit counts for at most 30 minutes. The rules only let students add a little to today's totals for a known page, and only HEP can read them. The Dashboard shows minutes per student per day (time ÷ students who opened the app), and per page: time, visits, time per visit, and how many visits reached 25%, half, 75% and the end. The privacy notice says so ("How the app is used").
+
+**Reports for PayNet:** on the Dashboard, **Excel report** downloads one sheet per area: KPIs, students, merchants and commerce, initiatives, and the daily trend. It holds counts only, with no names, emails or matric numbers. **Print or save as PDF** prints just the report, without the menu or buttons.
+
+**Initiatives** (admin site) gives each KOL, event or campaign a tracking link and QR code (`addonz.my/?src=<code>`), defined in `app/shared/js/initiatives.js`:
+- **Instagram, TikTok and other in-app browsers:** Google blocks sign-in there, so the app asks students to open +Onz in Chrome or Safari. That link carries the tracking code, so the KOL is still credited.
+- **How it counts:** the app remembers the first link a student opens for 30 days, and saves the code when they sign up. The sign-up form also asks an optional "How did you hear about +Onz?".
+- **What the page shows:** sign-ups through each link, how many of them became active, daily sign-ups before and after the start (against the 14 days before), and a KOL ranking.
+- **What's stored:** only counts appear on the page, and changes are recorded in the Activity log.
+- **Archive, never delete:** an initiative that's finished is archived (and can be restored). Its link keeps working and its sign-ups stay in the KOL ranking and reports. The rules refuse deletes, and archiving needs an Activity log entry.
+
+Set-up, including Cloud Scheduler and the backfill, is in [docs/DEPLOY.md](docs/DEPLOY.md#hep-dashboard-summaries-once-per-project).
+
+**More than one sign-in email** (`app/shared/js/link-email.js`, `functions/email-alias.js`): each matric number has one account, so a student who signed up with a personal Gmail can add their siswa email (or another Google account, up to 4) under **Me > Sign-in emails**. Either email then opens the same account.
+- **Why a server list, not Firebase linking:** Firebase allows only one Google account per sign-in. So the student proves they own the other email in a separate Google window, and the server saves it in `emailAliases` (the app can't read or write it) and copies it to the profile as `linkedEmails`, so HEP can search Students by either email.
+- **Signing in with it:** that sign-in has no profile, so the app asks the server, which hands back a one-time sign-in for the real account (like the iPhone hand-off). It only ever leads to a student account, and never takes over an email that has its own +Onz account.
+- **Removing:** students can remove an added email on the same card. Deleting an account frees its emails.
+
+**Deleting accounts** (`functions/account.js`):
+- **Students** delete their own account under **Me > Delete my account**. Their personal data goes straight away, and HEP sees an anonymous note in **Account closures**.
+- **HEP deletes a student** from the **Students** page (**Delete account**), typing the student's matric number to confirm. Useful for a duplicate made with the wrong email.
+- **Businesses** send a closing request instead. HEP settles their vouchers and PayNet listing, then clicks **Delete account** on the request in **Account closures**. Vouchers, claims and visits are kept, and so is the merchant assessment (it counts toward a KPI) but without the business and owner's names and WhatsApp number; the profile, listing, deals and sign-in go.
+- **How it's checked:** the dashboard writes `accountDeletions/{id}` with its Activity log entry. The rules only accept it from an admin signed in within 12 hours, never for an admin's own profile, with the right matric number for a student, and with an open closing request for a business. The server trigger `hepAccountDeletion` then carries it out and saves the result, which the dashboard waits for.
+- **Sign-up wording:** the profile form asks students to use the email they'll keep, and offers **I already have an account with another email**.
+- **Already signed in with the wrong email:** that button, or a "matric already has an account" error, removes the new, empty sign-in (only if it has no profile) so the student can sign in with their first email and add this one.
+- **iPhone home-screen app:** adding an email needs Google's pop-up window, so the app asks the student to do it in Safari or Chrome.
+
 ### HEP admin safety
 - **Sign-out after 30 idle minutes.** The HEP dashboard signs out after 30 minutes with no clicks, typing or scrolling in any of its tabs, so a shared office computer isn't left open.
 - **Big changes need a recent sign-in.** `firestore.rules` refuses changes to who can use the app, feature switches, points rules, the activation fund, rewards, blocks, point adjustments, matric releases, merchant reviews and welfare reviews unless the admin signed in within the last 12 hours. The dashboard signs the admin out just before that, so they simply sign in again.

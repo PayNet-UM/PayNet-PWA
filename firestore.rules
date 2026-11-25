@@ -10,6 +10,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Sign-in hand-off codes for the iPhone home-screen app: server only (functions/handoff.js).
     match /handoffs/{id} { allow read, write: if false; }
+    // Extra sign-in emails (Me > Sign-in emails): only the server reads and writes them (functions/email-alias.js).
+    match /emailAliases/{email} { allow read, write: if false; }
 
 
     // ---------- identity ----------
@@ -76,7 +78,8 @@ service cloud.firestore {
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
-                          'event', 'event-delete', 'event-review']
+                          'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures',
+                          'initiative', 'initiative-delete', 'initiative-archive', 'initiative-restore', 'delete-account']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
       allow update, delete: if false;
@@ -140,8 +143,13 @@ service cloud.firestore {
       allow read: if signedIn() && (uid() == u || isMpp());
       allow create: if verified() && uid() == u
         && D().keys().hasOnly(['role', 'name', 'email', 'matric', 'college', 'faculty', 'points', 'lastTx',
-                               'referralCode', 'goalCents', 'createdAt', 'termsVersion', 'termsAcceptedAt'])
+                               'referralCode', 'goalCents', 'createdAt', 'termsVersion', 'termsAcceptedAt',
+                               'source', 'heardFrom', 'heardFromOther'])
         && termsOk()
+        // How the student found +Onz (Initiatives): a tracking-link code and an optional answer, both short and fixed-format.
+        && (!('source' in D()) || (D().source is string && D().source.matches('^[a-z0-9-]{2,30}$')))
+        && (!('heardFrom' in D()) || D().heardFrom in ['instagram', 'tiktok', 'friend', 'event', 'kol', 'hep', 'other'])
+        && (!('heardFromOther' in D()) || (D().heardFromOther is string && D().heardFromOther.size() <= 60))
         && D().points == 0 && D().lastTx == '' && D().email == email()
         && D().createdAt == request.time && D().name is string && D().name.size() > 1 && D().name.size() <= 100
         && ((D().role == 'merchant' && featureOn('merchantSignup') && D().get('matric', '') == '') || (D().role == 'student' && studentEmailAllowed()
@@ -355,6 +363,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function dealFieldsOk() {
+      return D().title is string && D().title.size() >= 3 && D().title.size() <= 60
+        && D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160
+        && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
+        && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+    }
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status in ['approved', 'published'] || resource.data.merchantId == uid() || isMpp());
       allow create: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'published'
@@ -364,8 +378,13 @@ service cloud.firestore {
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
         && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
+      // Removing keeps the deal (past claims and reports point to it) but switches it off for good.
       allow update: if (isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && resource.data.merchantId == uid()
-          && (changed().hasOnly(['enabled']) || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')))
+          && resource.data.get('removed', false) != true
+          && (changed().hasOnly(['enabled'])
+            || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')
+            || (changed().hasOnly(['title', 'benefit', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
+            || (changed().hasOnly(['removed', 'enabled', 'removedAt']) && D().removed == true && D().enabled == false && D().removedAt == request.time)))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 
@@ -447,6 +466,45 @@ service cloud.firestore {
     }
     // Referral leaderboard: the 10 students whose codes were used most. Written only by the server
     // (functions/referrals.js); everyone signed in can see it.
+    // Initiatives and KOL tracking links: HEP only, and every change is logged. They're archived, never deleted, so a
+    // KOL's sign-up history stays for the ranking and reports, and nothing disappears without an Activity log entry.
+    match /initiatives/{code} {
+      allow read: if isMpp();
+      allow create, update: if adminChange() && code.matches('^[a-z0-9-]{2,30}$') && D().code == code
+        && D().name is string && D().name.size() > 1 && D().name.size() <= 80
+        && (!('archived' in D()) || D().archived is bool)
+        && loggedBy(D().get('logId', null));
+      allow delete: if false;
+    }
+    // HEP Dashboard daily summaries: counts only, written by the server (functions/daily-stats-load.js).
+    // Time on each page, as anonymous daily totals (app/shared/js/page-time.js; privacy notice "How the app is used").
+    // Students only ever add a little to today's totals for a known page; nothing names who added it. Only HEP reads it.
+    function pageTimeFields() { return ['day', 'page', 'ms', 'views', 'r25', 'r50', 'r75', 'r100']; }
+    function pageTimeDoc(id) {
+      return D().keys().hasOnly(pageTimeFields()) && D().keys().hasAll(pageTimeFields())
+        && D().day == dayKey(request.time) && D().page in ['home', 'explore', 'merchant', 'rewards', 'feskum', 'events', 'bayar', 'learn', 'survey', 'community', 'leagues', 'avatar', 'me', 'feedback', 'delete-account', 'points', 'about', 'contact', 'other']
+        && id.matches(D().day + '_' + D().page + '_[0-9]'); // 10 shards per page per day (page-time.js SHARDS)
+    }
+    // A save adds between 0 and max (10 minutes of time, 30 visits) to one total.
+    function addsUpTo(f, base, max) { return D()[f] is int && D()[f] >= base && D()[f] - base <= max; }
+    function pageTimeAdds(m) {
+      return addsUpTo('ms', m.ms, 600000) && addsUpTo('views', m.views, 30)
+        && addsUpTo('r25', m.r25, 30) && addsUpTo('r50', m.r50, 30) && addsUpTo('r75', m.r75, 30) && addsUpTo('r100', m.r100, 30);
+    }
+    function pageTimeFirst() {
+      return addsUpTo('ms', 0, 600000) && addsUpTo('views', 0, 30)
+        && addsUpTo('r25', 0, 30) && addsUpTo('r50', 0, 30) && addsUpTo('r75', 0, 30) && addsUpTo('r100', 0, 30);
+    }
+    match /pageTime/{id} {
+      allow read: if isMpp();
+      allow create: if isStudent() && pageTimeDoc(id) && pageTimeFirst();
+      allow update: if isStudent() && pageTimeDoc(id) && changed().hasOnly(['ms', 'views', 'r25', 'r50', 'r75', 'r100']) && pageTimeAdds(resource.data);
+      allow delete: if false;
+    }
+    match /dailyStats/{day} {
+      allow read: if isMpp();
+      allow write: if false;
+    }
     match /stats/referrals {
       allow read: if signedIn();
       allow write: if false;
@@ -488,6 +546,31 @@ service cloud.firestore {
       allow update: if isMpp() && changed().hasOnly(['status', 'reply', 'repliedBy', 'repliedAt'])
         && D().status in ['replied', 'done'] && D().repliedBy == email() && D().repliedAt == request.time
         && (D().status != 'replied' || (D().reply is string && D().reply.size() >= 2 && D().reply.size() <= 1000));
+      allow delete: if false;
+    }
+
+    // Voucher program: a verified merchant applies to offer a voucher. One application per merchant (the ID is the
+    // merchant). They can send it again while it's waiting or after a decline, but not once it's approved.
+    // Only the merchant and HEP can read it; only HEP can approve or decline.
+    function voucherApplicationOk() {
+      return isVerifiedMerchant() && D().keys().hasOnly(['merchantId', 'merchantName', 'offer', 'valueCents', 'perMonth', 'conditions',
+          'contactName', 'contactPhone', 'status', 'submittedAt'])
+        && D().merchantId == uid() && D().merchantName == get(/databases/$(database)/documents/merchants/$(uid())).data.name
+        && D().offer is string && D().offer.size() >= 3 && D().offer.size() <= 160
+        && D().valueCents is int && D().valueCents >= 50 && D().valueCents <= 100000
+        && D().perMonth is int && D().perMonth >= 1 && D().perMonth <= 10000
+        && D().conditions is string && D().conditions.size() <= 500
+        && D().contactName is string && D().contactName.size() >= 2 && D().contactName.size() <= 80
+        && D().contactPhone is string && D().contactPhone.size() >= 8 && D().contactPhone.size() <= 20
+        && D().status == 'pending' && D().submittedAt == request.time;
+    }
+    match /voucherApplications/{m} {
+      allow read: if signedIn() && (m == uid() || isMpp());
+      allow create: if m == uid() && voucherApplicationOk();
+      allow update: if (m == uid() && resource.data.status in ['pending', 'declined'] && voucherApplicationOk())
+        || (isMpp() && changed().hasOnly(['status', 'reviewNote', 'reviewedBy', 'reviewedAt'])
+          && D().status in ['approved', 'declined'] && D().reviewedBy == email() && D().reviewedAt == request.time
+          && D().reviewNote is string && D().reviewNote.size() <= 500);
       allow delete: if false;
     }
 
@@ -547,6 +630,24 @@ service cloud.firestore {
 
     // "Delete my account" notes for HEP: written only by the server (functions/account.js). Students' notes are
     // anonymous; businesses' closing requests name the business so HEP can close it.
+    // HEP deletes an account: the dashboard writes this request with its activity-log entry, and a server trigger
+    // (hepAccountDeletion) carries it out and saves the result. Never an admin's own account or another admin's.
+    function closingRequest(u) { return 'request_' + u; }
+    match /accountDeletions/{id} {
+      allow read: if isMpp();
+      allow create: if adminChange() && loggedBy(D().logId)
+        && D().keys().hasOnly(['uid', 'role', 'by', 'at', 'logId', 'status', 'confirm'])
+        && D().by == email() && D().at == request.time && D().status == 'pending'
+        && D().uid is string && D().uid != uid()
+        && exists(/databases/$(database)/documents/users/$(D().uid))
+        && D().role == userDoc(D().uid).role
+        && !(userDoc(D().uid).get('email', '') in access().mppEmails) && !(userDoc(D().uid).get('email', '') in bootstrapAdmins())
+        && D().confirm is string
+        && ((D().role == 'student' && D().confirm.size() > 0 && D().confirm == userDoc(D().uid).get('matric', ''))
+          || (D().role == 'merchant' && exists(/databases/$(database)/documents/accountClosures/$(closingRequest(D().uid)))));
+      allow update, delete: if false;
+    }
+
     match /accountClosures/{id} {
       allow read: if isMpp();
       allow update: if isMpp() && changed().hasOnly(['seen', 'status', 'handledBy', 'handledAt'])
@@ -562,24 +663,31 @@ service cloud.firestore {
         && D().knowledge is int && D().digital is int && D().at == request.time;
     }
 
-    // Stall survey (app/shared/js/stall-survey.js): merchants answer about their own stall; only they and the Admin
+    // Merchant assessment, the "stall survey" (app/shared/js/stall-survey.js): merchants answer about their own business; only they and the Admin
     // team can read it (it may hold a WhatsApp number). Nobody else can write it, and it can't be deleted from the app.
+    function otherText(k) { return !(k in D().answers) || (D().answers[k] is string && D().answers[k].size() <= 120); }
     match /stallSurveys/{u} {
       allow read: if signedIn() && (uid() == u || isMpp());
       allow create, update: if isMerchantRole() && uid() == u
         && D().keys().hasOnly(['v', 'lang', 'answers', 'stallType', 'at'])
-        && D().v == 1 && D().lang in ['en', 'ms'] && D().at == request.time
+        && D().v == 2 && D().lang in ['en', 'ms'] && D().at == request.time
         && D().stallType in ['cash', 'personalQr', 'businessQr', 'card']
-        && D().answers is map && D().answers.size() <= 25
-        && D().answers.keys().hasOnly(['area', 'areaOther', 'mid', 'peakQr', 'peakCash', 'peakCard', 'sell', 'sellOther', 'customers', 'style',
-          'payments', 'bank', 'bankOther', 'barriers', 'help', 'helpOther', 'trade', 'listing', 'bankHelp', 'whatsapp'])
-        && D().answers.keys().hasAll(['area', 'sell', 'customers', 'style', 'payments', 'bank', 'barriers', 'help', 'trade', 'listing', 'bankHelp'])
-        && D().answers.style == D().stallType
-        && D().answers.payments is list && D().answers.payments.size() <= 6
-        && D().answers.barriers is list && D().answers.barriers.size() <= 7
-        && D().answers.help is list && D().answers.help.size() >= 1 && D().answers.help.size() <= 2
+        && D().answers is map && D().answers.size() <= 30
+        && D().answers.keys().hasOnly(['name', 'location', 'locationOther', 'type', 'typeOther', 'age', 'registered', 'payments', 'banks', 'banksOther',
+          'bizAccount', 'records', 'customers', 'challenges', 'challengesOther', 'financing', 'financingPurpose', 'financingPurposeOther', 'financingAmount',
+          'priorities', 'support', 'supportOther', 'listing', 'ownerName', 'whatsapp', 'consentContact', 'consentPartners'])
+        && D().answers.keys().hasAll(['name', 'location', 'type', 'age', 'registered', 'payments', 'banks', 'bizAccount', 'records', 'customers',
+          'challenges', 'financing', 'priorities', 'support', 'listing', 'ownerName', 'consentContact', 'consentPartners'])
+        && D().answers.name is string && D().answers.name.size() <= 80 && D().answers.ownerName is string && D().answers.ownerName.size() <= 80
+        && D().answers.consentContact is bool && D().answers.consentPartners is bool
+        && D().answers.payments is list && D().answers.payments.size() <= 6 && D().answers.banks is list && D().answers.banks.size() <= 11
+        && D().answers.challenges is list && D().answers.challenges.size() <= 3
+        && D().answers.priorities is list && D().answers.priorities.size() <= 2
+        && D().answers.support is list && D().answers.support.size() <= 3
         && (!('whatsapp' in D().answers) || (D().answers.whatsapp is string && D().answers.whatsapp.size() <= 20))
-        && (!('mid' in D().answers) || (D().answers.mid is string && D().answers.mid.size() <= 40));
+        // "Other" boxes: short text only (the app allows 80 characters).
+        && otherText('locationOther') && otherText('typeOther') && otherText('banksOther')
+        && otherText('challengesOther') && otherText('financingPurposeOther') && otherText('supportOther');
     }
 
     match /missionClaims/{id} {
@@ -628,6 +736,14 @@ service cloud.firestore {
 
     // ---------- HEP-only programme records ----------
     // Public events: changes need a recent sign-in, and saves must write their activity-log entry in the same batch.
+    match /eventReactions/{eventId}/votes/{studentId} {
+      allow read: if signedIn();
+      allow create, update: if isStudent() && uid() == studentId
+        && D().keys().hasOnly(['emoji']) && D().emoji in ['❤️', '🔥', '🙌']
+        && (exists(/databases/$(database)/documents/campaigns/$(eventId))
+          || eventId in ['poster-3', 'poster-4', 'poster-6', 'poster-7', 'poster-8', 'poster-10']);
+      allow delete: if isStudent() && uid() == studentId;
+    }
     match /campaigns/{id} {
       allow read: if signedIn();
       allow create, update: if adminChange() && loggedBy(D().get('logId', null));
