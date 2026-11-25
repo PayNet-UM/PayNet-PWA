@@ -512,6 +512,13 @@ const visitor = await ctx.newPage(); watch(visitor, 'tracking link'); await visi
 if (!(await visitor.evaluate(() => localStorage.getItem('onz-src') || '')).includes('jtk-roundtable')) throw new Error('the tracking code was not remembered');
 await visitor.close();
 ok('HEP created an initiative with a tracking link and QR, and opening the link remembers its code');
+await off.goto(ADMIN + '#/initiatives'); await off.waitForSelector('[data-ini-edit]');
+await off.click('[data-ini-edit]'); await off.click('#ini-archive'); await off.click('#sheet [data-yes]');
+await off.waitForSelector('.ini-archived summary', { timeout: 20000 });
+if (!/Archived \(1\)/.test(await off.textContent('.ini-archived summary'))) throw new Error('the initiative should move to Archived');
+await off.click('.ini-archived summary'); await off.click('[data-ini-restore]');
+await off.waitForFunction(() => !document.querySelector('.ini-archived') && document.querySelector('[data-ini-edit]'), null, { timeout: 20000 });
+ok('HEP archived an initiative (kept in the records) and restored it');
 await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
