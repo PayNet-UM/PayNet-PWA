@@ -3,26 +3,35 @@
 // table view. Days an older summary didn't record yet leave a gap rather than an invented line.
 // The maths (metrics, ranges, ticks, change) is plain functions, tested in tests/trends.mjs.
 
-// unit: '' count, '%' percentage, 'days'. agg: how a period is summed up for the comparison:
+// group: the Dashboard section it belongs to (the "Key metrics" picker lists them by section).
+// unit: '' count, '%' percentage, 'days', 'min'. agg: how a period is summed up for the comparison:
 //   last = the value on the period's last day (totals and rolling figures), sum = added up (per-day counts),
 //   avg = the daily average (day-to-day figures that jump around).
+const STU = 'Students and engagement', TIME = 'Time in the app', MER = 'Merchants', COM = 'Commerce', CAMP = 'Campaigns';
 export const TREND_METRICS = [
-  { id: 'students', label: 'Registered students', unit: '', agg: 'last', pick: (r) => r.students?.total },
-  { id: 'signups', label: 'New sign-ups per day', unit: '', agg: 'sum', pick: (r) => r.students?.new },
-  { id: 'opened', label: 'Students who opened the app that day', unit: '', agg: 'avg', pick: (r) => r.active?.d1?.opened },
-  { id: 'daysPerWeek', label: 'Days opened per week (average)', unit: 'days', agg: 'last', pick: (r) => r.active?.daysPerWeek },
-  { id: 'minutes', label: 'Minutes per student per day (7-day average)', unit: 'min', agg: 'last', pick: (r) => r.time?.minutesPerStudent7 },
-  { id: 'basic7', label: 'Basic Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.basic },
-  { id: 'engaged7', label: 'Engaged Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.engaged },
-  { id: 'activation', label: 'Student activation (ever)', unit: '', agg: 'last', pick: (r) => r.activation?.ever },
-  { id: 'repeat', label: 'Repeat participation', unit: '%', agg: 'last', pick: (r) => r.activation?.repeatRate },
-  { id: 'referralRate', label: 'Referral sign-up rate', unit: '%', agg: 'last', pick: (r) => r.rates?.referral },
-  { id: 'quizRate', label: 'Quiz participation rate', unit: '%', agg: 'last', pick: (r) => r.rates?.quiz },
-  { id: 'vouchers', label: 'Vouchers claimed (total)', unit: '', agg: 'last', pick: (r) => r.commerce?.vouchersIssued },
-  { id: 'dealClaims', label: 'Live-deal QR claims (total)', unit: '', agg: 'last', pick: (r) => r.commerce?.dealClaims },
-  { id: 'verified', label: 'Verified merchants', unit: '', agg: 'last', pick: (r) => r.merchants?.verified },
-  { id: 'assessed', label: 'Merchants assessed', unit: '', agg: 'last', pick: (r) => r.merchants?.assessed },
+  { id: 'students', group: STU, label: 'Registered students', unit: '', agg: 'last', pick: (r) => r.students?.total },
+  { id: 'signups', group: STU, label: 'New sign-ups per day', unit: '', agg: 'sum', pick: (r) => r.students?.new },
+  { id: 'opened', group: STU, label: 'Students who opened the app that day', unit: '', agg: 'avg', pick: (r) => r.active?.d1?.opened },
+  { id: 'daysPerWeek', group: STU, label: 'Days opened per week (average)', unit: 'days', agg: 'last', pick: (r) => r.active?.daysPerWeek },
+  { id: 'stickiness', group: STU, label: 'Daily vs monthly opens', unit: '%', agg: 'last', pick: (r) => r.active?.stickiness },
+  { id: 'basic7', group: STU, label: 'Basic Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.basic },
+  { id: 'engaged7', group: STU, label: 'Engaged Active Users, last 7 days', unit: '', agg: 'last', pick: (r) => r.active?.d7?.engaged },
+  { id: 'activation', group: STU, label: 'Student activation (ever)', unit: '', agg: 'last', pick: (r) => r.activation?.ever },
+  { id: 'repeat', group: STU, label: 'Repeat participation', unit: '%', agg: 'last', pick: (r) => r.activation?.repeatRate },
+  { id: 'quizRate', group: STU, label: 'Quiz participation rate', unit: '%', agg: 'last', pick: (r) => r.rates?.quiz },
+  { id: 'minutes', group: TIME, label: 'Minutes per student per day (7-day average)', unit: 'min', agg: 'last', pick: (r) => r.time?.minutesPerStudent7 },
+  { id: 'merchants', group: MER, label: 'Merchants onboarded', unit: '', agg: 'last', pick: (r) => r.merchants?.total },
+  { id: 'verified', group: MER, label: 'Verified merchants', unit: '', agg: 'last', pick: (r) => r.merchants?.verified },
+  { id: 'assessed', group: MER, label: 'Merchants assessed', unit: '', agg: 'last', pick: (r) => r.merchants?.assessed },
+  { id: 'vouchers', group: COM, label: 'Vouchers claimed (total)', unit: '', agg: 'last', pick: (r) => r.commerce?.vouchersIssued },
+  { id: 'vouchersUsed', group: COM, label: 'Vouchers used (total)', unit: '', agg: 'last', pick: (r) => r.commerce?.vouchersUsed },
+  { id: 'dealClaims', group: CAMP, label: 'Live-deal QR claims (total)', unit: '', agg: 'last', pick: (r) => r.commerce?.dealClaims },
+  { id: 'referrals', group: CAMP, label: 'Referral sign-ups (total)', unit: '', agg: 'last', pick: (r) => r.community?.referrals },
+  { id: 'referralRate', group: CAMP, label: 'Referral sign-up rate', unit: '%', agg: 'last', pick: (r) => r.rates?.referral },
+  { id: 'events', group: CAMP, label: 'Event submissions (total)', unit: '', agg: 'last', pick: (r) => r.community?.eventSubmissions },
+  { id: 'friends', group: CAMP, label: 'Friend connections (total)', unit: '', agg: 'last', pick: (r) => r.community?.friendships },
 ];
+export const TREND_GROUPS = [STU, TIME, MER, COM, CAMP];
 export const TREND_RANGES = [['30', 'Last 30 days'], ['90', 'Last 90 days'], ['programme', 'Programme to date'], ['all', 'All time']];
 
 const DAY_MS = 86400000;
@@ -86,11 +95,11 @@ const fmtTick = (v, unit) => (unit === '%' ? `${v}%` : v >= 10000 ? `${Math.roun
 const shortDate = (day) => new Date(day + 'T00:00:00Z').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 // Draws the chart into `host` (an element), sized to its width. Returns nothing; call again to redraw.
-export function drawTrend(host, pts, metric) {
-  const W = Math.max(280, host.clientWidth || 640), H = W < 480 ? 200 : 240;
+export function drawTrend(host, pts, metric, { compact = false } = {}) {
+  const W = Math.max(compact ? 200 : 280, host.clientWidth || 640), H = compact ? 120 : W < 480 ? 200 : 240;
   const pad = { l: metric.unit === '%' ? 44 : 48, r: 16, t: 14, b: 28 };
   const vals = pts.map((p) => p.value).filter((v) => v != null);
-  const ticks = niceTicks(Math.max(...vals, metric.unit === '%' ? 10 : 1));
+  const ticks = niceTicks(Math.max(...vals, metric.unit === '%' ? 10 : 1), compact ? 2 : 4);
   const top = ticks[ticks.length - 1] || 1;
   const x = (i) => pad.l + (pts.length < 2 ? (W - pad.l - pad.r) / 2 : (i / (pts.length - 1)) * (W - pad.l - pad.r));
   const y = (v) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
@@ -98,7 +107,7 @@ export function drawTrend(host, pts, metric) {
   const runs = []; let cur = [];
   pts.forEach((p, i) => { if (p.value == null) { if (cur.length) runs.push(cur); cur = []; } else cur.push([x(i), y(p.value)]); });
   if (cur.length) runs.push(cur);
-  const xTickIdx = pts.length <= 1 ? [0] : [...new Set([0, Math.round((pts.length - 1) / 3), Math.round((2 * (pts.length - 1)) / 3), pts.length - 1])];
+  const xTickIdx = pts.length <= 1 ? [0] : compact ? [0, pts.length - 1] : [...new Set([0, Math.round((pts.length - 1) / 3), Math.round((2 * (pts.length - 1)) / 3), pts.length - 1])];
   const lastIdx = pts.map((p) => p.value != null).lastIndexOf(true);
   const svg = `<svg class="trend-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${metric.label} over time">
     ${ticks.map((t) => `<line class="trend-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(t)}" y2="${y(t)}"/><text class="trend-axis" x="${pad.l - 8}" y="${y(t) + 4}" text-anchor="end">${fmtTick(t, metric.unit)}</text>`).join('')}

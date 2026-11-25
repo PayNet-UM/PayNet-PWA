@@ -133,6 +133,8 @@ await test('a business erase keeps the records students and HEP need', () => {
   const queried = plan.queries.map((q) => q.collection);
   for (const keep of ['vouchers', 'liveDealClaims', 'visits']) assert.ok(!queried.includes(keep), keep + ' should be kept');
   assert.ok(!plan.docs.some((p) => p.startsWith('stallSurveys/')), 'the merchant assessment counts toward a KPI');
+  // ...but the owner's personal details in it are removed (PDPA).
+  assert.deepEqual(plan.clears, [{ path: 'stallSurveys/shop1', fields: ['answers.name', 'answers.ownerName', 'answers.whatsapp'] }]);
 });
 await test('a changed account type, an admin profile or a missing uid is not deleted', async () => {
   const { deps, s } = adminSetup();

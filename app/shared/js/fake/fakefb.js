@@ -91,6 +91,9 @@ function runDemoDeletions(docs, writes) {
       if (prof.matric) docs.delete('matrics/' + prof.matric);
       if (prof.referralCode) docs.delete('referralCodes/' + prof.referralCode);
       if (prof.username) docs.delete('usernames/' + prof.username);
+      // The merchant assessment stays (it counts toward a KPI) without the owner's details, like the server.
+      const assessment = docs.get('stallSurveys/' + uid);
+      if (assessment?.answers) { const { name, ownerName, whatsapp, ...rest } = assessment.answers; docs.set('stallSurveys/' + uid, { ...assessment, answers: rest }); }
       const req = docs.get('accountClosures/request_' + uid);
       if (req) docs.set('accountClosures/request_' + uid, { ...req, status: 'done', seen: true, handledBy: d.by, handledAt: d.at });
       if (d.role === 'student') docs.set('accountClosures/hep_' + randomId(12), { kind: 'deleted', role: 'student', reasons: [], comment: '', byAdmin: d.by,

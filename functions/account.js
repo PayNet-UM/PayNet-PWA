@@ -111,13 +111,17 @@ export async function closeAccount(deps, { idToken, reasons, comment }) {
 // the activity-log entry, the typed matric number (students) and the open closing request (businesses).
 // The server trigger then calls adminDelete.
 
-// What to remove for a business. Records students and HEP still need (vouchers, live-deal claims, visits) are kept, and
-// so is the merchant assessment (stallSurveys), which counts toward the "Merchants mapped" KPI and holds no name.
+// What to remove for a business. Records students and HEP still need (vouchers, live-deal claims, visits) are kept.
+// The merchant assessment (stallSurveys) is kept too, because it counts toward the "Merchants mapped" KPI, but its
+// personal details are removed: the business and owner's names and the WhatsApp number (PDPA).
+export const ASSESSMENT_PERSONAL = ['answers.name', 'answers.ownerName', 'answers.whatsapp'];
 export function merchantErasePlan(uid) {
   return {
     docs: [`merchants/${uid}`, `merchantPrivate/${uid}`, `voucherApplications/${uid}`, `presence/${uid}`],
     trees: [`users/${uid}`],
     prefixes: [],
+    // Fields removed from documents that are otherwise kept (only if the document exists).
+    clears: [{ path: `stallSurveys/${uid}`, fields: ASSESSMENT_PERSONAL }],
     queries: [
       { collection: 'deals', field: 'merchantId', action: 'delete' },
       { collection: 'offers', field: 'merchantId', action: 'delete' },

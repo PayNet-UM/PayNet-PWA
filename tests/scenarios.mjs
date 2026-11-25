@@ -891,6 +891,15 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('students can’t read the totals', () => stuA.sdk.getDoc(ptRef(stuA, 'about')));
   await denied('nobody can delete the totals', () => mpp.sdk.deleteDoc(ptRef(mpp, 'about')));
 
+  log('Merchant assessment answers');
+  const assessment = { name: 'Kopi Kolej', location: 'KK3', type: 'coffee', age: '1to3y', registered: 'no', payments: ['cash', 'personalQr'], banks: ['maybank', 'tng'],
+    bizAccount: 'personal', records: 'manual', customers: '50to100', challenges: ['traffic', 'cashflow'], financing: 'looking', financingPurpose: ['working'], financingAmount: 'u5k',
+    priorities: ['sales', 'digital'], support: ['qr', 'bookkeeping', 'financing'], listing: 'yes', ownerName: 'Hafiz Rahman', whatsapp: '012-345 6789', consentContact: true, consentPartners: true };
+  await ok('a business saves its merchant assessment', () => D.submitStallSurvey(merch, { ...assessment, type: 'other', typeOther: 'Kopi and kuih stall' }));
+  const rawAssessment = (answers) => merch.sdk.setDoc(merch.sdk.doc(merch.db, 'stallSurveys', merch.uid), { v: 2, lang: 'en', answers, stallType: 'personalQr', at: merch.sdk.serverTimestamp() });
+  await denied('a very long "Other" answer is refused, even sent straight to the database', () => rawAssessment({ ...assessment, type: 'other', typeOther: 'x'.repeat(500) }));
+  await denied('an "Other" answer must be text', () => rawAssessment({ ...assessment, location: 'other', locationOther: { html: '<b>' } }));
+
   log('Initiatives and KOL tracking');
   const tracked = await makeCtx({ uid: 'trk1', email: 'tracked@siswa.um.edu.my' });
   await ok('a sign-up saves its tracking code and "how did you hear" answer', async () => {
