@@ -3024,6 +3024,23 @@ How students and merchants did on the money check. Programme KPIs, targets and t
 Students who did the money check|Pelajar yang membuat semakan kewangan
 Average knowledge score|Purata skor pengetahuan
 Results by grade|Keputusan mengikut gred
+↑ Top|↑ Atas
+Back to the top of the page|Kembali ke bahagian atas halaman
+Key metrics|Metrik utama
+Your picks, side by side over the same dates (up to 6). Saved on this computer; Copy link shares this view.|Pilihan anda, bersebelahan untuk tarikh yang sama (sehingga 6). Disimpan pada komputer ini; Salin pautan untuk berkongsi paparan ini.
+Pick metrics|Pilih metrik
+Pick your key metrics|Pilih metrik utama anda
+Tick up to 6. They show side by side at the top of the Dashboard.|Tandakan sehingga 6. Ia dipaparkan bersebelahan di bahagian atas Papan Pemuka.
+Show these|Papar ini
+Back to the usual four|Kembali kepada empat biasa
+No metrics picked. Use Pick metrics to choose up to 6.|Tiada metrik dipilih. Guna Pilih metrik untuk memilih sehingga 6.
+Link copied. It opens the Dashboard with these metrics.|Pautan disalin. Ia membuka Papan Pemuka dengan metrik ini.
+Jump to section|Lompat ke bahagian
+Dashboard sections|Bahagian Papan Pemuka
+Vouchers used (total)|Baucar digunakan (jumlah)
+Referral sign-ups (total)|Pendaftaran rujukan (jumlah)
+Event submissions (total)|Acara dihantar (jumlah)
+Friend connections (total)|Hubungan rakan (jumlah)
 Time in the app|Masa dalam aplikasi
 Anonymous totals: only time while a page is on screen and the student was active in the last 2 minutes. No names or accounts.|Jumlah tanpa nama: hanya masa ketika halaman dipaparkan dan pelajar aktif dalam 2 minit terakhir. Tiada nama atau akaun.
 Minutes per student per day|Minit setiap pelajar sehari

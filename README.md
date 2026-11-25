@@ -145,6 +145,10 @@ The active-user tiers:
 
 HEP edits the targets and the period with **Edit targets**, and adds numbers the app can't see (stalls surveyed outside the app, outside reach, end-of-campaign retention) with **Enter figures**. Both are recorded in the Activity log.
 
+**Getting around the Dashboard** (team request, 25 Nov 2026):
+- **Jump to section:** a bar that stays at the top while scrolling (a dropdown on phones) and highlights the section you're in.
+- **Key metrics** (`app/shared/js/dash-compare.js`): **Pick metrics** to show up to 6 side by side over the same dates. Each card shows the number, its change against the previous period and a small chart. The 9 KPIs can be picked too, shown against their target with status. A caption with the dates and last update travels with a screenshot into slides. The choice is saved on that computer. **Copy link** shares the same view (`#/dashboard/compare/<metrics>/<period>`), and the picked metrics are added to the Excel report as a "Key metrics" sheet.
+
 **Trends** (top of the Dashboard, `app/shared/js/trend-chart.js`): pick a number (sign-ups, active users, days opened per week, referral sign-up rate, quiz participation rate and more) and a period (30 or 90 days, programme to date, all time) to see it day by day, with a hover tooltip, a "vs the previous period" change and a table view. Days from before a number was recorded show as a gap until the backfill is re-run.
 
 **New rates** (`app/shared/js/daily-stats.js`): **days opened per week** (average days in the last 7 that a student opened the app, among those who opened it), **referral sign-up rate** (students who joined with a referral code ÷ all students) and **quiz participation rate** (students who did a lesson quiz or the money check ÷ all students). The old "KPIs and surveys" page is now **Money check results**; its KPIs, including transaction frequency, are replaced by the Dashboard.
