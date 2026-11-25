@@ -38,7 +38,7 @@ const section = (title, intro, body) => `<section class="card pad-lg dash-sectio
 const SECTIONS = ['Key metrics', 'Trends', '1. Students and engagement', 'Time in the app', '2. Merchants', '3. Commerce and transactions', '4. Campaigns', '5. Impact', '6. KPI tracking'];
 function jumpHTML() {
   return `<nav class="dash-jump no-print" aria-label="Dashboard sections">
-    <div class="dash-jump-chips">${SECTIONS.map((t) => `<button type="button" class="dash-jump-chip" data-jump="${sectionId(t)}">${esc(t)}</button>`).join('')}</div>
+    <button type="button" class="dash-jump-top" data-jump="top" aria-label="Back to the top of the page">↑ Top</button>
     <label class="dash-jump-select"><span class="sr">Jump to section</span><select id="dash-jump">${SECTIONS.map((t) => `<option value="${sectionId(t)}">${esc(t)}</option>`).join('')}</select></label>
   </nav>`;
 }
@@ -235,7 +235,7 @@ function pickSheet(onSaved) {
 // ------------------------------------------------------------- Jump to section (sticky, highlights where you are)
 function mountJump(root) {
   const nav = $('.dash-jump', root); if (!nav) return () => {};
-  const select = $('#dash-jump', nav), chips = $$('[data-jump]', nav), row = $('.dash-jump-chips', nav);
+  const select = $('#dash-jump', nav), top = $('[data-jump="top"]', nav);
   let lock = '', lockUntil = 0; // while a jump scrolls the page, keep the chosen section highlighted
   const targets = SECTIONS.map((t) => $('#' + sectionId(t), root)).filter(Boolean);
   // On phones the admin menu bar sticks to the top, so the jump bar sits under it.
@@ -243,19 +243,17 @@ function mountJump(root) {
   const offset = () => topBar() + nav.offsetHeight + 8;
   const place = () => { nav.style.top = topBar() + 'px'; };
   const go = (id) => {
-    const el = $('#' + id, root); if (!el) return;
     const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Back to the top: the heading, the Excel and Print buttons, and the "Behind target" flags.
+    if (id === 'top') { lock = targets[0]?.id || ''; lockUntil = Date.now() + 1500; window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' }); $('h1', root)?.focus?.({ preventScroll: true }); return; }
+    const el = $('#' + id, root); if (!el) return;
     lock = id; lockUntil = Date.now() + 1500;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset(), behavior: smooth ? 'smooth' : 'auto' });
     $('h2', el)?.focus({ preventScroll: true });
     mark(id);
   };
   const mark = (id) => {
-    chips.forEach((c) => { const on = c.dataset.jump === id; c.classList.toggle('on', on); if (on) c.setAttribute('aria-current', 'true'); else c.removeAttribute('aria-current'); });
     if (select.value !== id) select.value = id;
-    // Bring the highlighted button into view in its own row (scrollIntoView would also move, and so stop, the page).
-    const chip = chips.find((c) => c.dataset.jump === id);
-    if (chip && row.clientWidth && (chip.offsetLeft < row.scrollLeft || chip.offsetLeft + chip.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = chip.offsetLeft - 16;
   };
   let ticking = false;
   const onScroll = () => {
@@ -273,7 +271,7 @@ function mountJump(root) {
       if (current) mark(current.id);
     });
   };
-  chips.forEach((c) => { c.onclick = () => go(c.dataset.jump); });
+  top.onclick = () => go('top');
   select.onchange = () => go(select.value);
   place(); onScroll();
   const onResize = () => { place(); onScroll(); };

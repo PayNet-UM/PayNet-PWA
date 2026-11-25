@@ -475,10 +475,11 @@ if (trDays < 1) throw new Error('the table should list the days');
 if (!/Referral sign-up rate/.test(await off.textContent('#view')) || !/Days opened per week/.test(await off.textContent('#view'))) throw new Error('the new rate tiles should show');
 ok(`the Dashboard trend chart switches number and period, shows a tooltip and a table (${trDays} days), and the new rate tiles show`);
 // Team requests: jump straight to a section, and pick key metrics (including KPIs) to see side by side.
-await off.click('[data-jump="dash-6-kpi-tracking"]');
+await off.selectOption('#dash-jump', 'dash-6-kpi-tracking');
 await off.waitForFunction(() => { const r = document.querySelector('#dash-6-kpi-tracking').getBoundingClientRect(); return r.top >= 0 && r.top < 200; }, null, { timeout: 5000 });
-await off.waitForFunction(() => document.querySelector('[data-jump="dash-6-kpi-tracking"]').getAttribute('aria-current') === 'true');
-await off.click('[data-jump="dash-key-metrics"]');
+await off.waitForTimeout(1600); if (await off.inputValue('#dash-jump') !== 'dash-6-kpi-tracking') throw new Error('the dropdown should show the section you are in');
+await off.click('[data-jump="top"]'); await off.waitForFunction(() => window.scrollY < 5, null, { timeout: 5000 });
+await off.selectOption('#dash-jump', 'dash-key-metrics');
 await off.click('#cmp-pick'); await off.waitForSelector('#cmp-form');
 for (const box of await off.$$('#cmp-form input[name=m]:checked')) await box.uncheck();
 await off.check('#cmp-form input[value="kpi-reach"]'); await off.check('#cmp-form input[value="quizRate"]'); await off.check('#cmp-form input[value="minutes"]');

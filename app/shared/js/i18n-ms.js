@@ -3024,6 +3024,8 @@ How students and merchants did on the money check. Programme KPIs, targets and t
 Students who did the money check|Pelajar yang membuat semakan kewangan
 Average knowledge score|Purata skor pengetahuan
 Results by grade|Keputusan mengikut gred
+↑ Top|↑ Atas
+Back to the top of the page|Kembali ke bahagian atas halaman
 Key metrics|Metrik utama
 Your picks, side by side over the same dates (up to 6). Saved on this computer; Copy link shares this view.|Pilihan anda, bersebelahan untuk tarikh yang sama (sehingga 6). Disimpan pada komputer ini; Salin pautan untuk berkongsi paparan ini.
 Pick metrics|Pilih metrik
