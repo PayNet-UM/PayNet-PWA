@@ -2,6 +2,7 @@
 // so these tests check that the app's writes satisfy firestore.rules and that abuse is blocked.
 // Backends: the local rules evaluator (default) or the official emulator (tests/emulator.mjs).
 import * as D from '../app/shared/js/data.js';
+import {setEventReaction} from '../app/shared/js/event-reactions.js';
 import * as L from '../app/shared/js/live-deals.js';
 
 export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime = true, adminEmail = 'mpp@um.edu.my', log = console.log }) {
@@ -84,6 +85,22 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('student cannot read another student', () => D.getProfile(stuA, 'stuB'));
   await denied('student cannot read lesson answer keys', () => D.getConfig(stuA, 'lessonKeys'));
   await denied('student cannot give themselves points', () => D.updateProfile(stuA, { points: 999 }));
+
+  log('Event reactions');
+  await ok('student reacts to an event',()=>setEventReaction(stuA,'poster-3','❤️'));
+  await ok('changing a reaction keeps just one vote',async()=>{
+    await setEventReaction(stuA,'poster-3','🔥');
+    const votes=await stuA.sdk.getDocs(stuA.sdk.collection(stuA.db,'eventReactions','poster-3','votes'));
+    eq(votes.docs.length,1);eq(votes.docs[0].data().emoji,'🔥');
+  });
+  const voteRef=(ctx,uid)=>ctx.sdk.doc(ctx.db,'eventReactions','poster-3','votes',uid);
+  await denied('student cannot impersonate another reaction',()=>stuA.sdk.setDoc(voteRef(stuA,'stuB'),{emoji:'❤️'}));
+  await denied('student cannot erase another reaction',()=>stuB.sdk.deleteDoc(voteRef(stuB,'stuA')));
+  await denied('reaction emoji whitelist is enforced',()=>stuA.sdk.setDoc(voteRef(stuA,'stuA'),{emoji:'invalid'}));
+  await denied('reaction cannot carry extra fields',()=>stuA.sdk.setDoc(voteRef(stuA,'stuA'),{emoji:'❤️',points:100}));
+  await denied('merchant cannot submit student reactions',()=>setEventReaction(merch,'poster-3','❤️'));
+  await denied('unknown events reject reactions',()=>setEventReaction(stuA,'missing-event','❤️'));
+  await ok('student can remove their own reaction',()=>setEventReaction(stuA,'poster-3',null));
 
   log('Merchant onboarding');
   const qr = 'data:image/jpeg;base64,' + 'A'.repeat(2000);

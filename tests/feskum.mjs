@@ -68,7 +68,7 @@ const page = feskumRender();
 assert.ok(page.indexOf('id="kps-title"') < page.indexOf('festival-other-areas'), 'Tapak KPS must be the first section');
 assert.ok(page.includes('festival-vendor-dropdown') && page.includes('Other areas (demo)'));
 assert.equal(matchingBooths('', 'All').length, 16, 'Keep the other demo areas available');
-const event = eventCarousel({ page: true });
+const event = eventCarousel({ page: true, today: '2026-11-05' });
 assert.ok(event.includes('data-explore-stalls href="#/feskum">Explore stalls'), 'Explore stalls must open the map directly');
 assert.ok(!event.includes('>Details '));
 assert.ok(event.includes('data-poster') && event.includes('data-play'), 'Keep poster previews and slideshow controls');
