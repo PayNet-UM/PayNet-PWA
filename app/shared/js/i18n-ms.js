@@ -1,5 +1,10 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+React to event|Reaksi kepada acara
+Love|Suka
+Excited|Teruja
+Interested|Berminat
+Choose an event reaction.|Pilih reaksi kepada acara.
 Review, edit and publish events.|Semak, sunting dan terbitkan acara.
 Event gallery|Galeri acara
 New event|Acara baharu

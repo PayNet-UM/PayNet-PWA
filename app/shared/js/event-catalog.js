@@ -12,8 +12,8 @@ export const EVENT_SLIDES = [
   {page:12,title:'What is FESKUM?',tag:'Meet the festival',when:'Festival Konvokesyen Universiti Malaya',where:'Universiti Malaya',note:'Get to know the celebration behind the campus festival.'},
   {page:13,title:'Pencarian Pengacara',tag:'Poster archive',when:'Poster deadline: 15 October 2026 · 11:59 pm',where:'FESKUM 2026',note:'Recruitment has closed.'},
 ];
-// Dates are transcribed from the original FESKUM posters. Recruitment posters stay labelled as archives.
-const DATES={3:['2026-11-11','2026-11-11'],4:['2026-11-04','2026-11-14'],6:['2026-11-14','2026-11-14'],7:['2026-11-15','2026-11-16'],8:['2026-11-13','2026-11-14'],9:['2026-11-07','2026-11-07'],10:['2026-11-04','2026-11-14'],11:['2026-10-07','2026-10-07'],13:['2026-10-15','2026-10-15']};
+// Dates are transcribed from the original FESKUM posters; registration deadlines take priority.
+const DATES={3:['2026-11-11','2026-11-11'],4:['2026-11-04','2026-11-14'],6:['2026-11-14','2026-11-14'],7:['2026-11-15','2026-11-16'],8:['2026-11-13','2026-11-14'],9:['2026-11-07','2026-11-07'],10:['2026-11-01','2026-11-06'],11:['2026-10-07','2026-10-07'],13:['2026-10-15','2026-10-15']};
 const TYPES={3:'festivals',4:'bazaars',5:'festivals',6:'sports',7:'festivals',8:'other',9:'competitions',10:'music',11:'other',12:'festivals',13:'competitions'};
 const validPage=page=>EVENT_SLIDES.some(s=>s.page===page);
 const validImage=image=>typeof image==='string'&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(image);
@@ -21,7 +21,15 @@ export function eventCover(event,base=''){
   if(validImage(event.posterImage))return event.posterImage;
   return validPage(event.sourcePosterPage)&&event.useOriginalPoster!==false?base+`assets/feskum-2026/feed-${String(event.sourcePosterPage).padStart(2,'0')}.jpg`:'';
 }
-export function galleryEvents(campaigns=[],today=new Date(Date.now()+8*3600000).toISOString().slice(0,10),{includeHidden=false}={}){
+export const eventToday=()=>new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+export function eventExpired(event,today=eventToday()){
+  const deadline=event.deadline||event.end||event.start;
+  return Boolean(deadline&&deadline<today);
+}
+export function activeEventSlides(today=eventToday()){
+  return EVENT_SLIDES.filter(s=>!eventExpired({end:DATES[s.page]?.[1]},today)&&![5,9,11,12,13].includes(s.page));
+}
+export function galleryEvents(campaigns=[],today=eventToday(),{includeHidden=false,includeExpired=includeHidden}={}){
   const when=(e,fallback='Date to be announced')=>e.start?e.start+(e.end&&e.end!==e.start?' – '+e.end:'')+(e.time?' · '+e.time:''):fallback;
   const overrides=new Map(campaigns.filter(c=>validPage(c.sourcePosterPage)).map(c=>[c.sourcePosterPage,c]));
   const originals=EVENT_SLIDES.map(s=>{
@@ -30,7 +38,7 @@ export function galleryEvents(campaigns=[],today=new Date(Date.now()+8*3600000).
     return update?{...original,...update,id:original.id,recordId:update.id,edited:true,when:when(update,original.when)}:original;
   });
   const added=campaigns.filter(c=>!validPage(c.sourcePosterPage)).map(c=>({...c,id:'campaign-'+c.id,recordId:c.id,when:when(c)}));
-  return [...added,...originals].filter(e=>includeHidden||e.published!==false).map(e=>({...e,category:eventCategory(e),status:e.published===false?'Hidden':e.archive?'Poster archive':e.end&&e.end<today?'Past event':e.start&&e.start>today?'Upcoming':!e.start&&!e.end?'Date to be announced':'Happening now'})).sort((a,b)=>['Happening now','Upcoming','Past event','Poster archive','Date to be announced','Hidden'].indexOf(a.status)-['Happening now','Upcoming','Past event','Poster archive','Date to be announced','Hidden'].indexOf(b.status));
+  return [...added,...originals].filter(e=>(includeHidden||e.published!==false)&&(includeExpired||(!e.archive&&!eventExpired(e,today)))).map(e=>({...e,category:eventCategory(e),status:e.published===false?'Hidden':e.archive?'Poster archive':e.end&&e.end<today?'Past event':e.start&&e.start>today?'Upcoming':!e.start&&!e.end?'Date to be announced':'Happening now'})).sort((a,b)=>['Happening now','Upcoming','Past event','Poster archive','Date to be announced','Hidden'].indexOf(a.status)-['Happening now','Upcoming','Past event','Poster archive','Date to be announced','Hidden'].indexOf(b.status));
 }
 export function adminEventDraft(input,{allowUndated=false}={}){
   const fields={name:120,description:1500,time:80,location:160,organiser:120},draft={};

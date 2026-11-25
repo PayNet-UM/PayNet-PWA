@@ -21,3 +21,9 @@
 .event-gallery-card{position:relative}
 .event-gallery-hit{position:absolute;inset:0;z-index:1;border:0;border-radius:inherit;background:transparent;cursor:pointer;font:inherit}
 .event-gallery-hit:focus-visible{outline:3px solid #2420ff;outline-offset:-4px}
+
+.event-reactions{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px;padding:0 22px 20px;cursor:default}
+.event-reactions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:64px;padding:8px 12px;border:1px solid #dcd8ef;border-bottom-width:3px;border-radius:16px;background:#f7f5ff;color:#38336b;font:inherit;font-size:14px;cursor:pointer;transition:transform .18s,background .18s}
+.event-reactions button>span:first-child{font-size:21px;line-height:1}.event-reactions button[aria-pressed=true]{background:#f1ff8f;border-color:#a8ba27;color:#242055}.event-reactions button:focus-visible{outline:3px solid #2420ff;outline-offset:3px}.event-reactions button:disabled{opacity:.6;cursor:wait}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){.event-reactions button:hover{transform:translateY(-3px) rotate(-3deg)}}
+@media(prefers-reduced-motion:reduce){.event-reactions button{transition:none}}

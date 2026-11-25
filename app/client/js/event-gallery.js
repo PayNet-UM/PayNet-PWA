@@ -3,9 +3,11 @@ import {$,$$,esc,icon,sheet,n,toast,errText} from './ui.js';
 import {openEventSubmission,openMyEventSubmissions,eventDetailsHTML} from './event-submissions-ui.js';
 import {openEventPoster} from './event-carousel.js';
 import {EVENT_CATEGORIES,categoryLabel} from './event-categories.js';
-import {galleryEvents,eventCover} from './event-catalog.js';
+import {EVENT_REACTIONS,reactionKey,watchEventReactions,setEventReaction} from './event-reactions.js';
+import {galleryEvents,eventCover,eventToday} from './event-catalog.js';
 export {galleryEvents};
-export function eventCardsHTML(events){return events.map((c,i)=>`<article class="event-gallery-card tone-${i%4}" data-event-open="${esc(c.id)}" data-event-category="${c.category}"><button type="button" class="event-gallery-hit" aria-label="${esc(c.name)}"></button><span class="event-gallery-art">${eventCover(c)?`<img src="${esc(eventCover(c))}" alt="${esc(c.name)}" loading="lazy" draggable="false">`:`<span class="event-gallery-generated" aria-hidden="true">${icon(EVENT_CATEGORIES.find(([id])=>id===c.category)?.[2]||'calendar')}</span>`}<span class="event-gallery-status ${c.status==='Past event'||c.archive?'is-past':''}">${c.status}</span></span><div class="event-gallery-copy"><span class="event-gallery-category">${categoryLabel(c.category)}</span><h3 data-no-i18n>${esc(c.name)}</h3><span class="event-gallery-meta">${icon('calendar')}<span ${c.when==='Date to be announced'?'':'data-no-i18n'}>${esc(c.when)}</span></span><span class="event-gallery-meta">${icon('map-pin')}<span ${c.location?'data-no-i18n':''}>${esc(c.location||'Venue to be announced')}</span></span><span class="event-gallery-open">Explore event ${icon('arrow-right')}</span></div></article>`).join('');}
+function reactionsHTML(event){return `<div class="event-reactions" role="group" aria-label="React to event">${EVENT_REACTIONS.map(([emoji,label])=>`<button type="button" data-event-react="${esc(emoji)}" data-reaction-key="${esc(reactionKey(event))}" aria-label="${label}" aria-pressed="false"><span data-no-i18n>${emoji}</span><span data-reaction-count>0</span></button>`).join('')}</div>`;}
+export function eventCardsHTML(events){return events.map((c,i)=>`<article class="event-gallery-card tone-${i%4}" data-event-open="${esc(c.id)}" data-event-category="${c.category}"><button type="button" class="event-gallery-hit" aria-label="${esc(c.name)}"></button><span class="event-gallery-art">${eventCover(c)?`<img src="${esc(eventCover(c))}" alt="${esc(c.name)}" loading="lazy" draggable="false">`:`<span class="event-gallery-generated" aria-hidden="true">${icon(EVENT_CATEGORIES.find(([id])=>id===c.category)?.[2]||'calendar')}</span>`}<span class="event-gallery-status ${c.status==='Past event'||c.archive?'is-past':''}">${c.status}</span></span><div class="event-gallery-copy"><span class="event-gallery-category">${categoryLabel(c.category)}</span><h3 data-no-i18n>${esc(c.name)}</h3><span class="event-gallery-meta">${icon('calendar')}<span ${c.when==='Date to be announced'?'':'data-no-i18n'}>${esc(c.when)}</span></span><span class="event-gallery-meta">${icon('map-pin')}<span ${c.location?'data-no-i18n':''}>${esc(c.location||'Venue to be announced')}</span></span><span class="event-gallery-open">Explore event ${icon('arrow-right')}</span></div>${reactionsHTML(c)}</article>`).join('');}
 export async function eventGalleryRender(app){
   const campaigns=await D.listCampaigns(app.ctx).catch(()=>[]);
   const events=galleryEvents(campaigns);app._galleryEvents=events;
@@ -18,17 +20,43 @@ export async function eventGalleryRender(app){
     <a class="event-gallery-map" data-explore-stalls href="#/feskum">${icon('map')}<span><b>FESKUM 2026</b><small>Explore the stalls and floor map.</small></span>${icon('arrow-right')}</a></div>`;
 }
 export function eventGalleryMount(root,app){
-  let selected='all',disposed=false;
+  let selected='all',disposed=false,campaigns=[],busy=new Set(),renderedDay=eventToday();
+  const reactionStops=new Map(),reactionState=new Map();
+  const paintReactions=()=>$$('[data-event-react]',root).forEach(button=>{
+    const state=reactionState.get(button.dataset.reactionKey),emoji=button.dataset.eventReact;
+    button.setAttribute('aria-pressed',String(state?.mine===emoji));
+    button.disabled=busy.has(button.dataset.reactionKey);
+    $('[data-reaction-count]',button).textContent=n(state?.counts[emoji]||0);
+  });
+  const syncReactions=()=>{
+    const keys=new Set(app._galleryEvents.map(reactionKey));
+    for(const [key,stop]of reactionStops)if(!keys.has(key)){stop();reactionStops.delete(key);reactionState.delete(key);}
+    for(const key of keys)if(!reactionStops.has(key))reactionStops.set(key,watchEventReactions(app.ctx,key,state=>{if(disposed)return;reactionState.set(key,state);paintReactions();},error=>{if(!disposed)toast(errText(error),true);}));
+    paintReactions();
+  };
   const applyFilter=()=>{
     $$('[data-event-filter]',root).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.eventFilter===selected)));
     let count=0;$$('[data-event-category]',root).forEach(card=>{card.hidden=selected!=='all'&&card.dataset.eventCategory!==selected;if(!card.hidden)count++;});
     $('#event-gallery-count',root).innerHTML=`${n(count)} <span>${count===1?'event':'events'}</span>`;$('.event-gallery-empty',root).hidden=count>0;
   };
-  const stop=D.watchCampaigns(app.ctx,campaigns=>{
-    if(disposed)return;app._galleryEvents=galleryEvents(campaigns);
-    $('.event-gallery-grid',root).innerHTML=eventCardsHTML(app._galleryEvents);applyFilter();
-  },err=>{if(!disposed)toast(errText(err),true);});
-  const handler=e=>{
+  const refresh=()=>{
+    if(disposed)return;renderedDay=eventToday();app._galleryEvents=galleryEvents(campaigns,renderedDay);
+    $('.event-gallery-grid',root).innerHTML=eventCardsHTML(app._galleryEvents);applyFilter();syncReactions();
+  };
+  const stop=D.watchCampaigns(app.ctx,records=>{campaigns=records;refresh();},err=>{if(!disposed)toast(errText(err),true);});
+  // Re-evaluate dates when a tab stays open overnight or returns from the background.
+  const checkDate=()=>{if(eventToday()!==renderedDay)refresh();};
+  const timer=setInterval(checkDate,1000),resume=()=>{if(!document.hidden)checkDate();};
+  document.addEventListener('visibilitychange',resume);
+  const handler=async e=>{
+    const reaction=e.target.closest('[data-event-react]');
+    if(reaction){
+      const key=reaction.dataset.reactionKey;if(busy.has(key))return;
+      busy.add(key);paintReactions();
+      try{await setEventReaction(app.ctx,key,reactionState.get(key)?.mine===reaction.dataset.eventReact?null:reaction.dataset.eventReact);}
+      catch(error){toast(errText(error),true);}finally{busy.delete(key);if(!disposed)paintReactions();}
+      return;
+    }
     if(e.target.closest('[data-event-submit]'))return openEventSubmission(app);
     if(e.target.closest('[data-my-events]'))return openMyEventSubmissions(app);
     const filter=e.target.closest('[data-event-filter]');
@@ -42,5 +70,5 @@ export function eventGalleryMount(root,app){
     return sheet(eventDetailsHTML(event,{actions:true}));
 
   };
-  root.addEventListener('click',handler);return()=>{disposed=true;stop();root.removeEventListener('click',handler);};
+  root.addEventListener('click',handler);return()=>{disposed=true;stop();clearInterval(timer);document.removeEventListener('visibilitychange',resume);for(const stopReaction of reactionStops.values())stopReaction();root.removeEventListener('click',handler);};
 }

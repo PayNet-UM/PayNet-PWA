@@ -37,7 +37,7 @@ try{
   assert.ok((await published.locator('img').getAttribute('src')).startsWith('data:image/jpeg;base64,'));
   const publicEvent=await student.evaluate(async()=>{const app=window.__umc;return (await (await import('./js/data.js')).listCampaigns(app.ctx)).find(c=>c.name==='Student Robotics Showcase (demo)');});
   assert.equal('contactEmail' in publicEvent,false);assert.equal('uid' in publicEvent,false);
-  await published.locator('button').click();await student.waitForSelector('.event-proposal-details');
+  await published.locator('.event-gallery-hit').click();await student.waitForSelector('.event-proposal-details');
   assert.ok((await student.locator('.event-proposal-details').textContent()).includes('UM Robotics Society'));
   await student.screenshot({path:SHOTS+'/student-published.png',fullPage:true});await student.click('#sheet [data-close]');
   await student.click('[data-my-events]');await student.waitForFunction(()=>document.querySelector('#my-event-submissions')?.textContent.includes('Approved'));

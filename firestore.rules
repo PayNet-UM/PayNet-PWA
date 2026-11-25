@@ -730,6 +730,14 @@ service cloud.firestore {
 
     // ---------- HEP-only programme records ----------
     // Public events: changes need a recent sign-in, and saves must write their activity-log entry in the same batch.
+    match /eventReactions/{eventId}/votes/{studentId} {
+      allow read: if signedIn();
+      allow create, update: if isStudent() && uid() == studentId
+        && D().keys().hasOnly(['emoji']) && D().emoji in ['❤️', '🔥', '🙌']
+        && (exists(/databases/$(database)/documents/campaigns/$(eventId))
+          || eventId in ['poster-3', 'poster-4', 'poster-6', 'poster-7', 'poster-8', 'poster-10']);
+      allow delete: if isStudent() && uid() == studentId;
+    }
     match /campaigns/{id} {
       allow read: if signedIn();
       allow create, update: if adminChange() && loggedBy(D().get('logId', null));
