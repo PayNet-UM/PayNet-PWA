@@ -78,7 +78,7 @@ service cloud.firestore {
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
-                          'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures',
+                          'event', 'event-delete', 'event-review', 'live-deal-edit', 'kpi-targets', 'kpi-figures',
                           'initiative', 'initiative-delete', 'initiative-archive', 'initiative-restore', 'delete-account']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
@@ -363,8 +363,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function dealPosterOk() {
+      let image = D().get('posterImage', '');
+      return image is string && image.size() <= 600000
+        && (image == '' || image.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$'));
+    }
     function dealFieldsOk() {
-      return D().title is string && D().title.size() >= 3 && D().title.size() <= 60
+      return dealPosterOk() && D().title is string && D().title.size() >= 3 && D().title.size() <= 60
         && D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160
         && D().startMin is int && D().endMin is int && D().startMin >= 0 && D().endMin <= 1440 && D().startMin < D().endMin
         && D().threshold is int && D().threshold > 0 && D().threshold <= 100;
@@ -372,7 +377,7 @@ service cloud.firestore {
     match /deals/{id} {
       allow read: if signedIn() && (resource.data.status in ['approved', 'published'] || resource.data.merchantId == uid() || isMpp());
       allow create: if isVerifiedMerchant() && featureOn('merchantTools') && featureOn('dealsAndPay') && D().merchantId == uid() && D().status == 'published'
-        && D().enabled == true && D().bonus is int && D().bonus == 0
+        && dealPosterOk() && D().enabled == true && D().bonus is int && D().bonus == 0
         && D().title is string && D().title.size() >= 3 && D().title.size() <= 60
         && (!('benefit' in D()) || (D().benefit is string && D().benefit.size() >= 3 && D().benefit.size() <= 160))
         && D().limit is int && D().limit > 0 && D().minSpendCents is int
@@ -383,8 +388,11 @@ service cloud.firestore {
           && resource.data.get('removed', false) != true
           && (changed().hasOnly(['enabled'])
             || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')
-            || (changed().hasOnly(['title', 'benefit', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
+            || (changed().hasOnly(['title', 'benefit', 'posterImage', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
             || (changed().hasOnly(['removed', 'enabled', 'removedAt']) && D().removed == true && D().enabled == false && D().removedAt == request.time)))
+        || (adminChange() && resource.data.get('removed', false) != true
+          && changed().hasOnly(['title','benefit','posterImage','startMin','endMin','threshold','enabled','logId','editedAt'])
+          && dealFieldsOk() && D().enabled is bool && D().editedAt == request.time && loggedBy(D().logId))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 

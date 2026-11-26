@@ -6,6 +6,7 @@ import { INFORMATION_ROUTES, informationLinks } from '../information.js';
 import * as D from '../data.js';
 import { signInEmails, addSignInEmail, removeSignInEmail, linkErrorText } from '../link-email.js';
 import { directoryArt } from '../directory-art.js';
+import {liveDealGalleryRender,liveDealGalleryMount} from '../deal-gallery.js';
 import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
 import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
@@ -162,6 +163,7 @@ function directoryCategory(type) {
     'Student ventures': ['lightbulb', 'ventures'] })[type] || ['store', 'shops'];
 }
 async function directoryRender(app, [mode] = []) {
+  if(mode==='deals')return liveDealGalleryRender(app);
   const merchants = await D.listVerifiedMerchants(app.ctx); app._merchants = merchants;
   const types = ['All', ...new Set(merchants.map((m) => m.type)), 'Student ventures'];
   const selected = mode === 'idea' ? 'Student ventures' : 'All';
@@ -185,6 +187,7 @@ async function directoryRender(app, [mode] = []) {
   </div>`;
 }
 function directoryMount(root, app, [mode] = []) {
+  if(mode==='deals')return liveDealGalleryMount(root,app);
   let pos = null, map = null, stop = null, disposed = false, refreshing = false;
   let activeType = mode === 'idea' ? 'Student ventures' : 'All', query = '', permission = null, watchToken = 0, requested = false, centerOnFix = true;
   const focusId = mode && !['idea', 'deals', 'cafes'].includes(mode) ? mode : null;
@@ -223,7 +226,7 @@ function directoryMount(root, app, [mode] = []) {
         || (pos ? distance(a.merchant) - distance(b.merchant) : 0));
     const html = rows.map(({ deal, merchant, status: dealStatus }) => {
       const live = dealStatus === 'Available';
-      return `<article class="card checkout-deal nearby-deal ${live ? 'is-live' : ''}"><div class="checkout-deal-top"><div>
+      return `<article class="card checkout-deal nearby-deal ${live ? 'is-live' : ''}">${D.dealPosterImage(deal)?`<a href="#/claim-deal/${esc(deal.id)}" class="overview-deal-poster"><img src="${esc(D.dealPosterImage(deal))}" alt="${esc(deal.title)}" loading="lazy"></a>`:''}<div class="checkout-deal-top"><div>
         <span class="checkout-deal-status">${icon(live ? 'zap' : 'clock')} ${esc(live ? 'Live now' : dealStatus)}</span>
         <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><span class="badge ok">${icon('sparkles')} +${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span></div>
         <span class="nearby-deal-icon" aria-hidden="true">${icon('coffee')}</span></div>
