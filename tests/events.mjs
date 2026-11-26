@@ -30,3 +30,26 @@ assert.equal(galleryEvents([],'2026-11-25',{includeHidden:true}).length,11,'HEP 
 const ending=[{id:'today',start:'2026-11-24',end:'2026-11-25'},{id:'yesterday',end:'2026-11-24'},{id:'tomorrow',start:'2026-11-26',end:'2026-11-26'}];
 assert.deepEqual(galleryEvents(ending,'2026-11-25').map(e=>e.id),['campaign-today','campaign-tomorrow']);
 console.log('Event expiry: deadline precedence, inclusive MYT end dates, home posters and HEP archive retention passed.');
+
+const {calendarDays,eventsOnDate,eventsInMonth,eventArchiveEvents,shiftEventMonth}=await import(pathToFileURL(path.join(dir,'js/event-calendar.js')));
+const history=galleryEvents([{id:'hidden',name:'Private event',start:'2026-11-10',end:'2026-11-11',published:false}], '2026-11-26',{includeExpired:true});
+assert.equal(history.some(e=>e.id==='campaign-hidden'),false,'Student archives never reveal hidden events');
+assert.ok(eventArchiveEvents(history,'2026-11-26').some(e=>e.id==='poster-4'));
+assert.equal(eventsOnDate(history,'2026-11-14').filter(e=>e.id==='poster-4').length,1,'Multi-day events appear on every inclusive date');
+assert.equal(eventsOnDate(history,'2026-11-15').some(e=>e.id==='poster-4'),false);
+assert.equal(eventsOnDate(history,'2026-11-14').some(e=>e.id==='poster-5'),false,'Do not invent dates for undated posters');
+assert.ok(eventsInMonth(history,'2026-10').some(e=>e.id==='poster-11'));
+assert.equal(shiftEventMonth('2026-12',1),'2027-01');assert.equal(shiftEventMonth('2026-01',-1),'2025-12');
+assert.equal(calendarDays([],'2028-02').filter(Boolean).length,29,'Leap years');
+assert.equal(calendarDays([],'2026-11').findIndex(Boolean),6,'Calendar begins Monday');
+assert.equal(calendarDays([],'2026-11').length,42,'Six-week month fits without clipping');
+assert.ok(calendarDays(history,'2026-11').find(c=>c?.day==='2026-11-14').events.length>=3);
+console.log('Event archive/calendar: hidden-event exclusion, date spans, undated posters, month boundaries and leap years passed.');
+
+const {floorMapAvailable,feskumFloorMapAvailable}=await import(pathToFileURL(path.join(dir,'js/event-catalog.js')));
+assert.equal(floorMapAvailable({end:'2026-11-26'},'2026-11-26'),true);
+assert.equal(floorMapAvailable({end:'2026-11-26'},'2026-11-27'),false,'Future maps expire after their final MYT date');
+assert.equal(floorMapAvailable({},'2026-11-26'),false,'An undated map cannot remain open indefinitely');
+assert.equal(feskumFloorMapAvailable('2026-11-26'),false);
+
+assert.equal(floorMapAvailable({end:'2026-11-30',deadline:'2026-11-20'},'2026-11-26'),true,'Maps follow the event end, not its earlier registration deadline');

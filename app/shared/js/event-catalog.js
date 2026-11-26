@@ -26,6 +26,12 @@ export function eventExpired(event,today=eventToday()){
   const deadline=event.deadline||event.end||event.start;
   return Boolean(deadline&&deadline<today);
 }
+// Each public floor map must use the event's final scheduled date.
+export const FESKUM_FLOOR_MAP={start:'2026-11-04',end:'2026-11-16'};
+export function floorMapAvailable(event,today=eventToday()){
+  return Boolean(event?.end)&&event.published!==false&&!event.archive&&event.end>=today;
+}
+export function feskumFloorMapAvailable(today=eventToday()){return floorMapAvailable(FESKUM_FLOOR_MAP,today);}
 export function activeEventSlides(today=eventToday()){
   return EVENT_SLIDES.filter(s=>!eventExpired({end:DATES[s.page]?.[1]},today)&&![5,9,11,12,13].includes(s.page));
 }

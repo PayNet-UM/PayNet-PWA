@@ -126,6 +126,7 @@ for (const r of ['rewards', 'community', 'events', 'bayar', 'learn', 'deals', 'e
   if (await stu.$('text=This page didn’t load')) throw new Error('student page failed: ' + r);
   await stu.screenshot({ path: `${shots}/s-${r.replace('/', '-')}.png`, fullPage: true });
 }
+await stu.evaluate(()=>{window.beforeMapClock=Date.now;Date.now=()=>Date.UTC(2026,10,10,4);});
 await stu.goto(BASE + '#/events'); await stu.waitForSelector('[data-explore-stalls]');
 await stu.click('[data-explore-stalls]'); await stu.waitForSelector('[data-kps-booth]');
 if (await stu.textContent('#kps-zoom-value') !== '100%') throw new Error('The map should open with the entire site visible');
@@ -152,6 +153,7 @@ if (!/Unnumbered in source plan/.test(await stu.textContent('#festival-vendor-dr
 if (await stu.textContent('#kps-explored-count') !== '2' || await pointsOf(stu) !== pointsBeforeExploring) throw new Error('Exploring stalls must track views without awarding points');
 await stu.keyboard.press('Escape');
 if (await stu.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) throw new Error('KPS page overflows on mobile');
+await stu.evaluate(()=>{Date.now=window.beforeMapClock;delete window.beforeMapClock;});
 ok('Tapak KPS preserves allocations in the adapted layout, opens pending vendor details, supports keyboard selection and zooms without mobile overflow');
 await stu.goto(BASE + '#/learn'); await stu.waitForSelector('[data-lesson="2"]'); await stu.click('[data-lesson="2"]');
 await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#toast.show');

@@ -1,14 +1,14 @@
 import * as D from './data.js';
 import {$,$$,esc,icon,safeImg,sheet,closeSheet,busy,toast,errText,compressImage,onSheetClose} from './ui.js';
 import {EVENT_CATEGORIES,categoryLabel} from './event-categories.js';
-import {eventCover} from './event-catalog.js';
+import {eventCover,feskumFloorMapAvailable} from './event-catalog.js';
 
 export function eventDetailsHTML(event,{assetBase='',actions=false}={}){
   const cover=eventCover(event,assetBase),photos=(Array.isArray(event.photos)?event.photos:[]).filter(image=>safeImg(image));
   return `<div class="event-proposal-details">${cover?`<img class="event-proposal-poster" src="${esc(cover)}" alt="${esc(event.name)}">`:''}
-    <span class="badge">${categoryLabel(event.category)}</span><h2 data-no-i18n>${esc(event.name)}</h2>
+    <span class="badge">${categoryLabel(event.category)}</span>${event.status==='Past event'||event.archive?` <span class="badge">${event.status==='Past event'?'Ended':'Archived'}</span>`:''}<h2 data-no-i18n>${esc(event.name)}</h2>
     <dl><div><dt>Dates</dt><dd ${event.start||(event.when&&event.when!=='Date to be announced')?'data-no-i18n':''}>${event.start?esc(event.start)+(event.end&&event.end!==event.start?' – '+esc(event.end):''):esc(event.when||'Date to be announced')}</dd></div>${event.time?`<div><dt>Time</dt><dd data-no-i18n>${esc(event.time)}</dd></div>`:''}<div><dt>Venue</dt><dd ${event.location?'data-no-i18n':''}>${esc(event.location||'Venue to be announced')}</dd></div>${event.organiser?`<div><dt>Organiser</dt><dd data-no-i18n>${esc(event.organiser)}</dd></div>`:''}</dl>
-    <p class="event-proposal-description" data-no-i18n>${esc(event.description)}</p>${photos.length?`<div class="event-photo-grid">${photos.map((image,i)=>`<img src="${safeImg(image)}" alt="${esc(event.name)} — ${i+1}" loading="lazy">`).join('')}</div>`:''}${actions?`<div class="event-detail-actions">${event.sourcePosterPage?`<a class="btn primary" href="#/feskum" data-close>${icon('map')} Explore stalls</a>`:''}<a class="btn" href="#/contact/events" data-close>${icon('mail')} Ask about this event</a></div>`:''}</div>`;
+    <p class="event-proposal-description" data-no-i18n>${esc(event.description)}</p>${photos.length?`<div class="event-photo-grid">${photos.map((image,i)=>`<img src="${safeImg(image)}" alt="${esc(event.name)} — ${i+1}" loading="lazy">`).join('')}</div>`:''}${actions?`<div class="event-detail-actions">${event.sourcePosterPage&&feskumFloorMapAvailable()?`<a class="btn primary" href="#/feskum" data-close>${icon('map')} Explore stalls</a>`:''}<a class="btn" href="#/contact/events" data-close>${icon('mail')} Ask about this event</a></div>`:''}</div>`;
 }
 export function openEventSubmission(app){
   const el=sheet(`<div class="event-form-heading"><span>${icon('megaphone')}</span><div><h2>Submit an event</h2><p>HEP reviews it. Approved events appear in the gallery.</p></div></div>
