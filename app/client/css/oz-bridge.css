@@ -1,0 +1,84 @@
+/* +Onz bridge: restyles the shared pre-redesign primitives (.card, .btn, fields, badges, headings, ranked rows, chips)
+   with the Figma tokens, so every client screen reads as one system. Client only; the Admin dashboard never loads it.
+   Screen-specific redesign files (oz-home.css, oz-rewards.css, …) refine individual screens on top of this. */
+
+/* Headings and text */
+.page-title { margin:var(--oz-space-2) 0 var(--oz-space-4); }
+.page-title h1 { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); display:flex; align-items:center; gap:var(--oz-space-2); }
+.page-title h1 > .ic { display:none; }
+.page-title p, .muted { color:var(--oz-text-secondary); }
+.faint { color:var(--oz-text-secondary); }
+.section > .head h2, .community-section-heading h2, .rewards-section-heading h2 { font:700 20px/24px var(--oz-font-display); color:var(--oz-text-primary); letter-spacing:0; }
+.section > .head h2::before, .kk-pillars-title::before { content:none !important; display:none !important; }
+.back { color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); min-height:var(--oz-touch); display:inline-flex; align-items:center; }
+
+/* Cards (Elevation 1 · Card) */
+.card, .mcard, .ticket, .stat { border:1px solid var(--oz-border); border-bottom-width:1px; border-radius:var(--oz-radius-lg); background-color:var(--oz-bg-surface);
+  box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); }
+
+/* Buttons (Button 431:75): default = ghost, .primary = blue, .go = lime primary action */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-2); min-height:var(--oz-touch); padding:11px 20px;
+  border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); color:var(--oz-blue-700);
+  font:700 15px/20px var(--oz-font-ui); box-shadow:none; text-decoration:none; transform:none; }
+.btn .ic { width:18px; height:18px; }
+.btn:hover { background:var(--oz-bg-subtle); border-color:var(--oz-border); color:var(--oz-blue-700); text-decoration:none; }
+.btn:active { transform:none; box-shadow:none; }
+.btn:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.btn.primary { background:var(--oz-action-secondary); border-color:var(--oz-action-secondary); color:var(--oz-text-on-brand); box-shadow:none; }
+.btn.primary:hover { background:var(--oz-blue-600); border-color:var(--oz-blue-600); color:var(--oz-text-on-brand); }
+.btn.go { background:var(--oz-action); border-color:var(--oz-action); color:var(--oz-text-on-accent); box-shadow:none; }
+.btn.go:hover { background:var(--oz-action-pressed); border-color:var(--oz-action-pressed); color:var(--oz-text-on-accent); }
+.btn.warn, .btn.danger { background:var(--oz-danger-bg); border-color:var(--oz-danger-bg); color:var(--oz-text-danger); }
+.btn.ghost, .btn.clear { background:transparent; }
+.btn.small { min-height:40px; padding:9px 16px; font:600 14px/20px var(--oz-font-ui); }
+.btn.block { display:flex; width:100%; }
+.btn:disabled, .btn[aria-disabled="true"] { background:var(--oz-bg-subtle); border-color:var(--oz-bg-subtle); color:var(--oz-text-disabled); cursor:not-allowed; opacity:1; }
+.danger-link { color:var(--oz-text-danger); }
+
+/* Badges → Tag (431:100) */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100);
+  color:var(--oz-blue-700); font:500 12px/16px var(--oz-font-ui); box-shadow:none; }
+.badge.ok { background:var(--oz-success-bg); color:var(--oz-text-success); border:0; }
+.badge.warn { background:var(--oz-warning-bg); color:var(--oz-text-warning); }
+.badge.bad { background:var(--oz-danger-bg); color:var(--oz-text-danger); }
+
+/* Form fields (Search field 773:50 / inputs) */
+.field { color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); }
+.field input, .field select, .field textarea, input.input, select.input, textarea.input {
+  min-height:48px; padding:12px 14px; border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface);
+  color:var(--oz-text-primary); font:400 16px/24px var(--oz-font-ui); box-shadow:none; }
+.field input:focus, .field select:focus, .field textarea:focus { outline:2px solid var(--oz-focus-ring); outline-offset:0; border-color:var(--oz-focus-ring); }
+.field input::placeholder, .field textarea::placeholder { color:var(--oz-text-disabled); }
+
+/* Icon tiles → List Row leading circle */
+.tile-icon { display:grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); box-shadow:none; border:0; }
+
+/* Empty state */
+.card.empty, .empty { color:var(--oz-text-secondary); text-align:center; }
+.empty > .ic { color:var(--oz-blue-700); }
+
+/* Chips (category / filter pills): hug labels, 44px hit area, active = blue */
+.chips button { min-height:34px; padding:6px 14px; border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface);
+  color:var(--oz-text-primary); font:600 13px/18px var(--oz-font-ui); box-shadow:none; }
+.chips button.on, .chips button[aria-pressed="true"] { background:var(--oz-blue-700); border-color:var(--oz-blue-700); color:var(--oz-text-on-brand); }
+
+/* Ranked Row (431:155) */
+.lb-row { display:flex; align-items:center; gap:var(--oz-space-3); padding:var(--oz-space-3) var(--oz-space-4); border:1px solid transparent; border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-surface); color:var(--oz-text-primary); }
+.lb-row + .lb-row { margin-top:var(--oz-space-2); }
+.lb-row .rank { width:28px; flex:none; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-secondary); background:none; border:0; }
+.lb-row .name { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.lb-row .num { margin-left:auto; font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); white-space:nowrap; }
+.lb-row .num small { font:inherit; }
+.lb-row .bar { display:none; }
+.lb-row.me { background:var(--oz-lime-100); border-color:var(--oz-lime-600); }
+
+/* Skeleton loading */
+.skeleton { background:linear-gradient(90deg, var(--oz-bg-subtle), var(--oz-neutral-200), var(--oz-bg-subtle)); background-size:200% 100%; border-radius:var(--oz-radius-lg); }
+
+/* Progress bars */
+.progress { background:var(--oz-bg-subtle); border-radius:99px; }
+.progress > i { background:var(--oz-lime-500); border-radius:99px; }
+
+/* Links */
+#view a:not([class]) { color:var(--oz-blue-700); }

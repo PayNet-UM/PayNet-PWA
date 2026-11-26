@@ -1,0 +1,121 @@
+/* Community (06 · Community 441:1092, Welfare 492:7479) and Leagues (08 · Leagues · Production 696:13575, Web 934:40986). Client only.
+   Restyles the production markup; every board, form and id stays in place. */
+
+/* ---------- Community ---------- */
+.community-page { display:flex; flex-direction:column; gap:var(--oz-space-3); padding-top:var(--oz-space-2); }
+.community-page .card.friends-hero { display:flex; flex-direction:column; align-items:stretch; gap:var(--oz-space-3); padding:0; border:0; background:none; box-shadow:none; overflow:visible; }
+.community-page .friends-hero::before, .community-page .friends-hero::after { content:none; }
+.community-page .friends-player, .community-page .friends-kicker, .community-page .friends-purpose { display:none; }
+.community-page .friends-hero-copy { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); flex-wrap:wrap; }
+.community-page .friends-hero-copy h1 { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+/* Friends / Requests / Sent jump buttons → Segmented Control */
+.community-page .friends-scoreboard { display:flex; gap:4px; padding:4px; margin:0; border:0; border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); box-shadow:none; }
+.community-page .friends-scoreboard button { flex:1 1 0; min-width:0; display:inline-flex; flex-direction:row-reverse; align-items:center; justify-content:center; gap:6px;
+  min-height:36px; padding:8px 10px; border:0; border-radius:var(--oz-radius-pill); background:transparent; color:var(--oz-text-secondary); box-shadow:none;
+  font:600 14px/20px var(--oz-font-ui); cursor:pointer; }
+.community-page .friends-scoreboard button strong, .community-page .friends-scoreboard button span { font:inherit; color:inherit; }
+.community-page .friends-scoreboard button:first-child { background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:var(--oz-shadow-card); }
+.community-page .friends-scoreboard button:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+/* Shortcuts: Add friends = primary blue action, others as rows */
+.community-page .community-shortcuts { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-2); margin:0; }
+.community-page .community-shortcuts > * { display:flex; align-items:center; justify-content:center; gap:var(--oz-space-2); min-height:48px; padding:10px 14px;
+  border:0; border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); color:var(--oz-blue-700); font:700 15px/20px var(--oz-font-ui);
+  text-decoration:none; box-shadow:none; cursor:pointer; }
+.community-page .community-shortcuts > :first-child { grid-column:1 / -1; background:var(--oz-action-secondary); color:var(--oz-text-on-brand); }
+.community-page .community-shortcuts > *:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.community-page .community-shortcuts .ic { width:20px; height:20px; }
+.community-page .friends-search, .community-page .friends-claim { padding:var(--oz-space-4); }
+.community-page .friends-search h2, .community-page .friends-claim h2 { margin:0; font:600 18px/24px var(--oz-font-ui); }
+/* Leagues + Refer links → List Rows */
+.community-page .community-invite { display:flex; align-items:center; gap:var(--oz-space-3); min-height:64px; padding:var(--oz-space-3) var(--oz-space-2) var(--oz-space-3) var(--oz-space-4);
+  border:0; border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); color:var(--oz-text-primary); text-decoration:none; box-shadow:none; }
+.community-page .community-invite-icon { display:grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.community-page .community-invite > div { flex:1 1 auto; min-width:0; }
+.community-page .community-invite h3 { margin:0; font:600 16px/24px var(--oz-font-ui); }
+.community-page .community-invite p { margin:2px 0 0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.community-page .community-invite-arrow { color:var(--oz-text-primary); background:none; }
+/* Welfare fund + support */
+.community-page .community-main-grid, .community-page .community-welfare-pair { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.community-page .card.community-welfare, .community-page .card.community-support { position:relative; padding:var(--oz-space-5); border:0; border-radius:var(--oz-radius-lg);
+  background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); overflow:visible; }
+.community-page .community-heart, .community-page .community-support-icon { display:none; }
+.community-page .community-welfare h2, .community-page .community-support h2 { margin:0 0 var(--oz-space-1); font:700 20px/24px var(--oz-font-display); color:var(--oz-text-primary); }
+.community-page .community-welfare p, .community-page .community-support p { margin:0 0 var(--oz-space-3); font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.community-page .community-welfare-total { display:flex; align-items:center; gap:var(--oz-space-2); font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.community-page .community-welfare-total .ic { width:20px; height:20px; color:var(--oz-blue-700); }
+.community-page .community-welfare-caption { display:block; margin-bottom:var(--oz-space-4); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.community-page #donate { width:100%; background:var(--oz-action-secondary); border-color:var(--oz-action-secondary); color:var(--oz-text-on-brand); }
+.community-page #request-welfare { width:100%; background:transparent; border:1px solid var(--oz-border); color:var(--oz-blue-700); }
+.community-page .welfare-history summary { min-height:var(--oz-touch); display:flex; align-items:center; gap:var(--oz-space-2); color:var(--oz-blue-700); font:600 14px/20px var(--oz-font-ui); cursor:pointer; }
+.community-page .community-ventures .mcard { border:0; background:var(--oz-bg-surface); }
+
+/* ---------- Leagues ---------- */
+.leagues-page { display:flex; flex-direction:column; gap:var(--oz-space-4); padding-top:var(--oz-space-2); }
+.leagues-page .page-title { margin:0; }
+.leagues-page .page-title p { margin:var(--oz-space-1) 0 0; font:400 14px/20px var(--oz-font-ui); }
+/* KK / Faculty / Referrers jump links → Segmented Control look */
+.leagues-page .community-shortcuts.leagues-tabs { display:flex; gap:4px; padding:4px; margin:0; border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); }
+.leagues-page .leagues-tabs a { flex:1 1 0; min-width:0; display:flex; align-items:center; justify-content:center; min-height:36px; padding:8px 10px; border:0;
+  border-radius:var(--oz-radius-pill); background:transparent; color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); text-decoration:none; box-shadow:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.leagues-page .leagues-tabs a .ic { display:none; }
+.leagues-page .leagues-tabs a:first-child { background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:var(--oz-shadow-card); }
+.leagues-page .leagues-tabs a:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.leagues-page .leagues-grid { display:flex; flex-direction:column; gap:var(--oz-space-5); }
+.leagues-page .card.community-league, .leagues-page .card.referral-board { padding:0; border:0; background:none; box-shadow:none; border-radius:0; }
+.leagues-page .community-section-heading { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); margin:0 0 var(--oz-space-3); }
+.leagues-page .community-section-heading h2 { display:flex; align-items:center; gap:var(--oz-space-2); margin:0; font:700 22px/28px var(--oz-font-display); }
+.leagues-page .community-section-heading h2 > .ic { display:none; }
+.leagues-page .community-section-heading > span { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.leagues-page .league-help { display:inline-grid; place-items:center; width:var(--oz-touch); height:var(--oz-touch); border:0; border-radius:50%; background:transparent; color:var(--oz-blue-700); cursor:pointer; }
+/* League Header (433:457): your college / faculty summary */
+.leagues-page .community-league-summary { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); flex-wrap:wrap;
+  padding:var(--oz-space-3) var(--oz-space-4); margin:0 0 var(--oz-space-3); border-radius:var(--oz-radius-lg); background:var(--oz-blue-100); color:var(--oz-text-primary); }
+.leagues-page .community-college { display:inline-flex; align-items:center; gap:6px; font:600 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+.leagues-page .community-college .ic { display:none; }
+.leagues-page .community-scoreboard { display:flex; gap:var(--oz-space-4); }
+.leagues-page .community-scoreboard div { display:flex; flex-direction:column; }
+.leagues-page .community-scoreboard span { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.leagues-page .community-scoreboard strong { font:700 20px/26px var(--oz-font-display); color:var(--oz-text-primary); }
+.leagues-page .community-league-hint { margin:0 0 var(--oz-space-3); font:400 13px/18px var(--oz-font-ui); color:var(--oz-text-secondary); }
+/* Podium: top three cards */
+.leagues-page .community-podium { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:var(--oz-space-2); margin:0 0 var(--oz-space-3); }
+.leagues-page .community-contender { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:var(--oz-space-3);
+  border:0; border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); transform:none; }
+.leagues-page .community-contender::before, .leagues-page .community-contender::after { content:none; }
+.leagues-page .community-contender.is-mine { background:var(--oz-lime-100); box-shadow:inset 0 0 0 1px var(--oz-lime-600); }
+.leagues-page .contender-place { display:inline-flex; align-items:center; gap:4px; font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); background:none; }
+.leagues-page .contender-place .ic { width:16px; height:16px; }
+.leagues-page .contender-crest { position:absolute; right:var(--oz-space-2); top:var(--oz-space-2); display:grid; place-items:center; min-width:32px; height:32px; padding:0 6px;
+  border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-blue-700); font:700 11px/1 var(--oz-font-ui); }
+.leagues-page .contender-name { margin-top:var(--oz-space-2); font:800 18px/22px var(--oz-font-display); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.leagues-page .contender-score { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.leagues-page .contender-score small { font:inherit; }
+.leagues-page .contender-mine { font:600 11px/14px var(--oz-font-ui); color:var(--oz-text-success); }
+.leagues-page .community-rank-list { display:flex; flex-direction:column; gap:var(--oz-space-2); }
+.leagues-page .community-rank-list .lb-row + .lb-row { margin-top:0; }
+.leagues-page .lb-row > div { flex:1 1 auto; min-width:0; }
+.leagues-page .community-league-empty { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-2); padding:var(--oz-space-6); border-radius:var(--oz-radius-lg);
+  background:var(--oz-bg-surface); color:var(--oz-text-secondary); text-align:center; }
+.leagues-page .referral-list { display:flex; flex-direction:column; gap:var(--oz-space-2); margin:0 0 var(--oz-space-3); padding:0; list-style:none; }
+.leagues-page .referral-list .lb-row + .lb-row { margin-top:0; }
+
+@media (min-width:1024px) {
+  .community-page .community-main-grid, .community-page .community-welfare-pair { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-4); }
+  .community-page .community-shortcuts { grid-template-columns:repeat(3, minmax(0, 1fr)); max-width:720px; }
+  .community-page .community-shortcuts > :first-child { grid-column:auto; }
+  .leagues-page .community-shortcuts.leagues-tabs { max-width:600px; }
+  .leagues-page .leagues-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-6); align-items:start; }
+}
+
+/* Friend lists: flat white sections and List Rows (441:1092) instead of the tinted legacy panels */
+.community-page .friends-section { margin:0; padding:var(--oz-space-4); border:0; border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
+.community-page .friends-section-heading { display:flex; align-items:center; gap:var(--oz-space-3); margin:0 0 var(--oz-space-3); padding:0; border:0; background:none; }
+.community-page .friends-section-heading h2, .community-page .friends-section-heading h3 { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.community-page .friends-section-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.community-page .friends-count { margin-left:auto; padding:2px 10px; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-blue-700); font:600 12px/16px var(--oz-font-ui); }
+.community-page .friends-grid { display:flex; flex-direction:column; gap:0; }
+.community-page .friends-grid > * { margin:0; padding:var(--oz-space-3) 0; border:0; border-top:1px solid var(--oz-border); border-radius:0; background:none; box-shadow:none; }
+.community-page .friends-grid > :first-child { border-top:0; }
+.community-page .friends-monogram { background:var(--oz-blue-100); color:var(--oz-blue-700); border:0; }
+.community-page .friends-section .btn.go, .community-page .friends-section .btn.primary { background:var(--oz-action-secondary); border-color:var(--oz-action-secondary); color:var(--oz-text-on-brand); }
+.leagues-page .community-contender { border:0; outline:0; }

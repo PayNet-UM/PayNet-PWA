@@ -385,7 +385,7 @@ async function rewardsRender(app) {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
         return `<article class="oz-voucher reward-prize ${left <= 0 ? 'sold-out' : ''}">
           <div class="oz-voucher-value"><strong>${rm(r.valueCents).replace(/\.00$/, '')}</strong><span>voucher value</span></div>
-          <div class="oz-voucher-body"><h3>${esc(r.title)}</h3><p class="oz-voucher-where">Redeem with the Admin team · valid ${r.validDays || 30} days</p>
+          <div class="oz-voucher-body"><h3>${esc(r.title)}</h3><p class="oz-voucher-where">Redeem with the Admin team · valid ${n(Number(r.validDays) || 30)} days</p>
             <div class="oz-voucher-foot"><span class="oz-voucher-meta"><span class="oz-voucher-cost">${n(r.cost)} pts</span>${left > 0 ? ozTag(`${left} left`, 'sky') : ozTag('All claimed', 'expiry')}</span>
             ${ozButton(left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`, { size: 'sm', kind: can ? 'primary' : 'ghost', attr: { 'data-redeem': r.id, disabled: !can } })}</div></div></article>`;
       }).join('') || ozEmpty({ title: 'No rewards yet', body: 'The Admin team hasn’t added rewards yet.' })}</div>
@@ -418,7 +418,7 @@ function rewardsMount(root, app, [section] = []) {
   $$('[data-redeem]', root).forEach((b) => {
     b.onclick = async () => {
       const r = (await D.listRewards(app.ctx)).find((x) => x.id === b.dataset.redeem);
-      if (!(await confirmSheet(`Swap ${n(r.cost)} points for ${r.title}?`, `You’ll have ${n(app.profile.points - r.cost)} points left. The voucher is valid for ${r.validDays || 30} days.`, 'Swap points'))) return;
+      if (!(await confirmSheet(`Swap ${n(r.cost)} points for ${r.title}?`, `You’ll have ${n(app.profile.points - r.cost)} points left. The voucher is valid for ${n(Number(r.validDays) || 30)} days.`, 'Swap points'))) return;
       try { const vid = await D.redeemReward(app.ctx, r); confetti(); toast('Voucher added. Show it to the Admin team for redemption.'); await app.render(); showVoucher(app, vid, [{ id: vid, title: r.title, merchantId: r.merchantId, status: 'issued' }]); }
       catch (e) { toast(errText(e), true); }
     };
@@ -750,10 +750,13 @@ async function meRender(app) {
   const p = app.profile; const refs = await D.myReferrals(app.ctx).catch(() => []);
   const lvl = levelOf(earnedTotal(app.ledger));
   const history = app.ledger.slice(0, 30);
-  return `<section class="card pad-lg me-card"><a href="#/avatar" class="me-avatar" aria-label="Customise your avatar">${AV.avatarSVG(myAvatar(app), { size: 120, title: p.name })}</a>
-      <div><h1 style="font-size:24px">${esc(p.name)}</h1><p class="muted">${esc(D.COLLEGES.find(([k]) => k === p.college)?.[1] || '')}</p>
+  // Figma 13 · Me (441:2458): profile card, customise, referral card, then the production sections.
+  return `<div class="oz-me"><h1 class="oz-page-title">Me</h1>
+    <section class="card pad-lg me-card"><a href="#/avatar" class="me-avatar" aria-label="Customise your avatar">${AV.avatarSVG(myAvatar(app), { variant: 'head', size: 72, title: p.name })}</a>
+      <div><h2>${esc(p.name)}</h2><p class="muted">${esc([D.COLLEGES.find(([k]) => k === p.college)?.[1], `${n(p.points)} pts`].filter(Boolean).join(' · '))}</p>
       <p class="row" style="gap:6px;margin-top:6px"><span class="badge ok">${icon('medal')}${esc(lvl.name)}</span></p>
       <a class="btn small primary" href="#/avatar" style="margin-top:10px">${icon('palette')} Customise avatar</a></div></section>
+    ${ozButton('Customise avatar', { kind: 'ghost', href: '#/avatar', block: true, cls: 'oz-me-customise' })}
     ${signInEmailsCard(app)}
     <section class="section card invite-card" id="referral-card">
       <div class="row invite-heading"><span class="tile-icon">${icon('ticket')}</span><h2>Refer a friend</h2></div>
@@ -803,7 +806,7 @@ async function meRender(app) {
     <section class="section stack"><button class="btn block" id="install">${icon('smartphone')} Install the app</button>
       <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
       <button class="btn block warn" id="out">${icon('log-out')} Sign out</button>
-      <a class="btn block ghost danger-link" href="#/delete-account">${icon('trash-2')} Delete my account</a></section>`;
+      <a class="btn block ghost danger-link" href="#/delete-account">${icon('trash-2')} Delete my account</a></section></div>`;
 }
 function pointsHistoryRow(entry) {
   const glyph = { checkin: 'map-pin-check', purchase: 'wallet', survey: 'target', lesson: 'book-open',

@@ -1,0 +1,63 @@
+/* Me (13 · Me 441:2458, W · Me 915:34264) and its sections. Client only; restyles production markup and keeps every form and id. */
+
+.oz-me { display:flex; flex-direction:column; gap:var(--oz-space-3); padding-top:var(--oz-space-2); }
+.oz-me .oz-page-title { margin:0; }
+.oz-me > .section { margin:var(--oz-space-2) 0 0; }
+.oz-me .section > .head { margin:0 0 var(--oz-space-2); padding:0; border:0; }
+
+/* Profile card */
+.oz-me .card.me-card { display:flex; align-items:center; gap:var(--oz-space-4); padding:var(--oz-space-4); border:0; border-radius:var(--oz-radius-lg); box-shadow:var(--oz-shadow-card); }
+.oz-me .me-avatar { display:grid; place-items:center; width:72px; height:72px; flex:none; overflow:hidden; border-radius:50%; background:var(--oz-blue-100); }
+.oz-me .me-avatar svg { width:72px; height:72px; }
+.oz-me .me-card h2 { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-me .me-card .muted { margin:2px 0 0; font:500 12px/16px var(--oz-font-ui); }
+.oz-me .me-card .row { margin-top:var(--oz-space-2) !important; }
+.oz-me .me-card .btn { display:none; }
+.oz-me .oz-me-customise { margin:0; }
+
+/* Referral Card (433:907) and Add friends */
+.oz-me .card.invite-card { display:flex; flex-direction:column; gap:var(--oz-space-3); padding:var(--oz-space-4) var(--oz-space-5); border:0; border-radius:var(--oz-radius-lg); margin:0; }
+.oz-me .invite-heading { display:flex; align-items:center; gap:var(--oz-space-3); }
+.oz-me .invite-heading h2 { margin:0; font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-me .invite-code { display:flex; flex-wrap:wrap; align-items:center; gap:var(--oz-space-2); padding:0; border:0; background:none; }
+.oz-me .invite-code > div { flex:1 1 100%; display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); min-height:52px; padding:var(--oz-space-3) var(--oz-space-4);
+  border:1px dashed var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+.oz-me .invite-code > div .faint { font:500 12px/16px var(--oz-font-ui); }
+.oz-me .invite-code .code-text { padding:0; background:none; font:700 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); letter-spacing:.02em; user-select:all; }
+.oz-me .invite-code .btn { flex:1 1 0; }
+.oz-me #share, .oz-me #add-friends-card .invite-code .btn.primary { background:var(--oz-action); border-color:var(--oz-action); color:var(--oz-text-on-accent); }
+.oz-me .invite-count { display:flex; align-items:center; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-me .invite-count strong { font:700 20px/24px var(--oz-font-display); }
+.oz-me .invite-count span { flex:1 1 auto; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-me .invite-activity summary, .oz-me .points-history-more summary { min-height:var(--oz-touch); display:flex; align-items:center; gap:var(--oz-space-2); color:var(--oz-blue-700); font:600 14px/20px var(--oz-font-ui); cursor:pointer; }
+
+/* Profile form */
+.oz-me #prof { gap:var(--oz-space-3); padding:var(--oz-space-4); border:0; }
+.oz-me #prof small { display:flex; gap:6px; margin-top:6px; font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-me #prof small .ic { width:14px; height:14px; flex:none; margin-top:1px; }
+.oz-me #prof input[readonly] { background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+
+/* Points history, settings rows */
+.oz-me .points-history { padding:var(--oz-space-2) var(--oz-space-4); border:0; }
+.oz-me .card.row { padding:var(--oz-space-4); border:0; }
+.oz-me .card.row h3 { margin:0; font:600 16px/24px var(--oz-font-ui); }
+.oz-me .card.row .faint { margin:2px 0 0; font:400 13px/18px var(--oz-font-ui); }
+
+/* Toggle (464:6237) */
+.oz-me .switch span, .switch span { background:var(--oz-neutral-200); }
+.switch input:checked + span { background:var(--oz-action-secondary); }
+.switch input:focus-visible + span { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+
+/* Shared "How points work" + information links at the bottom */
+.oz-me .points-summary { display:flex; align-items:center; gap:var(--oz-space-3); min-height:64px; padding:var(--oz-space-3) var(--oz-space-4); border:0; border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:none; text-decoration:none; }
+.oz-me .points-summary > span:first-child { display:grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-me .points-summary > div { flex:1 1 auto; display:flex; flex-direction:column; gap:2px; }
+.oz-me .points-summary b { font:600 16px/24px var(--oz-font-ui); }
+.oz-me .points-summary small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-me .points-summary > strong { padding:0; background:none; font:700 14px/20px var(--oz-font-ui); color:var(--oz-blue-700); }
+
+@media (min-width:1024px) { .oz-me { max-width:760px; } }
+.oz-me .card.me-card { flex-direction:row; justify-content:flex-start; text-align:left; }
+.oz-me .card.me-card > div { flex:1 1 auto; min-width:0; }
+.oz-me .card.me-card .row { justify-content:flex-start; }
