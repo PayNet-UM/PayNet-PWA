@@ -64,13 +64,13 @@ export function ozHeroMascot({ hat = 'none' } = {}) {
         <img class="h-ears" src="${A}hero/ears.svg" alt=""><i class="h-shell"></i><i class="h-face"></i>
         <i class="h-eye h-eye-l"></i><i class="h-eye h-eye-r"></i><img class="h-nose" src="${A}hero/nose.svg" alt="">
         <span class="h-smile"><img src="${A}hero/smile.svg" alt=""></span><img class="h-badge" src="${A}hero/plus-badge.svg" alt="">
-        ${hatArt ? `<img class="h-hat" src="${A}hero/${hatArt}" alt="">` : ''}
+        ${hatArt ? `<img class="h-hat" src="${A}hats/${hatArt}" alt="">` : ''}
       </span></span>
       <span class="h-tail-stem"><img src="${A}hero/tail-stem.svg" alt=""></span><img class="h-tail-tuft" src="${A}hero/tail-tuft.svg" alt="">
     </span></span></span>`;
 }
 // Hat overlays drawn for the hero pose. Hats without Figma artwork yet show no hat rather than an invented one.
-export const HERO_HATS = { beanie: 'hat-beanie.svg' };
+export const HERO_HATS = { beanie: 'beanie.svg', cap: 'cap.svg', songkok: 'songkok.svg', mushroom: 'mushroom.svg', grad: 'grad.svg', crown: 'crown.svg' };
 
 /**
  * Points Hero (433:115). levelName/streakDays/nextLine come from points-policy and the streak model.

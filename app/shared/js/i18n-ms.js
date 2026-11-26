@@ -1,5 +1,22 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Customise Sir Onz|Ubah suai Sir Onz
+Your Sir Onz|Sir Onz anda
+Sir Onz avatar|Avatar Sir Onz
+Hats|Topi
+Colours|Warna
+Wardrobe|Almari pakaian
+Back to Me|Kembali ke Saya
+Barista cap|Topi barista
+Explorer hat|Topi penjelajah
+Blue|Biru
+Red|Merah
+Orange|Oren
+Yellow|Kuning
+Green|Hijau
+Teal|Biru kehijauan
+Champion|Juara
+Hats and colours unlock as you level up. Spending points never takes them away.|Topi dan warna dibuka apabila tahap anda naik. Membelanjakan mata tidak akan menariknya balik.
 Earn with live deals|Kumpul mata dengan tawaran langsung
 Past 7 days|7 hari lalu
 Streak|Rentetan

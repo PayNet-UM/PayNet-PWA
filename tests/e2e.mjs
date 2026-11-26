@@ -106,21 +106,20 @@ if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Erro
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
 ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
 
+// Sir Onz replaced the human avatar: hats and colours unlock by level; older drawing options stay stored untouched.
+const avatarBefore = await stu.evaluate(() => window.__umc.profile.avatar || {});
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
-await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
-await stu.click('[data-t="glasses"]');
-const skin = stu.locator('.av-range[data-k="skin"]');
-await skin.focus(); await skin.press('Home');
-for (let i = 0; i < 5; i++) await skin.press('ArrowRight');
-await stu.click('[aria-controls="av-gear"]');
 await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
-await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]');
 const locked = await stu.locator('.av-opts [data-k="hat"][data-locked]').count();
+await stu.click('[aria-controls="av-colours"]');
+await stu.click('.av-opts [data-k="onz"][data-v="red"]');
+if (!await stu.locator('#av-prev svg image[href$="skins/red/mane.svg"]').count()) throw new Error('preview did not switch to the red skin');
 await stu.screenshot({ path: `${shots}/05-avatar.png`, fullPage: true });
 await stu.click('#av-save'); await stu.waitForSelector('.me-card');
 const saved = await stu.evaluate(() => window.__umc.profile.avatar);
-if (saved.hair !== 'curly' || saved.hat !== 'cap' || !saved.glasses || saved.skin !== 5) throw new Error('avatar not saved: ' + JSON.stringify(saved));
-ok(`avatar saved (curly hair, cap, glasses); ${locked} hats still locked behind levels`);
+if (saved.hat !== 'cap' || saved.onz !== 'red') throw new Error('avatar not saved: ' + JSON.stringify(saved));
+for (const k of ['skin', 'hair', 'outfit']) if (k in avatarBefore && saved[k] !== avatarBefore[k]) throw new Error('older avatar field changed: ' + k);
+ok(`Sir Onz saved (cap, red); ${locked} hats still locked behind levels; older avatar fields kept`);
 
 for (const r of ['rewards', 'community', 'events', 'bayar', 'learn', 'deals', 'explore/idea', 'cafes']) {
   await stu.goto(BASE + '#/' + r); await stu.waitForTimeout(700);

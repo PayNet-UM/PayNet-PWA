@@ -45,6 +45,9 @@
   /* streak screen (29 · Rewards · Streak 708:15284) */
   --oz-streak-fill:#FF8A1F; --oz-streak-track:#E8EAF5; --oz-streak-muted:#C9CDE2; --oz-streak-muted-text:#5B6090;
 
+  /* wardrobe stage (Wardrobe Stage 439:5478) */
+  --oz-sky-top:#8CC8FF; --oz-sky-bottom:#D8EEFF;
+
   /* semantic aliases */
   --oz-bg-app:var(--oz-blue-50);          /* bg/app */
   --oz-bg-surface:var(--oz-neutral-0);    /* bg/surface */

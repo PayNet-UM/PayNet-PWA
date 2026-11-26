@@ -29,6 +29,7 @@ const PATTERNS = [
   // +Onz redesign (Points Hero)
   [/^Next: (.+) · ([\d,]+) pts$/, (level, n) => `Seterusnya: ${t(level)} · ${n} mata`],
   [/^(\d+) days?$/, (n) => `${n} hari`],
+  [/^Reach (.+) level to unlock (.+)\.$/, (level, item) => `Capai tahap ${t(level)} untuk membuka ${t(item)}.`],
   [/^([\d,]+) of 7 days$/, (n) => `${n} daripada 7 hari`],
   [/^([\d,]+) left$/, (n) => `${n} lagi`],
   [/^Redeem with the Admin team · valid (\d+) days$/, (n) => `Tebus dengan pasukan Admin · sah ${n} hari`],

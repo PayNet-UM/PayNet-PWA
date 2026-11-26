@@ -670,74 +670,69 @@ function communityMount(root, app, [section] = []) {
 }
 
 // ------------------------------------------------------------- avatar editor
+// Wardrobe (Figma 15 · Wardrobe · Hats 696:13625 / Colours 696:13693; Web 929:35008).
+// Hats and skins unlock with earned levels; nothing here is bought with points.
 async function avatarRender(app) {
-  return `<a class="back" href="#/me">${icon('arrow-left')} Me</a><div class="page-title"><h1>Your avatar</h1><p>Hats unlock with earned levels. Spending points never takes them away.</p></div>
-    <div class="av-editor"><div class="av-stage card"><div class="av-stage-meta"><span>Live preview</span><span id="av-level"></span></div><div id="av-prev"></div>
-      <div class="row" style="justify-content:center;gap:8px;margin-top:10px"><button class="btn small" id="av-rand">${icon('dices')} Shuffle</button><button class="btn small ghost" id="av-reset">${icon('rotate-ccw')} Undo changes</button></div></div>
-      <div class="av-panel card" id="av-panel"></div></div>`;
+  return `<div class="oz-wardrobe">
+    <h1 class="oz-sr-only">Customise Sir Onz</h1>
+    <div class="av-stage" aria-label="Live preview">
+      <img class="av-stage-clouds" src="assets/onz/stage/clouds.svg" alt=""><img class="av-stage-ground" src="assets/onz/stage/ground.svg" alt="">
+      <img class="av-stage-accents" src="assets/onz/stage/accents.svg" alt=""><img class="av-stage-contact" src="assets/onz/stage/contact.svg" alt="">
+      <div id="av-prev"></div>
+      <a class="av-float av-close" href="#/me" aria-label="Back to Me">${ozIcon('s:close')}</a>
+      <span class="av-level-pill"><span class="oz-plus" aria-hidden="true"></span><span id="av-level"></span></span>
+      <button type="button" class="av-save-pill" id="av-save">Save</button>
+      <div class="av-float-stack"><button type="button" class="av-float" id="av-rand" aria-label="Shuffle">${ozIcon('search')}</button>
+        <button type="button" class="av-float" id="av-reset" aria-label="Undo changes">${ozIcon('s:history')}</button></div>
+    </div>
+    <div class="av-sheet" id="av-panel">
+      <div class="av-categories" role="tablist" aria-label="Wardrobe">
+        <button type="button" role="tab" aria-controls="av-hats" aria-pressed="true" aria-selected="true">${ozIcon('hat')}<span>Hats</span></button>
+        <button type="button" role="tab" aria-controls="av-colours" aria-pressed="false" aria-selected="false"><span class="av-colour-dot" aria-hidden="true"></span><span>Colours</span></button>
+      </div>
+      <div class="av-category" id="av-hats" role="tabpanel"><div class="av-opts" data-group="hat"></div></div>
+      <div class="av-category" id="av-colours" role="tabpanel" hidden><div class="av-opts" data-group="onz"></div></div>
+      <p class="av-note">Hats and colours unlock as you level up. Spending points never takes them away.</p>
+    </div></div>`;
 }
 function avatarMount(root, app) {
   const start = AV.clean(myAvatar(app)); let a = { ...start };
   const lvl = levelOf(earnedTotal(app.ledger)).name;
   $('#av-level', root).textContent = lvl;
-  const range = (k, colors, label) => {
-    return `<label class="av-label">${label}<input type="range" class="av-range" data-k="${k}" min="0" max="${colors.length - 1}" step="1" value="${a[k]}"
-      style="--track:linear-gradient(90deg,${colors.join(',')})" aria-label="${label}"></label>`;
+  const tile = (k, [id, name, lock]) => {
+    const locked = k === 'hat' ? !AV.hatUnlocked(id, lvl, LEVEL_NAMES) : !AV.skinUnlocked(id, lvl, LEVEL_NAMES);
+    const preview = k === 'hat' ? (id === 'none' ? '<span class="av-none" aria-hidden="true">⊘</span>' : `<img src="assets/onz/hats/${id}.svg" alt="">`)
+      : AV.avatarSVG({ ...a, onz: id, hat: 'none' }, { variant: 'head', size: 96, bg: false });
+    return `<button type="button" class="av-tile" data-k="${k}" data-v="${id}" aria-pressed="${a[k] === id}" title="${esc(name)}${locked ? ` (reach ${esc(lock)})` : ''}" ${locked ? 'data-locked="1"' : ''}>
+      <span class="av-thumb">${preview}</span><span class="av-name">${esc(name)}</span>${locked ? `<span class="av-lock-pill">${esc(lock === 'Campus champion' ? 'Champion' : lock)}</span>` : ''}
+      <span class="av-check" aria-hidden="true">${ozIcon('check')}</span></button>`;
   };
-  const swatches = (k, colors, label) => `<div class="av-label">${label}<div class="av-swatches" role="radiogroup" aria-label="${label}">${colors.map((c, i) => `<button type="button" role="radio" aria-checked="${a[k] === i}" data-k="${k}" data-v="${i}" style="--sw:${c}" aria-label="${label} ${i + 1}"></button>`).join('')}</div></div>`;
-  const thumbs = (k, list, label) => `<div class="av-label">${label}<div class="av-opts" data-group="${k}">${list.map(([id, name, lock]) => {
-    const locked = k === 'hat' && !AV.hatUnlocked(id, lvl, LEVEL_NAMES);
-    const nameAttribute = k === 'bg'
-      ? `aria-label="${esc(name)}" title="${esc(name)}"`
-      : `title="${esc(name)}${locked ? ` (reach ${esc(lock)})` : ''}"`;
-    return `<button type="button" data-k="${k}" data-v="${id}" aria-pressed="${a[k] === id}" ${nameAttribute} ${locked ? 'data-locked="1"' : ''}>
-      <span class="av-thumb"></span>${locked ? `<span class="av-lock">${icon('lock')}</span>` : ''}${k === 'bg' ? '' : `<span class="av-name">${esc(name)}</span>`}${locked ? `<small class="av-unlock">${esc(lock)}</small>` : ''}</button>`;
-  }).join('')}</div></div>`;
-  $('#av-panel', root).innerHTML = `
-    <div class="av-categories" role="group" aria-label="Avatar categories">
-      <button type="button" aria-controls="av-style" aria-pressed="true">${icon('sparkles')} Style</button>
-      <button type="button" aria-controls="av-gear" aria-pressed="false">${icon('shopping-bag')} Accessories</button>
-      <button type="button" aria-controls="av-scene" aria-pressed="false">${icon('image')} Background</button>
-    </div>
-    <div class="av-category" id="av-style">${thumbs('hair', AV.HAIRS.filter(([id]) => id !== 'tudung'), 'Hairstyle')}${range('hairColor', AV.HAIR_COLORS, 'Hair or tudung colour')}${range('skin', AV.SKIN, 'Skin tone')}
-    ${thumbs('face', AV.FACES, 'Face')}<div class="chips av-toggles"><button type="button" data-t="glasses" class="${a.glasses ? 'on' : ''}">${icon('glasses')} Glasses</button><button type="button" data-t="freckles" class="${a.freckles ? 'on' : ''}">${icon('sparkles')} Freckles</button></div>
-    </div><div class="av-category" id="av-gear" hidden>
-    ${thumbs('outfit', AV.OUTFITS, 'Outfit')}${swatches('outfitColor', AV.OUTFIT_COLORS, 'Outfit colour')}
-    ${thumbs('hat', AV.HATS, 'Hat')}${thumbs('bag', AV.BAGS, 'Bag')}${swatches('accent', AV.ACCENT_COLORS, 'Hat and bag colour')}</div><div class="av-category" id="av-scene" hidden>${thumbs('bg', AV.CAMPUS_BACKGROUNDS, 'Background')}</div>
-    <button class="btn primary block" id="av-save" style="margin-top:8px">${icon('check')} Save avatar</button>`;
+  $('[data-group="hat"]', root).innerHTML = AV.HATS.map((h) => tile('hat', h)).join('');
   const categories = $$('.av-categories button', root);
   categories.forEach((button) => {
-    button.onclick = () => {
-      categories.forEach((item) => {
-        const selected = item === button;
-        item.setAttribute('aria-pressed', String(selected));
-        $('#' + item.getAttribute('aria-controls'), root).hidden = !selected;
-      });
-    };
+    button.onclick = () => categories.forEach((item) => {
+      const selected = item === button;
+      item.setAttribute('aria-pressed', String(selected)); item.setAttribute('aria-selected', String(selected));
+      $('#' + item.getAttribute('aria-controls'), root).hidden = !selected;
+    });
   });
   const paint = () => {
-    $('#av-prev', root).innerHTML = AV.avatarSVG(a, { size: 200, title: 'Your avatar' });
-    $$('.av-opts [data-k]', root).forEach((b) => {
-      const k = b.dataset.k;
-      const v = k === 'bg' ? Number(b.dataset.v) : b.dataset.v;
-      b.setAttribute('aria-pressed', String(a[k] === v));
-      const fullPreview = k === 'outfit' || k === 'bag' || k === 'bg';
-      const variant = k === 'bag' ? 'bag' : fullPreview ? 'full' : k === 'hair' && AV.isTudung(v) ? 'bust' : 'head';
-      b.querySelector('.av-thumb').innerHTML = AV.avatarSVG({ ...a, [k]: v, ...(k === 'hat' && AV.isTudung(a.hair) && !['crown', 'grad', 'none'].includes(v) ? { hair: 'short' } : {}) }, { variant, size: fullPreview ? 72 : 56 });
-    });
-    $$('.av-swatches [data-k]', root).forEach((b) => b.setAttribute('aria-checked', String(a[b.dataset.k] === +b.dataset.v)));
-    $$('[data-t]', root).forEach((b) => b.classList.toggle('on', !!a[b.dataset.t]));
-    $$('.av-range', root).forEach((r) => { r.value = a[r.dataset.k]; });
+    $('#av-prev', root).innerHTML = AV.avatarSVG(a, { size: 200, bg: false, title: 'Your Sir Onz' });
+    $('[data-group="onz"]', root).innerHTML = AV.ONZ_SKINS.map((s) => tile('onz', s)).join('');
+    $$('.av-opts [data-k]', root).forEach((b) => b.setAttribute('aria-pressed', String(a[b.dataset.k] === b.dataset.v)));
   };
   root.addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-k], button[data-t]'); if (!b || !root.contains(b)) return;
-    if (b.dataset.t) { a[b.dataset.t] = !a[b.dataset.t]; return paint(); }
-    if (b.dataset.locked) { const h = AV.HATS.find((x) => x[0] === b.dataset.v); return toast(`Reach ${h[2]} level to unlock the ${h[1].toLowerCase()}.`); }
-    const k = b.dataset.k; a[k] = /^\d+$/.test(b.dataset.v) && k !== 'hair' && k !== 'hat' && k !== 'face' && k !== 'outfit' && k !== 'bag' ? +b.dataset.v : b.dataset.v;
-    paint();
+    const b = e.target.closest('button[data-k]'); if (!b || !root.contains(b)) return;
+    if (b.dataset.locked) {
+      const list = b.dataset.k === 'hat' ? AV.HATS : AV.ONZ_SKINS; const item = list.find((x) => x[0] === b.dataset.v);
+      return toast(`Reach ${item[2]} level to unlock ${item[1]}.`);
+    }
+    a[b.dataset.k] = b.dataset.v; paint();
   });
-  $$('.av-range', root).forEach((r) => { r.oninput = () => { a[r.dataset.k] = +r.value; paint(); }; });
-  $('#av-rand', root).onclick = () => { const rnd = AV.randomAvatar(); if (!AV.hatUnlocked(rnd.hat, lvl, LEVEL_NAMES)) rnd.hat = 'none'; a = { ...a, ...rnd }; paint(); };
+  $('#av-rand', root).onclick = () => {
+    const pick = (list, ok) => { const open = list.filter((x) => ok(x[0], lvl, LEVEL_NAMES)); return open[Math.floor(Math.random() * open.length)][0]; };
+    a = { ...a, onz: pick(AV.ONZ_SKINS, AV.skinUnlocked), hat: pick(AV.HATS, AV.hatUnlocked) }; paint();
+  };
   $('#av-reset', root).onclick = () => { a = { ...start }; paint(); };
   $('#av-save', root).onclick = (e) => busy(e.currentTarget, async () => {
     try { await D.saveAvatar(app.ctx, AV.clean(a)); toast('Avatar saved.'); confetti(); app.go('me'); } catch (err) { toast(errText(err), true); }
