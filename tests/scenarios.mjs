@@ -87,6 +87,7 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
   await denied('student cannot give themselves points', () => D.updateProfile(stuA, { points: 999 }));
 
   log('Event reactions');
+  await ok('student can react to an archived FESKUM poster',async()=>{await setEventReaction(stuA,'poster-11','🙌');await setEventReaction(stuA,'poster-11',null);});
   await ok('student reacts to an event',()=>setEventReaction(stuA,'poster-3','❤️'));
   await ok('changing a reaction keeps just one vote',async()=>{
     await setEventReaction(stuA,'poster-3','🔥');

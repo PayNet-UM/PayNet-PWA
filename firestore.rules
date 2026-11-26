@@ -741,7 +741,7 @@ service cloud.firestore {
       allow create, update: if isStudent() && uid() == studentId
         && D().keys().hasOnly(['emoji']) && D().emoji in ['❤️', '🔥', '🙌']
         && (exists(/databases/$(database)/documents/campaigns/$(eventId))
-          || eventId in ['poster-3', 'poster-4', 'poster-6', 'poster-7', 'poster-8', 'poster-10']);
+          || eventId in ['poster-3', 'poster-4', 'poster-5', 'poster-6', 'poster-7', 'poster-8', 'poster-9', 'poster-10', 'poster-11', 'poster-12', 'poster-13']);
       allow delete: if isStudent() && uid() == studentId;
     }
     match /campaigns/{id} {
