@@ -1,5 +1,6 @@
 // Public-area reference: UM Convocation 2025 directory. Booth allocations are illustrative.
 import { $, $$, esc, icon, rm } from './ui.js';
+import {eventToday,feskumFloorMapAvailable} from './event-catalog.js';
 import { kpsBooth, kpsMapHTML, kpsDetailsHTML, mountKpsZoom } from './feskum-kps.js';
 export const FESKUM_SOURCE = 'https://umconvo.um.edu.my/CONVO%202025/PPOG/Directory%20Map%20low.pdf';
 export const FESKUM_ZONES = [
@@ -33,15 +34,18 @@ export function matchingBooths(query='', category='All') {
 const zoneFor = id => FESKUM_ZONES.find(z=>z.id===id);
 const range = b => `${rm(Math.min(...b.items.map(i=>i.cents)))}–${rm(Math.max(...b.items.map(i=>i.cents)))}`;
 export function feskumCard() {
+  if(!feskumFloorMapAvailable())return '';
   return `<a class="festival-entry" href="#/feskum"><div><span class="festival-eyebrow">CAMPUS SPOTLIGHT · 2026 PREVIEW</span><h2>FESKUM <em>2026</em></h2><p>Find your booth. Discover your next favourite.</p><div class="festival-entry-meta"><span>${icon('store')} 70 numbered booths</span><span>${icon('map-pin')} Tapak KPS</span></div><span class="festival-entry-cta">Explore the festival ${icon('arrow-right')}</span></div><span class="festival-entry-art" aria-hidden="true">${icon('store')}<span>TAPAK KPS</span></span></a>`;
 }
-export function feskumRender() {
+export function feskumRender({today=eventToday()}={}) {
+  if(!feskumFloorMapAvailable(today))return `<section class="floor-map-ended"><span class="floor-map-ended-icon">${icon('map')}</span><span class="badge">FESKUM 2026 · Ended</span><h1>This event has ended.</h1><p>The floor map is no longer available.</p><a class="btn primary" href="#/events">${icon('calendar')} Back to events</a></section>`;
   return `<div class="festival-page festival-simple festival-canvas-page"><a class="back" href="#/events">${icon('arrow-left')} Events</a>
     <header class="festival-page-header festival-identity"><img class="festival-identity-art" src="assets/feskum-2026/identity-01.jpg" width="1600" height="710" alt="FESKUM 2026 butterfly identity with colourful bunting and paper artwork"><div class="festival-identity-caption"><h1>FESKUM <em>2026</em></h1><p>Explore stalls</p></div></header>
     <section class="festival-map-column" aria-label="Interactive booth map">${kpsMapHTML()}<details class="festival-other-areas"><summary><span>Other areas (demo)</span>${icon('chevron-right')}</summary><div id="festival-map"></div></details><div id="festival-vendor-dropdown" class="festival-vendor-dropdown" role="dialog" aria-modal="false" aria-label="Explore stalls" tabindex="-1" hidden></div><p id="festival-selection-status" class="sr" role="status"></p></section>
     </div>`;
 }
 export function feskumMount(root) {
+  if(!feskumFloorMapAvailable())return null;
   let selected=null;
   const explored=new Set();
   function overview() {
@@ -134,5 +138,7 @@ export function feskumMount(root) {
   const escape=e=>{if(e.key==='Escape'&&!dropdown.hidden){e.preventDefault();closeVendor(true);}};
   document.addEventListener('click',outside);dropdown.addEventListener('keydown',escape);
   window.addEventListener('resize',positionVendor);
-  return ()=>{zoomCleanup();root.removeEventListener('scroll',positionVendor,true);document.removeEventListener('click',outside);dropdown.removeEventListener('keydown',escape);window.removeEventListener('resize',positionVendor);};
+  const cleanup=()=>{clearInterval(expiryTimer);zoomCleanup();root.removeEventListener('scroll',positionVendor,true);document.removeEventListener('click',outside);dropdown.removeEventListener('keydown',escape);window.removeEventListener('resize',positionVendor);};
+  const expiryTimer=setInterval(()=>{if(!feskumFloorMapAvailable()){cleanup();root.innerHTML=feskumRender();}},1000);
+  return cleanup;
 }

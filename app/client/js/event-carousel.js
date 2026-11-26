@@ -1,7 +1,7 @@
 // Original event artwork: user-supplied Feskum Intsa Feed.pdf, pages 3–13.
 // Artwork and programme descriptions are kept separate from reward and check-in rules.
 import { $, $$, esc, icon, sheet } from './ui.js';
-import {EVENT_SLIDES,activeEventSlides,eventToday} from './event-catalog.js';
+import {EVENT_SLIDES,activeEventSlides,eventToday,feskumFloorMapAvailable} from './event-catalog.js';
 export {EVENT_SLIDES};
 
 const controlPaths = {
@@ -22,11 +22,11 @@ export function eventCarousel({page=false,today}={}) {
       : `<h2><a href="#/events" aria-label="Upcoming campus events">Upcoming ${icon('arrow-right')}</a></h2>`}</header>
     <div class="event-showcase-body">
       <button class="event-poster" data-poster aria-label="View full poster: ${esc(s.title)}"><img data-slide-image src="${imageFor(s)}" width="1600" height="710" alt="${esc(s.title)} — original FESKUM event poster" fetchpriority="high" draggable="false">${page?`<span class="event-poster-hint">${icon('image')}</span>`:''}</button>
-      ${page?`<div class="event-slide-caption"><div><span class="event-slide-tag" data-slide-tag>${esc(s.tag)}</span><h3 data-slide-title>${esc(s.title)}</h3><p data-slide-date>${icon('calendar')}<span>${esc(s.when)}</span></p><p data-slide-place>${icon('map-pin')}<span>${esc(s.where)}</span></p></div><a class="btn event-explore-stalls" data-explore-stalls href="#/feskum">Explore stalls ${eventIcon('arrow-up-right')}</a></div>`:''}
+      ${page?`<div class="event-slide-caption"><div><span class="event-slide-tag" data-slide-tag>${esc(s.tag)}</span><h3 data-slide-title>${esc(s.title)}</h3><p data-slide-date>${icon('calendar')}<span>${esc(s.when)}</span></p><p data-slide-place>${icon('map-pin')}<span>${esc(s.where)}</span></p></div>${feskumFloorMapAvailable(today)?`<a class="btn event-explore-stalls" data-explore-stalls href="#/feskum">Explore stalls ${eventIcon('arrow-up-right')}</a>`:''}</div>`:''}
       ${page?`<div class="event-slide-controls"><div class="event-slide-buttons"><button data-prev aria-label="Previous event">${eventIcon('chevron-left')}</button><button data-play aria-label="Pause slideshow">${eventIcon('pause')}</button><button data-next aria-label="Next event">${icon('chevron-right')}</button></div><div class="event-slide-dots" aria-label="Choose event poster">${slides.map((slide,i)=>`<button data-slide="${i}" aria-label="Show poster ${i+1}: ${esc(slide.title)}" aria-pressed="${i===0}"></button>`).join('')}</div><span class="event-slide-count" data-slide-count>01 / ${slides.length}</span></div>`
         : `<button class="event-home-play" data-play aria-label="Pause slideshow">${eventIcon('pause')}</button>`}
     </div>
-    ${page?`<footer class="event-showcase-footer"><span>${icon('info')} Campus events</span><a href="#/feskum">Booth map ${icon('map-pin')}</a></footer>`:''}
+    ${page?`<footer class="event-showcase-footer"><span>${icon('info')} Campus events</span>${feskumFloorMapAvailable(today)?`<a href="#/feskum">Booth map ${icon('map-pin')}</a>`:''}</footer>`:''}
     <span class="sr" data-slide-status role="status" aria-live="polite"></span>
   </section>`;
 }
@@ -163,6 +163,6 @@ export function mountEventCarousel(root) {
 }
 
 // Gallery and slideshow open the same original artwork and organiser details.
-export function openEventPoster(s) {
-  sheet(`<div class="event-poster-dialog"><span class="event-slide-tag">${esc(s.tag)}</span><h2>${esc(s.title)}</h2><p>${esc(s.when)}</p><p class="muted">${esc(s.where)}</p><a href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>${s.note?`<p>${esc(s.note)}</p>`:''}<p class="faint">Confirm current details with the organiser.</p><a class="btn primary" href="#/feskum" data-close>${icon('map-pin')} Explore stalls</a></div>`,{wide:true});
+export function openEventPoster(s,{status=''}={}) {
+  sheet(`<div class="event-poster-dialog">${status?`<span class="badge">${esc(status)}</span>`:""}<span class="event-slide-tag">${esc(s.tag)}</span><h2>${esc(s.title)}</h2><p>${esc(s.when)}</p><p class="muted">${esc(s.where)}</p><a href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>${s.note?`<p>${esc(s.note)}</p>`:''}<p class="faint">Confirm current details with the organiser.</p>${feskumFloorMapAvailable()?`<a class="btn primary" href="#/feskum" data-close>${icon('map-pin')} Explore stalls</a>`:''}</div>`,{wide:true});
 }

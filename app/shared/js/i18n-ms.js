@@ -14,6 +14,32 @@ Deal poster preview|Pratonton poster tawaran
 Remove poster|Buang poster
 Choose a JPG, PNG or WebP poster under 10 MB.|Pilih poster JPG, PNG atau WebP di bawah 10 MB.
 Choose a JPG, PNG or WebP poster under 600 KB.|Pilih poster JPG, PNG atau WebP di bawah 600 KB.
+Archived|Diarkibkan
+Archived stalls and floor map.|Arkib gerai dan pelan tapak.
+events this month|acara bulan ini
+This event has ended.|Acara ini telah tamat.
+The floor map is no longer available.|Pelan tapak tidak lagi tersedia.
+Back to events|Kembali ke acara
+FESKUM 2026 · Ended|FESKUM 2026 · Tamat
+Event views|Paparan acara
+Upcoming & ongoing|Akan datang dan sedang berlangsung
+Past events|Acara lalu
+Event calendar|Kalendar acara
+Calendar|Kalendar
+Ended|Tamat
+Previous month|Bulan sebelumnya
+Next month|Bulan seterusnya
+Choose an event date|Pilih tarikh acara
+Nothing listed for this day.|Tiada acara disenaraikan pada hari ini.
+Choose a highlighted day to explore its events.|Pilih hari yang ditandakan untuk melihat acaranya.
+No past events in this category yet.|Belum ada acara lalu dalam kategori ini.
+Mon|Isn
+Tue|Sel
+Wed|Rab
+Thu|Kha
+Fri|Jum
+Sat|Sab
+Sun|Ahd
 React to event|Reaksi kepada acara
 Love|Suka
 Excited|Teruja
