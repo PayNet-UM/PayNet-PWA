@@ -71,7 +71,7 @@
 
 /* ---------- Points Pill (431:83) ---------- */
 .oz-pill, .oz-pill.pts-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 14px 6px 10px; min-height:32px; position:relative;
-  border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-text-primary);
+  border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-text-primary); box-shadow:none; height:auto;
   font:600 14px/20px var(--oz-font-ui); text-decoration:none; font-variant-numeric:tabular-nums; }
 .oz-pill::before { content:''; position:absolute; inset:-6px 0; } /* 44px hit area */
 .oz-plus { position:relative; width:16px; height:16px; flex:none; }

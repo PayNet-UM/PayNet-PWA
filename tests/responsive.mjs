@@ -48,11 +48,12 @@ try {
             assert.equal(await page.locator('dialog[open]').count(),0,`${label}: unexpected modal`);
             if(role==='student'&&route==='home'){
               assert.equal(await page.locator('#view .info-links,#view .points-summary').count(),0,`${label}: redundant homepage links`);
-              const about=page.locator('.tabbar [data-tab="about"]'),home=page.locator('.tabbar [data-tab="home"]');
-              assert.ok(await about.isVisible(),`${label}: About tab missing`);
+              const home=page.locator('.tabbar [data-tab="home"]');
+              assert.equal(await page.locator('.tabbar [data-tab="about"]').count(),0,`${label}: About now lives in the account menu`);
               if(viewport.width<1024){
-                const a=await about.boundingBox(),h=await home.boundingBox(),l=await page.locator('.tabbar [data-tab="leagues"]').boundingBox();
-                assert.ok(l.x<a.x&&a.x<h.x,`${label}: About belongs between Leagues and Home`);
+                const box=async(t)=>(await page.locator(`.tabbar [data-tab="${t}"]`).boundingBox()).x;
+                const xs=[await box('community'),await box('leagues'),await box('home'),await box('rewards'),await box('me')];
+                assert.ok(xs.every((x,i)=>!i||xs[i-1]<x),`${label}: tabs should read Community, Leagues, Home, Rewards, Me`);
               }
               assert.equal(await home.getAttribute('aria-current'),'page');
             }

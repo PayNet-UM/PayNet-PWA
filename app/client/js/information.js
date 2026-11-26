@@ -101,6 +101,6 @@ export function contactMount(root) {
 }
 export const INFORMATION_ROUTES={
   points:{title:'Points guide',render:pointsPageRender,mount:pointsGuideMount,wide:true,tab:'rewards'},
-  about:{title:'About us',render:aboutRender,mount:aboutMount,wide:true,tab:'about'},
+  about:{title:'About us',render:aboutRender,mount:aboutMount,wide:true,tab:'me'},
   contact:{title:'Contact us',render:contactRender,mount:contactMount,wide:true,tab:'me'},
 };

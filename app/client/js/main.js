@@ -6,7 +6,7 @@ import * as D from './data.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
 import { trySignInByAlias } from './link-email.js';
-import { initI18n, langToggleHTML } from './i18n.js';
+import { initI18n, langToggleHTML, getLang } from './i18n.js';
 import { avatarSVG, defaultFor } from './avatar.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
@@ -15,7 +15,8 @@ import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
 import { INFORMATION_ROUTES } from './information.js';
 import { mountPageMotion } from './motion.js';
-import { installOzIcons } from './oz-icons.js';
+import { installOzIcons, ozIcon } from './oz-icons.js';
+import { ozPointsPill } from './oz-ui.js';
 installOzIcons();
 initI18n();
 
@@ -25,9 +26,11 @@ const app = {
 };
 window.__umc = app; // handy for debugging in the console
 
+// +Onz redesign navigation (Bottom Tab Bar 721:20421 on mobile, Web · Sidebar 915:33484 from 1024px).
+// Students: five destinations. Events are reached from Home and About from the account menu.
 const nav = {
-  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['promote', 'Promote your shop', 'megaphone'], ['insights', 'Insights', 'chart-column']],
+  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house'], ['promote', 'Promote your shop', 'megaphone'], ['insights', 'Insights', 'chart-column'], ['about', 'About us', 'info', 'desktop']],
 };
 
 // A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
@@ -142,17 +145,20 @@ function shell(role, routes) {
   app.shellRole = role;
   const p = app.profile || {};
   document.body.innerHTML = `
-    <div class="shell">
-      <header class="topbar">
-        <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
+    <div class="shell oz-shell oz-${role}">
+      <header class="topbar oz-topbar">
+        <a class="brand oz-wordmark" href="#/home" aria-label="+Onz home" data-no-i18n>+Onz</a>
+        <p class="oz-tagline">your campus, all added up</p>
         <span class="spacer"></span>
-        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
-        ${langToggleHTML()}
-        <button class="avatar" id="avatar" aria-label="Account menu">${esc(initials(p.name))}</button>
+        ${role === 'student' ? ozPointsPill(p.points || 0) : ''}
+        <button class="avatar oz-gear" id="avatar" aria-label="Account menu">${role === 'student' ? ozIcon('settings') : esc(initials(p.name))}</button>
       </header>
+      <aside class="oz-sidebar">
+        <a class="oz-side-brand" href="#/home" aria-label="+Onz home" data-no-i18n tabindex="-1">+Onz</a>
+        <nav class="tabbar oz-tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, only]) =>
+          `<a href="#/${k}" data-tab="${k}" class="oz-tab${only === 'desktop' ? ' nav-desktop-only' : ''}">${icon(ic)}<span class="oz-tab-label">${label}</span></a>`).join('')}</nav>
+      </aside>
       <main class="view" id="view"></main>
-      <nav class="tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, center]) =>
-        `<a href="#/${k}" data-tab="${k}" class="${center ? 'center' : ''}${k==='about'&&role==='merchant'?' nav-desktop-only':''}">${center ? `<span class="bubble">${icon(ic)}</span>` : icon(ic)}<span>${label}</span></a>`).join('')}</nav>
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
@@ -163,26 +169,42 @@ function shell(role, routes) {
 function paintAvatar() {
   const el = $('#avatar'); if (!el) return;
   const p = app.profile || {};
-  if (app.role === 'student') { el.classList.add('has-art'); el.innerHTML = avatarSVG(p.avatar || defaultFor(app.ctx?.uid), { variant: 'head', size: 40, title: p.name }); }
+  if (app.role === 'student') return; // the student's top-right control is the settings gear (Top Bar 431:356)
   else if (app.role === 'merchant' && app.merchant?.logo) { el.classList.add('has-art'); el.innerHTML = `<img src="${app.merchant.logo}" alt="">`; }
   else { el.classList.remove('has-art'); el.textContent = initials(p.name); }
 }
 
+// Account menu (Figma "Me · Account menu" 525:10476): grouped rows, shown as a sheet from the settings gear so every
+// existing entry point and id (#tour, #install, #terms, #signout, #to-feedback, #to-mpp) keeps working.
 function accountSheet() {
   const p = app.profile || {};
-  const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
-    <div class="stack" style="margin-top:18px">
-      ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
-      ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
-      ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the Admin dashboard</a>` : ''}
-      <a class="btn block" href="#/about" data-close>${icon('info')} About us</a><a class="btn block" href="#/contact" data-close>${icon('mail')} Contact us</a>
-      <a class="btn block" href="#/points" data-close>${icon('sparkles')} Points guide</a>
-      <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
-      <button class="btn block" id="install">Install the app on this device</button>
-      <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
-      <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
-      ${app.role === 'student' || app.role === 'merchant' ? `<a class="btn block ghost danger-link" href="#/delete-account" data-close>${icon('trash-2')} ${app.role === 'merchant' ? 'Close my account' : 'Delete my account'}</a>` : ''}
-    </div>`);
+  const student = app.role === 'student';
+  const chev = ozIcon('s:chevron-right', 'oz-menu-chev');
+  const row = (label, { href, id, badge = '' } = {}) => {
+    const inner = `<span class="oz-menu-label">${label}${badge}</span>${chev}`;
+    return href ? `<a class="oz-menu-row" href="${esc(href)}"${id ? ` id="${id}"` : ''} data-close>${inner}</a>`
+      : `<button type="button" class="oz-menu-row" id="${id}">${inner}</button>`;
+  };
+  const group = (title, rows) => `<h3 class="oz-menu-title">${title}</h3><div class="oz-menu-group">${rows.join('')}</div>`;
+  const lang = getLang();
+  const el = sheet(`<div class="oz-account">
+    <div class="oz-account-id">${student ? `<span class="oz-account-av">${avatarSVG(p.avatar || defaultFor(app.ctx?.uid), { variant: 'head', size: 52, title: p.name })}</span>` : ''}
+      <div class="oz-account-text"><h2 class="oz-account-name">${esc(p.name || app.user.email)}</h2><p class="oz-account-sub">${esc(app.user.email)}</p></div></div>
+    ${student ? group('Profile and preferences', [row('Profile and settings', { href: '#/me' }), row('Customise avatar', { href: '#/avatar' })]) : ''}
+    ${group('Help and information', [
+      ...(student ? [row('Questions and feedback', { href: '#/feedback', id: 'to-feedback', badge: app.feedbackNew ? ` <span class="oz-tag oz-tag-success">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : '' })] : []),
+      row('About +Onz', { href: '#/about' }), row('Contact us', { href: '#/contact' }), row('Points guide', { href: '#/points' })])}
+    ${group('App', [row('Take the tour', { id: 'tour' }), row('Install +Onz', { id: 'install' }), row('Terms of Use and Privacy', { id: 'terms' })])}
+    <h3 class="oz-menu-title" id="oz-lang-title">Language</h3>
+    <div class="oz-menu-group oz-lang" role="group" aria-labelledby="oz-lang-title" data-no-i18n>
+      <button type="button" class="oz-menu-row" data-lang-set="en" aria-pressed="${lang === 'en'}"><span class="oz-menu-label">English</span>${ozIcon('s:check', 'oz-menu-check')}</button>
+      <button type="button" class="oz-menu-row" data-lang-set="ms" aria-pressed="${lang === 'ms'}"><span class="oz-menu-label">Bahasa Malaysia</span>${ozIcon('s:check', 'oz-menu-check')}</button>
+    </div>
+    <div class="oz-menu-group oz-menu-end">
+      ${app.isMpp ? `<a class="oz-menu-row" href="${esc(siteUrls.admin)}" id="to-mpp"><span class="oz-menu-label">Open the Admin dashboard</span>${chev}</a>` : ''}
+      <button type="button" class="oz-menu-row" id="signout"><span class="oz-menu-label">${ozIcon('s:logout')}Sign out</span></button>
+      <a class="oz-menu-row is-danger" href="#/delete-account" data-close><span class="oz-menu-label">${ozIcon('s:trash')}${app.role === 'merchant' ? 'Close my account' : 'Delete my account'}</span></a>
+    </div></div>`);
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
   $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
@@ -259,7 +281,7 @@ async function render() {
     if(render.token!==token)return;
     if(gate&&gate!==route){history.replaceState(null,'','#/'+gate);route=gate;parts=[gate];if(mod.gateMessage)toast(mod.gateMessage);}
     const r=mod.routes[route];
-    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route);a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route)||(a.dataset.tab===route&&!$(`.tabbar a[data-tab="${r.tab}"]`));a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
     view=$('#view');view.className='view'+(r.wide?' wide':'');view.setAttribute('aria-busy','true');
     view.innerHTML=routeLoadingHTML(route);
     document.title=`${r.title} · +Onz ${app.role==='student'?'Student':'Merchant'}`;

@@ -36,7 +36,8 @@ for (const route of ['explore', 'community', 'explore/deals', 'learn']) {
 for (const route of ['bayar', 'explore/idea']) {
   if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
 }
-if (await stu.locator('.tabbar a[href="#/events"]').count() !== 1) throw new Error('missing Campus Events navigation');
+if ((await stu.locator('.tabbar a[data-tab]').evaluateAll((links) => links.map((a) => a.dataset.tab))).join() !== 'community,leagues,home,rewards,me') throw new Error('student navigation should be Community, Leagues, Home, Rewards, Me');
+if (await stu.locator('#view a[href="#/events"]').count() < 1) throw new Error('missing Campus Events link on Home');
 if (await stu.locator('#to-mpp').count() !== 0) throw new Error('student app offers the HEP dashboard to a student');
 const before = await pointsOf(stu);
 await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
@@ -270,10 +271,10 @@ await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
 if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));
 await ns.click('.guide [data-next]'); await ns.waitForSelector('.guide .is-tour');
 // The overlay covers the page, so switch the language from the page's own toggle in code.
-await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="ms"]')?.click());
+await ns.evaluate(async () => (await import('./js/i18n.js')).setLang('ms'));
 await ns.waitForFunction(() => /^Langkah 1 daripada \d+$/.test(document.querySelector('.guide-step')?.textContent.trim() || ''));
 await ns.screenshot({ path: `${shots}/g-student-step-ms.png` });
-await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="en"]')?.click());
+await ns.evaluate(async () => (await import('./js/i18n.js')).setLang('en'));
 for (let k = 0; k < 12 && await ns.locator('.guide .is-tour').count(); k++) await ns.click('.guide [data-next]');
 await ns.waitForSelector('.guide .is-finish'); await ns.screenshot({ path: `${shots}/g-student-finish.png` });
 await ns.click('.guide-tasks a[data-go="avatar"]'); await ns.waitForFunction(() => location.hash === '#/avatar' && !document.querySelector('.guide'));

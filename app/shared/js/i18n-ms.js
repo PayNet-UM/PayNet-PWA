@@ -1,5 +1,27 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+your campus, all added up|kampus anda, semuanya terkumpul
+Profile and preferences|Profil dan pilihan
+Help and information|Bantuan dan maklumat
+About +Onz|Tentang +Onz
+Install +Onz|Pasang +Onz
+Terms of Use and Privacy|Terma Penggunaan dan Privasi
+App|Aplikasi
++Onz home|Laman utama +Onz
+Upcoming events|Acara akan datang
+All campus events|Semua acara kampus
+Explore +Onz|Terokai +Onz
+Find campus shops|Cari kedai kampus
+Browse stalls and get directions.|Lihat gerai dan dapatkan arah.
+Discover student-run businesses.|Temui perniagaan kendalian pelajar.
+One-minute lessons on paying safely.|Pelajaran seminit tentang bayaran selamat.
+Find offers around campus.|Cari tawaran di sekitar kampus.
+Posters, calendar and past events.|Poster, kalendar dan acara lalu.
+Levels, streaks and ways to earn.|Tahap, rentetan dan cara mengumpul mata.
+No upcoming events right now|Tiada acara akan datang buat masa ini
+New campus events appear here as soon as they are announced.|Acara kampus baharu dipaparkan di sini sebaik sahaja diumumkan.
+Browse past events|Lihat acara lalu
+Top level reached|Tahap tertinggi dicapai
 Archived|Diarkibkan
 Archived stalls and floor map.|Arkib gerai dan pelan tapak.
 events this month|acara bulan ini

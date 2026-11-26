@@ -12,6 +12,7 @@ const controlPaths = {
 };
 const eventIcon = name => controlPaths[name]?`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${controlPaths[name]}</svg>`:icon(name);
 const imageFor = s => `assets/feskum-2026/feed-${String(s.page).padStart(2,'0')}.jpg`;
+export const eventPosterImage = imageFor;
 export function eventCarousel({page=false,today}={}) {
   const slides=activeEventSlides(today),s=slides[0];
   if(!s)return '';

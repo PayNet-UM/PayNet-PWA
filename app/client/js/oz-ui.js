@@ -31,7 +31,8 @@ export function ozSegmented(items, selected, { label = '', cls = '' } = {}) {
 export function ozListRow({ title, sub = '', iconName = '', leadHtml = '', href, trailHtml = '', chevron = true, cls = '', attr = {} }) {
   const lead = leadHtml || (iconName ? `<span class="oz-row-lead">${ozIcon(iconName)}</span>` : '');
   const body = `${lead}<span class="oz-row-text"><span class="oz-row-title">${esc(title)}</span>${sub ? `<span class="oz-row-sub">${esc(sub)}</span>` : ''}</span>${trailHtml}${chevron ? ozIcon('s:chevron-right', 'oz-row-chev') : ''}`;
-  return href ? `<a class="oz-row${cls ? ' ' + cls : ''}" href="${esc(href)}"${attrs(attr)}>${body}</a>` : `<div class="oz-row${cls ? ' ' + cls : ''}"${attrs(attr)}>${body}</div>`;
+  const c = `${cls ? cls + ' ' : ''}oz-row`;
+  return href ? `<a class="${c}" href="${esc(href)}"${attrs(attr)}>${body}</a>` : `<div class="${c}"${attrs(attr)}>${body}</div>`;
 }
 
 /** Sir Onz, front view (Lion v2 22:1166, calm). Built from the Figma layers; scales with --oz-lion-w. */
@@ -75,7 +76,8 @@ export const HERO_HATS = { beanie: 'hat-beanie.svg' };
  * Points Hero (433:115). levelName/streakDays/nextLine come from points-policy and the streak model.
  * progress is 0..1. points is bound live with data-bind="points".
  */
-export function ozPointsHero({ points = 0, levelName = '', streakDays = 0, nextLine = '', progress = 0, hat = 'none', label = 'Your points', cls = '' }) {
+export function ozPointsHero({ points = 0, levelName = '', streakDays = 0, nextLine = '', progress = 0, hat = 'none', label = 'Your points', cls = '',
+  levelAttr = null, streakHref = '', streakLabel = '' }) {
   const pct = Math.max(0, Math.min(1, Number(progress) || 0)) * 100;
   return `<section class="oz-hero${cls ? ' ' + cls : ''}" aria-label="${esc(label)}">
     ${ozHeroMascot({ hat })}
@@ -83,8 +85,10 @@ export function ozPointsHero({ points = 0, levelName = '', streakDays = 0, nextL
       <p class="oz-hero-label">${esc(label)}</p>
       <p class="oz-hero-points"><span data-bind="points">${Number(points || 0).toLocaleString()}</span></p>
       <div class="oz-hero-chips">
-        ${levelName ? `<span class="oz-hero-chip"><img src="${A}hero/medal.svg" alt="" width="16" height="16">${esc(levelName)}</span>` : ''}
-        ${streakDays > 0 ? `<span class="oz-hero-chip"><img src="${A}hero/flame.svg" alt="" width="16" height="16">${esc(streakDays === 1 ? '1 day' : `${streakDays} days`)}</span>` : ''}
+        ${levelName ? (levelAttr ? `<button type="button" class="oz-hero-chip oz-hero-chip-btn"${attrs(levelAttr)}>` : '<span class="oz-hero-chip">')
+          + `<img src="${A}hero/medal.svg" alt="" width="16" height="16">${esc(levelName)}` + (levelAttr ? '</button>' : '</span>') : ''}
+        ${streakHref ? `<a class="oz-hero-chip oz-hero-chip-btn" href="${esc(streakHref)}"${streakLabel ? ` aria-label="${esc(streakLabel)}"` : ''}><img src="${A}hero/flame.svg" alt="" width="16" height="16">${esc(streakDays > 0 ? (streakDays === 1 ? '1 day' : `${streakDays} days`) : 'Start a streak')}</a>`
+          : streakDays > 0 ? `<span class="oz-hero-chip"><img src="${A}hero/flame.svg" alt="" width="16" height="16">${esc(streakDays === 1 ? '1 day' : `${streakDays} days`)}</span>` : ''}
       </div>
       ${nextLine ? `<p class="oz-hero-next">${esc(nextLine)}</p>` : ''}
       ${nextLine ? `<div class="oz-hero-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="${esc(nextLine)}"><i style="width:${pct.toFixed(1)}%"></i></div>` : ''}

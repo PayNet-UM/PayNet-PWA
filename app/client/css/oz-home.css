@@ -1,0 +1,72 @@
+/* Home (Figma 03 · Home 441:304; W01 · Home · Desktop 915:33759). Client only. */
+
+/* Page title: visible from 1024px (web frames), kept for screen readers on phones. */
+.oz-page-title { margin:0 0 var(--oz-space-4); font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+@media (max-width:1023.98px) {
+  .oz-page-title.oz-desktop-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; margin:0; }
+}
+
+.oz-home { padding-top:var(--oz-space-2); }
+.oz-home-grid { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-home-main, .oz-home-side { display:flex; flex-direction:column; gap:var(--oz-space-3); min-width:0; }
+.oz-home .oz-section-head { min-height:44px; align-items:center; margin:var(--oz-space-1) 0 0; }
+.oz-home .oz-section-head h2 { font:700 20px/24px var(--oz-font-display); }
+.oz-home .oz-link { font-size:13px; }
+
+/* Points Hero on Home: the chips open the level guide and the streak. */
+.oz-home-hero { margin:0; padding:0; background:none; border:0; box-shadow:none; }
+.oz-hero-chip-btn { cursor:pointer; border:0; text-decoration:none; position:relative; }
+.oz-hero-chip-btn::before { content:''; position:absolute; inset:-8px -2px; }
+.oz-hero-chip-btn:focus-visible { outline:2px solid var(--oz-lime-500); outline-offset:2px; }
+@media (hover:hover) { .oz-hero-chip-btn:hover { background:rgba(255,255,255,.28); } }
+
+/* Upcoming events: poster rail (Event Poster Card 755:6150), swipe on phones, grid on desktop. No autoplay. */
+.oz-home-events { display:flex; flex-direction:column; gap:var(--oz-space-2); min-width:0; }
+.oz-rail { display:flex; gap:var(--oz-space-3); overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory;
+  margin:0 calc(var(--oz-space-4) * -1); padding:2px var(--oz-space-4) var(--oz-space-2); scroll-padding-inline:var(--oz-space-4); scrollbar-width:none; }
+.oz-rail::-webkit-scrollbar { display:none; }
+.oz-poster-card { flex:0 0 min(296px, 82vw); scroll-snap-align:start; display:flex; flex-direction:column; overflow:hidden; padding:0; text-align:left;
+  background:var(--oz-bg-surface); border:1px solid var(--oz-border); border-radius:20px; color:var(--oz-text-primary); cursor:pointer; font:inherit; }
+.oz-poster-card:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-poster-img { display:block; height:131px; overflow:hidden; background:var(--oz-bg-subtle); }
+.oz-poster-img img { display:block; width:100%; height:100%; object-fit:cover; }
+.oz-poster-info { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:12px 14px 14px; min-width:0; }
+.oz-poster-tag { padding:3px 8px; border-radius:var(--oz-radius-pill); background:var(--oz-lime-100); color:var(--oz-text-on-accent); font:700 11px/14px var(--oz-font-ui); }
+.oz-poster-title { font:800 18px/22px var(--oz-font-display); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-poster-meta { display:flex; align-items:center; gap:6px; font:500 13px/18px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-poster-meta .oz-ic { width:14px; height:14px; flex:none; color:var(--oz-text-primary); }
+@media (hover:hover) { .oz-poster-card:hover { border-color:var(--oz-border-strong); } }
+
+/* Explore rows (List Row 431:139). */
+.kk-pillars { display:flex; flex-direction:column; gap:var(--oz-space-2); margin:0; padding:0; grid-template-columns:none; }
+.oz-explore-more { display:none; flex-direction:column; gap:var(--oz-space-2); }
+.kk-pillar.is-unavailable { opacity:1; }
+.kk-pillar.is-unavailable .oz-row-title, .kk-pillar.is-unavailable .oz-row-sub { color:var(--oz-text-secondary); }
+.kk-pillar.is-unavailable .oz-row-lead { background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+.oz-row .oz-tag { flex:none; }
+
+/* Desktop: main column 720 + side column 376 (W01 · Home · Desktop). */
+@media (min-width:1024px) {
+  .oz-home { padding-top:0; }
+  .oz-home-grid { display:grid; grid-template-columns:minmax(0, 720fr) minmax(280px, 376fr); gap:var(--oz-space-6); align-items:start; }
+  .oz-home-main { gap:var(--oz-space-4); }
+  .oz-home-side { gap:var(--oz-space-2); }
+  .oz-home-side .oz-section-head { margin-top:0; }
+  .oz-home-side .oz-section-head h2 { font:700 22px/28px var(--oz-font-display); }
+  .oz-explore-more { display:flex; }
+  .oz-home .oz-hero { min-height:208px; padding:var(--oz-space-6) var(--oz-space-5); }
+  .oz-rail { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); overflow:visible; margin:0; padding:0; scroll-snap-type:none; }
+  .oz-poster-card { flex:none; }
+  .oz-poster-img { height:110px; }
+}
+@media (min-width:1280px) { .oz-poster-img { height:131px; } }
+
+/* Neutralise the pre-redesign .kk-hero / .kk-pillar rules (legacy layer) that still match the kept test hooks. */
+.oz-home-hero { all:unset; display:block; }
+.oz-home-hero::before, .oz-home-hero::after { content:none; display:none; }
+.kk-pillars .kk-pillar.oz-row { display:flex; align-items:center; justify-items:normal; align-content:normal; text-align:left; min-height:64px;
+  padding:var(--oz-space-3) var(--oz-space-2) var(--oz-space-3) var(--oz-space-4); gap:var(--oz-space-3); border:0; border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-surface); box-shadow:none; transform:none; transition:background-color 120ms var(--oz-ease-out); }
+.kk-pillars .kk-pillar.oz-row::after { content:none; display:none; }
+.kk-pillars .kk-pillar.oz-row:hover { transform:none; border:0; }
+.kk-pillars .kk-pillar.is-unavailable { background:var(--oz-bg-surface); cursor:default; }

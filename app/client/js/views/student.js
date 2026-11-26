@@ -10,7 +10,10 @@ import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
 import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
-import { eventCarousel, mountEventCarousel } from '../event-carousel.js';
+import { eventCarousel, mountEventCarousel, openEventPoster, eventPosterImage } from '../event-carousel.js';
+import { activeEventSlides } from '../event-catalog.js';
+import { ozPointsHero, ozListRow, ozSectionHead, ozEmpty, ozButton, ozTag } from '../oz-ui.js';
+import { ozIcon } from '../oz-icons.js';
 import { eventGalleryRender, eventGalleryMount } from '../event-gallery.js';
 import { CAFES } from '../cafes.js';
 import { createMap, shopPinMap, hasPin, directionsUrl, wazeUrl, distanceM, fmtDistance, watchLocation, locate, UM_CENTER } from '../map.js';
@@ -43,40 +46,57 @@ export const merchantLogo = (m, cls = 'logo') => (safeImg(m.logo) ? `<img class=
 const isIdea = (m) => m.segment === IDEA_SEGMENT;
 
 // ------------------------------------------------------------- home: the +Onz hub
+// Figma 03 · Home (441:304) and W01 · Home · Desktop (915:33759): Points Hero → Upcoming events → Explore.
+// Live deals stay behind their switches; manual check-in was removed from production and is not shown.
 const PILLARS = [
-  ['explore', 'Overview', 'shops', 'Find stalls that take QR.'],
-  ['community', 'Community', 'community', 'Friends, league & welfare.'],
-  ['explore/deals', 'Live deals', 'deals', 'Find offers around campus.'],
-  ['learn', 'Learn & Earn', 'lessons', 'Three lessons. One-time points.'],
+  ['explore', 'Find campus shops', 'stall', 'Browse stalls and get directions.'],
+  ['community', 'Student ventures', 'community', 'Discover student-run businesses.'],
+  ['explore/deals', 'Live deals', 's:live', 'Find offers around campus.'],
+  ['learn', 'Learn & Earn', 'learn', 'One-minute lessons on paying safely.'],
 ];
+function homeEventRail() {
+  const slides = activeEventSlides();
+  const head = `<div class="oz-section-head"><h2 id="home-events-title">Upcoming events</h2><a class="oz-link" href="#/events">All campus events <span aria-hidden="true">→</span></a></div>`;
+  if (!slides.length) return `<section class="oz-home-events" aria-labelledby="home-events-title">${head}
+    ${ozEmpty({ title: 'No upcoming events right now', body: 'New campus events appear here as soon as they are announced.', actionHtml: ozButton('Browse past events', { kind: 'ghost', size: 'sm', href: '#/events' }) })}</section>`;
+  return `<section class="oz-home-events" aria-labelledby="home-events-title">${head}
+    <div class="oz-rail">${slides.map((s, i) => `<button type="button" class="oz-poster-card" data-home-event="${i}" aria-label="View full poster: ${esc(s.title)}">
+      <span class="oz-poster-img"><img src="${eventPosterImage(s)}" alt="" width="1600" height="710" loading="${i ? 'lazy' : 'eager'}" draggable="false"></span>
+      <span class="oz-poster-info">${s.tag ? `<span class="oz-poster-tag">${esc(s.tag)}</span>` : ''}<span class="oz-poster-title">${esc(s.title)}</span>
+        ${s.when ? `<span class="oz-poster-meta">${ozIcon('events')}<span>${esc(s.when)}</span></span>` : ''}${s.where ? `<span class="oz-poster-meta">${ozIcon('map-pin')}<span>${esc(s.where)}</span></span>` : ''}</span>
+    </button>`).join('')}</div></section>`;
+}
 async function homeRender(app) {
   const p = app.profile; const lvl = levelOf(earnedTotal(app.ledger));
   const appStreak = D.dailyStreak(app.appDays);
-  return `
-  <div class="onz-home-feature">
-  <section class="kk-hero student-welcome" aria-label="Your +Onz card">
-    <a class="kk-hero-avatar" href="#/avatar" aria-label="Customise your avatar">${AV.avatarSVG(myAvatar(app), { size: 108, title: p.name })}<span class="kk-edit">${icon('pencil')}</span></a>
-    <div class="kk-hero-text">
-      <h1 class="who">Hi ${esc(firstName(p))}</h1>
-      ${usernameTag(p.username)}
-      <div class="balance"><span class="welcome-coin" aria-hidden="true">${icon('sparkles')}</span><div><strong data-bind="points">${n(p.points)}</strong><span>points</span></div></div>
-      <div class="welcome-badges"><button type="button" class="welcome-tier" id="level-guide" aria-haspopup="dialog" aria-label="${esc(lvl.name)} — ways to earn points">${icon('medal')}${esc(lvl.name)}${icon('chevron-right')}</button><a class="streak welcome-streak" href="#/rewards/streak" aria-label="View your daily app streak">${icon('flame')} ${appStreak.current ? `${appStreak.current}-day streak` : 'Start a streak'}${icon('chevron-right')}</a></div>
+  const hero = ozPointsHero({
+    points: p.points, levelName: lvl.name, streakDays: appStreak.current, progress: lvl.next ? lvl.pct / 100 : 1, hat: myAvatar(app).hat,
+    nextLine: lvl.next ? `Next: ${lvl.next} · ${n(lvl.toNext)} pts` : 'Top level reached',
+    levelAttr: { id: 'level-guide', 'aria-haspopup': 'dialog', 'aria-label': `${lvl.name} — ways to earn points` },
+    streakHref: '#/rewards/streak', streakLabel: 'View your daily app streak',
+  });
+  return `<div class="oz-home">
+  <h1 class="oz-page-title oz-desktop-only">Home</h1>
+  <div class="oz-home-grid">
+    <div class="oz-home-main">
+      <div class="kk-hero oz-home-hero">${hero}</div>
+      ${homeEventRail()}
     </div>
-    <div class="welcome-progress">
-      <div class="welcome-progress-label"><span>${lvl.next ? 'Next level' : 'Top level'}</span><strong>${lvl.next ? `${n(lvl.toNext)} to ${esc(lvl.next)}` : esc(lvl.name)}</strong></div>
-      <div class="welcome-progress-track" role="progressbar" aria-label="Level progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${lvl.pct}"><span style="width:${lvl.pct}%"></span></div>
+    <div class="oz-home-side">
+      <div class="oz-section-head"><h2>Explore +Onz</h2></div>
+      <nav class="kk-pillars" aria-label="+Onz directories">${PILLARS.map(([h, t, ic, d]) => {
+        const enabled = (h !== 'explore' && h !== 'explore/deals') || (D.featureOn(app.rules, 'overview') && (h !== 'explore/deals' || D.featureOn(app.rules, 'dealsAndPay')));
+        return enabled ? ozListRow({ title: t, sub: d, iconName: ic, href: '#/' + h, cls: 'kk-pillar' })
+          : ozListRow({ title: t, sub: d, iconName: ic, chevron: false, cls: 'kk-pillar is-unavailable', trailHtml: ozTag('Coming soon', 'sky'), attr: { 'aria-disabled': 'true' } });
+      }).join('')}</nav>
+      <div class="oz-explore-more">
+        ${ozListRow({ title: 'Campus Events', sub: 'Posters, calendar and past events.', iconName: 'events', href: '#/events' })}
+        ${ozListRow({ title: 'How points work', sub: 'Levels, streaks and ways to earn.', iconName: 'coin', href: '#/points' })}
+      </div>
     </div>
-  </section>
-  ${eventCarousel()}
-  </div>
-  <h2 class="kk-pillars-title">Explore</h2>
-  <nav class="kk-pillars" aria-label="+Onz directories">${PILLARS.map(([h, t, art, d]) => {
-    const enabled = (h !== 'explore' && h !== 'explore/deals') || (D.featureOn(app.rules, 'overview') && (h !== 'explore/deals' || D.featureOn(app.rules, 'dealsAndPay')));
-    const content = `<span class="onz-art-frame">${directoryArt(art)}</span><h3>${t}</h3><p>${d}</p>`;
-    return enabled ? `<a href="#/${h}" class="kk-pillar">${content}</a>` : `<div class="kk-pillar is-unavailable" aria-disabled="true">${content}<span class="badge">Coming soon</span></div>`;
-  }).join('')}</nav>
-`;
+  </div></div>`;
 }
+
 function homeMount(root, app) {
   mountUsernameCopy(root, app);
   $('#level-guide', root).onclick = () => {
@@ -105,7 +125,9 @@ function homeMount(root, app) {
       <p class="faint points-guide-note">Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.</p><a class="points-policy-link" href="#/points" data-close>${icon('info')} Full points guide ${icon('arrow-right')}</a>
     </div>`);
   };
-  return mountEventCarousel(root, app);
+  const slides = activeEventSlides();
+  $$('[data-home-event]', root).forEach((b) => { b.onclick = () => openEventPoster(slides[Number(b.dataset.homeEvent)]); });
+  return null;
 }
 
 const emptyMerchants = () => `<div class="card empty">${icon('store')}<p>Verified shops will appear here.</p></div>`;
@@ -822,8 +844,8 @@ export const routes = {
   explore: { title: 'Overview', render: directoryRender, mount: directoryMount, tab: 'home', feature: 'overview' },
   merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'home', feature: 'overview' },
   rewards: { title: 'Rewards', render: rewardsRender, mount: live(rewardsMount) },
-  feskum: { title: 'FESKUM 2026', render: feskumRender, mount: feskumMount, tab: 'events', wide: true },
-  events: { title: 'Campus Events', render: eventsRender, mount: eventGalleryMount, tab: 'events', wide:true },
+  feskum: { title: 'FESKUM 2026', render: feskumRender, mount: feskumMount, tab: 'home', wide: true },
+  events: { title: 'Campus Events', render: eventsRender, mount: eventGalleryMount, tab: 'home', wide:true },
   bayar: { title: 'Pay Cashless', render: bayarRender, tab: 'home', feature: 'dealsAndPay' },
   learn: { title: 'Learn & Earn', render: learnRender, mount: learnMount, tab: 'home' },
   survey: { title: 'Money check', render: surveyRender, mount: (r, a) => surveyMount(r, a, 'student', 'home'), tab: 'home' },
