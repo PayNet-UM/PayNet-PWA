@@ -29,6 +29,10 @@ const PATTERNS = [
   // +Onz redesign (Points Hero)
   [/^Next: (.+) · ([\d,]+) pts$/, (level, n) => `Seterusnya: ${t(level)} · ${n} mata`],
   [/^(\d+) days?$/, (n) => `${n} hari`],
+  [/^Ends in (\d+) min$/, (mins) => `Tamat dalam ${mins} minit`],
+  [/^\+(\d+) pts added · back tomorrow$/, (pts) => `+${pts} mata ditambah · kembali esok`],
+  [/^Off-peak deal · (.+)$/, (w) => `Tawaran luar waktu puncak · ${w}`],
+  [/^\+([\d,]+) pts$/, (n) => `+${n} mata`],
   [/^Reach (.+) level to unlock (.+)\.$/, (level, item) => `Capai tahap ${t(level)} untuk membuka ${t(item)}.`],
   [/^([\d,]+) of 7 days$/, (n) => `${n} daripada 7 hari`],
   [/^([\d,]+) left$/, (n) => `${n} lagi`],

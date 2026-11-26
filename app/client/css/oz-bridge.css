@@ -79,6 +79,3 @@
 /* Progress bars */
 .progress { background:var(--oz-bg-subtle); border-radius:99px; }
 .progress > i { background:var(--oz-lime-500); border-radius:99px; }
-
-/* Links */
-#view a:not([class]) { color:var(--oz-blue-700); }

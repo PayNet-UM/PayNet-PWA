@@ -7,12 +7,13 @@ import * as D from '../data.js';
 import { signInEmails, addSignInEmail, removeSignInEmail, linkErrorText } from '../link-email.js';
 import { directoryArt } from '../directory-art.js';
 import { studentDealClaimRender, studentDealClaimMount } from '../deal-flow.js';
+import { claimId } from '../live-deals.js';
 import { tr } from '../i18n.js';
 import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../friends.js';
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
 import { eventCarousel, mountEventCarousel, openEventPoster, eventPosterImage } from '../event-carousel.js';
 import { activeEventSlides } from '../event-catalog.js';
-import { ozPointsHero, ozListRow, ozSectionHead, ozEmpty, ozButton, ozTag, ozSegmented } from '../oz-ui.js';
+import { ozPointsHero, ozListRow, ozSectionHead, ozEmpty, ozButton, ozTag, ozSegmented, ozLiveDealCard } from '../oz-ui.js';
 import { ozIcon } from '../oz-icons.js';
 import { eventGalleryRender, eventGalleryMount } from '../event-gallery.js';
 import { CAFES } from '../cafes.js';
@@ -54,6 +55,75 @@ const PILLARS = [
   ['explore/deals', 'Live deals', 's:live', 'Find offers around campus.'],
   ['learn', 'Learn & Earn', 'learn', 'One-minute lessons on paying safely.'],
 ];
+// The daily claim and its points credit are atomic. The existing ledger watcher supplies
+// the student's credit, including the original points if HEP changes the award later.
+function studentDealRows(app, rows) {
+  const now = D.clock(app.ctx), day = D.dayKey(now);
+  const credits = new Map(app.ledger.filter((entry) => entry.type === 'liveDeal').map((entry) => [entry.id, entry.delta]));
+  return rows.map(({ deal, merchant }) => {
+    const credit = credits.get('liveDeal_' + claimId(deal.id, app.ctx.uid, day));
+    const status = credit !== undefined ? 'Claimed today' : D.dealStatus(deal, merchant, null, now);
+    return {
+      deal, merchant, status,
+      points: credit ?? app.rules.liveDealPoints,
+      minutesLeft: deal.endMin - D.minuteOfDay(now),
+      hhmm: D.hhmm,
+      claimHref: status === 'Available' && app.ledgerLoaded && livePointEarningOn(app.rules) ? '#/claim-deal/' + deal.id : '',
+    };
+  });
+}
+const availableFirst = (a, b) => Number(b.status === 'Available') - Number(a.status === 'Available');
+const dealMessage = (message) => `<p class="oz-deal-message" role="status">${esc(message)}</p>`;
+
+function mountLiveDeals(app, render, getMerchants) {
+  let rows = [], message = 'Finding café deals…', refreshing = false, disposed = false;
+  const draw = () => {
+    if (disposed) return;
+    if (!navigator.onLine) render([], 'Live deals are unavailable offline.');
+    else render(studentDealRows(app, rows), message);
+  };
+  async function refresh() {
+    if (disposed || refreshing) return;
+    if (!navigator.onLine) { draw(); return; }
+    refreshing = true;
+    try {
+      const [deals, merchants] = await Promise.all([D.approvedDeals(app.ctx), getMerchants()]);
+      const current = await D.dealOverview(app.ctx, deals.filter((deal) => deal.enabled), merchants);
+      rows = current.filter((row) => row.merchant);
+      message = 'No off-peak deals right now.';
+    } catch {
+      rows = [];
+      message = 'Deals are temporarily unavailable.';
+    } finally {
+      refreshing = false;
+    }
+    draw();
+  }
+  const stopLedger = app.on((topic) => { if (topic === 'ledger') draw(); });
+  window.addEventListener('online', refresh);
+  window.addEventListener('offline', draw);
+  const timer = setInterval(refresh, 30000);
+  refresh();
+  return { draw, stop() {
+    disposed = true;
+    clearInterval(timer);
+    stopLedger();
+    window.removeEventListener('online', refresh);
+    window.removeEventListener('offline', draw);
+  } };
+}
+
+function dealListWriter(list) {
+  let previous;
+  return (html) => {
+    if (html === previous) return;
+    previous = html;
+    const focusedHref = list.contains(document.activeElement) ? document.activeElement.getAttribute('href') : null;
+    list.innerHTML = html;
+    if (focusedHref) $$('a', list).find((link) => link.getAttribute('href') === focusedHref)?.focus({ preventScroll: true });
+  };
+}
+
 function homeEventRail() {
   const slides = activeEventSlides();
   const head = `<div class="oz-section-head"><h2 id="home-events-title">Upcoming events</h2><a class="oz-link" href="#/events">All campus events <span aria-hidden="true">→</span></a></div>`;
@@ -70,7 +140,7 @@ async function homeRender(app) {
   const p = app.profile; const lvl = levelOf(earnedTotal(app.ledger));
   const appStreak = D.dailyStreak(app.appDays);
   const hero = ozPointsHero({
-    points: p.points, levelName: lvl.name, streakDays: appStreak.current, progress: lvl.next ? lvl.pct / 100 : 1, hat: myAvatar(app).hat,
+    points: p.points, levelName: lvl.name, streakDays: appStreak.current, progress: lvl.next ? lvl.pct / 100 : 1, hat: AV.clean(myAvatar(app)).hat,
     nextLine: lvl.next ? `Next: ${lvl.next} · ${n(lvl.toNext)} pts` : 'Top level reached',
     levelAttr: { id: 'level-guide', 'aria-haspopup': 'dialog', 'aria-label': `${lvl.name} — ways to earn points` },
     streakHref: '#/rewards/streak', streakLabel: 'View your daily app streak',
@@ -80,6 +150,10 @@ async function homeRender(app) {
   <div class="oz-home-grid">
     <div class="oz-home-main">
       <div class="kk-hero oz-home-hero">${hero}</div>
+      ${livePointEarningOn(app.rules) ? `<section class="oz-home-live" aria-labelledby="home-live-title">
+        ${ozSectionHead('Live now', { id: 'home-live-title', href: '#/explore/deals', linkLabel: 'All live deals' })}
+        <div id="home-live-list">${dealMessage('Finding café deals…')}</div>
+      </section>` : ''}
       ${homeEventRail()}
     </div>
     <div class="oz-home-side">
@@ -127,7 +201,15 @@ function homeMount(root, app) {
   };
   const slides = activeEventSlides();
   $$('[data-home-event]', root).forEach((b) => { b.onclick = () => openEventPoster(slides[Number(b.dataset.homeEvent)]); });
-  return null;
+  const homeDeals = $('#home-live-list', root);
+  if (!homeDeals) return null;
+  const writeDeals = dealListWriter(homeDeals);
+  const liveDeals = mountLiveDeals(app, (rows, message) => {
+    const featured = rows.filter(({ status }) => status === 'Available' || status === 'Claimed today' || status === 'Busy right now' || status.startsWith('Opens '))
+      .sort(availableFirst)[0];
+    writeDeals(featured ? ozLiveDealCard(featured) : dealMessage(message));
+  }, () => D.listVerifiedMerchants(app.ctx));
+  return liveDeals.stop;
 }
 
 const emptyMerchants = () => `<div class="card empty">${icon('store')}<p>Verified shops will appear here.</p></div>`;
@@ -192,7 +274,7 @@ async function directoryRender(app, [mode] = []) {
         <div class="overview-stats"><span>${icon('store')}<strong>${n(merchants.length)}</strong> <span>Shops</span></span><span>${icon('lightbulb')}<strong>${n(merchants.filter(isIdea).length)}</strong> <span>Student Ventures</span></span></div></div>
         <div class="checkout-pin-art" aria-hidden="true">${icon('map')}<span>${icon('navigation')}</span><i class="overview-spot spot-coffee">${icon('coffee')}</i><i class="overview-spot spot-store">${icon('store')}</i></div></div>
       <div class="overview-location-bar"><div class="checkout-location" role="status"><span class="checkout-location-icon" aria-hidden="true">${icon('navigation')}</span><div><strong id="loc-h">Explore campus</strong><p id="loc-p">Allow location to see what’s nearby.</p></div></div>
-      <button type="button" class="btn go" id="nearby-locate">${icon('locate-fixed')} My location</button></div>
+      <button type="button" class="btn ${mode === 'deals' ? 'primary' : 'go'}" id="nearby-locate">${icon('locate-fixed')} My location</button></div>
     </section>
     <section class="checkout-shops" aria-labelledby="checkout-shops-title"><div class="checkout-section-heading"><h2 id="checkout-shops-title">${icon('store')} Nearby shops</h2><span class="overview-result-count" id="directory-results-count" aria-label="Matching shops">${n(merchants.length)}</span></div>
       <div class="overview-search">${icon('search')}<input type="search" id="q" placeholder="Search by name or place" aria-label="Search merchants"></div>
@@ -200,14 +282,15 @@ async function directoryRender(app, [mode] = []) {
       <div class="checkout-shops-layout"><div class="card map-card checkout-map"><div class="overview-map-title">${icon('map')}<strong>Campus map</strong><span>${icon('badge-check')}<span>Admin verified</span></span></div><div id="cmap" class="mmap small" aria-label="Campus shops and your location, when permitted"></div><div class="nearby-map-legend"><span class="nearby-location-key" id="nearby-location-key" hidden><span class="nearby-you-dot" aria-hidden="true"></span><span>Your location</span></span><span>${icon('store')} Campus shops</span></div></div>
         <div class="stack" id="clist"></div></div>
     </section>
-    <section class="section checkout-deals" id="directory-deals" tabindex="-1" aria-labelledby="checkout-deals-title" ${D.featureOn(app.rules, 'dealsAndPay') ? '' : 'style="display:none"'}><div class="checkout-section-heading"><h2 id="checkout-deals-title">${icon('zap')} Live deals</h2></div>
-      <div id="checkout-deals" class="checkout-deal-grid"><div class="card checkout-deals-empty">${icon('zap')}<p>Finding café deals…</p></div></div>
+    <section class="section checkout-deals" id="directory-deals" tabindex="-1" aria-labelledby="checkout-deals-title" ${D.featureOn(app.rules, 'dealsAndPay') ? '' : 'hidden'}>
+      ${ozSectionHead('Live deals', { id: 'checkout-deals-title' })}
+      <div id="checkout-deals" class="checkout-deal-grid">${dealMessage('Finding café deals…')}</div>
     </section>
     ${hereNowSection(app, { discovery: true })}${cafeListings()}
   </div>`;
 }
 function directoryMount(root, app, [mode] = []) {
-  let pos = null, map = null, stop = null, disposed = false, refreshing = false;
+  let pos = null, map = null, stop = null, disposed = false;
   let activeType = mode === 'idea' ? 'Student ventures' : 'All', query = '', permission = null, watchToken = 0, requested = false, centerOnFix = true;
   const focusId = mode && !['idea', 'deals', 'cafes'].includes(mode) ? mode : null;
   const merchants = [...app._merchants];
@@ -237,33 +320,19 @@ function directoryMount(root, app, [mode] = []) {
       map.fit((focused ? [focused] : pinned).map((m) => [m.lat, m.lng]));
     }
   }
-  let dealRows = [], dealMessage = 'Finding café deals…', renderedDeals;
-  function drawDeals() {
-    const ids = new Set(visibleMerchants().map((m) => m.id));
-    const rows = dealRows.filter(({ merchant }) => merchant && ids.has(merchant.id))
-      .sort((a, b) => Number(b.status === 'Available') - Number(a.status === 'Available')
-        || (pos ? distance(a.merchant) - distance(b.merchant) : 0));
-    const html = rows.map(({ deal, merchant, status: dealStatus }) => {
-      const live = dealStatus === 'Available';
-      return `<article class="card checkout-deal nearby-deal ${live ? 'is-live' : ''}"><div class="checkout-deal-top"><div>
-        <span class="checkout-deal-status">${icon(live ? 'zap' : 'clock')} ${esc(live ? 'Live now' : dealStatus)}</span>
-        <h3>${esc(deal.title)}</h3><p class="checkout-deal-shop">${esc(merchant.name)} · ${D.hhmm(deal.startMin)}–${D.hhmm(deal.endMin)} MYT</p><span class="badge ok">${icon('sparkles')} +${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span></div>
-        <span class="nearby-deal-icon" aria-hidden="true">${icon('coffee')}</span></div>
-        <div class="nearby-deal-links"><a href="#/merchant/${esc(merchant.id)}">View shop ${icon('chevron-right')}</a>${live ? `<a class="btn primary small" href="#/claim-deal/${esc(deal.id)}">${icon('qr-code')} Scan to claim</a>` : ''}${hasPin(merchant) ? `<a class="btn small checkout-deal-directions" href="${directionsUrl(merchant)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : ''}</div></article>`;
-    }).join('') || `<div class="card checkout-deals-empty">${icon('zap')}<p>${esc(dealMessage)}</p></div>`;
-    if (html !== renderedDeals) { $('#checkout-deals', root).innerHTML = html; renderedDeals = html; }
-  }
-  async function refreshDeals() {
-    if (refreshing || disposed || !D.featureOn(app.rules, 'dealsAndPay')) return;
-    refreshing = true;
-    try {
-      const approved = await D.approvedDeals(app.ctx);
-      dealRows = await D.dealOverview(app.ctx, approved.filter((d) => d.enabled), merchants);
-      dealMessage = 'No off-peak deals right now.';
-    } catch { dealRows = []; dealMessage = 'Deals are temporarily unavailable.'; }
-    finally { refreshing = false; }
-    if (!disposed) drawDeals();
-  }
+  const writeDeals = dealListWriter($('#checkout-deals', root));
+  const liveDeals = D.featureOn(app.rules, 'dealsAndPay') ? mountLiveDeals(app, (deals, message) => {
+    const visible = new Set(visibleMerchants().map((merchant) => merchant.id));
+    const rows = deals.filter(({ merchant }) => visible.has(merchant.id))
+      .sort((a, b) => availableFirst(a, b) || (pos ? distance(a.merchant) - distance(b.merchant) : 0));
+    const primary = mode === 'deals' ? rows.find((row) => row.claimHref) : null;
+    writeDeals(rows.map((row) => {
+      const { merchant } = row;
+      const footerHtml = `<a class="oz-link" href="#/merchant/${esc(merchant.id)}">View shop</a>${hasPin(merchant)
+        ? `<a class="oz-link" href="${esc(directionsUrl(merchant))}" target="_blank" rel="noopener">Directions</a>` : ''}`;
+      return ozLiveDealCard({ ...row, primary: row === primary, claimLabel: 'Scan to claim', footerHtml });
+    }).join('') || dealMessage(message));
+  }, () => merchants) : null;
   function draw() {
     if (disposed) return;
     const rows = sortedMerchants();
@@ -274,7 +343,7 @@ function directoryMount(root, app, [mode] = []) {
         ${pos && hasPin(m) ? `<span class="nearby-distance">${icon('navigation')} ${esc(fmtDistance(distanceM(pos, m)))}</span>` : ''}</div>
       <div class="checkout-shop-action">${hasPin(m) ? `<a class="btn small" href="${directionsUrl(m)}" target="_blank" rel="noopener">${icon('navigation')} Directions</a>` : `<a class="btn small" href="#/merchant/${esc(m.id)}">View shop ${icon('chevron-right')}</a>`}</div></article>`; }).join('')
       || `<div class="card empty">${icon('search')}<p>No merchants match. Try another word or filter.</p></div>`;
-    drawDeals();
+    liveDeals?.draw();
   }
   function clearLocation(err) {
     pos = null;
@@ -326,11 +395,10 @@ function directoryMount(root, app, [mode] = []) {
   }).catch(() => {
     if (!disposed) $('#cmap', root).innerHTML = `<div class="empty">${icon('map')}<p>Map unavailable. Browse shops below.</p></div>`;
   });
-  draw(); refreshDeals();
+  draw();
   const section = mode === 'deals' ? $('#directory-deals', root) : mode === 'cafes' ? $('#directory-cafes', root) : null;
   if (section) { if (mode === 'cafes') section.open = true; section.scrollIntoView({ block: 'start' }); }
-  const dealTimer = setInterval(refreshDeals, 30000);
-  return () => { disposed = true; ++watchToken; clearInterval(dealTimer); if (stop) stop(); permission?.removeEventListener('change', permissionChanged); hn.stop(); if (map) map.remove(); };
+  return () => { disposed = true; ++watchToken; liveDeals?.stop(); if (stop) stop(); permission?.removeEventListener('change', permissionChanged); hn.stop(); if (map) map.remove(); };
 }
 
 function appStreakSection(app) {

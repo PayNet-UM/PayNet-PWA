@@ -213,6 +213,12 @@ await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
+await stu.goto(BASE + '#/explore/deals');
+const usedDeal = stu.locator('#checkout-deals article').filter({ hasText: 'Campus QR special' });
+await usedDeal.getByText('Claimed today', { exact: true }).waitFor({ timeout: 5000 });
+if (await usedDeal.locator('a[href^="#/claim-deal/"]').count()) throw new Error('a claimed deal still offers the scanner');
+if (!await usedDeal.getByRole('link', { name: 'View shop' }).count() || !await usedDeal.getByRole('link', { name: 'Directions' }).count()) throw new Error('the deal card lost its directory actions');
+ok('the deal directory shows the credited claim and preserves the shop and directions links');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
 await mer.click('#locate'); await mer.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');

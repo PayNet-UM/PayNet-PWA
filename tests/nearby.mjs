@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { canonicalPath } from '../app/client/js/student-paths.js';
 const source = fs.readFileSync(new URL('../app/client/js/views/student.js', import.meta.url), 'utf8');
+const dealStart = source.indexOf('function studentDealRows(');
+const dealEnd = source.indexOf('function homeEventRail()', dealStart);
 const start = source.indexOf('function directoryCategory(');
 const end = source.indexOf('\nasync function rewardsRender(app)', start);
 const shops = [{ id: 'far', name: 'Far Café', lat: 3.15, lng: 101.65, type: 'Food & drinks', location: 'KK1' },
@@ -11,7 +13,7 @@ const shops = [{ id: 'far', name: 'Far Café', lat: 3.15, lng: 101.65, type: 'Fo
   { id: 'unmapped', name: 'Unmapped Print', type: 'Printing', location: 'Library', zone: 'Central campus' }];
 const selectors = new Map();
 const el = (selector) => {
-  if (!selectors.has(selector)) selectors.set(selector, { innerHTML: '', textContent: '', hidden: true, classList: { toggle() {} } });
+  if (!selectors.has(selector)) selectors.set(selector, { innerHTML: '', textContent: '', hidden: true, contains: () => false, classList: { toggle() {} } });
   return selectors.get(selector);
 };
 const filters = [false, true].map((venture) => ({ dataset: { type: venture ? 'Student ventures' : 'All' }, setAttribute() {}, classList: { toggle() {} } }));
@@ -19,19 +21,19 @@ filters.push({ dataset: { type: 'Printing' }, setAttribute() {}, classList: { to
 let permissionListener, watch, watchCalls = 0, stopped = 0, removed = false, clearedTimer = false;
 const permission = { state: 'prompt', addEventListener: (_, cb) => { permissionListener = cb; }, removeEventListener: () => { permissionListener = null; } };
 const map = { position: null, pins: [], setMe(p) { this.position = p; }, setPins(pins, opts) { this.pins = pins; this.popup = opts.popup; }, setView() {}, fit() {}, remove() { removed = true; } };
-const D = new Proxy({ featureOn: () => true, listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], hhmm: String }, {
+const D = new Proxy({ featureOn: () => true, listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], clock: () => 0, dayKey: () => '1970-01-01' }, {
   get(target, key) { if (!(key in target)) throw new Error('Discovery accessed unexpected data operation: ' + key); return target[key]; },
 });
-const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n'];
+const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n', 'ozSectionHead', 'window', 'document'];
 const values = [D, (selector) => el(selector), () => filters, (m) => Number.isFinite(m.lat) && Number.isFinite(m.lng), (name) => `<i>${name}</i>`, String, () => '',
   () => '', (shop) => shop.venture, (shop) => `https://maps.example/${shop.id}`, (a, b) => Math.abs(a.lat - b.lat) * 100000, (d) => `${d} m away`,
   (onPos, onErr) => { watchCalls++; watch = { onPos, onErr }; return () => { stopped++; }; }, async () => map, [3.12, 101.65],
-  { permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String];
-const { directoryRender, directoryMount } = new Function(...names, source.slice(start, end) + '\nreturn { directoryRender, directoryMount };')(...values);
+  { onLine: true, permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String, (title) => '<h2>' + title + '</h2>', { addEventListener() {}, removeEventListener() {} }, {}];
+const { directoryRender, directoryMount } = new Function(...names, source.slice(dealStart, dealEnd) + source.slice(start, end) + '\nreturn { directoryRender, directoryMount };')(...values);
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 let passed = 0;
 async function test(label, fn) { await fn(); passed++; console.log('  ✓ ' + label); }
-const app = { ctx: {}, backend: { mode: 'demo' }, profile: {} };
+const app = { ctx: {}, backend: { mode: 'demo' }, profile: {}, ledger: [], on: () => () => {} };
 await test('render contains a map and nearby browsing, without attendance or points-claim controls', async () => {
   const html = await directoryRender(app);
   assert.ok(html.includes('id="cmap"') && html.includes('id="nearby-locate"'));
@@ -91,5 +93,24 @@ await test('granted permission resumes location and leaving the page releases tr
   cleanup(); assert.ok(stopped >= 2 && removed && clearedTimer); assert.equal(permissionListener, null);
   const before = el('#loc-h').textContent;
   watch.onErr(new Error('late error')); assert.equal(el('#loc-h').textContent, before);
+});
+await test('a failed deal read shows a recoverable message while shops remain visible', async () => {
+  D.approvedDeals = async () => { throw new Error('Temporary network failure'); };
+  const dispose = directoryMount({}, app);
+  await flush();
+  assert.ok(el('#checkout-deals').innerHTML.includes('Deals are temporarily unavailable.'));
+  assert.ok(el('#clist').innerHTML.includes('Near Café'));
+  dispose();
+});
+await test('leaving during a deal read prevents stale UI updates', async () => {
+  let finish;
+  D.approvedDeals = () => new Promise((resolve) => { finish = resolve; });
+  const dispose = directoryMount({}, app);
+  const loading = el('#checkout-deals').innerHTML;
+  assert.ok(loading.includes('Finding café deals'));
+  dispose();
+  finish([]);
+  await flush();
+  assert.equal(el('#checkout-deals').innerHTML, loading);
 });
 console.log(`\n${passed} passed, 0 failed`);

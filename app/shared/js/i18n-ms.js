@@ -1,5 +1,13 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+All live deals|Semua tawaran langsung
+Claim|Tuntut
+LIVE|LANGSUNG
+Shop is full. Try again soon.|Kedai penuh. Cuba lagi sebentar lagi.
+Claimed today|Dituntut hari ini
+Back tomorrow|Kembali esok
+Directions|Panduan arah
+Live deals are unavailable offline.|Tawaran langsung tidak tersedia di luar talian.
 Customise Sir Onz|Ubah suai Sir Onz
 Your Sir Onz|Sir Onz anda
 Sir Onz avatar|Avatar Sir Onz

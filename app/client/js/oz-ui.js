@@ -35,6 +35,25 @@ export function ozListRow({ title, sub = '', iconName = '', leadHtml = '', href,
   return href ? `<a class="${c}" href="${esc(href)}"${attrs(attr)}>${body}</a>` : `<div class="${c}"${attrs(attr)}>${body}</div>`;
 }
 
+/** Live Deal Card (754:6209). footerHtml is trusted directory navigation. */
+export function ozLiveDealCard({ deal, merchant, status, points, minutesLeft, hhmm, claimHref, claimLabel = 'Claim', primary = true, footerHtml = '' }) {
+  const live = status === 'Available', claimed = status === 'Claimed today', busy = status === 'Busy right now';
+  const tone = claimed ? 'is-claimed' : busy ? 'is-busy' : 'is-later';
+  const pill = live ? '' : `<span class="oz-deal-pill ${tone}">${esc(status)}</span>`;
+  const pointsLabel = Number(points) > 0 ? `+${Number(points)} pts` : '';
+  const note = live ? `Ends in ${minutesLeft} min`
+    : claimed ? (pointsLabel ? `${pointsLabel} added · back tomorrow` : 'Back tomorrow')
+    : busy ? 'Shop is full. Try again soon.'
+    : status.startsWith('Opens ') ? `Off-peak deal · ${hhmm(deal.startMin)}–${hhmm(deal.endMin)}` : '';
+  return `<article class="oz-deal${live ? ' is-live' : ''}">
+    <div class="oz-deal-top"><span class="oz-deal-badge" aria-hidden="true">${ozIcon('stall')}</span>
+      <div class="oz-deal-text" data-no-i18n><p class="oz-deal-shop">${esc(merchant.name)}</p><h3 class="oz-deal-title">${esc(deal.title)}</h3></div>${pill}</div>
+    ${note ? `<div class="oz-deal-bottom">${ozIcon('clock', 'oz-deal-clock')}<p class="oz-deal-note">${esc(note)}</p>
+      ${claimHref ? `<span class="oz-deal-points">${esc(pointsLabel)}</span>${ozButton(claimLabel, { href: claimHref, size: 'sm', kind: primary ? 'primary' : 'secondary' })}` : ''}</div>` : ''}
+    ${footerHtml ? `<div class="oz-deal-links">${footerHtml}</div>` : ''}
+  </article>`;
+}
+
 /** Sir Onz, front view (Lion v2 22:1166, calm). Built from the Figma layers; scales with --oz-lion-w. */
 export function ozLion({ cls = '', label = '' } = {}) {
   return `<span class="oz-lion${cls ? ' ' + cls : ''}"${label ? ` role="img" aria-label="${esc(label)}"` : ' aria-hidden="true"'}>
@@ -54,7 +73,7 @@ export const ozSectionHead = (title, { href, linkLabel, id } = {}) =>
 
 /** Sir Onz waving with his tail (Tail Wave 422:50) inside the halo, as used by the Points Hero (433:115). */
 export function ozHeroMascot({ hat = 'none' } = {}) {
-  const hatArt = HERO_HATS[hat];
+  const hatArt = Object.prototype.hasOwnProperty.call(HERO_HATS, hat) ? HERO_HATS[hat] : null;
   return `<span class="oz-hero-art" aria-hidden="true">
     <i class="h-ring"></i><i class="h-halo"></i>
     <span class="h-pose"><span class="h-wave">
@@ -64,7 +83,7 @@ export function ozHeroMascot({ hat = 'none' } = {}) {
         <img class="h-ears" src="${A}hero/ears.svg" alt=""><i class="h-shell"></i><i class="h-face"></i>
         <i class="h-eye h-eye-l"></i><i class="h-eye h-eye-r"></i><img class="h-nose" src="${A}hero/nose.svg" alt="">
         <span class="h-smile"><img src="${A}hero/smile.svg" alt=""></span><img class="h-badge" src="${A}hero/plus-badge.svg" alt="">
-        ${hatArt ? `<img class="h-hat" src="${A}hats/${hatArt}" alt="">` : ''}
+        ${hatArt ? `<img class="h-hat" src="${A}hats/${esc(hatArt)}" alt="">` : ''}
       </span></span>
       <span class="h-tail-stem"><img src="${A}hero/tail-stem.svg" alt=""></span><img class="h-tail-tuft" src="${A}hero/tail-tuft.svg" alt="">
     </span></span></span>`;
