@@ -15,6 +15,8 @@ import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
 import { INFORMATION_ROUTES } from './information.js';
 import { mountPageMotion } from './motion.js';
+import { installOzIcons } from './oz-icons.js';
+installOzIcons();
 initI18n();
 
 const app = {

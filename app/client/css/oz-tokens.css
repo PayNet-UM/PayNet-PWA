@@ -1,3 +1,6 @@
+/* Cascade order: Figma type defaults < pre-redesign styles < redesign components (unlayered). */
+@layer oz-base, legacy;
+
 /* +Onz redesign tokens (student and merchant app only; the Admin dashboard never loads this file).
    Values come from the Figma variable collections "UI / Color", "UI / Size" and "Web · Accessible foregrounds"
    in the file "mascot konsep addOnz". Figma names are in the trailing comments. Use these, never raw hex, in components. */
@@ -33,6 +36,11 @@
   --oz-mascot-shell-top:#4DA1F8; --oz-mascot-shell-bottom:#8CBEFB;
   --oz-mascot-face-top:#BBD0F5; --oz-mascot-face-bottom:#DDE8FA;
   --oz-mascot-eye:#1A1A1A;
+
+  /* toast icon discs (Toast 721:35556; values used only there) */
+  --oz-toast-info:#8FA0FF; --oz-toast-error:#FF6B6B;
+  --oz-shadow-toast:0 8px 12px rgba(10,15,59,.28);
+  --oz-shadow-nav:0 6px 20px rgba(11,15,58,.08);
 
   /* semantic aliases */
   --oz-bg-app:var(--oz-blue-50);          /* bg/app */

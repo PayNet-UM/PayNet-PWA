@@ -7,18 +7,21 @@
 @font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700; font-display:swap; src:url(../fonts/bricolage-grotesque-latin-700-normal.woff2) format('woff2'); }
 @font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:800; font-display:swap; src:url(../fonts/bricolage-grotesque-latin-800-normal.woff2) format('woff2'); }
 
-/* Base: replaces the Helvetica/Arial base from the shared onz.css for this site only. */
-body, body:has(.pts-chip) {
-  font-family:var(--oz-font-ui); font-size:16px; line-height:24px; font-weight:400;
-  color:var(--oz-text-primary); background:var(--oz-bg-app);
-  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-}
-h1, h2, h3, h4, .brand, .balance, .stat .v { letter-spacing:0; }
-h1 { font:800 28px/34px var(--oz-font-display); }
-h2 { font:700 22px/28px var(--oz-font-display); }
-h3 { font:600 18px/24px var(--oz-font-ui); }
-h4 { font:600 16px/24px var(--oz-font-ui); }
+/* Families and page colours apply everywhere in this site (unlayered, so they beat the legacy layer). */
+body { font-family:var(--oz-font-ui); color:var(--oz-text-primary); background:var(--oz-bg-app);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+h1, h2, .brand, .balance, .stat .v { font-family:var(--oz-font-display); letter-spacing:0; }
+h3, h4 { font-family:var(--oz-font-ui); letter-spacing:0; }
 button, input, select, textarea { font-family:inherit; }
+
+/* Sizes are defaults only: a screen's own (legacy or redesigned) rules still size its headings. */
+@layer oz-base {
+  body { font-size:16px; line-height:24px; font-weight:400; }
+  h1 { font-size:28px; line-height:34px; font-weight:800; }
+  h2 { font-size:22px; line-height:28px; font-weight:700; }
+  h3 { font-size:18px; line-height:24px; font-weight:600; }
+  h4 { font-size:16px; line-height:24px; font-weight:600; }
+}
 
 /* Text style utilities (Figma "UI/…") */
 .oz-display   { font:800 40px/44px var(--oz-font-display); letter-spacing:0; }

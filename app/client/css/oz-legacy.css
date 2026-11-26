@@ -1,0 +1,16 @@
+/* The student and merchant app's pre-redesign styles, kept in the "legacy" cascade layer so the +Onz redesign
+   (unlayered, in oz-*.css) always wins without specificity fights. Remove an @import once nothing uses it.
+   The Admin dashboard links these files directly and is not affected. __VERSION__ is stamped by scripts/build.mjs. */
+@import url("app.css?v=__VERSION__") layer(legacy);
+@import url("onz.css?v=__VERSION__") layer(legacy);
+@import url("merchant.css?v=__VERSION__") layer(legacy);
+@import url("feskum.css?v=__VERSION__") layer(legacy);
+@import url("event-carousel.css?v=__VERSION__") layer(legacy);
+@import url("event-gallery.css?v=__VERSION__") layer(legacy);
+@import url("event-submissions.css?v=__VERSION__") layer(legacy);
+@import url("guide.css?v=__VERSION__") layer(legacy);
+@import url("feedback.css?v=__VERSION__") layer(legacy);
+@import url("information.css?v=__VERSION__") layer(legacy);
+@import url("points.css?v=__VERSION__") layer(legacy);
+@import url("motion.css?v=__VERSION__") layer(legacy);
+@import url("usability.css?v=__VERSION__") layer(legacy);
