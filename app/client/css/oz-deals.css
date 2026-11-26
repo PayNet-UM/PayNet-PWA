@@ -81,6 +81,7 @@
 }
 
 /* Merchant Deal QR and counter use the same reading column as the student claim. */
+.oz-counter { margin-block-start:0; }
 .oz-counter .mer-qr-intro { margin:0; border:0; background:var(--oz-bg-surface); }
 .oz-counter .mer-qr-intro p { color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
 .oz-counter-list, .oz-counter-claims, .oz-counter-unavailable { display:grid; gap:var(--oz-space-3); }

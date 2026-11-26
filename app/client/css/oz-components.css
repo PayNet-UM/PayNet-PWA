@@ -173,8 +173,8 @@ a.oz-row:active { background:var(--oz-bg-subtle); }
 .oz-hero-art .h-tail-stem img { left:-9.42%; top:-4.67%; width:118.84%; height:109.34%; }
 .oz-hero-art .h-tail-tuft { left:162.43px; top:116.57px; width:25.249px; height:17.253px; }
 /* Narrow phones: shrink the art from the top-right corner so it never covers the text column. */
-@container (max-width:340px) { .oz-hero-art { transform:scale(.84); } }
-@container (max-width:300px) { .oz-hero-art { transform:scale(.72); } }
+@container (max-width:305px) { .oz-hero-art { transform:scale(.84); } }
+@container (max-width:270px) { .oz-hero-art { transform:scale(.72); } }
 
 /* ---------- Toast (721:35556) — restyles the shared #toast ---------- */
 .toast { left:50%; right:auto; width:min(358px, calc(100vw - 32px)); min-height:48px; display:flex; align-items:center; gap:10px;

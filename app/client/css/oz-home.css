@@ -6,7 +6,7 @@
   .oz-page-title.oz-desktop-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; margin:0; }
 }
 
-.oz-home { padding-top:var(--oz-space-2); }
+.oz-home { padding-top:0; }
 .oz-home-grid { display:flex; flex-direction:column; gap:var(--oz-space-3); }
 .oz-home-main, .oz-home-side { display:flex; flex-direction:column; gap:var(--oz-space-3); min-width:0; }
 .oz-home .oz-section-head { min-height:44px; align-items:center; margin:var(--oz-space-1) 0 0; }
@@ -47,19 +47,23 @@
 
 /* Desktop: main column 720 + side column 376 (W01 · Home · Desktop). */
 @media (min-width:1024px) {
-  .oz-home { padding-top:0; }
   .oz-home-grid { display:grid; grid-template-columns:minmax(0, 720fr) minmax(280px, 376fr); gap:var(--oz-space-6); align-items:start; }
   .oz-home-main { gap:var(--oz-space-4); }
   .oz-home-side { gap:var(--oz-space-2); }
   .oz-home-side .oz-section-head { margin-top:0; }
   .oz-home-side .oz-section-head h2 { font:700 22px/28px var(--oz-font-display); }
   .oz-explore-more { display:flex; }
-  .oz-home .oz-hero { min-height:208px; padding:var(--oz-space-6) var(--oz-space-5); }
+  .oz-home .oz-hero { min-height:208px; padding:var(--oz-space-5) var(--oz-space-6); }
   .oz-rail { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); overflow:visible; margin:0; padding:0; scroll-snap-type:none; }
   .oz-poster-card { flex:none; }
   .oz-poster-img { height:110px; }
 }
-@media (min-width:1280px) { .oz-poster-img { height:131px; } }
+@media (min-width:1280px) {
+  .oz-poster-img { height:131px; }
+  .oz-home .h-ring { right:9px; top:16px; width:211px; height:211px; }
+  .oz-home .h-halo { right:30px; top:20px; width:168px; height:168px; }
+  .oz-home .h-pose { right:-122.67px; }
+}
 
 /* Neutralise the pre-redesign .kk-hero / .kk-pillar rules (legacy layer) that still match the kept test hooks. */
 .oz-home-hero { all:unset; display:block; }

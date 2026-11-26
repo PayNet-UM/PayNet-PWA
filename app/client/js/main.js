@@ -3,7 +3,7 @@
 import { initBackend } from './backend.js';
 import { captureSource } from './initiatives.js';
 import * as D from './data.js';
-import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
+import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, errText, routeLoadingHTML } from './ui.js';
 import * as Auth from './views/auth.js';
 import { trySignInByAlias } from './link-email.js';
 import { initI18n, langToggleHTML, getLang } from './i18n.js';
@@ -30,7 +30,7 @@ window.__umc = app; // handy for debugging in the console
 // Students: five destinations. Events are reached from Home and About from the account menu.
 const nav = {
   student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['home', 'Home', 'house'], ['promote', 'Promote your shop', 'megaphone'], ['insights', 'Insights', 'chart-column'], ['about', 'About us', 'info', 'desktop']],
+  merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Deal QR', 'qr-code'], ['insights', 'Insights', 'wallet'], ['promote', 'Promote your shop', 'megaphone'], ['about', 'About us', 'info', 'desktop']],
 };
 
 // A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
@@ -101,7 +101,6 @@ function startRole(role) {
     if (!s.exists()) return;
     app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
     $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
-    paintAvatar();
   }, () => {}));
   if (role === 'student') {
 
@@ -120,7 +119,6 @@ function startRole(role) {
     }, () => {}));
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'merchants', app.ctx.uid), (s) => {
       app.merchant = s.exists() ? { id: s.id, ...s.data() } : null; app.ctx.merchantName = app.merchant?.name || '';
-      paintAvatar();
       app.emit && app.emit('merchant');
     }, () => {}));
   }
@@ -148,32 +146,23 @@ function shell(role, routes) {
     <div class="shell oz-shell oz-${role}">
       <header class="topbar oz-topbar">
         <a class="brand oz-wordmark" href="#/home" aria-label="+Onz home" data-no-i18n>+Onz</a>
-        <p class="oz-tagline">your campus, all added up</p>
+        <p class="oz-tagline">${role === 'merchant' ? 'Merchant workspace' : 'your campus, all added up'}</p>
         <span class="spacer"></span>
         ${role === 'student' ? ozPointsPill(p.points || 0) : ''}
-        <button class="avatar oz-gear" id="avatar" aria-label="Account menu">${role === 'student' ? ozIcon('settings') : esc(initials(p.name))}</button>
+        <button class="avatar oz-gear" id="avatar" aria-label="Account menu">${role === 'student' ? ozIcon('settings') : 'Merchant'}</button>
       </header>
       <aside class="oz-sidebar">
         <a class="oz-side-brand" href="#/home" aria-label="+Onz home" data-no-i18n tabindex="-1">+Onz</a>
+        ${role === 'merchant' ? '<span class="oz-side-role">Merchant</span>' : ''}
         <nav class="tabbar oz-tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, only]) =>
-          `<a href="#/${k}" data-tab="${k}" class="oz-tab${only === 'desktop' ? ' nav-desktop-only' : ''}">${icon(ic)}<span class="oz-tab-label">${label}</span></a>`).join('')}</nav>
+          `<a href="#/${k}" data-tab="${k}" class="oz-tab${only === 'desktop' ? ' nav-desktop-only' : ''}"${k === 'promote' ? ' aria-label="Promote your shop"' : ''}>${icon(ic)}<span class="oz-tab-label">${label}</span>${k === 'promote' ? '<span class="oz-tab-short" aria-hidden="true">Promote</span>' : ''}</a>`).join('')}</nav>
       </aside>
       <main class="view" id="view"></main>
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
-  paintAvatar();
   paintFeedbackDot(); // the reply check may finish before the top bar exists
 }
-// Students see their avatar in the top bar; merchants see their logo.
-function paintAvatar() {
-  const el = $('#avatar'); if (!el) return;
-  const p = app.profile || {};
-  if (app.role === 'student') return; // the student's top-right control is the settings gear (Top Bar 431:356)
-  else if (app.role === 'merchant' && app.merchant?.logo) { el.classList.add('has-art'); el.innerHTML = `<img src="${app.merchant.logo}" alt="">`; }
-  else { el.classList.remove('has-art'); el.textContent = initials(p.name); }
-}
-
 // Account menu (Figma "Me · Account menu" 525:10476): grouped rows, shown as a sheet from the settings gear so every
 // existing entry point and id (#tour, #install, #terms, #signout, #to-feedback, #to-mpp) keeps working.
 function accountSheet() {
@@ -194,7 +183,8 @@ function accountSheet() {
     ${group('Help and information', [
       ...(student ? [row('Questions and feedback', { href: '#/feedback', id: 'to-feedback', badge: app.feedbackNew ? ` <span class="oz-tag oz-tag-success">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : '' })] : []),
       row('About +Onz', { href: '#/about' }), row('Contact us', { href: '#/contact' }), row('Points guide', { href: '#/points' })])}
-    ${group('App', [row('Take the tour', { id: 'tour' }), row('Install +Onz', { id: 'install' }), row('Terms of Use and Privacy', { id: 'terms' })])}
+    ${group('App', [row('Take the tour', { id: 'tour' }), row('Install +Onz', { id: 'install' }), row('Terms of Use and Privacy', { id: 'terms' }),
+      ...(!student && app.backend.mode === 'demo' ? [row('Demo mode', { id: 'demo-account' })] : [])])}
     <h3 class="oz-menu-title" id="oz-lang-title">Language</h3>
     <div class="oz-menu-group oz-lang" role="group" aria-labelledby="oz-lang-title" data-no-i18n>
       <button type="button" class="oz-menu-row" data-lang-set="en" aria-pressed="${lang === 'en'}"><span class="oz-menu-label">English</span>${ozIcon('s:check', 'oz-menu-check')}</button>
@@ -208,6 +198,8 @@ function accountSheet() {
   $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
   $('#install', el).onclick = () => installApp();
   $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
+  const demo = $('#demo-account', el);
+  if (demo) demo.onclick = () => import('./demo-seed.js').then((m) => m.demoSheet(app));
   $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
 }
 app.accountSheet = accountSheet;
@@ -229,7 +221,10 @@ function addDemoRibbon() {
   b.setAttribute('aria-label', 'Demo mode: switch account or reset');
   b.onclick = () => import('./demo-seed.js').then((m) => m.demoSheet(app));
   const bar = $('.topbar .spacer');
-  if (bar) { b.classList.add('in-bar'); bar.before(b); } else document.body.append(b);
+  if (bar) {
+    b.classList.add('in-bar');
+    if (app.role === 'merchant') bar.after(b); else bar.before(b);
+  } else document.body.append(b);
 }
 app.addDemoRibbon = addDemoRibbon;
 

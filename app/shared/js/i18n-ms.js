@@ -776,6 +776,8 @@ Points and payments need a connection so the cashier can confirm them. Reconnect
 A new version is ready. Reopen the app to update.|Versi baharu sudah sedia. Buka semula aplikasi untuk mengemas kini.
 Student|Pelajar
 Merchant|Peniaga
+Merchant workspace|Ruang kerja peniaga
+Promote|Promosi
 +Onz|+Onz
 +Onz|+Onz
 Hi|Hai
