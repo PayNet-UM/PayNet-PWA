@@ -928,7 +928,7 @@ const live = (fn) => (root, app, params) => {
 };
 export const routes = {
   ...INFORMATION_ROUTES,
-  'claim-deal': { title: 'Claim a live deal', render: studentDealClaimRender, mount: studentDealClaimMount, tab: 'home', feature: ['overview', 'merchantTools', 'dealsAndPay'] },
+  'claim-deal': { title: 'Claim a live deal', render: studentDealClaimRender, mount: studentDealClaimMount, tab: 'home', wide: true, feature: ['overview', 'merchantTools', 'dealsAndPay'] },
   home: { title: 'Home', render: homeRender, mount: live(homeMount) },
   explore: { title: 'Overview', render: directoryRender, mount: directoryMount, tab: 'home', feature: 'overview' },
   merchant: { title: 'Merchant', render: merchantRender, mount: merchantMount, tab: 'home', feature: 'overview' },

@@ -118,6 +118,7 @@ assert.ok(qrView.includes('data-deal-qr="live"') && !qrView.includes('id="manual
 const claimingStudent = await makeApp(student);
 const scanView = await S.routes['claim-deal'].render(claimingStudent, ['live']);
 assert.ok(scanView.includes('id="deal-cam"') && scanView.includes('id="start-deal-scan"'), 'Student should scan the selected deal QR');
+assert.ok(scanView.includes('id="deal-scanner-panel" hidden'), 'Camera preview should wait for explicit activation');
 const session = await liveQR.issueDealQR(merchant, 'live');
 await liveQR.claimDealQR(student, session.code, 'live');
 const confirmation = await S.routes['claim-deal'].render(claimingStudent, ['live']);

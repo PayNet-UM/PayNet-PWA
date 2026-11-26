@@ -530,6 +530,16 @@ Show this confirmation to staff. They will apply your discount.|Tunjukkan penges
 Valid for 15 minutes after scanning|Sah selama 15 minit selepas mengimbas
 This confirms a deal claim, not a payment.|Ini mengesahkan tuntutan tawaran, bukan pembayaran.
 Back to live deals|Kembali ke tawaran aktif
+Your deal claim|Tuntutan tawaran anda
+Scan the deal QR|Imbas QR tawaran
+Camera preview|Pratonton kamera
+Point your camera at the code shown by staff.|Halakan kamera ke kod yang ditunjukkan oleh kakitangan.
+No manual code entry is available.|Kod tidak boleh dimasukkan secara manual.
+Camera permission denied|Akses kamera tidak dibenarkan
+Camera unavailable|Kamera tidak tersedia
+Scan unsuccessful|Imbasan tidak berjaya
+Time left|Masa berbaki
+Ask staff to show the deal QR. Each student can claim each deal once a day. This confirms a deal claim, not a payment.|Minta kakitangan menunjukkan QR tawaran. Setiap pelajar boleh menuntut setiap tawaran sekali sehari. Ini mengesahkan tuntutan tawaran, bukan pembayaran.
 Redeem with the Admin team|Tebus melalui pasukan Admin
 e.g. RM5 campus reward|cth. Ganjaran kampus RM5
 Show this voucher to the Admin team for redemption.|Tunjukkan baucar ini kepada pasukan Admin untuk penebusan.

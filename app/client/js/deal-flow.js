@@ -1,7 +1,9 @@
 import * as D from './data.js';
 import * as L from './live-deals.js';
 import { $, $$, esc, icon, n, sheet, closeSheet, onSheetClose, renderQR, busy, toast, errText, startScanner, confetti } from './ui.js';
-import { merchantHeading, merchantEmpty } from './merchant-ui.js';
+import { merchantHeading } from './merchant-ui.js';
+import { ozButton } from './oz-ui.js';
+import { ozIcon } from './oz-icons.js';
 
 // Why a deal can't show its QR right now, in the merchant's words, and where to fix it.
 function whyNotLive(deal, status) {
@@ -100,42 +102,135 @@ export function merchantDealQRMount(root, app, [requested] = []) {
   if (requested && app._dealQRRows?.some(({ deal, status }) => deal.id === requested && status === 'Available')) show(requested);
   return () => { alive = false; stopSheet(); };
 }
-export async function studentDealClaimRender(app, [id] = []) {
-  if (!id) return `<div class="card empty"><h1>Scan a live deal</h1><a class="btn primary" href="#/explore/deals">Live deals</a></div>`;
-  const snap = await app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'deals', id));
-  if (!snap.exists()) return `<div class="card empty"><h1>Deal unavailable</h1><a href="#/explore/deals">Live deals</a></div>`;
-  const deal = { id: snap.id, ...snap.data() }, merchant = await D.getMerchant(app.ctx, deal.merchantId);
-  const existing = await L.myDealClaim(app.ctx, id);
-  app._studentDeal = { deal, merchant, claim: existing };
-  return `<div class="merchant-page student-deal-claim"><a class="back" href="#/explore/deals">${icon('arrow-left')} Live deals</a>${merchantHeading('Claim a live deal', 'Scan the QR shown by the merchant.', 'qr-code', 'At the counter')}
-    <div class="card deal-student-summary"><span class="mer-panel-emblem">${icon('badge-percent')}</span><div><h2 data-no-i18n>${esc(deal.title)}</h2><p data-no-i18n>${esc(merchant.name)}</p><span class="badge ok">+${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span>${deal.benefit ? `<strong class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</strong>` : ''}</div></div>
-    ${existing ? '<div id="deal-confirmation" aria-live="polite"></div>' : `<section class="section"><div class="scanner deal-student-scanner"><video id="deal-cam" muted playsinline></video><div class="idle" id="deal-camera-idle"><div>${icon('qr-code')}<h2>Ready to claim?</h2><p>Ask staff to show this deal’s QR.</p><button class="btn go" id="start-deal-scan">${icon('camera')} Scan to claim</button></div></div></div><p id="deal-scan-status" class="faint" role="status"></p><p class="faint deal-claim-note">Scan once per deal each day to earn points immediately.</p></section>`}</div>`;
+function claimPage(content) {
+  return `<div class="oz-claim-workspace"><div class="oz-claim-main">${content}</div>
+    <aside class="oz-claim-counter oz-claim-card"><h2>At the counter</h2>
+      <p>Ask staff to show the deal QR. Each student can claim each deal once a day. This confirms a deal claim, not a payment.</p>
+    </aside></div>`;
 }
+const claimBack = (kind = 'ghost') => ozButton('Back to live deals', { href: '#/explore/deals', kind, cls: 'oz-claim-back' });
+
+export async function studentDealClaimRender(app, [id] = []) {
+  const unavailable = (title) => claimPage(`<h1 class="oz-claim-title">${title}</h1>${claimBack()}`);
+  if (!id) return unavailable('Scan a live deal');
+  const snap = await app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'deals', id));
+  if (!snap.exists()) return unavailable('Deal unavailable');
+  const deal = { id: snap.id, ...snap.data() }, merchant = await D.getMerchant(app.ctx, deal.merchantId);
+  if (!merchant) return unavailable('Deal unavailable');
+  const claim = await L.myDealClaim(app.ctx, id);
+  app._studentDeal = { deal, claim };
+  const pts = claim?.rewardPoints ?? app.rules.liveDealPoints;
+  return claimPage(`<header class="oz-claim-heading">
+      <h1 class="oz-claim-title" id="deal-claim-title" tabindex="-1">${claim ? 'Your deal claim' : 'Claim a live deal'}</h1>
+      <p id="deal-claim-subtitle">${claim ? 'At the counter' : 'Scan the QR shown by the merchant.'}</p>
+    </header>
+    <section class="oz-claim-card oz-claim-summary">
+      <h2 data-no-i18n>${esc(deal.title)}</h2><p data-no-i18n>${esc(merchant.name)}</p>
+      ${deal.benefit ? `<p class="oz-claim-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}
+      ${pts > 0 ? `<p class="oz-claim-credit">+${n(pts)} <span>points on a successful scan</span></p>` : ''}
+    </section>
+    ${claim ? '<div id="deal-confirmation" aria-live="polite"></div>' : `
+      <section class="oz-claim-card oz-claim-ready" id="deal-camera-idle">
+        ${ozIcon('scan')}<h2>Ready to claim?</h2><p>Ask staff to show this deal’s QR.</p>
+        ${ozButton('Scan to claim', { attr: { id: 'start-deal-scan' } })}
+        <p class="oz-claim-caption">Scan once per deal each day to earn points immediately.</p>
+      </section>
+      <section id="deal-scanner-panel" hidden class="oz-claim-card oz-claim-scanner">
+        <div class="oz-claim-preview"><video id="deal-cam" muted playsinline hidden></video>
+          <div id="deal-camera-placeholder">${ozIcon('scan')}<span>Camera preview</span></div>
+        </div>
+        <div class="oz-claim-instructions" id="deal-scan-instructions">
+          <p>Point your camera at the code shown by staff.</p><p class="oz-claim-caption">No manual code entry is available.</p>
+        </div>
+        <div id="deal-scan-status" role="status" hidden>
+          <p class="oz-claim-error-title"></p><p class="oz-claim-caption"></p>
+        </div>
+        ${ozButton('Try again', { attr: { id: 'retry-deal-scan', hidden: true } })}
+      </section>
+      ${claimBack()}`}`);
+}
+
+function mountClaimStatus(root, app, claim) {
+  const confirmation = $('#deal-confirmation', root);
+  let current = claim, previous = '', timerLabel = null, disposed = false;
+  const draw = () => {
+    if (disposed) return;
+    const now = D.clock(app.ctx);
+    const applied = current.status === 'applied';
+    const expired = !applied && L.claimExpired(current, now);
+    const state = applied ? 'applied' : expired ? 'expired' : 'confirmed';
+    if (state !== previous) {
+      previous = state;
+      const title = applied ? 'Discount applied' : expired ? 'Claim expired' : 'Claim confirmed';
+      const detail = applied ? 'The merchant has marked your discount as applied.' : expired ? 'The 15-minute claim window has ended.' : 'Show this confirmation to staff. They will apply your discount.';
+      confirmation.innerHTML = `<section class="oz-claim-card oz-claim-confirmation${expired ? ' is-expired' : ''}">
+        ${ozIcon(expired ? 'info' : 'check')}<h2>${title}</h2><p>${detail}</p>
+        ${state === 'confirmed' ? `<div class="oz-claim-countdown">
+          <span>Time left</span><strong role="timer" aria-live="off" data-no-i18n></strong>
+          <p class="oz-claim-caption">Valid for 15 minutes after scanning</p>
+        </div>` : ''}
+        ${current.rewardPoints ? `<p class="deal-points-earned">+${n(current.rewardPoints)} <span>points earned</span></p>` : ''}
+        <p class="oz-claim-caption">This confirms a deal claim, not a payment.</p>${claimBack('primary')}
+      </section>`;
+      timerLabel = $('[role="timer"]', confirmation);
+    }
+    if (timerLabel) {
+      const seconds = Math.max(0, Math.ceil((D.toMs(current.createdAt) + L.CLAIM_LIFETIME_MS - now) / 1000));
+      const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      if (timerLabel.textContent !== time) timerLabel.textContent = time;
+    }
+  };
+  draw();
+  const off = L.watchMyClaim(app.ctx, claim.id, (snapshot) => {
+    if (snapshot && !disposed) { current = snapshot; draw(); }
+  }, (error) => { if (!disposed) toast(errText(error), true); });
+  const timer = setInterval(draw, 1000);
+  return () => { disposed = true; off(); clearInterval(timer); };
+}
+
 export function studentDealClaimMount(root, app) {
-  let stopCamera = null, stopWatch = null, interval = null, disposed = false, handling = false;
-  const { deal, claim } = app._studentDeal || {};
-  if (!deal) return null;
-  if (claim) {
-    const draw = (c) => {
-      if (!c || disposed) return;
-      const expired = c.status !== 'applied' && L.claimExpired(c, D.clock(app.ctx));
-      $('#deal-confirmation', root).innerHTML = `<section class="card deal-confirmation ${expired ? 'is-expired' : ''}"><span class="deal-confirmation-stamp">${icon(c.status === 'applied' ? 'badge-check' : expired ? 'clock' : 'circle-check')}</span><h2>${c.status === 'applied' ? 'Discount applied' : expired ? 'Claim expired' : 'Claim confirmed'}</h2><p>${c.status === 'applied' ? 'The merchant has marked your discount as applied.' : expired ? 'The 15-minute claim window has ended.' : 'Show this confirmation to staff. They will apply your discount.'}</p><span class="badge">${c.status === 'applied' ? 'Completed' : expired ? 'Expired' : 'Valid for 15 minutes after scanning'}</span>${c.rewardPoints ? `<span class="deal-points-earned">${icon('sparkles')} +${n(c.rewardPoints)} <span>points earned</span></span>` : ''}<p class="faint">This confirms a deal claim, not a payment.</p><a class="btn primary" href="#/explore/deals">Back to live deals ${icon('arrow-right')}</a></section>`;
-    };
-    stopWatch = L.watchMyClaim(app.ctx, claim.id, (c) => { app._studentDeal.claim = c; draw(c); }, (e) => toast(errText(e), true));
-    draw(claim); interval = setInterval(() => draw(app._studentDeal.claim), 1000);
-  } else {
-    $('#start-deal-scan', root).onclick = (event) => busy(event.currentTarget, async () => {
-      try {
-        stopCamera = await startScanner($('#deal-cam', root), async (raw) => {
-          if (handling || disposed) return; handling = true;
-          try { await L.claimDealQR(app.ctx, raw, deal.id); if (!disposed) { stopCamera?.(); confetti(); app.render(); } }
-          catch (error) { if (!disposed) toast(error.message || errText(error), true); }
-          finally { handling = false; }
-        }, (message) => { if (!disposed) $('#deal-scan-status', root).textContent = message; }, { manualFallback: false });
-        if (disposed) { stopCamera?.(); return; }
-        if ($('#deal-cam', root).srcObject) $('#deal-camera-idle', root).hidden = true;
-      } catch (error) { if (!disposed) toast(error.message || errText(error), true); }
-    });
-  }
-  return () => { disposed = true; stopCamera?.(); stopWatch?.(); clearInterval(interval); };
+  if (!$('#deal-claim-title', root)) return null;
+  const { deal, claim } = app._studentDeal;
+  if (claim) return mountClaimStatus(root, app, claim);
+  const video = $('#deal-cam', root), ready = $('#deal-camera-idle', root), scanner = $('#deal-scanner-panel', root);
+  const title = $('#deal-claim-title', root), retry = $('#retry-deal-scan', root);
+  const status = $('#deal-scan-status', root), instructions = $('#deal-scan-instructions', root);
+  let stopCamera, disposed = false, handling = false;
+  const report = (label, detail, canRetry) => {
+    status.hidden = !detail; instructions.hidden = !!detail;
+    status.firstElementChild.textContent = label;
+    status.lastElementChild.textContent = detail;
+    retry.hidden = !canRetry;
+  };
+  const begin = (event) => busy(event.currentTarget, async () => {
+    ready.hidden = true; scanner.hidden = false;
+    title.textContent = 'Scan the deal QR';
+    $('#deal-claim-subtitle', root).textContent = 'At the counter';
+    title.focus({ preventScroll: true });
+    report('', '', false);
+    try {
+      stopCamera = await startScanner(video, async (raw) => {
+        if (handling || disposed) return;
+        handling = true;
+        try {
+          await L.claimDealQR(app.ctx, raw, deal.id);
+          if (!disposed) { stopCamera?.(); confetti(); app.render(); }
+        } catch (error) {
+          if (!disposed) report('Scan unsuccessful', error.message || errText(error), false);
+        } finally { handling = false; }
+      }, (message, state) => {
+        if (disposed) return;
+        if (state === 'ready') {
+          video.hidden = false;
+          $('#deal-camera-placeholder', root).hidden = true;
+        } else report(state === 'denied' ? 'Camera permission denied' : 'Camera unavailable', message, true);
+      }, { manualFallback: false });
+      if (disposed) stopCamera();
+    } catch (error) {
+      if (!disposed) report('Camera unavailable', error.message || errText(error), true);
+    }
+  });
+  $('#start-deal-scan', root).onclick = begin;
+  retry.onclick = begin;
+  return () => { disposed = true; stopCamera?.(); };
 }

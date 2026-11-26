@@ -35,13 +35,50 @@
   .checkout-deal-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--oz-space-4) var(--oz-space-6); }
 }
 
-/* ---------- Claim / scan / QR (523:9596–9867) ---------- */
-.qr-stage { text-align:center; }
-.qr-stage h2 { font:700 22px/28px var(--oz-font-display); }
-.qr-frame { display:inline-grid; place-items:center; padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-xl); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
-.qr-frame.dead { opacity:.45; }
-#deal-cam { border-radius:var(--oz-radius-xl); }
-#deal-confirmation { border:0; border-radius:var(--oz-radius-lg); background:var(--oz-success-bg); color:var(--oz-text-success); }
+/* Student claim and scanner, including the 640 px web workspace. */
+.oz-claim-workspace { display:grid; align-items:start; max-width:var(--oz-content-max); margin-block-start:calc(-1 * var(--oz-space-2)); }
+.oz-claim-main { display:grid; gap:var(--oz-space-3); width:100%; max-width:640px; min-width:0; margin-inline:auto; }
+.oz-claim-heading { display:grid; gap:var(--oz-space-3); }
+.oz-claim-title { margin:0; color:var(--oz-text-primary); font:800 28px/34px var(--oz-font-display); }
+.oz-claim-heading p, .oz-claim-card p { margin:0; color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-claim-card { display:grid; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-4);
+  border-radius:var(--oz-radius-xl); background:var(--oz-bg-surface); overflow-wrap:anywhere; }
+.oz-claim-card h2 { margin:0; color:var(--oz-text-primary); font:700 22px/28px var(--oz-font-display); }
+.oz-claim-card > .oz-ic { width:24px; height:24px; color:var(--oz-text-primary); }
+.oz-claim-summary { gap:var(--oz-space-2); }
+.oz-claim-card .oz-claim-benefit, .oz-claim-instructions p:first-child { color:var(--oz-text-primary); font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-card .oz-claim-credit { color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); }
+.oz-claim-card .oz-claim-caption { font:500 12px/16px var(--oz-font-ui); }
+.oz-claim-workspace [hidden] { display:none!important; }
+.oz-claim-counter { display:none; }
+.oz-claim-workspace .oz-btn { min-height:48px; padding-block:13px; white-space:normal; text-align:center; }
+.oz-claim-preview { position:relative; display:grid; width:min(100%,326px); height:210px; justify-self:center;
+  place-items:center; border-radius:var(--oz-radius-lg); overflow:hidden; background:var(--oz-blue-900); }
+.oz-claim-preview video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+#deal-camera-placeholder { display:grid; justify-items:center; gap:var(--oz-space-5); padding-top:var(--oz-space-6);
+  color:var(--oz-text-on-brand); font:600 14px/20px var(--oz-font-ui); }
+#deal-camera-placeholder .oz-ic { width:24px; height:24px; color:var(--oz-nav-active); }
+.oz-claim-instructions, #deal-scan-status { display:grid; gap:var(--oz-space-3); }
+#deal-scan-status { max-width:none; margin:0; text-align:start; }
+.oz-claim-card .oz-claim-error-title { color:var(--oz-text-danger); font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-confirmation.is-expired h2 { color:var(--oz-text-danger); }
+.oz-claim-card .deal-points-earned { display:block; padding:0; border:0; background:transparent; color:var(--oz-nav-active);
+  font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-card .deal-points-earned span { font:inherit; }
+.oz-claim-countdown { display:grid; justify-items:center; gap:var(--oz-space-2); padding:var(--oz-space-4); text-align:center;
+  border-radius:var(--oz-radius-lg); background:var(--oz-blue-100); color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); }
+.oz-claim-countdown strong { font:800 28px/34px var(--oz-font-display); font-variant-numeric:tabular-nums; }
+@media (min-width:1024px) {
+  .oz-claim-workspace { gap:var(--oz-space-6); margin-block-start:0; }
+  .oz-claim-counter { display:grid; width:100%; max-width:456px; justify-self:center; }
+  .oz-claim-workspace .oz-btn { justify-self:start; }
+  .oz-claim-scanner .oz-btn { justify-self:center; }
+  .oz-claim-confirmation .oz-claim-back { border-color:var(--oz-border); background:transparent; color:var(--oz-nav-active); }
+  .oz-claim-confirmation .oz-claim-back:hover { background:var(--oz-bg-subtle); }
+}
+@media (min-width:1280px) {
+  .oz-claim-workspace { grid-template-columns:minmax(0,640px) minmax(0,1fr); }
+}
 
 /* ---------- Merchant shell and screens ---------- */
 .oz-merchant .mer-actions a, .oz-merchant .mer-actions button { border-radius:var(--oz-radius-lg); }

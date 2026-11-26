@@ -194,15 +194,53 @@ await mer.goto(BASE + '#/scan/' + liveId);
 await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
+const claimShots = async (state) => {
+  const original = stu.viewportSize();
+  for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    await stu.setViewportSize(viewport);
+    await stu.evaluate(() => scrollTo(0, 0));
+    await stu.screenshot({ path: `${shots}/claim-${state}-${viewport.width}.png`, animations: 'disabled',
+      style: '#toast, canvas.confetti { visibility:hidden; }' });
+  }
+  await stu.setViewportSize(original);
+};
+if (await stu.locator('#deal-scanner-panel').isVisible()) throw new Error('camera opened before the student requested it');
+await claimShots('ready');
+await stu.evaluate(() => {
+  navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Denied in the test browser', 'NotAllowedError'); };
+});
+await stu.click('#start-deal-scan');
+await stu.getByText('Camera permission denied', { exact: true }).waitFor();
+await stu.locator('#retry-deal-scan').waitFor();
+await claimShots('camera-denied');
 // Feed the actual merchant QR image through the student's camera pipeline.
 await stu.evaluate((raw) => {
   const holder=document.createElement('div'); new QRCode(holder,{text:raw,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
   const qr=holder.querySelector('canvas'), frame=document.createElement('canvas');frame.width=640;frame.height=640;
-  const x=frame.getContext('2d'), draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);x.drawImage(qr,64,64);};draw();
+  const x=frame.getContext('2d'), draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);if(window.useDealQR) x.drawImage(qr,64,64);};draw();
   navigator.mediaDevices.getUserMedia=async()=>{const stream=frame.captureStream(10),timer=setInterval(draw,100);for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{clearInterval(timer);stop();};}return stream;};
 }, dealQR);
-await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmation h2');
+await stu.click('#retry-deal-scan');
+await stu.waitForSelector('#deal-cam:visible');
+if (await stu.locator('#deal-scan-status').isVisible()) throw new Error('camera recovered but stale denial remained visible');
+await claimShots('scanner');
+await stu.evaluate(() => { window.useDealQR = true; });
+await stu.waitForSelector('#deal-confirmation h2');
 if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
+const claimTimer = stu.locator('#deal-confirmation [role="timer"]');
+const firstClaimTime = await claimTimer.innerText();
+if (!/^\d{1,2}:\d{2}$/.test(firstClaimTime)) throw new Error('claim timer must show minutes and seconds');
+await stu.waitForFunction((initial) => document.querySelector('#deal-confirmation [role="timer"]')?.textContent !== initial, firstClaimTime);
+await claimShots('confirmed');
+await stu.evaluate(() => { window.beforeClaimClock = Date.now; Date.now = () => window.beforeClaimClock() + 16 * 60_000; });
+try {
+  await stu.getByRole('heading', { name: 'Claim expired' }).waitFor();
+  if (await claimTimer.count()) throw new Error('expired claim still shows a countdown');
+  if (!await stu.locator('.deal-points-earned').count()) throw new Error('claim expiry hid the previously earned points');
+  await claimShots('expired');
+} finally {
+  await stu.evaluate(() => { Date.now = window.beforeClaimClock; delete window.beforeClaimClock; });
+}
 await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
 if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
 await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `${shots}/m-deal-qr-claim.png` });
@@ -210,6 +248,8 @@ await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `$
 if (!(await mer.evaluate(() => document.querySelector('.mer-claim').getBoundingClientRect().top < document.querySelector('#live-deal-qr').getBoundingClientRect().top))) throw new Error('the new claim should appear above the QR');
 await mer.click('[data-apply-claim]');
 await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
+if (await claimTimer.count()) throw new Error('applied claim still shows a countdown');
+await claimShots('applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
 await mer.click('#sheet [data-close]');
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
