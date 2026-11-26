@@ -115,6 +115,8 @@ console.log('  ✓ Merchant promotion visuals use recorded occupancy and preserv
 const liveQR = await import('../dist/client/js/live-deals.js');
 const qrView = await M.routes.scan.render(await makeApp(merchant), []);
 assert.ok(qrView.includes('data-deal-qr="live"') && !qrView.includes('id="manual"'), 'Merchant should show deal QRs instead of scanning vouchers');
+const counterView = await M.routes.scan.render(await makeApp(merchant), ['live']);
+assert.ok(counterView.includes('id="live-deal-qr"') && counterView.includes('href="#/scan"'), 'The selected deal has a standalone counter page and a route back to the deal list');
 const claimingStudent = await makeApp(student);
 const scanView = await S.routes['claim-deal'].render(claimingStudent, ['live']);
 assert.ok(scanView.includes('id="deal-cam"') && scanView.includes('id="start-deal-scan"'), 'Student should scan the selected deal QR');

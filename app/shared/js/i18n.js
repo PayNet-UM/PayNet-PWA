@@ -163,6 +163,7 @@ const PATTERNS = [
   [/^Runs (\S+)–(\S+) each day\. Come back then\.$/, (a, b) => `Berjalan ${a}–${b} setiap hari. Kembali pada waktu itu.`],
   [/^Hidden while your café is more than (\d+)% full\.$/, (x) => `Disembunyikan semasa kafe anda lebih daripada ${x}% penuh.`],
   [/^New code in (\d+)s\. It changes by itself, so screenshots won’t work\.$/, (x) => `Kod baharu dalam ${x}s. Ia bertukar sendiri, jadi tangkap layar tidak akan berfungsi.`],
+  [/^Each live deal has its own QR code\. Students scan it with \+Onz to claim your discount and earn ([\d,]+) points\. Then tap Apply discount\.$/, (points) => `Setiap tawaran aktif mempunyai kod QR sendiri. Pelajar mengimbasnya dengan +Onz untuk menuntut diskaun dan mendapat ${points} mata. Kemudian ketik Berikan diskaun.`],
   [/^Students scan your deal QR and earn ([\d,]+) points\.$/, (x) => `Pelajar mengimbas QR tawaran anda dan mendapat ${x} mata.`],
   [/^(\d+) of (\d+) done$/, (a, b) => `${a} daripada ${b} selesai`],
   [/^Next: (.+)$/, (x) => `Seterusnya: ${t(x)}`],

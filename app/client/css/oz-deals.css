@@ -80,6 +80,27 @@
   .oz-claim-workspace { grid-template-columns:minmax(0,640px) minmax(0,1fr); }
 }
 
+/* Merchant Deal QR and counter use the same reading column as the student claim. */
+.oz-counter .mer-qr-intro { margin:0; border:0; background:var(--oz-bg-surface); }
+.oz-counter .mer-qr-intro p { color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-counter-list, .oz-counter-claims, .oz-counter-unavailable { display:grid; gap:var(--oz-space-3); }
+.oz-counter-list > h2 { margin:0; color:var(--oz-text-primary); font:700 22px/28px var(--oz-font-display); }
+.oz-counter .oz-claim-card h3 { margin:0; color:var(--oz-text-primary); font:600 18px/24px var(--oz-font-ui); }
+.oz-counter-unavailable > p { margin:0; color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-counter-claims:empty, .oz-counter-result:empty { display:none; }
+.oz-counter-claims .mer-claim p { margin:0; }
+.oz-counter-new, .oz-counter .oz-counter-result h3 { color:var(--oz-nav-active); }
+.oz-counter-new { font:600 14px/20px var(--oz-font-ui); }
+.oz-counter-code { min-height:276px; justify-items:center; align-content:center; gap:var(--oz-space-6); text-align:center;
+  padding-block-start:calc(var(--oz-space-6) + var(--oz-space-3)); }
+.oz-counter-code #live-deal-qr { width:180px; max-width:100%; padding:0; border:0; box-shadow:none; }
+.oz-counter-code #live-deal-qr :is(canvas, img) { max-width:100%; height:auto; }
+.oz-counter-meta { display:grid; gap:var(--oz-space-3); }
+.oz-counter-meta p { margin:0; color:var(--oz-text-secondary); font:500 12px/16px var(--oz-font-ui); }
+.oz-counter-meta #deal-counter-total { color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); }
+.oz-counter-meta #deal-qr-clock { padding:0; background:transparent; font-variant-numeric:tabular-nums; }
+@media (min-width:1024px) { .oz-counter-unavailable .oz-btn { justify-self:start; } }
+
 /* ---------- Merchant shell and screens ---------- */
 .oz-merchant .mer-actions a, .oz-merchant .mer-actions button { border-radius:var(--oz-radius-lg); }
 .oz-merchant .card.mcard, .oz-merchant .card { border-radius:var(--oz-radius-lg); }

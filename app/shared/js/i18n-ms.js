@@ -2889,6 +2889,15 @@ Your DuitNow QR|QR DuitNow anda
 These were checked by the Admin team, so they’re locked. Need to change something?|Butiran ini telah disemak oleh pasukan Admin, jadi ia dikunci. Perlu menukar sesuatu?
 Contact the Admin team|Hubungi pasukan Admin
 Show QR to students|Paparkan QR kepada pelajar
+Manage promotions|Urus promosi
+Back to Deal QR|Kembali ke QR tawaran
+Keep this screen open at the counter.|Biarkan skrin ini terbuka di kaunter.
+Loading deal QR…|Memuatkan QR tawaran…
+Check Promote your shop to see why.|Semak Promosikan kedai anda untuk mengetahui sebabnya.
+This deal isn’t live any more|Tawaran ini tidak lagi aktif
+The student can now see the confirmed discount.|Pelajar kini boleh melihat diskaun yang disahkan.
+Discount cannot be applied to an expired claim.|Diskaun tidak boleh diberikan untuk tuntutan yang telah tamat tempoh.
+Show the QR to students. Give them the discount and mark it applied before the claim expires.|Paparkan QR kepada pelajar. Berikan diskaun dan tandakan sebagai diberikan sebelum tuntutan tamat tempoh.
 No deal is live right now.|Tiada tawaran yang aktif sekarang.
 A deal shows here during its hours, while your café has space.|Tawaran dipaparkan di sini dalam waktunya, semasa kafe anda masih ada ruang.
 Not live right now|Tidak aktif sekarang

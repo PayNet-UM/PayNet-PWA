@@ -174,7 +174,7 @@ if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here 
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-intro');
+await mer.goto(BASE + '#/scan'); await mer.getByRole('heading', { name: 'Deal QR', exact: true }).waitFor();
 if (!(await mer.locator('.mer-qr-manage[href="#/promote"]').count())) throw new Error('Deal QR should point to Promote your shop');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
@@ -193,6 +193,7 @@ const pointsBeforeScan = await pointsOf(stu);
 await mer.goto(BASE + '#/scan/' + liveId);
 await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
+const merchantQR = await mer.locator('#live-deal-qr :is(canvas,img):visible').first().screenshot();
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
 const claimShots = async (state) => {
   const original = stu.viewportSize();
@@ -214,12 +215,13 @@ await stu.getByText('Camera permission denied', { exact: true }).waitFor();
 await stu.locator('#retry-deal-scan').waitFor();
 await claimShots('camera-denied');
 // Feed the actual merchant QR image through the student's camera pipeline.
-await stu.evaluate((raw) => {
-  const holder=document.createElement('div'); new QRCode(holder,{text:raw,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
-  const qr=holder.querySelector('canvas'), frame=document.createElement('canvas');frame.width=640;frame.height=640;
-  const x=frame.getContext('2d'), draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);if(window.useDealQR) x.drawImage(qr,64,64);};draw();
+await stu.evaluate(async (png) => {
+  const qr = new Image(); qr.src = 'data:image/png;base64,' + png; await qr.decode();
+  const frame=document.createElement('canvas');frame.width=640;frame.height=640;
+  const x=frame.getContext('2d'); x.imageSmoothingEnabled = false;
+  const draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);if(window.useDealQR) x.drawImage(qr,64,64,512,512);};draw();
   navigator.mediaDevices.getUserMedia=async()=>{const stream=frame.captureStream(10),timer=setInterval(draw,100);for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{clearInterval(timer);stop();};}return stream;};
-}, dealQR);
+}, merchantQR.toString('base64'));
 await stu.click('#retry-deal-scan');
 await stu.waitForSelector('#deal-cam:visible');
 if (await stu.locator('#deal-scan-status').isVisible()) throw new Error('camera recovered but stale denial remained visible');
@@ -251,7 +253,19 @@ await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?
 if (await claimTimer.count()) throw new Error('applied claim still shows a countdown');
 await claimShots('applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
-await mer.click('#sheet [data-close]');
+await mer.getByText('The student can now see the confirmed discount.', { exact: true }).waitFor();
+if (await mer.locator('#sheet[open]').count()) throw new Error('counter view opened a sheet instead of the deal route');
+await mer.evaluate(() => { window.beforeCounterClock = Date.now; Date.now = () => window.beforeCounterClock() + 88_000; });
+try {
+  await mer.waitForFunction((initial) => {
+    const code = document.querySelector('#live-deal-qr')?.dataset.code;
+    return code && code !== initial;
+  }, dealQR, { timeout: 6000 });
+} finally {
+  await mer.evaluate(() => { Date.now = window.beforeCounterClock; delete window.beforeCounterClock; });
+}
+await mer.getByRole('link', { name: 'Back to Deal QR' }).click();
+await mer.getByRole('heading', { name: 'Deal QR', exact: true }).waitFor();
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
 await stu.goto(BASE + '#/explore/deals');
 const usedDeal = stu.locator('#checkout-deals article').filter({ hasText: 'Campus QR special' });
