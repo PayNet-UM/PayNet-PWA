@@ -78,7 +78,7 @@ service cloud.firestore {
         && D().at == request.time && D().by == email()
         && D().action in ['programme-setup', 'access', 'features', 'points-rules', 'budget', 'merchant-readiness', 'reward',
                           'block', 'unblock', 'adjust-points', 'release-matric', 'merchant-review', 'welfare-review', 'change-college', 'change-faculty',
-                          'event', 'event-delete', 'event-review', 'kpi-targets', 'kpi-figures',
+                          'event', 'event-delete', 'event-review', 'live-deal-edit', 'kpi-targets', 'kpi-figures',
                           'initiative', 'initiative-delete', 'initiative-archive', 'initiative-restore', 'delete-account']
         && D().target is string && D().target.size() <= 100
         && D().summary is string && D().summary.size() <= 300;
@@ -390,6 +390,9 @@ service cloud.firestore {
             || (resource.data.status == 'pending' && changed().hasOnly(['status']) && D().status == 'published')
             || (changed().hasOnly(['title', 'benefit', 'posterImage', 'startMin', 'endMin', 'threshold']) && dealFieldsOk())
             || (changed().hasOnly(['removed', 'enabled', 'removedAt']) && D().removed == true && D().enabled == false && D().removedAt == request.time)))
+        || (adminChange() && resource.data.get('removed', false) != true
+          && changed().hasOnly(['title','benefit','posterImage','startMin','endMin','threshold','enabled','logId','editedAt'])
+          && dealFieldsOk() && D().enabled is bool && D().editedAt == request.time && loggedBy(D().logId))
         || (isMpp() && changed().hasOnly(['status', 'reviewedBy', 'reviewedAt']));
     }
 

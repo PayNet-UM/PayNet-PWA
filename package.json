@@ -8,7 +8,7 @@
     "test": "node tests/local.mjs && node tests/stall-survey.mjs && node tests/env.mjs && node tests/handoff.mjs && node tests/daily-stats.mjs && node tests/trends.mjs && node tests/dash-compare.mjs && node tests/page-time.mjs && node tests/kpis.mjs && node tests/initiatives.mjs && node tests/report.mjs && node tests/account.mjs && node tests/email-alias.mjs && node tests/safety.mjs && node tests/i18n.mjs && node tests/league.mjs && node tests/nearby.mjs && node tests/learning.mjs && node tests/app-activity.mjs && node tests/streak-rewards.mjs && node tests/guide.mjs && node tests/feskum.mjs && node tests/information.mjs && node tests/points-policy.mjs && node tests/events.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "test:responsive": "node tests/responsive.mjs",
-    "test:experience": "node tests/experience.mjs && node tests/event-submissions.mjs && node tests/streak-browser.mjs && node tests/event-admin.mjs && node tests/event-reactions-browser.mjs && node tests/event-archive-browser.mjs && node tests/deal-gallery-browser.mjs",
+    "test:experience": "node tests/experience.mjs && node tests/event-submissions.mjs && node tests/streak-browser.mjs && node tests/event-admin.mjs && node tests/event-reactions-browser.mjs && node tests/event-archive-browser.mjs && node tests/deal-gallery-browser.mjs && node tests/admin-deals-browser.mjs",
     "test:views": "node scripts/build.mjs --env demo && node tests/role-views.mjs",
     "test:legacy": "node legacy/campus.test.cjs",
     "test:emulator": "node scripts/build.mjs --env demo && firebase emulators:exec --project demo-umc --only firestore \"node tests/emulator.mjs && node tests/streaks-emulator.mjs\"",

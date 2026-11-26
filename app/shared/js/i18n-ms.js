@@ -1,5 +1,9 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Live deal edited|Tawaran langsung disunting
+Manage deals|Urus tawaran
+Manage merchant discounts and posters.|Urus diskaun dan poster peniaga.
+Deal enabled|Tawaran diaktifkan
 Campus perks|Ganjaran kampus
 Scan the merchant’s QR to claim.|Imbas kod QR peniaga untuk menuntut tawaran.
 All deals|Semua tawaran

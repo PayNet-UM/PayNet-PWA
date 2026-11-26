@@ -1,5 +1,6 @@
 import { learningPlan, unspentPointExposure } from '../points-policy.js';
 import { pointsPageRender } from '../points-guide.js';
+import {adminDealsRender,adminDealsMount,bindAdminDealEditors} from '../deal-admin.js';
 import {eventAdminRender,eventAdminMount} from '../event-admin.js';
 // Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
@@ -19,7 +20,7 @@ const toMs = D.toMs;
 const NAV = [
   ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['initiatives', 'Initiatives', 'target'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
   ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+  ['deals', 'Live deals', 'badge-percent'], ['campaigns', 'Campus events', 'calendar'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
 ];
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
@@ -64,7 +65,7 @@ async function overviewRender(app) {
   if (!(await D.programmeReady(app.ctx)) || !(await D.rulesUpToDate(app.ctx))) { await D.initProgramme(app.ctx); app.rules = await D.getRules(app.ctx); }
   const [users, merchants, welfare, league, deals, requests] = await Promise.all([D.listUsers(app.ctx), D.listMerchantsAll(app.ctx),
     app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'welfare')), app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'stats', 'league')), D.approvedDeals(app.ctx), D.pendingWelfareRequests(app.ctx)]);
-  const liveDeals = await D.dealOverview(app.ctx, deals, merchants);
+  const liveDeals = await D.dealOverview(app.ctx, deals, merchants);app._hepOverviewDeals=liveDeals;
   const students = users.filter((u) => u.role === 'student');
   const verified = merchants.filter((m) => m.status === 'verified');
   const pending = merchants.filter((m) => m.status === 'pending');
@@ -91,11 +92,11 @@ async function overviewRender(app) {
       ${hepShortcut('paynet', 'PayNet list', 'Export Lampiran 1', 'file-spreadsheet', 'peach')}
     </nav>
     <div class="hep-overview-grid">
-      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('badge-percent')} Live deals</h2><a href="#/recon">View activity ${icon('arrow-right')}</a></div>
+      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('badge-percent')} Live deals</h2><a href="#/deals">Manage deals ${icon('arrow-right')}</a></div>
         <div class="hep-live-summary"><span>${liveDeals.filter((row) => row.status === 'Available').length} <span>live now</span></span><span>${deals.length} <span>published by merchants</span></span></div>
         <div class="hep-live-grid">${liveDeals.map(({ deal: d, merchant: m, status }) => `<article class="hep-deal ${status === 'Available' ? 'is-live' : ''}">
           <div class="hep-deal-top"><span class="hep-deal-icon" aria-hidden="true">${icon('badge-percent')}</span><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span></div>
-          <h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)}</p><div class="hep-deal-meta">${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT<span>· ${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</span></div>
+          <h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)}</p><div class="hep-deal-meta">${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT<span>· ${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</span></div><button type="button" class="btn small" data-admin-edit-deal="${esc(d.id)}">${icon('pencil')} Edit live deal</button>
         </article>`).join('') || hepEmpty('No published deals yet.', 'badge-percent')}</div>
       </section>
       <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('trophy')} KK League</h2></div><div class="hep-league-list">${ranked.map(([k, v]) => `<div class="hep-league-row"><span class="hep-league-rank" aria-hidden="true"></span><div class="hep-league-college"><strong>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</strong><div class="hep-league-bar" aria-hidden="true"><i style="--width:${Math.round(v / ranked[0][1] * 100)}%"></i></div></div><span class="num">${n(v)} <small>pts</small></span></div>`).join('') || hepEmpty(league.exists() ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.', 'trophy')}</div><p class="hep-league-note">Total points earned</p></section>
@@ -107,6 +108,7 @@ function setupHTML() {
       <button class="btn primary" id="init">Set up +Onz</button></div>`;
 }
 function overviewMount(root, app) {
+  bindAdminDealEditors(root,app,app._hepOverviewDeals||[]);
   bindMonth(root, app);
   if ($('#init', root)) $('#init', root).onclick = (e) => busy(e.currentTarget, async () => {
     try { await D.initProgramme(app.ctx, { studentDomains: $('#domains', root).value.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) }); toast('Programme set up.'); app.rules = await D.getRules(app.ctx); app.render(); }
@@ -697,6 +699,7 @@ export const routes = {
   paynet: { title: 'PayNet list', render: paynetRender, mount: paynetMount },
   recon: { title: 'Reconciliation', render: reconRender, mount: reconMount },
   rewards: { title: 'Rewards and budget', render: rewardsRender, mount: rewardsMount },
+  deals: {title:'Live deals',render:adminDealsRender,mount:adminDealsMount,wide:true},
   campaigns: { title: 'Campus events', render: campaignsRender, mount: campaignsMount },
   kpis: { title: 'Money check results', render: kpisRender, mount: kpisMount },
   'stall-survey': { title: 'Merchant assessment', render: stallSurveyAdminRender, mount: stallSurveyAdminMount, wide: true },

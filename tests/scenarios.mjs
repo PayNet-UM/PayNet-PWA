@@ -398,6 +398,21 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     await D.editDeal(merch,'legacy_pending',editInput);eq((await D.myDeals(merch)).find(d=>d.id==='legacy_pending').posterImage,'data:image/jpeg;base64,AAAA');
     await D.editDeal(merch,'legacy_pending',{...editInput,posterImage:''});eq((await D.myDeals(merch)).find(d=>d.id==='legacy_pending').posterImage,'');
   });
+  await ok('HEP edits a merchant deal with an immutable activity-log entry',async()=>{
+    await D.adminEditDeal(mpp,'legacy_pending',{...editInput,title:'Admin coffee offer',posterImage:'data:image/png;base64,AAAA',enabled:true});
+    const record=(await D.listDealsAdmin(mpp)).find(d=>d.id==='legacy_pending');eq(record.title,'Admin coffee offer');eq(record.merchantId,merch.uid);
+    const audit=(await D.listAdminLog(mpp)).find(entry=>entry.id===record.logId);eq(audit.action,'live-deal-edit');eq(audit.target,'legacy_pending');eq(audit.by,adminEmail);
+  });
+  await denied('students cannot use the admin deal editor',()=>D.adminEditDeal(stuA,'legacy_pending',{...editInput,enabled:true}));
+  await denied('merchants cannot use the admin deal editor',()=>D.adminEditDeal(merch,'legacy_pending',{...editInput,enabled:true}));
+  await denied('admin deal edits without an activity log are refused',()=>mpp.sdk.updateDoc(mpp.sdk.doc(mpp.db,'deals','legacy_pending'),{title:'Unlogged change'}));
+  await denied('admin deal edits still validate occupancy thresholds',()=>D.adminEditDeal(mpp,'legacy_pending',{...editInput,threshold:101,enabled:true}));
+  await denied('an old admin session cannot change live deals',async()=>{const old=await makeCtx({uid:'mpp1',email:adminEmail,signedInHoursAgo:13});await D.adminEditDeal(old,'legacy_pending',{...editInput,enabled:true});});
+  await denied('even a logged admin edit cannot reassign the merchant',async()=>{
+    const batch=mpp.sdk.writeBatch(mpp.db),logId=D.logAdmin(mpp,batch,'live-deal-edit','legacy_pending','test');
+    batch.update(mpp.sdk.doc(mpp.db,'deals','legacy_pending'),{merchantId:'mer2',logId,editedAt:mpp.sdk.serverTimestamp()});await batch.commit();
+  });
+  await ok('merchant can still edit its own deal after an admin change',()=>D.editDeal(merch,'legacy_pending',editInput));
   await denied('another merchant cannot edit it', () => D.editDeal(merch2, 'legacy_pending', editInput));
   await denied('an edit cannot set impossible hours', () => D.editDeal(merch, 'legacy_pending', { ...editInput, startMin: 20 * 60, endMin: 19 * 60 }));
   await denied('an edit cannot move the deal to another shop', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'deals', 'legacy_pending'), { merchantId: 'mer2' }));
