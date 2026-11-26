@@ -1,0 +1,35 @@
+/* +Onz type: Bricolage Grotesque (display) and Inter (UI), self-hosted under the SIL OFL 1.1 (fonts/OFL-*.txt).
+   Text styles match the Figma "UI/*" text styles. Client only. */
+@font-face { font-family:'Inter'; font-style:normal; font-weight:400; font-display:swap; src:url(../fonts/inter-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:500; font-display:swap; src:url(../fonts/inter-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:600; font-display:swap; src:url(../fonts/inter-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:700; font-display:swap; src:url(../fonts/inter-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:700; font-display:swap; src:url(../fonts/bricolage-grotesque-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family:'Bricolage Grotesque'; font-style:normal; font-weight:800; font-display:swap; src:url(../fonts/bricolage-grotesque-latin-800-normal.woff2) format('woff2'); }
+
+/* Base: replaces the Helvetica/Arial base from the shared onz.css for this site only. */
+body, body:has(.pts-chip) {
+  font-family:var(--oz-font-ui); font-size:16px; line-height:24px; font-weight:400;
+  color:var(--oz-text-primary); background:var(--oz-bg-app);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1, h2, h3, h4, .brand, .balance, .stat .v { letter-spacing:0; }
+h1 { font:800 28px/34px var(--oz-font-display); }
+h2 { font:700 22px/28px var(--oz-font-display); }
+h3 { font:600 18px/24px var(--oz-font-ui); }
+h4 { font:600 16px/24px var(--oz-font-ui); }
+button, input, select, textarea { font-family:inherit; }
+
+/* Text style utilities (Figma "UI/…") */
+.oz-display   { font:800 40px/44px var(--oz-font-display); letter-spacing:0; }
+.oz-number-xl { font:800 48px/52px var(--oz-font-display); letter-spacing:0; font-variant-numeric:tabular-nums; }
+.oz-h1        { font:800 28px/34px var(--oz-font-display); letter-spacing:0; }
+.oz-h2        { font:700 22px/28px var(--oz-font-display); letter-spacing:0; }
+.oz-h3        { font:600 18px/24px var(--oz-font-ui); }
+.oz-body      { font:400 16px/24px var(--oz-font-ui); }
+.oz-body-strong { font:600 16px/24px var(--oz-font-ui); }
+.oz-body-sm   { font:400 14px/20px var(--oz-font-ui); }
+.oz-label     { font:600 14px/20px var(--oz-font-ui); }
+.oz-caption   { font:500 12px/16px var(--oz-font-ui); }
+.oz-button-text { font:700 16px/20px var(--oz-font-ui); }
+.oz-muted     { color:var(--oz-text-secondary); }

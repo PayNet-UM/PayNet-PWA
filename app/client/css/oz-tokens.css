@@ -1,0 +1,81 @@
+/* +Onz redesign tokens (student and merchant app only; the Admin dashboard never loads this file).
+   Values come from the Figma variable collections "UI / Color", "UI / Size" and "Web · Accessible foregrounds"
+   in the file "mascot konsep addOnz". Figma names are in the trailing comments. Use these, never raw hex, in components. */
+:root {
+  /* colour primitives */
+  --oz-blue-900:#0B0F3A;  /* brand/blue-900 */
+  --oz-blue-700:#1325F5;  /* brand/blue-700 */
+  --oz-blue-600:#2A3CF7;  /* brand/blue-600 */
+  --oz-blue-500:#4DA1F8;  /* brand/blue-500 */
+  --oz-blue-300:#8CBEFB;  /* brand/blue-300 */
+  --oz-blue-100:#DDE8FA;  /* brand/blue-100 */
+  --oz-blue-50:#F6F8FF;   /* brand/blue-50 */
+  --oz-lime-600:#C4E81F;  /* accent/lime-600 */
+  --oz-lime-500:#E0FF3A;  /* accent/lime-500 */
+  --oz-lime-100:#F7FFD1;  /* accent/lime-100 */
+  --oz-neutral-0:#FFFFFF; --oz-neutral-100:#F1F3F9; --oz-neutral-200:#E2E6F0; /* neutral/* */
+  --oz-neutral-400:#A3A9C2; --oz-neutral-600:#4A5180; --oz-neutral-900:#0B0F3A;
+  --oz-success:#1FAF6B; --oz-success-bg:#E3F7EE;  /* semantic/* */
+  --oz-warning:#E7A23B; --oz-warning-bg:#FDF2E2;
+  --oz-danger:#E8453C;  --oz-danger-bg:#FDE7E5;
+  --oz-lilac:#7A5CF5; --oz-lilac-bg:#EEE9FE;      /* tag/* */
+  --oz-mint:#13A383;  --oz-mint-bg:#E2F7F1;
+  --oz-sky:#1E88D9;   --oz-sky-bg:#E3F1FC;
+  --oz-peach:#E0663A; --oz-peach-bg:#FDEDE6;
+
+  /* accessible text on tinted backgrounds (Web · Accessible foregrounds) */
+  --oz-text-danger:#B92822; --oz-text-warning:#8A5400; --oz-text-success:#13713F;
+  --oz-text-mint:#08705A; --oz-text-sky:#165D9C; --oz-text-peach:#A44723; --oz-text-lilac:#5C38C9;
+
+  /* Sir Onz artwork colours (the --onz-* variables bound in the mascot components) */
+  --oz-mascot-mane-top:#1325F5; --oz-mascot-mane-bottom:#5A78FF;
+  --oz-mascot-body-top:#68ACFA; --oz-mascot-body-bottom:#A8CBFC;
+  --oz-mascot-shell-top:#4DA1F8; --oz-mascot-shell-bottom:#8CBEFB;
+  --oz-mascot-face-top:#BBD0F5; --oz-mascot-face-bottom:#DDE8FA;
+  --oz-mascot-eye:#1A1A1A;
+
+  /* semantic aliases */
+  --oz-bg-app:var(--oz-blue-50);          /* bg/app */
+  --oz-bg-surface:var(--oz-neutral-0);    /* bg/surface */
+  --oz-bg-subtle:var(--oz-neutral-100);   /* bg/subtle */
+  --oz-text-primary:var(--oz-neutral-900);
+  --oz-text-secondary:var(--oz-neutral-600);
+  --oz-text-disabled:var(--oz-neutral-400);
+  --oz-text-on-brand:var(--oz-neutral-0);
+  --oz-text-on-accent:var(--oz-blue-900);
+  --oz-border:var(--oz-neutral-200);       /* border/default */
+  --oz-border-strong:var(--oz-blue-300);   /* border/strong */
+  --oz-action:var(--oz-lime-500);          /* action/primary */
+  --oz-action-pressed:var(--oz-lime-600);  /* action/primary-pressed */
+  --oz-action-secondary:var(--oz-blue-700);
+  --oz-nav-active:var(--oz-blue-700);
+  --oz-reward:var(--oz-lime-500);          /* reward/earned */
+  --oz-focus-ring:var(--oz-nav-active);
+
+  /* size (UI / Size: space/*, radius/*) */
+  --oz-space-1:4px; --oz-space-2:8px; --oz-space-3:12px; --oz-space-4:16px; --oz-space-5:20px;
+  --oz-space-6:24px; --oz-space-7:32px; --oz-space-8:40px; --oz-space-9:56px;
+  --oz-radius-sm:8px; --oz-radius-md:12px; --oz-radius-lg:16px; --oz-radius-xl:24px; --oz-radius-pill:999px;
+  --oz-touch:44px;
+
+  /* elevation (UI/Elevation 1 · Card, UI/Elevation 2 · Sheet) */
+  --oz-shadow-card:0 2px 8px rgba(10,15,59,.06);
+  --oz-shadow-sheet:0 -8px 32px rgba(10,15,59,.14);
+
+  /* motion */
+  --oz-ease-out:cubic-bezier(.22,1,.36,1); --oz-ease-out-back:cubic-bezier(.34,1.56,.64,1);
+  --oz-ease-in-out:cubic-bezier(.65,0,.35,1);
+  --oz-dur-tab:220ms; --oz-dur-push:300ms; --oz-dur-sheet:450ms; --oz-dur-dissolve:150ms;
+
+  /* type families */
+  --oz-font-display:'Bricolage Grotesque','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --oz-font-ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+
+  /* layout */
+  --oz-bp-desktop:1024px; /* documentation only: media queries use the literal */
+  --oz-sidebar-w:240px;
+  --oz-content-max:1120px;
+}
+@media (prefers-reduced-motion:reduce) {
+  :root { --oz-dur-tab:150ms; --oz-dur-push:150ms; --oz-dur-sheet:150ms; --oz-ease-out-back:var(--oz-ease-out); }
+}
