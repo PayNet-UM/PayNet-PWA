@@ -81,7 +81,7 @@
 
 /* ---------- Segmented Control (464:6226) ---------- */
 .oz-seg { display:flex; gap:4px; padding:4px; border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); width:100%; }
-.oz-seg-item { flex:1 1 0; min-width:0; min-height:36px; padding:8px 16px; border:0; border-radius:var(--oz-radius-pill); background:transparent;
+.oz-seg-item { flex:1 1 0; min-width:0; min-height:36px; padding:8px 10px; border:0; border-radius:var(--oz-radius-pill); background:transparent;
   color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   transition:background-color var(--oz-dur-tab) var(--oz-ease-out), color var(--oz-dur-tab) var(--oz-ease-out); position:relative; }
 .oz-seg-item::before { content:''; position:absolute; inset:-4px 0; }

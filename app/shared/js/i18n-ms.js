@@ -1,5 +1,12 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Earn with live deals|Kumpul mata dengan tawaran langsung
+Past 7 days|7 hari lalu
+Streak|Rentetan
+Rewards sections|Bahagian ganjaran
+No rewards yet|Belum ada ganjaran
+No vouchers yet|Belum ada baucar
+earned|diperoleh
 your campus, all added up|kampus anda, semuanya terkumpul
 Profile and preferences|Profil dan pilihan
 Help and information|Bantuan dan maklumat

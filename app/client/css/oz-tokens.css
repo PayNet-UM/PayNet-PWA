@@ -42,6 +42,9 @@
   --oz-shadow-toast:0 8px 12px rgba(10,15,59,.28);
   --oz-shadow-nav:0 6px 20px rgba(11,15,58,.08);
 
+  /* streak screen (29 · Rewards · Streak 708:15284) */
+  --oz-streak-fill:#FF8A1F; --oz-streak-track:#E8EAF5; --oz-streak-muted:#C9CDE2; --oz-streak-muted-text:#5B6090;
+
   /* semantic aliases */
   --oz-bg-app:var(--oz-blue-50);          /* bg/app */
   --oz-bg-surface:var(--oz-neutral-0);    /* bg/surface */

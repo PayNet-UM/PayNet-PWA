@@ -1,0 +1,109 @@
+/* Rewards (10 · Rewards 696:13830, W · Rewards 915:34184) and Streak (29 · Rewards · Streak 708:15284). Client only. */
+
+.oz-rewards { display:flex; flex-direction:column; gap:var(--oz-space-3); padding-top:var(--oz-space-2); }
+.oz-rewards .oz-page-title { margin:0; }
+.oz-rewards-top { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+
+/* Balance Strip (433:279) — keeps the .rewards-hero test hook. */
+.oz-rewards .rewards-hero.oz-balance { all:unset; display:flex; flex-direction:column; gap:2px; padding:var(--oz-space-4);
+  border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:0 2px 4px rgba(10,15,59,.06); }
+.oz-rewards .oz-balance::before, .oz-rewards .oz-balance::after { content:none; }
+.oz-balance-value { margin:0; font:700 22px/28px var(--oz-font-display); color:var(--oz-text-primary); font-variant-numeric:tabular-nums; }
+.oz-balance-label { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+
+/* "How points work" summary (shared markup) shown as a List Row. */
+.oz-rewards .points-summary { display:flex; align-items:center; gap:var(--oz-space-3); min-height:64px; margin:0; padding:var(--oz-space-3) var(--oz-space-4);
+  border:0; border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); box-shadow:none; color:var(--oz-text-primary); text-decoration:none; }
+.oz-rewards .points-summary > span:first-child { display:grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-rewards .points-summary > div { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.oz-rewards .points-summary b { font:600 16px/24px var(--oz-font-ui); }
+.oz-rewards .points-summary small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-rewards .points-summary > strong { font:700 14px/20px var(--oz-font-ui); color:var(--oz-blue-700); white-space:nowrap; }
+
+.oz-rewards-tabs { margin-top:var(--oz-space-1); }
+.oz-rewards-panel[hidden] { display:none !important; }
+.oz-rewards .reward-grid { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+
+/* Voucher Card (431:163) */
+.oz-voucher { display:flex; align-items:stretch; width:100%; overflow:hidden; padding:0; border:0; border-radius:var(--oz-radius-lg);
+  background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); text-align:left; font:inherit; }
+.oz-voucher-value { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:none; min-width:96px; padding:20px 16px;
+  background:var(--oz-blue-100); color:var(--oz-action-secondary); text-align:center; }
+.oz-voucher-value strong { font:800 28px/34px var(--oz-font-display); white-space:nowrap; }
+.oz-voucher-value span { font:500 12px/16px var(--oz-font-ui); }
+.oz-voucher-value .oz-ic { width:28px; height:28px; }
+.oz-voucher-body { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:10px; padding:14px 16px; }
+.oz-voucher-body h3, .oz-voucher-title { margin:0; font:600 16px/24px var(--oz-font-ui); overflow-wrap:anywhere; }
+.oz-voucher-where { margin:-6px 0 0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-voucher-foot { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-2); flex-wrap:wrap; }
+.oz-voucher-meta { display:flex; align-items:center; gap:var(--oz-space-2); flex-wrap:wrap; }
+.oz-voucher-cost { font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); white-space:nowrap; }
+.oz-voucher.sold-out .oz-voucher-value { background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+.oz-voucher-list { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-voucher-ticket { cursor:pointer; align-items:center; }
+.oz-voucher-ticket .oz-voucher-value { min-width:72px; align-self:stretch; }
+.oz-voucher-ticket .oz-row-chev { margin-right:var(--oz-space-3); width:24px; height:24px; }
+.oz-voucher-ticket.used { opacity:1; }
+.oz-voucher-ticket.used .oz-voucher-value { background:var(--oz-bg-subtle); color:var(--oz-text-disabled); }
+.oz-voucher-ticket:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+
+/* Badges */
+.oz-badge-count { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-rewards .awards { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:var(--oz-space-3); margin:var(--oz-space-2) 0 0; }
+.oz-rewards .award.oz-badge { display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-2); padding:var(--oz-space-4);
+  border:0; border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); text-align:left; }
+.oz-badge-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+.oz-badge.got .oz-badge-icon { background:var(--oz-lime-100); color:var(--oz-blue-700); }
+.oz-badge-label { font:600 14px/20px var(--oz-font-ui); }
+
+.oz-rewards-more { display:flex; flex-direction:column; gap:var(--oz-space-3); margin-top:var(--oz-space-2); }
+
+/* ---------- Streak page ---------- */
+.oz-page-head { position:relative; display:flex; align-items:center; justify-content:center; min-height:56px; margin:0 calc(var(--oz-space-4) * -1);
+  padding:0 var(--oz-space-4); background:var(--oz-bg-surface); border-bottom:1px solid var(--oz-border); }
+.oz-page-head-title { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-back { position:absolute; left:var(--oz-space-4); top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:3px; min-height:var(--oz-touch);
+  color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); text-decoration:none; }
+.oz-back .oz-ic { width:24px; height:24px; }
+.oz-back:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-streak-page { gap:var(--oz-space-4); padding-top:0; }
+.oz-streak { display:flex; flex-direction:column; gap:var(--oz-space-4); margin:0; padding:0; border:0; background:none; box-shadow:none; outline:none; }
+.oz-streak-hero { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-3); padding-top:var(--oz-space-6); text-align:center; }
+.oz-streak-flame { width:120px; height:120px; }
+.oz-streak-hero h2 { margin:0; font:700 30px/36px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-streak-hero h2 strong { font-weight:inherit; }
+.oz-streak-status.badge { display:inline-flex; align-items:center; gap:4px; min-height:28px; padding:0 14px; border:0; border-radius:14px;
+  background:var(--oz-lime-500); color:var(--oz-text-on-accent); font:600 12px/16px var(--oz-font-ui); }
+.oz-streak-card { display:flex; flex-direction:column; gap:var(--oz-space-3); padding:var(--oz-space-4); border-radius:20px; background:var(--oz-bg-surface); }
+.oz-streak-label { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-streak-muted-text); }
+.oz-streak .streak-calendar { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:var(--oz-space-1); margin:0; padding:0; list-style:none; }
+.oz-streak .streak-calendar li { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-2); font:500 11px/14px var(--oz-font-ui); color:var(--oz-streak-muted-text); border:0; background:none; }
+.oz-streak .streak-calendar li.today { color:var(--oz-text-primary); }
+.oz-streak .streak-day { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--oz-bg-subtle); color:var(--oz-streak-muted); }
+.oz-streak .streak-day .oz-ic { width:18px; height:18px; }
+.oz-streak .checked .streak-day { background:var(--oz-lime-500); color:var(--oz-text-on-accent); }
+.oz-streak-next { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--oz-space-3); }
+.oz-streak .streak-guidance { display:flex; flex-direction:column; gap:2px; margin:0; }
+.oz-streak-day { font:600 20px/26px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-streak-day strong { font-weight:inherit; }
+.oz-streak .streak-bonus { display:inline-flex; align-items:center; gap:4px; min-height:32px; padding:0 10px; border-radius:10px;
+  background:var(--oz-lime-500); color:var(--oz-text-on-accent); font:700 13px/16px var(--oz-font-ui); white-space:nowrap; }
+.oz-streak .streak-bonus-progress { height:8px; border-radius:4px; background:var(--oz-streak-track); overflow:hidden; }
+.oz-streak .streak-bonus-progress span { display:block; height:100%; border-radius:4px; background:var(--oz-streak-fill); }
+.oz-streak-count { margin:0; font:500 11px/14px var(--oz-font-ui); color:var(--oz-streak-muted-text); }
+
+@media (min-width:1024px) {
+  .oz-rewards { display:grid; grid-template-columns:minmax(0, 720fr) minmax(280px, 376fr); column-gap:var(--oz-space-6); row-gap:var(--oz-space-4); align-items:start; }
+  .oz-rewards > .oz-page-title { grid-column:1 / -1; }
+  .oz-rewards-top { grid-column:2; grid-row:2 / span 4; }
+  .oz-rewards-tabs, .oz-rewards-panel, .oz-rewards-more { grid-column:1; }
+  .oz-rewards .reward-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .oz-streak-page { display:flex; max-width:720px; }
+  .oz-page-head { margin:0; border-radius:var(--oz-radius-lg); border:0; }
+}
+
+/* Legacy clean-up for kept hooks (.points-summary, .reward-extra, streak .today). */
+.oz-rewards .points-summary > strong { padding:0; border:0; border-radius:0; background:none; box-shadow:none; }
+.oz-rewards .points-summary > .ic { width:24px; height:24px; flex:none; color:var(--oz-text-primary); }
+.oz-rewards .reward-extra.oz-row { border:0; border-bottom:0; box-shadow:none; background:var(--oz-bg-surface); }
+.oz-streak .streak-calendar li.today .streak-day, .oz-streak .streak-calendar li .streak-day { border:0; box-shadow:none; outline:none; }

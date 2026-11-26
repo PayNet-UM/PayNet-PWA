@@ -29,6 +29,11 @@ const PATTERNS = [
   // +Onz redesign (Points Hero)
   [/^Next: (.+) · ([\d,]+) pts$/, (level, n) => `Seterusnya: ${t(level)} · ${n} mata`],
   [/^(\d+) days?$/, (n) => `${n} hari`],
+  [/^([\d,]+) of 7 days$/, (n) => `${n} daripada 7 hari`],
+  [/^([\d,]+) left$/, (n) => `${n} lagi`],
+  [/^Redeem with the Admin team · valid (\d+) days$/, (n) => `Tebus dengan pasukan Admin · sah ${n} hari`],
+  [/^\+([\d,]+) pts per eligible deal$/, (n) => `+${n} mata bagi setiap tawaran yang layak`],
+  [/^([\d,]+) days? running · \+([\d,]+) pts every 7 days$/, (d, n) => `${d} hari berturut-turut · +${n} mata setiap 7 hari`],
   [/^([\d,]+) friends?$/, (n) => `${n} rakan`],
   [/^You lose your ([\d,]+) points and any unused vouchers\.$/, (n) => `Anda kehilangan ${n} mata dan semua baucar yang belum digunakan.`],
   [/^The Admin team will close your account after settling any vouchers students still hold and updating the PayNet list\. They’ll contact you at (.+) if they need anything\.$/, (email) => `Pasukan Admin akan menutup akaun anda selepas menyelesaikan baucar yang masih dipegang pelajar dan mengemas kini senarai PayNet. Mereka akan menghubungi anda di ${email} jika perlu.`],

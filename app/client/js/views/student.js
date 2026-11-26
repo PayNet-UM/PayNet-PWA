@@ -12,7 +12,7 @@ import { friendsRender, friendsMount, usernameTag, mountUsernameCopy } from '../
 import { feskumCard, feskumRender, feskumMount } from '../feskum.js';
 import { eventCarousel, mountEventCarousel, openEventPoster, eventPosterImage } from '../event-carousel.js';
 import { activeEventSlides } from '../event-catalog.js';
-import { ozPointsHero, ozListRow, ozSectionHead, ozEmpty, ozButton, ozTag } from '../oz-ui.js';
+import { ozPointsHero, ozListRow, ozSectionHead, ozEmpty, ozButton, ozTag, ozSegmented } from '../oz-ui.js';
 import { ozIcon } from '../oz-icons.js';
 import { eventGalleryRender, eventGalleryMount } from '../event-gallery.js';
 import { CAFES } from '../cafes.js';
@@ -342,38 +342,62 @@ function appStreakSection(app) {
   const recent = Array.from({ length: 7 }, (_, i) => {
     const time = now - (6 - i) * 86400000, day = D.dayKey(time), completed = days.has(day);
     const label = new Date(time).toLocaleDateString('en-MY', { weekday: 'short', timeZone: 'Asia/Kuala_Lumpur' });
-    return `<li class="${completed ? 'checked' : ''} ${day === today ? 'today' : ''}" aria-label="${day}: ${completed ? 'App opened' : 'No app activity'}"><span>${label}</span><span class="streak-day" aria-hidden="true">${icon(completed ? 'check' : day === today ? 'flame' : 'circle-check')}</span></li>`;
+    return `<li class="${completed ? 'checked' : ''} ${day === today ? 'today' : ''}" aria-label="${day}: ${completed ? 'App opened' : 'No app activity'}"><span>${label}</span><span class="streak-day" aria-hidden="true">${ozIcon('s:check')}</span></li>`;
   }).join('');
-  return `<section class="section card rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading"><div class="streak-heading"><span class="streak-emblem" aria-hidden="true">${icon('flame')}</span><div><h2 id="app-streak-heading">Daily check-in streak</h2><p><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</p></div><span class="badge">${credited?`+${n(credited.delta)} <span>pts earned</span>`:pending?'Bonus on the way':todayDone?'Today counted':'Ready for today'}</span></div>
-    <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul><div class="streak-footer"><p class="streak-guidance"><span>Next bonus</span> · <span>Day</span> <strong>${next}</strong></p><span class="streak-bonus">${icon('sparkles')} +${n(bonus)} <span>pts</span></span></div><div class="streak-bonus-progress" role="progressbar" aria-label="Days towards the next streak bonus" aria-valuemin="0" aria-valuemax="7" aria-valuenow="${progress}"><span style="width:${progress/7*100}%"></span></div></section>`;
+  const status = credited ? `+${n(credited.delta)} <span>pts earned</span>` : pending ? 'Bonus on the way' : todayDone ? 'Today counted' : 'Ready for today';
+  // Figma 29 · Rewards · Streak (708:15284). #rewards-streak, .streak-calendar and .streak-guidance are test hooks.
+  return `<section class="oz-streak rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading">
+    <div class="oz-streak-hero"><img class="oz-streak-flame" src="assets/onz/streak/flame.svg" alt="" width="120" height="120">
+      <h2 id="app-streak-heading"><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</h2>
+      <span class="oz-streak-status badge">${status}</span></div>
+    <div class="oz-streak-card"><h3 class="oz-streak-label">Past 7 days</h3><ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul></div>
+    <div class="oz-streak-card"><div class="oz-streak-next"><p class="streak-guidance"><span class="oz-streak-label">Next bonus</span><span class="oz-streak-day"><span>Day</span> <strong>${next}</strong></span></p>
+      <span class="streak-bonus">✦ +${n(bonus)} <span>pts</span></span></div>
+      <div class="streak-bonus-progress" role="progressbar" aria-label="Days towards the next streak bonus" aria-valuemin="0" aria-valuemax="7" aria-valuenow="${progress}"><span style="width:${progress/7*100}%"></span></div>
+      <p class="oz-streak-count">${progress} of 7 days</p></div>
+  </section>`;
 }
 
 // ------------------------------------------------------------- rewards, vouchers and learning streaks
+// Figma 10 · Rewards (696:13830) and W · Rewards (915:34184). Rewards come from Firestore and are redeemed with the Admin team.
 async function rewardsRender(app) {
-  const rewards = await D.listRewards(app.ctx);
-  // Where a voucher can be used, shown before the student spends points.
-  const whereTo = () => 'Redeem with the Admin team';
+  const [section] = arguments[1] || []; // route parts, e.g. #/rewards/streak
   const p = app.profile;
+  if (section === 'streak') {
+    return `<div class="rewards-page oz-rewards oz-streak-page">
+      <div class="oz-page-head"><a class="oz-back" href="#/rewards">${ozIcon('s:chevron-left')}<span>Rewards</span></a><h1 class="oz-page-head-title">Streak</h1></div>
+      ${appStreakSection(app)}</div>`;
+  }
+  const rewards = await D.listRewards(app.ctx);
   const achievements = badges(app);
-  return `<div class="rewards-page"><div class="rewards-hero"><div class="rewards-hero-copy"><h1>Rewards</h1>
-    <p>Available points</p><div class="rewards-balance">${icon('sparkles')}<strong data-bind="points">${n(p.points)}</strong><span>pts</span></div>
-    <button class="btn go" type="button" id="browse-rewards">Swap points ${icon('chevron-right')}</button></div>
-    <div class="rewards-hero-art" aria-hidden="true"><span class="rewards-orbit orbit-one">${icon('star')}</span><span class="rewards-gift">${icon('gift')}</span><span class="rewards-orbit orbit-two">${icon('sparkles')}</span></div></div>
-    ${pointsSummaryHTML(app)}
-    <div class="points-reward-context"><span>${icon('info')}</span><p>Find out how to gain points.</p><a href="#/points">Points guide ${icon('arrow-right')}</a></div>
-    ${appStreakSection(app)}
-    <section class="rewards-shelf" id="reward-shelf" tabindex="-1"><div class="rewards-section-heading"><h2>${icon('gift')} Swap points</h2></div>
-      <div class="reward-grid">${rewards.filter((r) => r.active).map((r, index) => {
+  const live = livePointEarningOn(app.rules) && D.featureOn(app.rules, 'overview') && D.featureOn(app.rules, 'dealsAndPay');
+  return `<div class="rewards-page oz-rewards">
+    <h1 class="oz-page-title">Rewards</h1>
+    <div class="oz-rewards-top">
+      <div class="rewards-hero oz-balance"><p class="oz-balance-value" data-bind="points">${n(p.points)}</p><p class="oz-balance-label">Available points</p></div>
+      ${pointsSummaryHTML(app)}
+      ${ozListRow({ title: 'Daily check-in streak', sub: `${D.dailyStreak(app.appDays).current} ${D.dailyStreak(app.appDays).current === 1 ? 'day running' : 'days running'} · +${n(pointsRules(app.rules).streakBonus)} pts every 7 days`, iconName: 'streak', href: '#/rewards/streak' })}
+      ${live ? ozListRow({ title: 'Earn with live deals', sub: `+${n(app.rules.liveDealPoints)} pts per eligible deal`, iconName: 'stall', href: '#/explore/deals' }) : ''}
+    </div>
+    ${ozSegmented([{ key: 'shop', label: 'Shop' }, { key: 'vouchers', label: 'My vouchers' }, { key: 'badges', label: 'Badges' }], 'shop', { label: 'Rewards sections', cls: 'oz-rewards-tabs' })}
+    <section class="oz-rewards-panel rewards-shelf" id="reward-shelf" data-panel="shop" tabindex="-1" aria-label="Swap points">
+      <div class="reward-grid">${rewards.filter((r) => r.active).map((r) => {
         const left = (r.stock || 0) - (r.issued || 0); const can = p.points >= r.cost && left > 0;
-        return `<article class="card reward-prize prize-colour-${index % 3} ${left <= 0 ? 'sold-out' : ''}"><div class="reward-prize-art"><span class="reward-prize-icon" aria-hidden="true">${icon(r.icon || 'gift')}</span><span class="reward-stock">${left > 0 ? `${left} left` : 'All claimed'}</span></div>
-          <div class="reward-prize-copy"><h3>${esc(r.title)}</h3><p class="reward-where">${whereTo(r)}</p><p class="reward-face-value">${rm(r.valueCents)} <span>voucher value</span></p><p class="reward-valid">${icon('clock')} valid ${r.validDays || 30} days</p>
-          <div class="reward-prize-footer"><span class="reward-price">${icon('sparkles')}<strong>${n(r.cost)}</strong><span>pts</span></span>
-          <button class="btn small ${can ? 'primary' : ''}" data-redeem="${esc(r.id)}" ${can ? '' : 'disabled'}>${left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`}</button></div></div></article>`;
-      }).join('') || `<div class="card empty">${icon('gift')}<p>The Admin team hasn’t added rewards yet.</p></div>`}</div></section>
-    <section class="section rewards-wallet"><div class="rewards-section-heading"><h2>${icon('ticket')} My vouchers</h2></div><div id="vouchers" class="stack"><div class="skeleton" style="height:80px"></div></div></section>
-    <section class="section rewards-badges"><div class="rewards-section-heading"><h2>${icon('trophy')} Badges</h2><span class="rewards-badge-count" aria-label="Badges earned">${achievements.filter(([got]) => got).length}/${achievements.length}</span></div>
-      <div class="awards" role="list" style="--achievement-count:${achievements.length}">${achievements.map(([got, ic, label]) => `<div class="award ${got ? 'got' : ''}" role="listitem"><span class="reward-medal" aria-hidden="true">${icon(ic)}<span class="reward-medal-state">${icon(got ? 'check' : 'lock')}</span></span><span class="reward-badge-label">${esc(label)}</span><span class="reward-badge-status">${got ? 'Earned' : 'Locked'}</span></div>`).join('')}</div></section>
-    <div class="rewards-extras"><a class="reward-extra welfare-extra" href="#/community"><span class="reward-extra-icon">${icon('hand-heart')}</span><div><h3>Give to the welfare fund</h3><p>Points you donate support UM students in need.</p></div>${icon('chevron-right')}</a></div></div>`;
+        return `<article class="oz-voucher reward-prize ${left <= 0 ? 'sold-out' : ''}">
+          <div class="oz-voucher-value"><strong>${rm(r.valueCents).replace(/\.00$/, '')}</strong><span>voucher value</span></div>
+          <div class="oz-voucher-body"><h3>${esc(r.title)}</h3><p class="oz-voucher-where">Redeem with the Admin team · valid ${r.validDays || 30} days</p>
+            <div class="oz-voucher-foot"><span class="oz-voucher-meta"><span class="oz-voucher-cost">${n(r.cost)} pts</span>${left > 0 ? ozTag(`${left} left`, 'sky') : ozTag('All claimed', 'expiry')}</span>
+            ${ozButton(left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`, { size: 'sm', kind: can ? 'primary' : 'ghost', attr: { 'data-redeem': r.id, disabled: !can } })}</div></div></article>`;
+      }).join('') || ozEmpty({ title: 'No rewards yet', body: 'The Admin team hasn’t added rewards yet.' })}</div>
+    </section>
+    <section class="oz-rewards-panel rewards-wallet" data-panel="vouchers" hidden aria-label="My vouchers"><div id="vouchers" class="oz-voucher-list"><div class="skeleton" style="height:80px"></div></div></section>
+    <section class="oz-rewards-panel rewards-badges" data-panel="badges" hidden aria-label="Badges">
+      <p class="oz-badge-count"><span class="rewards-badge-count" aria-label="Badges earned">${achievements.filter(([got]) => got).length}/${achievements.length}</span> earned</p>
+      <div class="awards" role="list">${achievements.map(([got, ic, label]) => `<div class="award oz-badge ${got ? 'got' : ''}" role="listitem"><span class="oz-badge-icon" aria-hidden="true">${icon(ic)}</span><span class="oz-badge-label">${esc(label)}</span>${ozTag(got ? 'Earned' : 'Locked', got ? 'success' : 'lilac')}</div>`).join('')}</div></section>
+    <div class="oz-rewards-more">
+      ${ozButton('Learn & Earn', { kind: 'ghost', href: '#/learn', block: true })}
+      ${ozListRow({ title: 'Give to the welfare fund', sub: 'Points you donate support UM students in need.', iconName: 's:fund', href: '#/community', cls: 'reward-extra welfare-extra' })}
+    </div></div>`;
 }
 function badges(app) {
   const ids = new Set(app.ledger.map((l) => l.id));
@@ -384,17 +408,13 @@ function badges(app) {
   ];
 }
 function rewardsMount(root, app, [section] = []) {
-  if (section === 'streak') {
-    const target = $('#rewards-streak', root);
-    target.focus({ preventScroll: true });
-    target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-  }
-  $('#browse-rewards', root).onclick = (event) => {
-    event.preventDefault();
-    const shelf = $('#reward-shelf', root);
-    shelf.focus({ preventScroll: true });
-    shelf.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  if (section === 'streak') { $('#rewards-streak', root)?.focus({ preventScroll: true }); return null; }
+  const tabs = $$('.oz-rewards-tabs [data-seg]', root);
+  const show = (key) => {
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.seg === key)));
+    $$('[data-panel]', root).forEach((panel) => { panel.hidden = panel.dataset.panel !== key; });
   };
+  tabs.forEach((t) => { t.onclick = () => show(t.dataset.seg); });
   $$('[data-redeem]', root).forEach((b) => {
     b.onclick = async () => {
       const r = (await D.listRewards(app.ctx)).find((x) => x.id === b.dataset.redeem);
@@ -406,9 +426,12 @@ function rewardsMount(root, app, [section] = []) {
   const unsub = D.watchMyVouchers(app.ctx, (vs) => {
     const el = $('#vouchers', root); if (!el) return;
     vs.sort((a, b) => (toMs(b.createdAt) || 0) - (toMs(a.createdAt) || 0));
-    el.innerHTML = vs.map((v) => `<button class="ticket ${v.status === 'used' ? 'used' : ''}" data-voucher="${esc(v.id)}" style="text-align:left;cursor:pointer;width:100%;font:inherit;padding:0">
-      <span class="stub">${icon('ticket')}</span><span class="body"><h3>${esc(v.title)}</h3><p class="faint">${v.status === 'used' ? `Used ${fmtDate(v.usedAt)}` : `${D.voucherExpired(v)?'Expired':`Code ${esc(v.code)} · tap to show`}`}</p></span></button>`).join('')
-      || `<div class="card empty">${icon('ticket')}<p>Vouchers you swap points for appear here.</p></div>`;
+    el.innerHTML = vs.map((v) => {
+      const dead = v.status === 'used' || D.voucherExpired(v);
+      return `<button type="button" class="oz-voucher oz-voucher-ticket ticket ${dead ? 'used' : ''}" data-voucher="${esc(v.id)}">
+        <span class="oz-voucher-value">${ozIcon('voucher')}</span><span class="oz-voucher-body"><span class="oz-voucher-title">${esc(v.title)}</span>
+        <span class="oz-voucher-where">${v.status === 'used' ? `Used ${fmtDate(v.usedAt)}` : D.voucherExpired(v) ? 'Expired' : `Code ${esc(v.code)} · tap to show`}</span></span>${ozIcon('s:chevron-right', 'oz-row-chev')}</button>`;
+    }).join('') || ozEmpty({ title: 'No vouchers yet', body: 'Vouchers you swap points for appear here.' });
     $$('[data-voucher]', el).forEach((b) => { b.onclick = () => showVoucher(app, b.dataset.voucher, vs); });
   }, () => {});
   return unsub;
