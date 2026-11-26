@@ -385,6 +385,18 @@ export async function runScenarios({ makeCtx, seedHistory, setTime, canSetTime =
     const d = (await D.myDeals(merch)).find((x) => x.id === 'legacy_pending');
     eq(d.title, 'Evening study break', 'title'); eq(d.startMin, 18 * 60, 'start'); eq(d.threshold, 70, 'threshold');
   });
+  await ok('merchant adds a poster to its live deal',async()=>{
+    await D.editDeal(merch,'legacy_pending',{...editInput,posterImage:'data:image/jpeg;base64,AAAA'});
+    eq((await D.myDeals(merch)).find(d=>d.id==='legacy_pending').posterImage,'data:image/jpeg;base64,AAAA');
+  });
+  await denied('another merchant cannot replace its poster',()=>D.editDeal(merch2,'legacy_pending',{...editInput,posterImage:'data:image/png;base64,BBBB'}));
+  const posterRef=merch.sdk.doc(merch.db,'deals','legacy_pending');
+  await denied('poster SVG content is rejected by the rules',()=>merch.sdk.updateDoc(posterRef,{posterImage:'data:image/svg+xml;base64,AAAA'}));
+  await denied('oversized poster payloads are rejected by the rules',()=>merch.sdk.updateDoc(posterRef,{posterImage:'data:image/png;base64,'+'A'.repeat(600001)}));
+  await ok('ordinary edits preserve posters and merchants can remove them',async()=>{
+    await D.editDeal(merch,'legacy_pending',editInput);eq((await D.myDeals(merch)).find(d=>d.id==='legacy_pending').posterImage,'data:image/jpeg;base64,AAAA');
+    await D.editDeal(merch,'legacy_pending',{...editInput,posterImage:''});eq((await D.myDeals(merch)).find(d=>d.id==='legacy_pending').posterImage,'');
+  });
   await denied('another merchant cannot edit it', () => D.editDeal(merch2, 'legacy_pending', editInput));
   await denied('an edit cannot set impossible hours', () => D.editDeal(merch, 'legacy_pending', { ...editInput, startMin: 20 * 60, endMin: 19 * 60 }));
   await denied('an edit cannot move the deal to another shop', () => merch.sdk.updateDoc(merch.sdk.doc(merch.db, 'deals', 'legacy_pending'), { merchantId: 'mer2' }));

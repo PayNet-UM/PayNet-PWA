@@ -6,7 +6,7 @@ import * as D from '../data.js';
 import * as L from '../live-deals.js';
 import { merchantDealQRRender, merchantDealQRMount } from '../deal-flow.js';
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtTime, timeAgo, confetti, renderQR,
-  startScanner, compressImage, barChart, colorFor, initials, downloadCSV } from '../ui.js';
+  startScanner, compressImage, onSheetClose, barChart, colorFor, initials, downloadCSV } from '../ui.js';
 import { pinPicker, hasPin, inGeoBox } from '../map.js';
 import { surveyHTML, surveyMount, merchantLogo, studentShopRender, studentShopMount } from './student.js';
 import { avatarSVG, defaultFor } from '../avatar.js';
@@ -459,7 +459,7 @@ async function promoteRender(app, [section] = []) {
         const live = status === 'Available', published = ['approved', 'published'].includes(d.status);
         return `<article class="card mer-deal-card ${live ? 'is-live' : ''}">
         <span class="badge ${live ? 'ok' : d.status === 'rejected' ? 'bad' : d.status === 'pending' ? 'warn' : 'grey'}">${live ? '<span class="mer-live-dot" aria-hidden="true"></span>' : ''}${esc(live ? 'Live now' : status)}</span>
-        <h3 data-no-i18n>${esc(d.title)}</h3>${d.benefit && !same(d.benefit, d.title) ? `<p class="deal-benefit" data-no-i18n>${esc(d.benefit)}</p>` : ''}
+        ${D.dealPosterImage(d)?`<img class="merchant-deal-poster" src="${esc(D.dealPosterImage(d))}" alt="${esc(d.title)}">`:''}<h3 data-no-i18n>${esc(d.title)}</h3>${d.benefit && !same(d.benefit, d.title) ? `<p class="deal-benefit" data-no-i18n>${esc(d.benefit)}</p>` : ''}
         <div class="mer-deal-meta"><span>${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)}</span><span>${icon('users')} under ${d.threshold}% full</span></div>
         <div class="mer-deal-actions">${d.status === 'pending' ? `<button class="btn small primary" data-publish-deal="${esc(d.id)}">${icon('megaphone')} Publish deal</button>` : ''}${live ? `<a class="btn small primary" href="#/scan/${esc(d.id)}">${icon('qr-code')} Show deal QR</a>` : ''}${published ? `<button class="btn small ${d.enabled ? '' : 'primary'}" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${icon(d.enabled ? 'moon' : 'zap')} ${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div>
         <div class="mer-deal-manage">${d.status !== 'rejected' ? `<button class="btn small ghost" data-edit-deal="${esc(d.id)}">${icon('pencil')} Edit</button>` : ''}<button class="btn small ghost mer-deal-remove" data-remove-deal="${esc(d.id)}">${icon('trash-2')} Remove</button></div>
@@ -471,17 +471,32 @@ async function promoteRender(app, [section] = []) {
 const wayFacts = (list) => `<ul class="mer-way-facts">${list.map(([ic, t]) => `<li>${icon(ic)}<span>${t}</span></li>`).join('')}</ul>`;
 // The live-deal builder, for a new deal or (with a deal) for editing one.
 function dealSheet(app, deal = null) {
+  let poster=D.dealPosterImage(deal),uploading=false,closed=false;
   const v = (k, d = '') => esc(deal?.[k] ?? d);
   const time = (min, d) => (Number.isFinite(min) ? D.hhmm(Math.min(min, 1439)) : d);
   const el = sheet(`<div class="mer-sheet-head"><span class="mer-panel-emblem">${icon(deal ? 'pencil' : 'megaphone')}</span><div><span class="mer-eyebrow">${deal ? 'Change your deal' : 'Make some noise'}</span><h2>${deal ? 'Edit live deal' : 'New live deal'}</h2></div></div>
-    <div class="mer-deal-preview"><span class="mer-eyebrow">Student preview</span><h3 id="deal-preview-title" data-no-i18n></h3><div class="mer-deal-meta"><span>${icon('clock')}<span id="deal-preview-time"></span></span><span>${icon('users')}<span>Occupancy threshold</span><b id="deal-preview-threshold"></b></span></div><span class="badge warn">${deal ? 'Changes show to students straight away' : 'Publish instantly — no approval needed'}</span></div>
+    <div class="mer-deal-preview"><img id="deal-preview-poster" class="deal-builder-poster" alt="Deal poster preview" ${poster?`src="${esc(poster)}"`:'hidden'}><span class="mer-eyebrow">Student preview</span><h3 id="deal-preview-title" data-no-i18n></h3><div class="mer-deal-meta"><span>${icon('clock')}<span id="deal-preview-time"></span></span><span>${icon('users')}<span>Occupancy threshold</span><b id="deal-preview-threshold"></b></span></div><span class="badge warn">${deal ? 'Changes show to students straight away' : 'Publish instantly — no approval needed'}</span></div>
     <form id="df" class="stack mer-builder" style="margin-top:18px">
     <label class="field">Name<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Afternoon study break" value="${v('title')}"></label>
+    <label class="field">Deal poster (optional)<input id="deal-poster-input" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WebP. Up to 10 MB.</small></label><button type="button" class="btn small" id="remove-deal-poster" ${poster?'':'hidden'}>Remove poster</button><p id="deal-poster-error" class="event-form-error" role="alert" hidden></p>
     <label class="field">Discount details<input name="benefit" required minlength="3" maxlength="160" placeholder="e.g. 20% off any coffee" value="${v('benefit')}"></label>
     <div class="grid-2"><label class="field">From<input name="start" type="time" required value="${time(deal?.startMin, '14:00')}"></label><label class="field">Until<input name="end" type="time" required value="${time(deal?.endMin, '17:00')}"></label></div>
     <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="${v('threshold', 60)}"></label></div>
     <ul class="mer-deal-rules"><li>${icon('users')}<span>Each student can claim each deal once a day.</span></li><li>${icon('clock')}<span>A claim lasts 15 minutes. Apply the discount before then.</span></li></ul>
-    <button class="btn primary">${icon(deal ? 'check' : 'megaphone')} ${deal ? 'Save changes' : 'Publish deal'}</button></form>`);
+    <button type="submit" class="btn primary">${icon(deal ? 'check' : 'megaphone')} ${deal ? 'Save changes' : 'Publish deal'}</button></form>`);
+  onSheetClose(()=>{closed=true;});
+  const posterPreview=()=>{const img=$('#deal-preview-poster',el);img.hidden=!poster;if(poster)img.src=poster;else img.removeAttribute('src');$('#remove-deal-poster',el).hidden=!poster;};
+  $('#remove-deal-poster',el).onclick=()=>{poster='';posterPreview();};
+  $('#deal-poster-input',el).onchange=async event=>{
+    const file=event.target.files[0];if(!file)return;
+    const error=$('#deal-poster-error',el),submit=$('#df button[type=submit]',el);
+    error.hidden=true;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){error.textContent='Choose a JPG, PNG or WebP poster under 10 MB.';error.hidden=false;event.target.value='';return;}
+    uploading=true;submit.disabled=true;event.target.disabled=true;$('#remove-deal-poster',el).disabled=true;
+    try{const image=D.cleanDealPoster(await compressImage(file,1400,.86));if(!closed){poster=image;posterPreview();}}
+    catch(err){if(!closed){error.textContent=err.message;error.hidden=false;}}
+    finally{uploading=false;if(!closed){submit.disabled=false;event.target.disabled=false;$('#remove-deal-poster',el).disabled=false;event.target.value='';}}
+  };
   const preview = () => {
     const form = $('#df', el);
     const title = $('#deal-preview-title', el);
@@ -492,10 +507,10 @@ function dealSheet(app, deal = null) {
   };
   $('#df', el).addEventListener('input', preview); preview();
   $('#df', el).onsubmit = (e) => {
-    e.preventDefault(); const f = e.target; const s = D.parseHHMM(f.start.value), en = D.parseHHMM(f.end.value);
+    e.preventDefault();if(uploading)return; const f = e.target; const s = D.parseHHMM(f.start.value), en = D.parseHHMM(f.end.value);
     if (en <= s) return toast('The end time must be after the start time.', true);
-    const fields = { title: f.title.value, benefit: f.benefit.value, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value) };
-    busy($('button', el), async () => {
+    const fields = { title: f.title.value, benefit: f.benefit.value, posterImage:poster, startMin: s, endMin: en, threshold: Math.floor(+f.threshold.value) };
+    busy($('#df button[type=submit]', el), async () => {
       try {
         if (deal) { await D.editDeal(app.ctx, deal.id, fields); toast('Deal updated.'); }
         else { await D.createDeal(app.ctx, { ...fields, bonus: 0, limit: 1 }); toast('Live deal published.'); }

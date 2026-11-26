@@ -105,11 +105,13 @@ export async function studentDealClaimRender(app, [id] = []) {
   const snap = await app.backend.sdk.getDoc(app.backend.sdk.doc(app.ctx.db, 'deals', id));
   if (!snap.exists()) return `<div class="card empty"><h1>Deal unavailable</h1><a href="#/explore/deals">Live deals</a></div>`;
   const deal = { id: snap.id, ...snap.data() }, merchant = await D.getMerchant(app.ctx, deal.merchantId);
+  if(!merchant||merchant.status!=='verified')return `<div class="card empty"><h1>Deal unavailable</h1><a class="btn primary" href="#/explore/deals">Live deals</a></div>`;
+  const status=D.dealStatus(deal,merchant,null,D.clock(app.ctx));
   const existing = await L.myDealClaim(app.ctx, id);
   app._studentDeal = { deal, merchant, claim: existing };
   return `<div class="merchant-page student-deal-claim"><a class="back" href="#/explore/deals">${icon('arrow-left')} Live deals</a>${merchantHeading('Claim a live deal', 'Scan the QR shown by the merchant.', 'qr-code', 'At the counter')}
-    <div class="card deal-student-summary"><span class="mer-panel-emblem">${icon('badge-percent')}</span><div><h2 data-no-i18n>${esc(deal.title)}</h2><p data-no-i18n>${esc(merchant.name)}</p><span class="badge ok">+${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span>${deal.benefit ? `<strong class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</strong>` : ''}</div></div>
-    ${existing ? '<div id="deal-confirmation" aria-live="polite"></div>' : `<section class="section"><div class="scanner deal-student-scanner"><video id="deal-cam" muted playsinline></video><div class="idle" id="deal-camera-idle"><div>${icon('qr-code')}<h2>Ready to claim?</h2><p>Ask staff to show this deal’s QR.</p><button class="btn go" id="start-deal-scan">${icon('camera')} Scan to claim</button></div></div></div><p id="deal-scan-status" class="faint" role="status"></p><p class="faint deal-claim-note">Scan once per deal each day to earn points immediately.</p></section>`}</div>`;
+    ${D.dealPosterImage(deal)?`<img class="deal-claim-poster" src="${esc(D.dealPosterImage(deal))}" alt="${esc(deal.title)}">`:''}<div class="card deal-student-summary"><span class="mer-panel-emblem">${icon('badge-percent')}</span><div><h2 data-no-i18n>${esc(deal.title)}</h2><p data-no-i18n>${esc(merchant.name)}</p><span class="badge ok">+${n(app.rules.liveDealPoints ?? 10)} <span>points on a successful scan</span></span>${deal.benefit ? `<strong class="deal-benefit" data-no-i18n>${esc(deal.benefit)}</strong>` : ''}</div></div>
+    ${existing ? '<div id="deal-confirmation" aria-live="polite"></div>' : status!=='Available'?`<section class="card empty"><h2>${esc(status)}</h2><p>This live deal is not available right now.</p><a class="btn primary" href="#/explore/deals">Back to live deals</a></section>`:`<section class="section"><div class="scanner deal-student-scanner"><video id="deal-cam" muted playsinline></video><div class="idle" id="deal-camera-idle"><div>${icon('qr-code')}<h2>Ready to claim?</h2><p>Ask staff to show this deal’s QR.</p><button class="btn go" id="start-deal-scan">${icon('camera')} Scan to claim</button></div></div></div><p id="deal-scan-status" class="faint" role="status"></p><p class="faint deal-claim-note">Scan once per deal each day to earn points immediately.</p></section>`}</div>`;
 }
 export function studentDealClaimMount(root, app) {
   let stopCamera = null, stopWatch = null, interval = null, disposed = false, handling = false;
@@ -123,7 +125,7 @@ export function studentDealClaimMount(root, app) {
     };
     stopWatch = L.watchMyClaim(app.ctx, claim.id, (c) => { app._studentDeal.claim = c; draw(c); }, (e) => toast(errText(e), true));
     draw(claim); interval = setInterval(() => draw(app._studentDeal.claim), 1000);
-  } else {
+  } else if($('#start-deal-scan',root)) {
     $('#start-deal-scan', root).onclick = (event) => busy(event.currentTarget, async () => {
       try {
         stopCamera = await startScanner($('#deal-cam', root), async (raw) => {

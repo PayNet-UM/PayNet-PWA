@@ -1,5 +1,19 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+Campus perks|Ganjaran kampus
+Scan the merchant’s QR to claim.|Imbas kod QR peniaga untuk menuntut tawaran.
+All deals|Semua tawaran
+Filter live deals|Tapis tawaran langsung
+Browse live deals|Lihat tawaran langsung
+deal|tawaran
+deals|tawaran
+No live deals right now.|Tiada tawaran langsung buat masa ini.
+Check back for your next campus perk.|Semak semula untuk ganjaran kampus seterusnya.
+Deal poster (optional)|Poster tawaran (pilihan)
+Deal poster preview|Pratonton poster tawaran
+Remove poster|Buang poster
+Choose a JPG, PNG or WebP poster under 10 MB.|Pilih poster JPG, PNG atau WebP di bawah 10 MB.
+Choose a JPG, PNG or WebP poster under 600 KB.|Pilih poster JPG, PNG atau WebP di bawah 600 KB.
 React to event|Reaksi kepada acara
 Love|Suka
 Excited|Teruja

@@ -739,10 +739,16 @@ export async function reviewOffer(ctx, offer, status) {
   if (status === 'approved') b.update(R(ctx).merchant(offer.merchantId), { offer: offer.title });
   await b.commit();
 }
+const DEAL_POSTER_RE=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+export function cleanDealPoster(value=''){
+  if(typeof value!=='string'||value.length>600000||(value&&!DEAL_POSTER_RE.test(value)))throw new Error('Choose a JPG, PNG or WebP poster under 600 KB.');
+  return value;
+}
+export function dealPosterImage(deal){try{return cleanDealPoster(deal?.posterImage||'');}catch{return '';}}
 export async function createDeal(ctx, d) {
   const ref = ctx.sdk.doc(ctx.sdk.collection(ctx.db, 'deals'));
   await ctx.sdk.setDoc(ref, { merchantId: ctx.uid, merchantName: ctx.merchantName || '',
-    title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold, bonus: 0,
+    title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), posterImage: cleanDealPoster(d.posterImage), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold, bonus: 0,
     minSpendCents: 0, limit: 1, status: 'published', enabled: true, createdAt: ctx.sdk.serverTimestamp() });
   return ref.id;
 }
@@ -750,7 +756,7 @@ export async function createDeal(ctx, d) {
 export async function myDeals(ctx) { return (await list(ctx, 'deals', eq(ctx, 'merchantId', ctx.uid))).filter((d) => !d.removed); }
 export async function approvedDeals(ctx) { return (await list(ctx, 'deals', ctx.sdk.where('status', 'in', ['approved', 'published']))).filter((d) => !d.removed); }
 export async function editDeal(ctx, id, d) {
-  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold });
+  await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { title: d.title.trim(), benefit: String(d.benefit || d.title).trim(), ...('posterImage' in d?{posterImage:cleanDealPoster(d.posterImage)}:{}), startMin: d.startMin, endMin: d.endMin, threshold: d.threshold });
 }
 export async function removeDeal(ctx, id) {
   await ctx.sdk.updateDoc(ctx.sdk.doc(ctx.db, 'deals', id), { removed: true, enabled: false, removedAt: ctx.sdk.serverTimestamp() });

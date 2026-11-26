@@ -3,6 +3,7 @@
    service worker; on the dev server it lives at /admin/ on this address, so this worker leaves it alone. */
 const VERSION = 'umc-__VERSION__';
 const SHELL = [
+  'css/deal-gallery.css?v=__VERSION__','js/deal-gallery.js',
   'css/event-submissions.css?v=__VERSION__','js/event-submissions-data.js','js/event-submissions-ui.js',
   'css/event-gallery.css?v=__VERSION__','js/event-gallery.js','js/event-categories.js','js/event-catalog.js','js/event-reactions.js',
   'css/motion.css?v=__VERSION__', 'js/motion.js',
