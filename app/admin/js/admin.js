@@ -8,6 +8,8 @@ import * as Auth from './views/auth.js';
 import * as Hep from './views/mpp.js';
 import { initI18n } from './i18n.js';
 import { mountPageMotion } from './motion.js';
+import { installOzIcons } from './oz-icons.js';
+installOzIcons(); // every icon('…') in the Admin views renders as a filled +Onz glyph
 initI18n();
 
 const app = {

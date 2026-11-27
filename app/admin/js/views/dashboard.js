@@ -23,8 +23,16 @@ function spark(values) {
   const pts = v.map((x, i) => `${(i * step).toFixed(1)},${(h - 2 - (x / max) * (h - 4)).toFixed(1)}`).join(' ');
   return `<svg class="dash-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
 }
+// What changed: the latest weekly value against the week before, from the same weekly series as the sparkline
+// (Stripe / Searchable put the change right under the number). No history = no chip, never a made-up change.
+function delta(values) {
+  const v = values.filter((x) => Number.isFinite(x)); if (v.length < 2) return '';
+  const d = Math.round((v[v.length - 1] - v[v.length - 2]) * 10) / 10;
+  const cls = d > 0 ? 'is-up' : d < 0 ? 'is-down' : 'is-flat';
+  return `<span class="dash-delta ${cls}">${d > 0 ? '+' : d < 0 ? '−' : ''}${d ? n(Math.abs(d)) : 'No change'}<small>vs last week</small></span>`;
+}
 const tile = (label, value, detail, source, trend = []) => `<div class="stat dash-tile">
-  <div class="k">${label}</div><div class="v num">${value}</div>${spark(trend)}
+  <div class="k">${label}</div><div class="dash-tile-num"><div class="v num">${value}</div>${delta(trend)}</div>${spark(trend)}
   <div class="s">${detail ? `<span>${detail}</span>` : ''}${badge(source)}</div></div>`;
 const missing = (label, why) => tile(label, '—', why, 'none');
 const top = (obj, label = (k) => (k === 'none' ? 'Not set' : k), max = 6) => {

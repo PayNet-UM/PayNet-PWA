@@ -67,7 +67,7 @@ try {
             if(role==='merchant'&&route==='scan'){
               const menu=page.locator('#avatar');
               assert.equal(await menu.getAttribute('aria-label'),language==='ms'?'Menu akaun':'Account menu');
-              assert.equal(await menu.innerText(),language==='ms'?'Peniaga':'Merchant');
+              assert.equal((await menu.innerText()).trim(),'','Merchant account control is the gear icon, like students');assert.equal(await menu.locator('.oz-ic').count(),1);
               if(viewport.width===390){
                 const header=await page.locator('.oz-topbar').boundingBox();
                 const nav=await page.locator('.oz-tabbar').boundingBox();

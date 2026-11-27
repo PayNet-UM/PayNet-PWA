@@ -1,42 +1,46 @@
-// Merchant presentation helpers. All progress and totals come from existing records.
-import { esc, icon, n } from './ui.js';
+// Merchant presentation helpers on the +Onz design system (Figma Merchant frames, e.g. Insights 523:11598,
+// Close merchant account 523:11859, Promote 1116:58618). All progress and totals come from existing records.
+import { esc, n } from './ui.js';
 import { merchantReadinessCurrent } from './data.js';
-import { directoryArt } from './directory-art.js';
+import { ozIcon } from './oz-icons.js';
 
-// Title and one line of help. (The old fourth argument, a small uppercase kicker, is no longer shown.)
-export const merchantHeading = (title, description, glyph) => `<header class="mer-page-head">
-  <div><h1>${title}</h1><p>${description}</p></div>
-  <span class="mer-heading-art" aria-hidden="true">${icon(glyph)}</span>
+/** Back link above a page title ("‹ Merchant home"), the Figma sub-page pattern. */
+export const merchantBack = (href, label) => `<a class="oz-mback" href="${esc(href)}">${ozIcon('s:chevron-left')}<span>${esc(label)}</span></a>`;
+
+/** Page title (UI/H1) and one line of help. `glyph` is kept for old callers and no longer drawn. */
+export const merchantHeading = (title, description, _glyph, _kicker, back = null) => `${back ? merchantBack(back[0], back[1]) : ''}<header class="oz-mhead mer-page-head">
+  <h1>${title}</h1>${description ? `<p>${description}</p>` : ''}
 </header>`;
 
-export const merchantMetric = (label, value, glyph, tone = 'violet', hint = '') => `<div class="stat mer-metric" data-tone="${tone}">
-  <span class="mer-metric-icon" aria-hidden="true">${icon(glyph)}</span><div class="k">${label}</div><div class="v num">${value}</div>${hint ? `<small class="mer-metric-hint">${hint}</small>` : ''}
+/** Stat card (label, big number, optional hint). */
+export const merchantMetric = (label, value, _glyph, _tone, hint = '') => `<div class="oz-mstat stat mer-metric"><span class="oz-mstat-label">${label}</span><strong class="num">${value}</strong>${hint ? `<small>${hint}</small>` : ''}</div>`;
+
+/** Empty state: lime icon tile, title, one line (Figma "No deal claims yet" 1374:82524). */
+export const merchantEmpty = (glyph, title, description = '') => `<div class="oz-mzero mer-empty">
+  <span class="oz-mzero-ic" aria-hidden="true">${ozIcon({ 'badge-percent': 'voucher', 'qr-code': 'scan' }[glyph] || glyph)}</span><h3>${title}</h3>${description ? `<p>${description}</p>` : ''}
 </div>`;
 
-export const merchantEmpty = (glyph, title, description = '') => `<div class="mer-empty">
-  <span class="mer-empty-art" aria-hidden="true">${icon(glyph)}<i>${icon('sparkles')}</i></span><h3>${title}</h3>${description ? `<p>${description}</p>` : ''}
-</div>`;
-
+/** Shop readiness card (Figma "Shop readiness · setup" 840:29261 / "Action needed · update" 840:29318). */
 export function merchantSetup(m, hasPin, rules) {
   const current = merchantReadinessCurrent(m, rules);
   const updated = !!m?.ready && !current;
   const milestones = [
-    ['store', 'Shop profile', !!m], ['map-pin', 'Map pin', hasPin(m)],
-    ['badge-check', 'Admin verified', m?.status === 'verified'], ['shield-check', 'Staff ready', current],
+    ['stall', 'Shop profile', !!m, '#/shop'], ['map-pin', 'Map pin', hasPin(m), '#/shop'],
+    ['shield', 'Admin verified', m?.status === 'verified', '#/shop'], ['check', 'Staff ready', current, '#/shop/ready'],
   ];
   const done = milestones.filter(([, , complete]) => complete).length;
   if (done === 4) return '';
-  return `<section class="card mer-setup" aria-labelledby="mer-setup-title">
-    <div class="mer-section-head"><h2 id="mer-setup-title">Shop readiness</h2><span class="mer-count">${n(done)} / 4</span></div>
-    <div class="mer-setup-progress"><div class="mer-progress-ring" style="--progress:${done * 25}%" role="img" aria-label="${done}/4 completed"><span>${done * 25}<small>%</small></span></div>
-      <div><span class="mer-eyebrow">${updated ? 'New update' : 'Get set up'}</span><h3>${updated ? 'Action needed' : 'Build your shop'}</h3></div></div>
-    ${updated && rules?.merchantReadinessUpdate?.message ? `<p class="mer-readiness-update-copy" data-no-i18n>${esc(rules.merchantReadinessUpdate.message)}</p>` : ''}
-    <div class="mer-milestones">${milestones.map(([glyph, label, complete]) => `<a href="${glyph === 'shield-check' ? '#/shop/ready' : '#/shop'}" class="mer-milestone ${complete ? 'is-done' : ''}"><span>${icon(glyph)}</span><strong>${label}</strong><i aria-label="${complete ? 'Complete' : 'To do'}">${icon(complete ? 'check' : 'chevron-right')}</i></a>`).join('')}</div>
-    <a class="btn primary block" href="${updated ? '#/shop/ready' : '#/shop'}">${updated ? 'Review update' : 'Continue setup'} ${icon('arrow-right')}</a>
+  return `<section class="oz-mcard oz-msetup mer-setup" aria-labelledby="mer-setup-title">
+    <p class="oz-mkicker">${updated ? 'New update' : 'Get set up'}</p>
+    <h2 id="mer-setup-title">${updated ? 'Action needed' : 'Shop readiness'}</h2>
+    <p class="oz-mstart-count">${n(done)} of 4 done</p>
+    <span class="oz-mstart-bar" aria-hidden="true"><i style="width:${done * 25}%"></i></span>
+    ${updated && rules?.merchantReadinessUpdate?.message ? `<p class="oz-msetup-note" data-no-i18n>${esc(rules.merchantReadinessUpdate.message)}</p>` : ''}
+    <ul class="oz-mchecks">${milestones.map(([glyph, label, complete, href]) => `<li class="${complete ? 'is-done' : ''}"><a href="${href}">
+      <span class="oz-mstart-ic" aria-hidden="true">${ozIcon(complete ? 'check' : glyph)}</span><span class="oz-mstart-text"><b>${label}</b><small class="oz-mstart-state">${complete ? 'Completed' : 'To do'}</small></span></a></li>`).join('')}</ul>
+    <a class="oz-btn oz-btn-primary oz-btn-md oz-btn-block btn" href="${updated ? '#/shop/ready' : '#/shop'}"><span>${updated ? 'Review update' : 'Continue setup'}</span></a>
   </section>`;
 }
 
-export const merchantAction = (route, glyph, label, description, index) => `<a class="mer-action" data-tone="${['violet', 'lime', 'peach', 'sky'][index % 4]}" href="#/${esc(route)}">
-  <span class="mer-action-top"><span class="onz-art-frame mer-action-art">${directoryArt({ store: 'shops', 'qr-code': 'qr', 'badge-percent': 'deals', target: 'lessons', 'list-checks': 'lessons' }[glyph] || 'shops')}</span><span class="mer-action-arrow">${icon('arrow-right')}</span></span>
-  <h3>${label}</h3><p>${description}</p>
-</a>`;
+/** Kept for old imports: a plain list row to a merchant page. */
+export const merchantAction = (route, glyph, label, description) => `<a class="oz-row" href="#/${esc(route)}"><span class="oz-row-lead">${ozIcon(glyph)}</span><span class="oz-row-text"><span class="oz-row-title">${label}</span><span class="oz-row-sub">${description}</span></span></a>`;

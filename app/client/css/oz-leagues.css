@@ -1,0 +1,146 @@
+/* +Onz Leagues (Figma 08 · Leagues · Production 696:13575, Faculty 696:13590, Referrers 696:13601;
+   web 934:40986, 934:41136, 934:41320). Built only from oz-lg-* classes so no pre-redesign rule reaches it. */
+.oz-leagues { display:flex; flex-direction:column; gap:var(--oz-space-3); padding:0 0 var(--oz-space-6); color:var(--oz-text-primary); }
+.oz-lg-head h1 { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-lg-head h1:focus { outline:none; }
+.oz-lg-sub { margin:var(--oz-space-2) 0 0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+
+/* Segmented Control (464:6226) as route links */
+.oz-lg-tabs { display:flex; gap:var(--oz-space-1); padding:var(--oz-space-1); margin:0; border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); }
+.oz-lg-tabs .oz-seg-item { flex:1 1 0; min-width:0; display:flex; align-items:center; justify-content:center; min-height:36px; padding:var(--oz-space-2) var(--oz-space-4);
+  border-radius:var(--oz-radius-pill); color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); text-decoration:none; white-space:nowrap;
+  transition:background-color var(--oz-dur-tab) var(--oz-ease-out), color var(--oz-dur-tab) var(--oz-ease-out); }
+.oz-lg-tabs .oz-seg-item[aria-current="page"] { background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:var(--oz-shadow-card); }
+.oz-lg-tabs .oz-seg-item:hover:not([aria-current]) { color:var(--oz-text-primary); }
+.oz-lg-tabs .oz-seg-item:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+
+.oz-lg-board { display:flex; flex-direction:column; gap:var(--oz-space-3); outline:none; }
+.oz-lg-board[hidden] { display:none; }
+.oz-lg-top { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-lg-card { display:none; }
+.oz-lg-standings-head { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); min-height:50px; }
+.oz-lg-standings-head h2 { margin:0; font:600 23px/28px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-lg-link { display:inline-flex; align-items:center; min-height:var(--oz-touch); padding:0; border:0; background:none; color:var(--oz-nav-active);
+  font:600 14px/17px var(--oz-font-ui); text-decoration:none; cursor:pointer; }
+.oz-lg-link:hover { text-decoration:underline; }
+.oz-lg-link:focus-visible, .oz-lg-find:focus-visible, .oz-lg-totop:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; border-radius:var(--oz-radius-sm); }
+
+/* Your college / faculty summary (787:498) */
+.oz-lg-summary { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); padding:var(--oz-space-3) var(--oz-space-4) var(--oz-space-3) var(--oz-space-4);
+  border-radius:var(--oz-radius-md); background:var(--oz-league-tint); }
+.oz-lg-sum-text { min-width:0; }
+.oz-lg-sum-label { margin:0; font:600 12px/15px var(--oz-font-ui); color:var(--oz-text-secondary); text-transform:uppercase; letter-spacing:.02em; }
+.oz-lg-sum-value { margin:var(--oz-space-2) 0 0; font:600 20px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-lg-find { flex:none; display:inline-flex; align-items:center; justify-content:center; min-height:var(--oz-touch); padding:0 var(--oz-space-5);
+  border:0; border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); color:var(--oz-nav-active); font:600 14px/17px var(--oz-font-ui); text-decoration:none; cursor:pointer; }
+.oz-lg-find:hover { background:var(--oz-bg-subtle); }
+
+/* Podium (787:503): three white tiles, place glyph, code, points, the entry's Sir Onz */
+.oz-lg-podium { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:var(--oz-space-1); margin:0; padding:0; list-style:none; }
+.oz-lg-podium:empty { display:none; }
+.oz-lg-pod { position:relative; min-width:0; min-height:114px; padding:var(--oz-space-3); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); overflow:hidden; }
+.oz-lg-pod.is-mine { box-shadow:inset 0 0 0 2px var(--oz-lime-500); }
+.oz-lg-pod-place { display:flex; align-items:center; gap:var(--oz-space-2); color:var(--oz-text-primary); font:600 14px/17px var(--oz-font-ui); }
+.oz-lg-pod-place > span:last-child { color:var(--oz-text-secondary); }
+.oz-lg-pod-place .oz-ic { width:20px; height:20px; }
+.oz-lg-pod-art { position:absolute; top:12px; right:10px; width:40px; height:56px; }
+.oz-lg-pod-art svg, .oz-lg-pod-art img { display:block; width:40px; height:56px; }
+.oz-lg-pod-name { display:block; margin-top:24px; font:600 21px/25px var(--oz-font-ui); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-lg-pod-pts { display:block; font:400 13px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+#league-faculty .oz-lg-pod-name { margin-top:var(--oz-space-3); }
+#league-faculty .oz-lg-pod-art { top:2px; right:4px; width:48px; height:68px; }
+#league-faculty .oz-lg-pod-art img { width:48px; height:68px; }
+
+/* Ranked rows (787:522): rank, crest with the entry's Sir Onz, name, points */
+.oz-lg-ranks { display:flex; flex-direction:column; gap:var(--oz-space-3); margin:0; padding:0; list-style:none; }
+.oz-lg-row { display:grid; grid-template-columns:37px 42px minmax(0, 1fr) auto; align-items:center; column-gap:var(--oz-space-2); min-height:58px;
+  padding:var(--oz-space-3) 12px var(--oz-space-3) var(--oz-space-2); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); transition:box-shadow var(--oz-dur-tab) var(--oz-ease-out); }
+.oz-lg-row.is-mine { background:var(--oz-league-tint); outline:none; }
+.oz-lg-row.is-found, .oz-lg-pod.is-found { box-shadow:0 0 0 3px var(--oz-nav-active); }
+.oz-lg-rank { font:600 14px/17px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-lg-crest { position:relative; width:42px; height:38px; border-radius:var(--oz-radius-md); background:var(--oz-league-tint); overflow:hidden; align-self:start; }
+.oz-lg-crest svg { position:absolute; left:2px; top:-7px; width:38px; height:53px; }
+.oz-lg-row.is-mine .oz-lg-crest { background:var(--oz-lime-500); }
+.oz-lg-crest.is-plain { width:48px; height:50px; margin:-6px 0 -6px -4px; /* art bleed from 787:522 */ background:none; overflow:visible; }
+.oz-lg-crest.is-plain img, .oz-lg-crest.is-plain svg { position:absolute; left:4px; top:-3px; width:40px; height:56px; }
+.oz-lg-name { display:flex; flex-direction:column; min-width:0; padding-left:var(--oz-space-1); }
+.oz-lg-name strong { font:600 14px/17px var(--oz-font-ui); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-lg-name small { margin-top:4px; font:600 11px/13px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-lg-gap { margin-top:var(--oz-space-2); font:600 12px/15px var(--oz-font-ui); font-style:normal; color:var(--oz-nav-active); }
+.oz-lg-pts { font:600 13px/16px var(--oz-font-ui); color:var(--oz-text-primary); text-align:right; white-space:nowrap; }
+.oz-lg-row.skeleton, .oz-lg-pod.skeleton { background:var(--oz-neutral-200); border-color:transparent; } /* sheen comes from the shared .skeleton (oz-components.css) */
+@keyframes oz-lg-shimmer { to { background-position:-200% 0; } }
+.oz-lg-empty { padding:var(--oz-space-4); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); text-align:center; }
+.oz-lg-empty .oz-empty { padding:0; }
+.oz-lg-totop { align-self:stretch; min-height:var(--oz-touch); border:0; background:none; color:var(--oz-nav-active); font:600 15px/18px var(--oz-font-ui); cursor:pointer; }
+
+/* Top referrers (696:13601): illustrated empty state and invite card */
+.oz-lg-ref-empty { list-style:none; }
+.oz-lg-ref-empty .oz-empty { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-4); padding:var(--oz-space-4) 0 0; }
+.oz-lg-ref-empty .oz-lion { --oz-lion-w:132px; }
+.oz-lg-ref-empty .oz-empty-title { margin:0; font:400 16px/22px var(--oz-font-ui); color:var(--oz-text-secondary); text-align:center; }
+.oz-lg-invite { display:flex; flex-direction:column; gap:var(--oz-space-4); padding:var(--oz-space-5); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
+.oz-lg-invite-head { display:flex; align-items:center; gap:var(--oz-space-4); }
+.oz-lg-invite-ic { display:grid; place-items:center; flex:none; width:48px; height:48px; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-nav-active); }
+.oz-lg-invite-ic .oz-ic { width:22px; height:22px; }
+.oz-lg-invite h2 { margin:0; font:600 16px/22px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-lg-invite p { margin:2px 0 0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-lg-code { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); min-height:50px; padding:0 var(--oz-space-4);
+  border:1px dashed var(--oz-neutral-400); border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+.oz-lg-code strong { font:700 18px/24px var(--oz-font-ui); letter-spacing:.02em; overflow-wrap:anywhere; }
+.oz-lg-invite .oz-btn { min-height:48px; border-radius:var(--oz-radius-pill); }
+
+@media (min-width:1024px) {
+  .oz-leagues { gap:var(--oz-space-4); }
+  .oz-lg-tabs { max-width:720px; }
+  /* Remaining ranks split into two columns */
+  .oz-lg-ranks:not(.oz-lg-ref-list):not(.is-flat) { display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(var(--oz-lg-half, 5), auto); gap:var(--oz-space-2) var(--oz-space-6); }
+  .oz-lg-row { grid-template-columns:37px 42px minmax(0, 1fr) minmax(0, 1.2fr); }
+  .oz-lg-pts { text-align:left; }
+  .oz-lg-totop { display:none; }
+}
+/* Wide desktop (1440 frames): standings card with the podium beside your college card. Below 1200 px it stacks. */
+@media (min-width:1200px) {
+  .oz-lg-top { display:grid; grid-template-columns:minmax(0, 1fr) 400px; grid-template-rows:auto 1fr; column-gap:var(--oz-space-6); row-gap:var(--oz-space-2); align-items:start; }
+  .oz-lg-card { display:block; grid-column:1; grid-row:1 / 3; align-self:stretch; border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); }
+  .oz-lg-standings-head { grid-column:1; grid-row:1; justify-content:flex-start; gap:var(--oz-space-9); padding:var(--oz-space-6) var(--oz-space-6) 0; }
+  .oz-lg-podium { grid-column:1; grid-row:2; gap:var(--oz-space-4); padding:0 var(--oz-space-6) var(--oz-space-6); }
+  .oz-lg-pod { min-height:96px; }
+  .oz-lg-pod-art { right:auto; left:58px; }
+  .oz-lg-sum-wrap { grid-column:2; grid-row:1 / 3; padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); }
+  .oz-lg-refs { display:grid; grid-template-columns:minmax(0, 1fr) 400px; gap:var(--oz-space-6); align-items:start; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .oz-lg-row.skeleton, .oz-lg-pod.skeleton { animation:none; }
+}
+
+/* ---------- Podium places nobody holds yet, and the "Yet to score" grid (everyone stays listed) ---------- */
+.oz-lg-pod-open { position:relative; min-width:0; min-height:114px; padding:var(--oz-space-3); border-radius:var(--oz-radius-md); background:var(--oz-bg-app);
+  box-shadow:inset 0 0 0 1px var(--oz-border); color:var(--oz-text-secondary); list-style:none; }
+.oz-lg-pod-open .oz-lg-pod-place { color:var(--oz-text-secondary); }
+.oz-lg-pod-open .oz-lg-pod-name { color:var(--oz-text-secondary); }
+.oz-lg-unranked { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-lg-unranked[hidden] { display:none; }
+.oz-lg-subhead { margin:0; font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-lg-subcount { color:var(--oz-text-secondary); font-weight:500; }
+.oz-lg-unranked-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:var(--oz-space-2); margin:0; padding:0; list-style:none; }
+.oz-lg-row.is-unranked { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--oz-space-1); min-height:0; padding:var(--oz-space-3) var(--oz-space-2); text-align:center; }
+.oz-lg-row.is-unranked .oz-lg-rank { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.oz-lg-row.is-unranked .oz-lg-name { align-items:center; padding:0; }
+.oz-lg-row.is-unranked .oz-lg-name small { display:none; }
+.oz-lg-row.is-unranked .oz-lg-pts { text-align:center; font-weight:500; color:var(--oz-text-secondary); }
+.oz-lg-row.is-unranked .oz-lg-gap { font-size:11px; line-height:14px; }
+.oz-lg-ranks[hidden] { display:none; }
+@media (min-width:1024px) {
+  .oz-lg-unranked-list { grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:var(--oz-space-3); }
+  .oz-lg-row.is-unranked .oz-lg-pts { text-align:center; }
+}
+@media (min-width:1200px) {
+  /* Same split as Home and Community: main column + the 376px side column (Figma 934:40986). Tabs align with the main column. */
+  .oz-lg-top { grid-template-columns:minmax(0, 1fr) var(--oz-aside-w); }
+  .oz-lg-refs { grid-template-columns:minmax(0, 1fr) var(--oz-aside-w); }
+  .oz-lg-tabs { max-width:calc(100% - var(--oz-aside-w) - var(--oz-space-6)); }
+  .oz-lg-pod-open { min-height:96px; }
+}
+.oz-lg-row.is-unranked .oz-lg-crest { align-self:center; }
+.oz-lg-row.is-unranked .oz-lg-crest.is-plain { margin:-6px auto; }

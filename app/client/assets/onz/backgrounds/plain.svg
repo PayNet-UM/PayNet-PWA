@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 194.769" fill="none">
+<defs><linearGradient id="plainsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DDE8FA"/><stop offset="1" stop-color="#F6F8FF"/></linearGradient>
+<clipPath id="plainclip"><rect width="90" height="194.769"/></clipPath></defs><g clip-path="url(#plainclip)">
+<rect width="90" height="106.154" fill="url(#plainsky)"/>
+<svg x="-1.850" y="-2.310" width="95.400" height="112.523" viewBox="0 0 95.4 112.523" preserveAspectRatio="none" overflow="visible">
+<g id="w92_Plain &#194;&#183; studio halo" clip-path="url(#w92_clip0_0_46)">
+<path id="w92_Vector" d="M0 76.3199C14.6769 74.1184 28.8646 74.363 47.7 76.3199C66.5354 78.2768 80.7231 78.2768 95.4 76.3199V105.185H0V76.3199Z" fill="#D8E4F8"/>
+<path id="w92_Vector_2" d="M0 86.5938C11.7415 83.6585 25.44 82.4354 47.7 82.4354C69.96 82.4354 83.6585 83.6585 95.4 86.5938V108.609H0V86.5938Z" fill="#D1DEF5"/>
+<path id="w92_Vector_3" opacity="0.5" d="M8.56154 34.4908H11.0077V32.0446H12.9646V34.4908H15.4108V36.4477H12.9646V38.8938H11.0077V36.4477H8.56154V34.4908Z" fill="#AFC5EC"/>
+<path id="w92_Vector_4" opacity="0.6" d="M80.7231 28.62H82.4354V26.9077H83.9031V28.62H85.6154V30.0877H83.9031V31.8H82.4354V30.0877H80.7231V28.62Z" fill="#B7CAEF"/>
+</g>
+<defs>
+<clipPath id="w92_clip0_0_46">
+<rect width="95.4" height="112.523" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+
+<rect x="-38.08" y="96.92" width="166.154" height="267.692" fill="#C9D8F5"/>
+<svg x="-38.080" y="78.460" width="166.154" height="60.000" viewBox="0 0 166.154 60" preserveAspectRatio="none" overflow="visible">
+<ellipse id="w93_Ground" cx="83.0769" cy="30" rx="83.0769" ry="30" fill="#C9D8F5"/>
+</svg>
+
+<svg x="0.000" y="0.000" width="90.000" height="106.154" viewBox="0 0 90 106.154" preserveAspectRatio="none" overflow="visible">
+<g id="w94_Foreground &#194;&#183; Plain accents">
+<path id="w94_Vector" opacity="0.8" d="M5.07692 99.6923C15.2308 97.3846 23.5385 96.4615 31.8462 96.4615M56.7692 96.4615C67.3846 96.6923 76.1538 97.8461 84.6923 99.6923" stroke-width="0.461538" stroke-linecap="round" stroke="#E8EFFD"/>
+<g id="w94_Vector_2" opacity="0.6">
+<path d="M10.6154 103.846H20.3077ZM69.6923 103.846H79.3846Z" fill="black"/>
+<path d="M10.6154 103.846H20.3077M69.6923 103.846H79.3846" stroke-width="0.346154" stroke-linecap="round" stroke="#B6C9EA"/>
+</g>
+</g>
+</svg>
+
+<svg x="-3.002" y="137.745" width="96.229" height="44.554" viewBox="0 0 96.2309 44.5665" preserveAspectRatio="none" overflow="visible">
+<g id="w95_Group" opacity="0.48">
+<path id="w95_Vector" d="M0.230829 14.5664C10.3847 10.2587 20.0001 8.64335 29.077 9.72027M68.7693 1.41258C78.7693 -0.58742 87.8462 -0.0489583 96.0001 3.02796" stroke-width="0.461538" stroke-linecap="round" stroke="#EAF1FC"/>
+<path id="w95_Vector_2" d="M0.692367 44.3357C17.4616 38.4895 31.3078 37.7203 42.2308 42.028M58.6154 36.4895C72.0001 31.4126 84.4616 30.7203 96.0001 34.4126" stroke-width="0.461538" stroke-linecap="round" stroke="#EAF1FC"/>
+</g>
+</svg>
+
+<svg x="5.310" y="137.078" width="77.535" height="32.994" viewBox="0 0 77.5385 33" preserveAspectRatio="none" overflow="visible">
+<g id="w96_Group" opacity="0.35">
+<path id="w96_Vector" d="M0 2.07692C0.769231 -0.230769 1.53846 -0.230769 2.30769 2.07692C3.07692 -0.692308 3.84615 -0.692308 4.61538 2.07692H0Z" fill="#AFC4E8"/>
+<path id="w96_Vector_2" d="M73.3846 15.2308C74 13.3846 74.6154 13.3846 75.2308 15.2308C76 12.9231 76.7692 12.9231 77.5385 15.2308H73.3846Z" fill="#AFC4E8"/>
+<path id="w96_Vector_3" d="M12.4615 33C13.0769 31.3077 13.6923 31.3077 14.3077 33C15.0769 31 15.7692 31 16.3846 33H12.4615Z" fill="#AFC4E8"/>
+</g>
+</svg>
+
+<svg x="7.272" y="142.727" width="74.538" height="41.895" viewBox="0 0 74.5385 41.8846" preserveAspectRatio="none" overflow="visible">
+<g id="w97_Group" opacity="0.8">
+<path id="w97_Vector" d="M0.576923 1.15385C0.895549 1.15385 1.15385 0.895549 1.15385 0.576923C1.15385 0.258297 0.895549 0 0.576923 0C0.258297 0 0 0.258297 0 0.576923C0 0.895549 0.258297 1.15385 0.576923 1.15385Z" fill="#EAF1FC"/>
+<path id="w97_Vector_2" d="M3.11538 1.84615C3.30656 1.84615 3.46154 1.69118 3.46154 1.5C3.46154 1.30882 3.30656 1.15385 3.11538 1.15385C2.92421 1.15385 2.76923 1.30882 2.76923 1.5C2.76923 1.69118 2.92421 1.84615 3.11538 1.84615Z" fill="#EAF1FC"/>
+<path id="w97_Vector_3" d="M73.9615 16.1538C74.2802 16.1538 74.5385 15.8955 74.5385 15.5769C74.5385 15.2583 74.2802 15 73.9615 15C73.6429 15 73.3846 15.2583 73.3846 15.5769C73.3846 15.8955 73.6429 16.1538 73.9615 16.1538Z" fill="#EAF1FC"/>
+<path id="w97_Vector_4" d="M62.4231 41.8846C62.678 41.8846 62.8846 41.678 62.8846 41.4231C62.8846 41.1682 62.678 40.9615 62.4231 40.9615C62.1682 40.9615 61.9615 41.1682 61.9615 41.4231C61.9615 41.678 62.1682 41.8846 62.4231 41.8846Z" fill="#EAF1FC"/>
+</g>
+</svg>
+
+</g>
+</svg>

@@ -1,7 +1,7 @@
 /* Shared finishing rules: readable guidance, clear controls and comfortable touch targets.
    Layouts, programme data and feature permissions stay in their role-specific modules. */
 #view { overflow-wrap:break-word; }
-#view .btn,.sheet .btn { min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4;text-align:center; }
+#view .btn,.sheet .btn { min-width:0;white-space:normal;overflow-wrap:break-word;line-height:1.4;text-align:center; }
 #view .btn .ic,.sheet .btn .ic { flex-shrink:0; }
 #view input,#view select,#view textarea { max-width:100%; }
 #view :is(.row,.field,.stack) > :is(input,select,textarea) { min-width:0; }

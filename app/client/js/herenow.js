@@ -1,5 +1,6 @@
 // Attendance-based friend place sharing is paused. Friendship management remains active.
 import * as D from './data.js';
+import { ozListRow } from './oz-ui.js';
 import * as AV from './avatar.js';
 import { $, $$, esc, icon, toast, sheet, closeSheet, busy, errText, timeAgo } from './ui.js';
 
@@ -15,7 +16,7 @@ function crowdHTML(app, g) {
 }
 
 export function hereNowSection() {
-  return `<section class="section directory-friends"><div class="head"><h2>${icon('users')} Friends</h2><a href="#/community/friends">Manage friends ${icon('chevron-right')}</a></div><p class="faint">Place sharing is paused. Your GPS location stays private.</p></section>`;
+  return ozListRow({ title: 'Manage friends', sub: 'Place sharing is paused. Your GPS location stays private.', iconName: 'community', href: '#/community/friends', cls: 'oz-shops-friends' });
 }
 export function mountHereNow() { return { stop() {}, redraw() {} }; }
 export function mapSettingsSheet(app) {

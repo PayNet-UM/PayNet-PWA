@@ -196,8 +196,12 @@ export function merchantDealQRMount(root, app) {
   };
 }
 const studentCounterContext = 'Ask staff to show the deal QR. Each student can claim each deal once a day. This confirms a deal claim, not a payment.';
+// The page title sits above both columns, so the "At the counter" card lines up with the first card in the list
+// instead of floating level with the heading.
 function dealWorkspace(content, counterText, cls = '') {
-  return `<div class="oz-claim-workspace ${cls}"><div class="oz-claim-main">${content}</div>
+  const end = content.startsWith('<header') ? content.indexOf('</header>') + 9 : 0;
+  const head = content.slice(0, end), body = content.slice(end);
+  return `<div class="oz-claim-workspace ${cls}">${head ? `<div class="oz-claim-head">${head}</div>` : ''}<div class="oz-claim-main">${body}</div>
     <aside class="oz-claim-counter oz-claim-card"><h2>At the counter</h2>
       <p>${esc(counterText)}</p>
     </aside></div>`;

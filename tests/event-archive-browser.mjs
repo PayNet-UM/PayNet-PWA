@@ -29,8 +29,19 @@ try{
  await p.click('[data-calendar-month="-1"]');await p.click('[data-calendar-day="2026-10-07"]');await p.waitForSelector('[data-event-open="poster-11"]');
  await p.waitForFunction(()=>document.querySelector('[data-reaction-key="poster-11"][data-event-react="🙌"]')?.getAttribute('aria-pressed')==='true');
  await p.click('[data-calendar-month="1"]');await p.click('[data-calendar-day="2026-11-14"]');
- for(const width of [320,390,768,1360])for(const lang of ['en','ms']){
+ for(const width of [320,390,768,1024,1360])for(const lang of ['en','ms']){
   await p.setViewportSize({width,height:900});await p.evaluate(async lang=>(await import('./js/i18n.js')).setLang(lang),lang);
+  await p.evaluate(()=>document.fonts.ready);
+  await p.click('[data-calendar-month="-1"]');
+  const toolbar=p.locator('.event-calendar-toolbar');
+  const octoberHeight=(await toolbar.boundingBox()).height;
+  for(const [step,month] of [[-1,'2026-09'],[1,'2026-10'],[1,'2026-11']]){
+   await p.click(`[data-calendar-month="${step}"]`);
+   assert.equal(await p.locator('.event-calendar').getAttribute('data-month'),month);
+   assert.equal((await toolbar.boundingBox()).height,octoberHeight,
+    `Calendar controls should stay on the same row when showing ${month} at ${width}px (${lang})`);
+  }
+  await p.click('[data-calendar-day="2026-11-14"]');
   await p.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth);
   assert.ok(await p.locator('.event-calendar').isVisible());
   assert.ok((await p.locator('.event-calendar-toolbar h3').textContent()).includes('November'));
@@ -49,5 +60,5 @@ try{
  await p.evaluate(()=>{Date.now=()=>Date.UTC(2026,10,17,4);});
  await p.waitForSelector('.floor-map-ended');assert.equal(await p.locator('[data-kps-booth]').count(),0);
  assert.deepEqual(errors,[]);
- console.log('Event archive/calendar browser: ended posters, reactions across views, multi-day agenda, previous months, Today and 8 responsive/language layouts passed.');
+ console.log('Event archive/calendar browser: ended posters, reactions across views, multi-day agenda, stable month navigation, Today and 10 responsive/language layouts passed.');
 }finally{await browser.close();}

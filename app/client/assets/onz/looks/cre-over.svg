@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39.600 55.440" fill="none">
+<svg x="0.000" y="0.000" width="39.600" height="55.440" viewBox="0 0 39.6 55.44" preserveAspectRatio="none" overflow="visible">
+<g id="w51_Original front beret">
+<ellipse id="w51_Contact Shadow" cx="19.8" cy="19.305" rx="12.87" ry="1.089" fill="#0B0F3A" fill-opacity="0.18"/>
+<ellipse id="w51_Beret" cx="20.196" cy="12.474" rx="15.642" ry="6.336" fill="url(#w51_paint0_linear_0_364)"/>
+<ellipse id="w51_Stem" cx="19.998" cy="5.544" rx="1.188" ry="1.584" fill="url(#w51_paint1_linear_0_364)"/>
+<rect id="w51_Band" x="6.93" y="15.642" width="25.74" height="3.762" rx="1.881" fill="url(#w51_paint2_linear_0_364)"/>
+<path id="w51_Pin" d="M19.7999 16.434C20.0003 16.434 20.1631 16.5968 20.1631 16.7973V17.1596H20.5264C20.7267 17.1598 20.8887 17.3226 20.8887 17.5229C20.8887 17.7232 20.7267 17.8859 20.5264 17.8861H20.1631V18.2494C20.1629 18.4497 20.0002 18.6117 19.7999 18.6117C19.5996 18.6117 19.4368 18.4497 19.4366 18.2494V17.8861H19.0743C18.8738 17.8861 18.711 17.7233 18.711 17.5229C18.7111 17.3224 18.8738 17.1596 19.0743 17.1596H19.4366V16.7973C19.4366 16.5968 19.5994 16.4341 19.7999 16.434Z" fill="#F4E1C1"/>
+</g>
+<defs>
+<linearGradient id="w51_paint0_linear_0_364" x1="20.196" y1="6.138" x2="20.196" y2="18.81" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7A2B3A"/>
+<stop offset="1" stop-color="#A84458"/>
+</linearGradient>
+<linearGradient id="w51_paint1_linear_0_364" x1="19.998" y1="3.96" x2="19.998" y2="7.128" gradientUnits="userSpaceOnUse">
+<stop stop-color="#5C1F2B"/>
+<stop offset="1" stop-color="#7A2B3A"/>
+</linearGradient>
+<linearGradient id="w51_paint2_linear_0_364" x1="19.8" y1="15.642" x2="19.8" y2="19.404" gradientUnits="userSpaceOnUse">
+<stop stop-color="#3A1A20"/>
+<stop offset="1" stop-color="#5C1F2B"/>
+</linearGradient>
+</defs>
+</svg>
+
+<svg x="0.000" y="0.000" width="39.600" height="55.440" viewBox="0 0 39.6 55.44" preserveAspectRatio="none" overflow="visible">
+<g id="w52_Brush tucked into beret">
+<path id="w52_Vector" d="M24.42 16.06L31.02 8.36L32.12 9.24L25.52 16.94L24.42 16.06Z" fill="#E5B15C"/>
+<path id="w52_Vector_2" d="M30.58 8.58C30.7267 6.96667 31.7533 5.79333 33.66 5.06C33.8067 7.11333 33.0733 8.50667 31.46 9.24L30.58 8.58Z" fill="#FFDF94"/>
+</g>
+</svg>
+
+</svg>

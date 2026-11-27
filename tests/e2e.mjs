@@ -28,10 +28,11 @@ await stu.goto(BASE); await stu.evaluate(() => { localStorage.clear(); sessionSt
 await stu.reload(); await stu.waitForFunction(() => document.documentElement.dataset.backend, null, { timeout: 60000 });
 if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo') { console.error('Stopped: the server is not in Demo mode. Use npm run dev:demo.'); await b.close(); process.exit(1); }
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
+// Figma Home: a Find campus shops row, then Explore addOnz (Learn & Earn, Student ventures) and All activities.
 const pillars = await stu.locator('.kk-pillar').count();
-if (pillars !== 4) throw new Error('expected 4 +Onz directory cards, got ' + pillars);
-for (const route of ['explore', 'community', 'explore/deals', 'learn']) {
-  if (await stu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 1) throw new Error('missing directory: ' + route);
+if (pillars !== 3) throw new Error('expected 3 +Onz directory rows, got ' + pillars);
+for (const route of ['explore', 'community', 'learn', 'activities']) {
+  if (await stu.locator(`.oz-home a[href="#/${route}"]`).count() < 1) throw new Error('missing directory: ' + route);
 }
 for (const route of ['bayar', 'explore/idea']) {
   if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
@@ -82,8 +83,11 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
 await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
-await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
-await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+// Leagues is its own nav tab (Figma), so Community no longer repeats a Leagues link.
+await stu.click('.tabbar a[data-tab="leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
+// Figma Leagues is one board per tab: KK shows; Faculty and Referrers are on the page but hidden until chosen.
+await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty', { state: 'attached' }); await stu.waitForSelector('#league-referrals', { state: 'attached' });
+if (await stu.locator('.oz-lg-tabs a[aria-current="page"]').getAttribute('href') !== '#/leagues/kk') throw new Error('KK League tab is not selected on Leagues');
 // The first plain visit to Leagues explains the KK League, then never again.
 await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
 if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Leagues tour did not start on Your KK');
@@ -91,12 +95,22 @@ await stu.screenshot({ path: `${shots}/04b-leagues-tour.png` });
 await stu.click('.guide [data-next]');
 if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Leagues tour does not mention the prize');
 await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
-await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .community-podium, #league-kk .community-league-empty'); await stu.waitForTimeout(900);
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .oz-lg-pod, #league-kk .oz-lg-empty'); await stu.waitForTimeout(900);
 if (await stu.locator('.guide').count()) throw new Error('Leagues tour showed again after it was seen');
-await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+// Every college is listed, including those without points, so nothing is hidden from students.
+if (await stu.locator('#league-kk .oz-lg-pod, #league-kk .oz-lg-row').count() < 14) throw new Error('KK League does not list every college');
+// "Scoring rules" explains the scoring, and its "Show me around" replays the tour.
+await stu.click('#league-help'); await stu.waitForSelector('.oz-lg-rules'); await stu.click('.oz-lg-rules [data-tour]'); await stu.waitForSelector('.guide .is-tour');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+// The board follows the route: the Faculty tab selects and shows the Faculty League, and Back returns to KK.
+await stu.click('.oz-lg-tabs a[href="#/leagues/faculty"]'); await stu.waitForFunction(() => location.hash === '#/leagues/faculty');
+await stu.waitForSelector('#league-faculty:not([hidden])'); if (!await stu.locator('#league-kk').isHidden()) throw new Error('KK board still shows on the Faculty tab');
+if (await stu.locator('.oz-lg-tabs a[aria-current="page"]').getAttribute('href') !== '#/leagues/faculty') throw new Error('Faculty tab is not selected');
+await stu.goBack(); await stu.waitForSelector('#league-kk:not([hidden])');
+await stu.click('#league-help'); await stu.waitForSelector('.oz-lg-rules [data-tour]'); await stu.click('.oz-lg-rules [data-tour]'); await stu.waitForSelector('.guide .is-tour');
 await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
 await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
-await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
+await stu.click('.oz-ctabs [data-ctab="fund"]'); // Figma Community: the welfare fund is the Fund tab
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
 await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
 await stu.goto(BASE + '#/home'); await stu.waitForSelector('.kk-hero');
@@ -104,7 +118,7 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
+ok('Community combines friends and welfare; Leagues has its own page, one board per tab with every college listed, explains the KK League once and replays it from Scoring rules');
 
 // Sir Onz replaced the human avatar: hats and colours unlock by level; older drawing options stay stored untouched.
 const avatarBefore = await stu.evaluate(() => window.__umc.profile.avatar || {});
@@ -156,8 +170,10 @@ if (await stu.evaluate(() => document.documentElement.scrollWidth > innerWidth +
 await stu.evaluate(()=>{Date.now=window.beforeMapClock;delete window.beforeMapClock;});
 ok('Tapak KPS preserves allocations in the adapted layout, opens pending vendor details, supports keyboard selection and zooms without mobile overflow');
 await stu.goto(BASE + '#/learn'); await stu.waitForSelector('[data-lesson="2"]'); await stu.click('[data-lesson="2"]');
-await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#toast.show');
-ok('all student screens rendered; lesson: ' + (await stu.textContent('#toast')));
+await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#sheet [data-quiz-continue]');
+if (await stu.locator('#sheet .oz-quiz-progress').evaluate((el) => el.value) !== 1) throw new Error('Correct answer did not complete the lesson progress');
+ok('all student screens rendered; lesson: ' + (await stu.textContent('#sheet #fb p')));
+await stu.click('#sheet [data-quiz-continue]');
 
 // voucher
 await stu.goto(BASE + '#/rewards'); await stu.waitForSelector('[data-redeem="kopi-rm3"]:not([disabled])');
@@ -337,7 +353,7 @@ await ns.evaluate(async () => (await import('./js/i18n.js')).setLang('en'));
 for (let k = 0; k < 12 && await ns.locator('.guide .is-tour').count(); k++) await ns.click('.guide [data-next]');
 await ns.waitForSelector('.guide .is-finish'); await ns.screenshot({ path: `${shots}/g-student-finish.png` });
 await ns.click('.guide-tasks a[data-go="avatar"]'); await ns.waitForFunction(() => location.hash === '#/avatar' && !document.querySelector('.guide'));
-await ns.goto(BASE + '#/me'); await ns.waitForSelector('#prof');
+await ns.goto(BASE + '#/me/profile'); await ns.waitForSelector('#prof'); // Figma: the profile form is Me › Edit profile
 if (await ns.locator('#prof select[name=college]').count() || !/Kolej Kediaman Ketujuh \(KK7\)/.test(await ns.inputValue('#prof input[aria-describedby="college-locked"]'))) throw new Error('college is still editable in Me');
 await ns.screenshot({ path: `${shots}/c-me-locked.png`, fullPage: true });
 await ns.close();
@@ -380,13 +396,13 @@ await nm.goto(BASE + '#/shop'); await nm.waitForSelector('#app-form');
 await nm.fill('#app-form [name=name]', 'Satay Siswa'); await nm.fill('#app-form [name=accountName]', 'Satay Siswa Enterprise'); await nm.fill('#app-form [name=location]', 'KK11 cafeteria');
 await nm.setInputFiles('#app-form [name=qr]', { name: 'qr.png', mimeType: 'image/png', buffer: png });
 await nm.evaluate(() => { document.querySelector('#app-form [name=logo]').removeAttribute('required'); document.querySelector('#app-form [name=qr]').removeAttribute('required'); });
-await nm.click('#app-form button.primary'); await nm.waitForSelector('#toast.show');
+await nm.click('#app-form button.oz-btn-primary'); await nm.waitForSelector('#toast.show');
 const noLogo = await nm.textContent('#toast');
 if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caught: ' + noLogo);
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
+await nm.click('#app-form button.oz-btn-primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
 // ---------- the two websites keep to their own people
@@ -585,7 +601,7 @@ await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
-for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
+for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.oz-home a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
 for (const route of ['explore', 'deals', 'cafes', 'checkin', 'bayar', 'merchant/mer1', 'claim-deal/' + liveId]) {
   await offStu.goto(BASE + '#/' + route); await offStu.waitForTimeout(500);
   if (await offStu.locator('.kk-hero').count() !== 1) throw new Error('typed #/' + route + ' did not go home');
@@ -606,7 +622,7 @@ if (/check in at shops|your check-ins/i.test(await offMer.locator('body').innerT
 ok('with switches off, sign-up has no merchant option');
 await off.check('#features input[name=overview]'); await off.click('#features button'); await off.waitForTimeout(600);
 await offStu.goto(BASE); await offStu.reload(); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
-if (await offStu.locator('.kk-pillars a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not restore its homepage card');
+if (await offStu.locator('.oz-home-shops a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not restore its homepage card');
 await offStu.goto(BASE + '#/explore'); await offStu.waitForSelector('#cmap', { timeout: 20000 });
 if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live deals shown while its switch is off');
 await offStu.locator('#clist h3 a[href^="#/merchant/"]').first().click(); await offStu.waitForSelector('text=Visit this shop', { timeout: 20000 });
@@ -624,15 +640,16 @@ await linkPage.selectOption('#ob [name=college]', { index: 1 }); await linkPage.
 await linkPage.check('#ob [name=terms]'); await linkPage.click('#ob button[type=submit]');
 await linkPage.waitForSelector('.guide [data-skip]', { timeout: 30000 }); await linkPage.click('.guide [data-skip]');
 await linkPage.waitForFunction(() => !document.querySelector('.guide'));
-await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#add-email');
+await linkPage.goto(BASE + '#/me/profile'); await linkPage.waitForSelector('#add-email'); // sign-in emails live on Me › Edit profile
 await linkPage.click('#add-email'); await linkPage.fill('#le [name=email]', 'link.second@siswa.um.edu.my'); await linkPage.click('#le button');
 await linkPage.waitForFunction(() => document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
 await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
 await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my');
 await linkPage.waitForFunction(() => !document.querySelector('#google') && !document.querySelector('#ob'), null, { timeout: 30000 });
-await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#signin-emails');
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('.me-card');
 if (!(await linkPage.locator('.me-card').innerText()).includes('Link Tester')) throw new Error('the second email should open the same account');
 ok('a student added a second Google account on Me, and it signs in to the same account');
+await linkPage.goto(BASE + '#/me/profile'); await linkPage.waitForSelector('#signin-emails');
 await linkPage.click('[data-remove-email="link.second@siswa.um.edu.my"]'); await linkPage.click('#sheet [data-yes]');
 await linkPage.waitForFunction(() => !document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
 await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });

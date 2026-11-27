@@ -107,6 +107,16 @@ function runDemoDeletions(docs, writes) {
     docs.set(p, { ...d, status: 'done' });
   }
 }
+// Opt-in visual-comparison data, Demo only: open the app with ?fixture=parity to get league totals shaped like the
+// Figma Leagues frames (13 ranked colleges, 16 faculties). Default Demo and every real backend never read it.
+const PARITY_FIXTURE = (() => { try { return new URLSearchParams(globalThis.location?.search || '').get('fixture') === 'parity'; } catch { return false; } })();
+const PARITY_LEAGUE = {
+  colleges: { KK12: 3480, KK5: 3120, KK1: 2940, KK6: 2620, KK10: 2390, KK2: 2180, KK13: 2000, KK4: 1820, KK8: 1600, KK11: 1450, KK7: 1300, KK9: 1240, KK3: 1180 },
+  faculties: { 'Faculty of Arts and Social Sciences': 3480, 'Faculty of Built Environment': 3120, 'Faculty of Engineering': 2940, 'Faculty of Science': 2620,
+    'Faculty of Medicine': 2390, 'Faculty of Business and Economics': 2180, 'Faculty of Law': 2000, 'Faculty of Computer Science and Information Technology': 1940,
+    'Faculty of Education': 1600, 'Faculty of Dentistry': 1450, 'Faculty of Pharmacy': 1300, 'Faculty of Languages and Linguistics': 1240,
+    'Faculty of Creative Arts': 1180, 'Faculty of Sport and Exercise Sciences': 960, 'Academy of Islamic Studies': 720, 'Academy of Malay Studies': 540 },
+};
 function rebuildDemoLeague(docs) {
   if (!docs.has('stats/campus')) return;
   const earned = new Map(), colleges = {}, faculties = {};
@@ -123,9 +133,10 @@ function rebuildDemoLeague(docs) {
     const faculty = typeof profile.faculty === 'string' ? profile.faculty.trim() : '';
     if (faculty.length > 1 && faculty.length <= 100) faculties[faculty] = (faculties[faculty] || 0) + points;
   }
-  docs.set('stats/league', { colleges, faculties, metric: 'totalEarned' });
+  docs.set('stats/league', PARITY_FIXTURE ? { ...PARITY_LEAGUE, metric: 'totalEarned' } : { colleges, faculties, metric: 'totalEarned' });
   rebuildDemoReferrals(docs);
 }
+
 // Demo equivalent of functions/referrals.js: the 10 students whose referral codes were used most.
 function rebuildDemoReferrals(docs) {
   const counts = new Map(); let total = 0;

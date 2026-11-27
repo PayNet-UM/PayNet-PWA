@@ -1,6 +1,8 @@
 import * as D from './data.js';
 import { avatarSVG, defaultFor } from './avatar.js';
-import { $, $$, esc, icon, busy, toast, errText, confirmSheet, initials, confetti } from './ui.js';
+import { $, $$, esc, icon, busy, toast, errText, confirmSheet, initials, sheet, closeSheet } from './ui.js';
+import { ozIcon } from './oz-icons.js';
+import { collapse } from './oz-motion.js';
 
 export function usernameTag(username) {
   return username ? `<div class="username-tag"><span data-no-i18n>@${esc(username)}</span><button type="button" class="username-copy" data-copy-username aria-label="Copy username" title="Copy username">${icon('copy')}</button></div>` : '';
@@ -35,8 +37,6 @@ export async function friendsRender(app) {
     </section>
     <nav class="community-shortcuts" aria-label="Community sections">
       <button type="button" data-friends-jump="friend-search" aria-controls="friend-search">${icon('user-plus')} Add friends</button>
-      <a href="#/leagues">${icon('trophy')} Leagues</a>
-      <button type="button" data-friends-jump="community-welfare" aria-controls="community-welfare">${icon('hand-heart')} Welfare</button>
     </nav>
     ${profile.username ? ''
       : `<form id="friend-username" class="card stack friends-claim"><div class="row"><span class="tile-icon">${icon('user')}</span><div><h2>Choose your username</h2></div></div>
@@ -44,7 +44,7 @@ export async function friendsRender(app) {
     <form id="friend-search" class="card stack friends-search" tabindex="-1" aria-label="Add friends"><div class="row"><span class="tile-icon">${icon('user-plus')}</span><div><h2>Add friends</h2></div></div>
       <div class="friends-search-controls"><div class="friends-autocomplete"><label class="field"><span class="sr">Find by username</span><input name="username" required maxlength="25" placeholder="@username" autocomplete="off" autocapitalize="none" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="friend-suggestions" aria-expanded="false" ${profile.username ? '' : 'disabled'}></label><ul id="friend-suggestions" class="friends-suggestions" role="listbox" aria-label="Matching users" hidden></ul></div><button class="btn primary" ${profile.username ? '' : 'disabled'}>${icon('user-plus')} Add</button></div>
       <div id="friend-result" aria-live="polite"></div><p class="faint">Search a username and send a request. Once accepted, they appear in Friends.</p></form>
-    <div id="friend-lists" aria-live="polite" role="region" aria-label="Friend requests and your circle" tabindex="0"><p class="faint">Loading friends…</p></div>`;
+    <div id="friend-lists" aria-live="polite" role="region" aria-label="Friend requests and your circle" tabindex="0"><div class="oz-skel-list" role="status"><span class="visually-hidden">Loading friends…</span><span class="oz-skel oz-skel-row"></span><span class="oz-skel oz-skel-row"></span><span class="oz-skel oz-skel-row"></span></div></div>`;
 }
 
 export function friendsMount(root, app) {
@@ -136,7 +136,9 @@ export function friendsMount(root, app) {
       } catch (err) { if (!disposed) result.textContent = errText(err); }
     });
   };
-  const stop = D.watchFriendships(app.ctx, (rows) => {
+  const accepting = new Set();
+  let latest = null;
+  const paint = (rows) => {
     if (disposed) return;
     connected = new Set(rows.map((f) => f.from === app.ctx.uid ? f.to : f.from));
     if (!suggestions.hidden) showSuggestions();
@@ -158,22 +160,64 @@ export function friendsMount(root, app) {
         const username = app._friendDirectory.find((person) => person.uid === personUid)?.username
           || (f.from === app.ctx.uid ? f.toUsername : f.fromUsername);
         const label = username ? '@' + username : f.from === app.ctx.uid ? 'Referral · ' + f.referralCode : f.fromName || 'Student';
-        return `<article class="card friend-row friend-${kind}">
+        return `<article class="oz-friend-row friend-row friend-${kind}" data-friend-label="${esc(label)}">
           <span class="friends-badge" aria-hidden="true"><span class="friends-monogram">${esc(initials(label.replace(/[@_]/g, ' ')))}</span><span class="friends-badge-mark">${icon(kind === 'accepted' ? 'check' : kind === 'incoming' ? 'plus' : 'clock')}</span></span>
           <div class="friend-identity"><h3 ${username ? 'data-no-i18n' : ''}>${esc(label)}</h3><span class="friend-state">${icon(kind === 'accepted' ? 'check' : 'clock')} ${kind === 'accepted' ? 'Connected' : kind === 'incoming' ? 'Wants to connect' : 'Awaiting reply'}</span></div>
           <div class="friend-actions">
-            ${kind === 'incoming' ? `<button class="btn small go" data-accept-friend="${esc(f.id)}">${icon('user-plus')} Accept</button>` : ''}
-            <button class="btn small ghost" data-remove-friend="${esc(f.id)}" data-kind="${kind}">${kind === 'accepted' ? 'Remove' : kind === 'incoming' ? 'Decline' : 'Cancel'}</button>
+            ${kind === 'incoming' ? `<button type="button" class="oz-btn oz-btn-primary oz-btn-sm" data-accept-friend="${esc(f.id)}"><span>Accept</span></button>` : ''}
+            ${kind === 'accepted'
+              // A friend's options live in a sheet (who they are, then actions); removing is a deliberate, confirmed step there.
+              ? `<button type="button" class="oz-friend-more" data-friend-sheet="${esc(f.id)}" aria-label="Options for ${esc(label)}" aria-haspopup="dialog"><span class="oz-friend-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>`
+              : `<button type="button" class="oz-btn oz-btn-ghost oz-btn-sm" data-remove-friend="${esc(f.id)}" data-kind="${kind}"><span>${kind === 'incoming' ? 'Decline' : 'Cancel'}</span></button>`}
           </div></article>`;
       }).join('') || `<div class="friends-empty"><div class="friends-empty-orbit" aria-hidden="true"><span>${icon('user')}</span><span class="friends-empty-icon">${icon(glyph)}</span><span>${icon('user')}</span></div><p>${empty}</p></div>`}</div></section>`).join('');
     $$('.friends-scoreboard button', root).forEach((button) => { button.disabled = false; });
     $$('[data-accept-friend]', root).forEach((button) => { button.onclick = () => busy(button, async () => {
-      try { await D.acceptFriend(app.ctx, button.dataset.acceptFriend); confetti(); toast('Friend added'); } catch (err) { toast(errText(err), true); }
+      const id = button.dataset.acceptFriend;
+      accepting.add(id);
+      try {
+        await D.acceptFriend(app.ctx, id);
+        toast('Friend added');
+        const row = button.closest('.friend-row');
+        if (disposed || !row?.isConnected || !row.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        button.innerHTML = ozIcon('s:check');
+        button.style.minWidth = 'var(--oz-touch)';
+        row.style.overflow = 'hidden';
+        const height = row.getBoundingClientRect().height;
+        await row.animate([
+          { opacity: 1, height: height + 'px', minHeight: 0, offset: 0 },
+          { opacity: 1, height: height + 'px', minHeight: 0, offset: .35 },
+          { opacity: 0, height: '0px', minHeight: 0, paddingBlock: 0, borderWidth: 0 },
+        ], { duration: 280, easing: 'ease-out', fill: 'forwards' }).finished.catch(() => {});
+      } catch (err) { toast(errText(err), true); }
+      finally {
+        accepting.delete(id);
+        if (!accepting.size && latest) paint(latest);
+      }
     }); });
+    $$('[data-friend-sheet]', root).forEach((button) => { button.onclick = () => {
+      const label = button.closest('[data-friend-label]').dataset.friendLabel; const id = button.dataset.friendSheet;
+      const el = sheet(`<div class="oz-friend-sheet"><span class="oz-friend-sheet-av" aria-hidden="true">${esc(initials(label.replace(/[@_]/g, ' ')))}</span>
+        <h2 data-no-i18n>${esc(label)}</h2><p class="oz-friend-sheet-state">${ozIcon('check')} Connected</p>
+        <div class="oz-friend-sheet-actions">${label.startsWith('@') ? `<button type="button" class="oz-row oz-friend-sheet-row" data-copy-handle>${ozIcon('copy')}<span>Copy username</span></button>` : ''}
+          <button type="button" class="oz-row oz-friend-sheet-row is-danger" data-unfriend>${ozIcon('trash')}<span>Remove friend</span></button></div></div>`);
+      const copyBtn = el.querySelector('[data-copy-handle]');
+      if (copyBtn) copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(label); toast('Username copied.'); } catch { toast('Copy is unavailable here.', true); } };
+      el.querySelector('[data-unfriend]').onclick = async () => { closeSheet(); if (!(await confirmSheet('Remove friend?', 'This removes the connection for both of you.', 'Remove'))) return;
+        const row = $(`[data-friend-sheet="${CSS.escape(id)}"]`, root)?.closest('.friend-row');
+        if (row) await collapse(row, { remove: false }); // the row folds away instead of the list jumping
+        try { await D.removeFriend(app.ctx, id); toast('Friend removed.'); } catch (err) { row?.getAnimations().forEach((a) => a.cancel()); toast(errText(err), true); } };
+    }; });
     $$('[data-remove-friend]', root).forEach((button) => { button.onclick = async () => {
       if (button.dataset.kind === 'accepted' && !(await confirmSheet('Remove friend?', 'This removes the connection for both of you.', 'Remove'))) return;
-      busy(button, async () => { try { await D.removeFriend(app.ctx, button.dataset.removeFriend); } catch (err) { toast(errText(err), true); } });
+      const row = button.closest('.friend-row');
+      busy(button, async () => { if (row) await collapse(row, { remove: false });
+        try { await D.removeFriend(app.ctx, button.dataset.removeFriend); } catch (err) { row?.getAnimations().forEach((a) => a.cancel()); toast(errText(err), true); } });
     }; });
+  };
+  const stop = D.watchFriendships(app.ctx, (rows) => {
+    latest = rows;
+    if (!accepting.size) paint(rows);
   }, (err) => { if (!disposed) $('#friend-lists', root).textContent = errText(err); });
   return () => { disposed = true; jumpAnimation?.cancel(); stop(); };
 }

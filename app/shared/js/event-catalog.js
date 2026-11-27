@@ -35,8 +35,17 @@ export function feskumFloorMapAvailable(today=eventToday()){return floorMapAvail
 export function activeEventSlides(today=eventToday()){
   return EVENT_SLIDES.filter(s=>!eventExpired({end:DATES[s.page]?.[1]},today)&&![5,9,11,12,13].includes(s.page));
 }
+// "27 Nov", "6–8 Dec", "27 Nov – 3 Dec" from yyyy-mm-dd keys (Event Card 740:20415 date line). Raw keys pass through.
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+export function eventDateLabel(start,end){
+  const part=(k)=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(k||'');return m?{y:m[1],m:MONTHS[+m[2]-1],d:+m[3]}:null;};
+  const a=part(start),b=end&&end!==start?part(end):null;
+  if(!a)return start||'';
+  if(!b)return `${a.d} ${a.m}`;
+  return a.m===b.m&&a.y===b.y?`${a.d}–${b.d} ${a.m}`:`${a.d} ${a.m} – ${b.d} ${b.m}`;
+}
 export function galleryEvents(campaigns=[],today=eventToday(),{includeHidden=false,includeExpired=includeHidden}={}){
-  const when=(e,fallback='Date to be announced')=>e.start?e.start+(e.end&&e.end!==e.start?' – '+e.end:'')+(e.time?' · '+e.time:''):fallback;
+  const when=(e,fallback='Date to be announced')=>e.start?eventDateLabel(e.start,e.end)+(e.time?' · '+e.time:''):fallback;
   const overrides=new Map(campaigns.filter(c=>validPage(c.sourcePosterPage)).map(c=>[c.sourcePosterPage,c]));
   const originals=EVENT_SLIDES.map(s=>{
     const original={id:'poster-'+s.page,recordId:null,name:s.title,category:TYPES[s.page],when:s.when,time:s.when.includes(' · ')?s.when.split(' · ').slice(1).join(' · '):'',location:s.where,poster:s,page:s.page,sourcePosterPage:s.page,start:DATES[s.page]?.[0],end:DATES[s.page]?.[1],archive:[5,9,11,12,13].includes(s.page),description:s.note};

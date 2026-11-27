@@ -56,8 +56,12 @@ for (const [role, mod, app, routes] of [
       for (const id of controls) assert.ok(ids.includes(id), `HEP ${route} lost its ${id} control`);
     }
     if (role === 'Student' && route === 'home') {
+      // Figma Home (441:304 / 915:33759): a Find campus shops row, then Explore addOnz with Learn & Earn and Student
+      // ventures (plus Campus Events and How points work on the web). Live deals is the Live now header link.
       const directories = html.match(/<nav class="kk-pillars"[\s\S]*?<\/nav>/)[0];
-      assert.deepEqual([...directories.matchAll(/href="#\/([^"]+)"/g)].map((match) => match[1]), ['explore', 'community', 'explore/deals', 'learn']);
+      assert.deepEqual([...directories.matchAll(/href="#\/([^"]+)"/g)].map((match) => match[1]), ['learn', 'community', 'events', 'points']);
+      assert.ok(/<div class="oz-home-shops"><a class="kk-pillar[^"]*" href="#\/explore"/.test(html), 'Home shows the Find campus shops row');
+      assert.ok(html.includes('href="#/activities"'), 'Home links to All activities');
     }
     if (role === 'Student' && route === 'community') {
       for (const id of ['friend-search', 'friend-lists', 'community-welfare', 'donate', 'request-welfare']) {
@@ -68,13 +72,20 @@ for (const [role, mod, app, routes] of [
       assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Community should have one page heading');
       assert.ok(!S.routes.friends, 'Friends should use the combined Community route');
     }
-    if (role === 'Student' && route === 'community') assert.ok(!html.includes('id="community-league"') && html.includes('href="#/leagues"'), 'KK League has its own Leagues page');
+    if (role === 'Student' && route === 'community') assert.ok(!html.includes('id="community-league"') && ['friends', 'requests', 'fund'].every((k) => html.includes('data-ctab="' + k + '"')), 'KK League has its own Leagues page; Community has Friends, Requests and Fund tabs');
     if (role === 'Student' && route === 'leagues') {
       for (const id of ['league-kk', 'league-faculty', 'league-referrals', 'referral-list']) assert.ok(html.includes(`id="${id}"`), `Leagues is missing ${id}`);
       assert.equal((html.match(/<h1\b/g) || []).length, 1, 'Leagues should have one page heading');
     }
     if (role === 'Student' && route === 'me') assert.ok(!html.includes('id="inv"'), 'Referral codes can only be entered at sign-up');
-    if (role === 'Student' && route === 'me') assert.ok(html.includes('id="referral-card"') && html.includes('id="add-friends-card"') && html.indexOf('>Refer a friend<') < html.indexOf('>Add friends<'), 'Me separates the sign-up referral code from adding friends by username');
+    // Figma Me keeps the sign-up referral code on the hub; adding friends by username lives on Me › Edit profile.
+    if (role === 'Student' && route === 'me') {
+      assert.ok(html.includes('id="referral-card"') && !html.includes('id="add-friends-card"'), 'Me shows the referral code, not the username card');
+      const profile = await mod.routes.me.render(app, ['profile']);
+      assert.ok(profile.includes('id="add-friends-card"') && profile.includes('id="prof"') && !profile.includes('id="referral-card"'), 'Me › Edit profile separates adding friends by username from the referral code');
+      assert.ok(!profile.includes('id="inv"'), 'Referral codes can only be entered at sign-up');
+      for (const page of ['history', 'account', 'settings', 'language']) assert.equal(((await mod.routes.me.render(app, [page])).match(/<h1\b/g) || []).length, 1, `Me › ${page} should have one page heading`);
+    }
     console.log(`  ✓ ${role} ${route} renders without an attendance dependency`); passed++;
   }
 }
@@ -130,10 +141,10 @@ console.log('  ✓ Merchant QR → student scanner → recorded confirmation ren
 const studentApp = await makeApp(student);
 studentApp.rules = { ...featureRules, features: { overview: false, dealsAndPay: false } };
 const disabledHome = await S.routes.home.render(studentApp, []);
-const disabledDirectories = disabledHome.match(/<nav class="kk-pillars"[\s\S]*?<\/nav>/)[0];
-assert.equal((disabledDirectories.match(/class="kk-pillar(?: |")/g) || []).length, 4, 'All four homepage directories should stay visible');
-assert.equal((disabledDirectories.match(/aria-disabled="true"/g) || []).length, 2);
-assert.ok(!/href="#\/explore(?:\/deals)?"/.test(disabledDirectories), 'Disabled features must not be linked');
+const disabledDirectories = disabledHome.match(/<div class="oz-home-shops">[\s\S]*?<\/nav>/)[0];
+assert.equal((disabledDirectories.match(/class="kk-pillar(?: |")/g) || []).length, 3, 'All three homepage directories should stay visible');
+assert.equal((disabledDirectories.match(/aria-disabled="true"/g) || []).length, 1, 'Find campus shops shows as Coming soon');
+assert.ok(!/href="#\/explore(?:\/deals)?"/.test(disabledHome), 'Disabled features must not be linked');
 console.log('  ✓ Overview and Live deals remain visible while respecting feature switches'); passed++;
 
 const { ensureDemoData } = await import('../dist/client/js/demo-seed.js');

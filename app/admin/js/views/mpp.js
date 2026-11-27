@@ -4,7 +4,8 @@ import {eventAdminRender,eventAdminMount} from '../event-admin.js';
 // Admin dashboard: verification, approvals, PayNet lists, reconciliation, rewards and budget, KPIs, settings.
 import * as D from '../data.js';
 import * as L from '../live-deals.js';
-import { hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-ui.js';
+import { hepGlyph, hepHeading, hepMetric, hepEmpty, hepEmblem, hepShortcut } from '../hep-ui.js';
+import { ozIcon } from '../oz-icons.js';
 import { safeImg, $, $$, esc, icon, rm, n, toast, sheet, closeSheet, confirmSheet, busy, errText, fmtDate, fmtDateTime, timeAgo,
   downloadCSV, downloadBlob, loadExcel, parseCSV, barChart, initials } from '../ui.js';
 import { langToggleHTML, tr, getLang } from '../i18n.js';
@@ -16,33 +17,48 @@ import { initiativesRender, initiativesMount } from './initiatives.js';
 
 export const defaultRoute = 'overview';
 const toMs = D.toMs;
-const NAV = [
-  ['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column'], ['initiatives', 'Initiatives', 'target'], ['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['vouchers', 'Voucher program', 'ticket'],
-  ['paynet', 'PayNet list', 'file-spreadsheet'], ['recon', 'Activity check', 'scale'], ['rewards', 'Rewards and budget', 'gift'],
-  ['campaigns', 'Campus events', 'calendar'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'target'], ['people', 'Students', 'users'], ['closures', 'Account closures', 'trash-2'], ['activity', 'Activity log', 'shield-check'], ['settings', 'Settings', 'settings'],
+// Grouped navigation (Square, Stripe and AirOps on Mobbin): the two home pages first, then the work that waits on the
+// team, then programme content, then reports. Activity log and Settings are pinned to the bottom with the account.
+const NAV_GROUPS = [
+  [null, [['overview', 'Overview', 'layout-dashboard'], ['dashboard', 'Dashboard', 'chart-column']]],
+  ['To review', [['merchants', 'Merchants', 'store'], ['approvals', 'Approvals', 'list-checks'], ['feedback', 'Feedback', 'mail'], ['closures', 'Account closures', 'trash-2']]],
+  ['Programme', [['campaigns', 'Campus events', 'calendar'], ['rewards', 'Rewards and budget', 'gift'], ['vouchers', 'Voucher program', 'ticket'], ['initiatives', 'Initiatives', 'target'], ['people', 'Students', 'users']]],
+  ['Reports', [['paynet', 'PayNet list', 'send'], ['recon', 'Activity check', 'search'], ['kpis', 'Money check results', 'piggy-bank'], ['stall-survey', 'Merchant assessment', 'star']]],
 ];
+const NAV_FOOT = [['activity', 'Activity log', 'history'], ['settings', 'Settings', 'settings']];
+const NAV = [...NAV_GROUPS.flatMap(([, items]) => items), ...NAV_FOOT];
+const navLink = ([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${hepGlyph(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`;
 const monthLabel = (m) => new Date(m + '-01T00:00:00+08:00').toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
 const lastMonths = (k = 6) => Array.from({ length: k }, (_, i) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - i); return D.monthKey(d.getTime() + 86400000 * 2); });
 let month = D.monthKey();
 const monthPicker = () => `<select id="month" aria-label="Reporting month" style="width:auto;min-height:40px">${lastMonths().map((m) => `<option value="${m}" ${m === month ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>`;
 const bindMonth = (root, app) => { const s = $('#month', root); if (s) s.onchange = () => { month = s.value; app.render(); }; };
 
+// Shell (Figma Admin 1136:64484 / Mobile admin 1137:65876 + menu 1137:67223). Web: light 240px sidebar with filled
+// icons and counts, a 64px header with the breadcrumb and the account. Phones: a top bar with Menu, which opens the
+// same navigation as a full page. Hooks kept: #mpp-rail, #menu, #mpp-out, #as-user, [data-nav], [data-count].
 export async function renderShell(app, route) {
   if (!$('#mpp-rail')) {
-    $('#root').innerHTML = `<div class="mpp"><aside class="rail" id="mpp-rail"><header class="onz-hep-header"><a class="brand" href="#/overview"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">Admin</em></a>
-      <button class="btn small menu-toggle" id="menu" aria-expanded="false" aria-controls="hep-navigation">${icon('list-checks')} Menu</button></header>
-      <span class="hep-nav-title">Campus workspace</span>
-      <nav id="hep-navigation" aria-label="Admin">${NAV.map(([k, l, ic]) => `<a href="#/${k}" data-nav="${k}">${icon(ic)}<span>${l}</span><span class="count hidden" data-count="${k}"></span></a>`).join('')}</nav>
-      <div class="who"><div class="hep-account"><span class="hep-account-icon" aria-hidden="true">${icon('shield-check')}</span><div class="hep-account-copy"><strong>Admin team</strong><small>${esc(app.user.email)}</small></div></div>${langToggleHTML('on-dark')}<div class="hep-account-actions">
-        ${app.profile ? `<a class="btn small" id="as-user" href="${esc(siteUrls.client)}">${icon('arrow-right')} Open my ${esc(app.profile.role)} app</a>` : ''}
-        <button class="btn small" id="mpp-out">${icon('log-out')} Sign out</button></div></div></aside>
-      <main class="view" id="view"></main></div>`;
-    $('#menu').onclick = () => { const open = $('#mpp-rail').classList.toggle('open'); $('#menu').setAttribute('aria-expanded', String(open)); };
+    $('#root').innerHTML = `<div class="oz-admin"><aside class="oz-arail" id="mpp-rail">
+        <header class="oz-arail-head"><a class="oz-abrand" href="#/overview"><b>+Onz Admin</b><small>Campus workspace</small></a>
+          <button type="button" class="oz-amenu" id="menu" aria-label="Menu" aria-expanded="false" aria-controls="hep-navigation">${ozIcon('s:menu')}</button></header>
+        <div class="oz-arail-body"><p class="oz-arail-title">Admin menu</p>
+          <nav id="hep-navigation" class="oz-anav" aria-label="Admin">${NAV_GROUPS.map(([title, items]) => `<div class="oz-anav-group">${title ? `<p class="oz-anav-title">${title}</p>` : ''}${items.map(navLink).join('')}</div>`).join('')}
+            <div class="oz-anav-group oz-anav-foot">${NAV_FOOT.map(navLink).join('')}</div></nav>
+          <div class="oz-awho"><span class="oz-awho-avatar" aria-hidden="true">${ozIcon('shield')}</span><div class="oz-awho-id"><strong>Admin team</strong><small data-no-i18n title="${esc(app.user.email)}">${esc(app.user.email)}</small></div>
+            <button type="button" class="oz-awho-out" id="mpp-out" aria-label="Sign out" title="Sign out">${ozIcon('logout')}</button>
+            ${app.profile ? `<a class="oz-link oz-awho-app" id="as-user" href="${esc(siteUrls.client)}">Open my ${esc(app.profile.role)} app</a>` : ''}</div></div></aside>
+      <div class="oz-amain"><header class="oz-atop"><p class="oz-acrumb"><span>Campus workspace</span> / <b data-crumb></b></p><a class="oz-gear oz-atop-gear" href="#/settings" aria-label="Settings" title="Settings">${ozIcon('settings')}</a></header>
+        <main class="view" id="view"></main></div></div>`;
+    const setOpen = (open) => { $('#mpp-rail').classList.toggle('open', open); document.body.classList.toggle('oz-amenu-open', open); $('#menu').setAttribute('aria-expanded', String(open)); const b = $('#menu'); b.setAttribute('aria-label', open ? 'Close menu' : 'Menu'); b.innerHTML = ozIcon(open ? 's:close' : 's:menu'); };
+    $('#menu').onclick = () => setOpen(!$('#mpp-rail').classList.contains('open'));
+    app._setMenu = setOpen;
     $('#mpp-out').onclick = () => app.backend.sdk.signOut(app.backend.auth);
     if (app.addDemoRibbon) app.addDemoRibbon();
   }
-  $('#mpp-rail').classList.remove('open');
-  $('#menu').setAttribute('aria-expanded', 'false');
+  app._setMenu?.(false);
+  const label = NAV.find(([k]) => k === route)?.[1] || 'Overview';
+  $('[data-crumb]').textContent = label;
   $$('[data-nav]').forEach((a) => { const active = a.dataset.nav === route; a.classList.toggle('on', active); if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   refreshCounts(app);
 }
@@ -72,33 +88,35 @@ async function overviewRender(app) {
   const readiness = verified.length ? Math.round(ready / verified.length * 100) : 0;
   const today = Number(D.dayKey().slice(-2));
   const ranked = Object.entries((league.exists() && league.data().colleges) || {}).filter(([, points]) => points > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { numeric: true })).slice(0, 6);
-  return `<section class="kk-hero hep-overview-hero">
-      <div><span class="hep-eyebrow">Your campus, connected</span><h1>Programme overview</h1><p>Students, merchants and campus opportunities. One place to keep things moving.</p>
-        <div class="hep-hero-footer"><label class="hep-period"><span class="sr">Reporting month</span>${monthPicker()}</label><span class="hep-hero-note">${icon('calendar')}<span>PayNet list due on the 20th</span>${today <= 20 && month === D.monthKey() ? `<b>${20 - today} <span>days left this month</span></b>` : ''}</span></div>
-      </div>
-      <div class="hep-hero-progress"><div class="hep-orbit" style="--progress:${readiness}%" role="progressbar" aria-label="Merchant readiness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${readiness}"><span><strong>${verified.length ? readiness + '%' : '—'}</strong><small>Staff ready</small></span></div><span>${ready} / ${verified.length} <span>verified merchants ready</span></span></div>
-    </section>
-    <div class="stats hep-overview-stats">
-      ${hepMetric('Students enrolled', n(students.length), 'users', 'violet')}
-      ${hepMetric('Cashless-ready merchants', n(ready), 'shield-check', 'lime')}
-      ${hepMetric('Verified merchants', n(verified.length), 'store', 'sky', `${pending.length} <span>waiting for review</span>`)}
-      ${hepMetric('Welfare fund', n(welfare.exists() ? welfare.data().points : 0), 'hand-heart', 'peach', 'points available')}
+  const live = liveDeals.filter((row) => row.status === 'Available').length;
+  const daysLeft = today <= 20 && month === D.monthKey() ? 20 - today : null;
+  const leagueMax = ranked[0]?.[1] || 1;
+  return `${hepHeading('Programme overview', 'Students, merchants and campus opportunities.', '', `
+      <a class="oz-btn oz-btn-secondary oz-btn-sm" href="#/approvals"><span>Welfare requests</span>${requests.length ? `<b class="oz-acount">${n(requests.length)}</b>` : ''}</a>
+      <a class="oz-btn oz-btn-secondary oz-btn-sm" href="#/paynet"><span>PayNet list</span></a>
+      <a class="oz-btn oz-btn-secondary oz-btn-sm" href="#/campaigns"><span>Campus events</span></a>
+      <a class="oz-btn oz-btn-primary oz-btn-sm" href="#/merchants"><span>Merchant reviews</span>${pending.length ? `<b class="oz-acount">${n(pending.length)}</b>` : ''}</a>`)}
+    <div class="oz-astats stats hep-overview-stats">
+      ${hepMetric('Students enrolled', n(students.length))}
+      ${hepMetric('Cashless-ready merchants', n(ready))}
+      ${hepMetric('Verified merchants', n(verified.length), '', '', `${n(pending.length)} <span>waiting for review</span>`)}
+      ${hepMetric('Welfare fund', `${n(welfare.exists() ? welfare.data().points : 0)} <span class="oz-astat-unit">pts</span>`, '', '', 'Available')}
     </div>
-    <div class="hep-section-title"><h2>Needs your attention</h2></div>
-    <nav class="hep-shortcut-grid" aria-label="Admin shortcuts">
-      ${hepShortcut('merchants', 'Merchant reviews', `${pending.length} <span>waiting for review</span>`, 'store', 'violet')}
-      ${hepShortcut('approvals', 'Welfare requests', `${requests.length} <span>waiting for review</span>`, 'hand-heart', 'lime')}
-      ${hepShortcut('paynet', 'PayNet list', 'Export Lampiran 1', 'file-spreadsheet', 'peach')}
-    </nav>
-    <div class="hep-overview-grid">
-      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('badge-percent')} Live deals</h2><a href="#/recon">View activity ${icon('arrow-right')}</a></div>
-        <div class="hep-live-summary"><span>${liveDeals.filter((row) => row.status === 'Available').length} <span>live now</span></span><span>${deals.length} <span>published by merchants</span></span></div>
-        <div class="hep-live-grid">${liveDeals.map(({ deal: d, merchant: m, status }) => `<article class="hep-deal ${status === 'Available' ? 'is-live' : ''}">
-          <div class="hep-deal-top"><span class="hep-deal-icon" aria-hidden="true">${icon('badge-percent')}</span><span class="badge ${status === 'Available' ? 'ok' : 'grey'}">${esc(status === 'Available' ? 'Live now' : status)}</span></div>
-          <h3>${esc(d.title)}</h3><p>${esc(m?.name || d.merchantName)}</p><div class="hep-deal-meta">${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT<span>· ${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</span></div>
-        </article>`).join('') || hepEmpty('No published deals yet.', 'badge-percent')}</div>
-      </section>
-      <section class="card pad-lg"><div class="hep-panel-head"><h2>${icon('trophy')} KK League</h2></div><div class="hep-league-list">${ranked.map(([k, v]) => `<div class="hep-league-row"><span class="hep-league-rank" aria-hidden="true"></span><div class="hep-league-college"><strong>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</strong><div class="hep-league-bar" aria-hidden="true"><i style="--width:${Math.round(v / ranked[0][1] * 100)}%"></i></div></div><span class="num">${n(v)} <small>pts</small></span></div>`).join('') || hepEmpty(league.exists() ? 'No points earned yet. Get your KK started.' : 'Scores are syncing.', 'trophy')}</div><p class="hep-league-note">Total points earned</p></section>
+    <div class="oz-agrid hep-overview-grid">
+      <section class="oz-acard"><div class="oz-acard-head"><h2>This month</h2><label class="oz-aperiod hep-period"><span class="sr">Reporting month</span>${monthPicker()}</label></div>
+        <div class="oz-alist">
+          <div class="oz-aline">${hepGlyph('events')}<span><b>PayNet list due on the 20th</b><small>${daysLeft !== null ? `${n(daysLeft)} <span>days left this month</span>` : 'Export Lampiran 1 from PayNet list.'}</small></span></div>
+          <div class="oz-aline">${hepGlyph('shield')}<span><b>${verified.length ? readiness + '%' : '–'} <span>staff ready</span></b><small>${n(ready)} / ${n(verified.length)} <span>verified merchants ready</span></small></span>
+            <span class="oz-abar" role="progressbar" aria-label="Merchant readiness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${readiness}"><i style="width:${readiness}%"></i></span></div>
+        </div></section>
+      <section class="oz-acard"><div class="oz-acard-head"><h2>Live deals</h2><a class="oz-link" href="#/recon">View activity</a></div>
+        <p class="oz-anote"><span class="num">${n(live)}</span> <span>live now</span> · <span class="num">${n(deals.length)}</span> <span>published by merchants</span></p>
+        <div class="oz-alist">${liveDeals.map(({ deal: d, merchant: m, status }) => `<div class="oz-aline ${status === 'Available' ? 'is-live' : ''}">
+          <span><b>${esc(d.title)}</b><small><span data-no-i18n>${esc(m?.name || d.merchantName)}</span> · ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT · ${m?.seats ? `${m.occupied}/${m.seats} seats taken` : 'Seat count not set'}</small></span>
+          <span class="oz-tag oz-tag-${status === 'Available' ? 'success' : 'lilac'}">${esc(status === 'Available' ? 'Live now' : status)}</span></div>`).join('') || hepEmpty('No published deals yet.', 'badge-percent')}</div></section>
+      <section class="oz-acard"><div class="oz-acard-head"><h2>KK League</h2><a class="oz-link" href="#/dashboard">Dashboard</a></div>
+        <div class="oz-alist">${ranked.map(([k, v], i) => `<div class="oz-aline oz-aleague"><span class="oz-arank">${i + 1}</span><span><b data-no-i18n>${esc(D.COLLEGES.find(([c]) => c === k)?.[1] || k)}</b><span class="oz-abar"><i style="width:${Math.round(v / leagueMax * 100)}%"></i></span></span><small class="num">${n(v)} pts</small></div>`).join('') || hepEmpty('No college points yet.', 'trophy')}</div>
+        <p class="oz-anote">Total points earned</p></section>
     </div>`;
 }
 function setupHTML() {
@@ -122,7 +140,7 @@ async function merchantsRender(app) {
   const rows = all.filter((m) => mFilter === 'all' || m.status === mFilter).sort((a, b) => (toMs(b.submittedAt) || 0) - (toMs(a.submittedAt) || 0));
   return `${hepHeading('Merchants', 'Verify that each DuitNow QR belongs to the business before it goes on PayNet’s list. Event stalls expire after their end date.', 'store')}
     <div class="chips">${[['pending', 'To review'], ['verified', 'Verified'], ['rejected', 'Needs changes'], ['suspended', 'Suspended'], ['all', 'All']].map(([k, l]) => `<button data-f="${k}" class="${k === mFilter ? 'on' : ''}">${l} (${counts(k)})</button>`).join('')}</div>
-    <div class="card" style="margin-top:10px"><div class="table-wrap"><table class="data"><thead><tr><th>Business</th><th>Category</th><th>Location</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>
+    <div class="card"><div class="table-wrap"><table class="data"><thead><tr><th>Business</th><th>Category</th><th>Location</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>
       ${rows.map((m) => `<tr><td><b>${esc(m.name)}</b><br><span class="faint">${esc(m.type)}</span></td><td>${esc(m.segment)}${m.eventEnd ? `<br><span class="faint">ends ${esc(m.eventEnd)}</span>` : ''}</td><td>${esc(m.location)}</td><td>${fmtDate(m.submittedAt)}</td>
         <td>${m.status === 'verified' ? '<span class="badge ok">Verified</span>' : m.status === 'pending' ? '<span class="badge warn">To review</span>' : `<span class="badge bad">${esc(m.status)}</span>`}${D.merchantReadinessCurrent(m, app.rules) ? ` <span class="badge ok">Staff ready</span>` : ''}</td>
         <td class="r"><button class="btn small ${m.status === 'pending' ? 'primary' : ''}" data-review="${esc(m.id)}">${m.status === 'pending' ? 'Review' : 'Open'}</button></td></tr>`).join('') || '<tr><td colspan="6" class="faint">Nothing here.</td></tr>'}
@@ -644,6 +662,7 @@ async function settingsRender(app) {
   const field = (k, label, help, min = 0, max = 100000) => `<label class="field">${label}<input name="${k}" type="number" min="${min}" max="${max}" step="1" required value="${rules[k]}"><small>${help}</small></label>`;
   const list = (k) => esc((access?.[k] || []).join('\n'));
   return `${hepHeading('Settings', 'Changes apply to new activity only. Past points stay as they were.', 'settings')}<div class="hep-settings">
+    <section class="card pad-lg oz-aset-row"><div><h2>Language</h2><p class="muted">The language of this dashboard on this device.</p></div>${langToggleHTML()}</section>
     <form id="features" class="card pad-lg stack" style="margin-bottom:16px"><h2>Features</h2>
       <p class="muted">Choose what students and merchants can use. Changes apply when people next open or refresh the app, and nothing is deleted.</p>
       <div class="hep-feature-grid">${D.FEATURES.map(([k, label, help]) => `<label class="check"><input type="checkbox" name="${k}" ${D.featureOn(rules, k) ? 'checked' : ''}> <span><b>${esc(label)}</b><br><span class="faint">${esc(help)}</span></span></label>`).join('')}</div>

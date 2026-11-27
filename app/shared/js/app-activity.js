@@ -1,14 +1,20 @@
 import { dayKey, recordAppDay } from './data.js';
 
 // Count opening/resuming/using the signed-in app, never an idle background tab.
-export function startDailyAppActivity(ctx, { doc = document, host = window, now = Date.now, record = recordAppDay, onError = () => {} } = {}) {
+export function startDailyAppActivity(ctx, { doc = document, host = window, now = Date.now, record = recordAppDay, onError = () => {}, onRecorded = () => {} } = {}) {
   let savedDay = '', errorDay = '', busy = false, stopped = false;
   const recordToday = async () => {
     if (stopped || busy || doc.visibilityState === 'hidden') return;
     const day = dayKey(now());
     if (savedDay === day) return;
     busy = true;
-    try { await record(ctx); if (!stopped) { savedDay = day; errorDay = ''; } }
+    try {
+      const result = await record(ctx);
+      if (!stopped) {
+        savedDay = day; errorDay = '';
+        if (result === 'recorded') onRecorded(day);
+      }
+    }
     catch (error) { if (!stopped && errorDay !== day) { errorDay = day; onError(error); } }
     finally { busy = false; }
   };

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import { canonicalPath } from '../app/client/js/student-paths.js';
 const source = fs.readFileSync(new URL('../app/client/js/views/student.js', import.meta.url), 'utf8');
 const dealStart = source.indexOf('function studentDealRows(');
-const dealEnd = source.indexOf('function homeEventRail()', dealStart);
+const dealEnd = source.indexOf('async function homeEvents(', dealStart);
 const start = source.indexOf('function directoryCategory(');
 const end = source.indexOf('\nasync function rewardsRender(app)', start);
 const shops = [{ id: 'far', name: 'Far Café', lat: 3.15, lng: 101.65, type: 'Food & drinks', location: 'KK1' },
@@ -20,15 +20,15 @@ const filters = [false, true].map((venture) => ({ dataset: { type: venture ? 'St
 filters.push({ dataset: { type: 'Printing' }, setAttribute() {}, classList: { toggle() {} } });
 let permissionListener, watch, watchCalls = 0, stopped = 0, removed = false, clearedTimer = false;
 const permission = { state: 'prompt', addEventListener: (_, cb) => { permissionListener = cb; }, removeEventListener: () => { permissionListener = null; } };
-const map = { position: null, pins: [], setMe(p) { this.position = p; }, setPins(pins, opts) { this.pins = pins; this.popup = opts.popup; }, setView() {}, fit() {}, remove() { removed = true; } };
+const map = { position: null, pins: [], setMe(p) { this.position = p; }, setPins(pins, opts) { this.pins = pins; this.popup = opts.popup; this.onSelect = opts.onSelect; }, selectPin(id) { this.selected = id; }, setView() {}, fit() {}, remove() { removed = true; } };
 const D = new Proxy({ featureOn: () => true, listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], clock: () => 0, dayKey: () => '1970-01-01' }, {
   get(target, key) { if (!(key in target)) throw new Error('Discovery accessed unexpected data operation: ' + key); return target[key]; },
 });
-const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n', 'ozSectionHead', 'window', 'document'];
+const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n', 'ozSectionHead', 'ozListRow', 'window', 'document'];
 const values = [D, (selector) => el(selector), () => filters, (m) => Number.isFinite(m.lat) && Number.isFinite(m.lng), (name) => `<i>${name}</i>`, String, () => '',
   () => '', (shop) => shop.venture, (shop) => `https://maps.example/${shop.id}`, (a, b) => Math.abs(a.lat - b.lat) * 100000, (d) => `${d} m away`,
   (onPos, onErr) => { watchCalls++; watch = { onPos, onErr }; return () => { stopped++; }; }, async () => map, [3.12, 101.65],
-  { onLine: true, permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String, (title) => '<h2>' + title + '</h2>', { addEventListener() {}, removeEventListener() {} }, {}];
+  { onLine: true, permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String, (title) => '<h2>' + title + '</h2>', ({ href, title }) => href + ' ' + title, { addEventListener() {}, removeEventListener() {} }, {}];
 const { directoryRender, directoryMount } = new Function(...names, source.slice(dealStart, dealEnd) + source.slice(start, end) + '\nreturn { directoryRender, directoryMount };')(...values);
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 let passed = 0;
@@ -59,6 +59,15 @@ await test('explicit location request shows the position and nearest-first dista
   const html = el('#clist').innerHTML;
   assert.ok(html.indexOf('Near Café') < html.indexOf('Far Café'));
   assert.ok(html.includes('nearby-distance')); assert.equal(el('#nearby-location-key').hidden, false);
+});
+await test('pin selection shows the matching shop and clears when filtered out', () => {
+  map.onSelect(shops[0]);
+  assert.equal(map.selected, 'far');
+  assert.match(el('.oz-shops-preview').innerHTML, /#\/merchant\/far/);
+  filters[1].onclick();
+  assert.equal(map.selected, null);
+  assert.equal(el('.oz-shops-preview').hidden, true);
+  filters[0].onclick();
 });
 await test('student venture filter updates map pins and the nearby list', async () => {
   filters[1].onclick(); assert.equal(map.pins.length, 1);

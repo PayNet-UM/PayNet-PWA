@@ -2,7 +2,7 @@
 // (googleMapsApiKey), and falls back to Leaflet + OpenStreetMap when there is no key, in Demo mode
 // without a key, or if Google rejects the key. Both engines sit behind one small interface:
 //   const m = await createMap(el, { center, zoom });
-//   m.setPins(list, { popup }) · m.setMe(pos) · m.fit(points) · m.setView(lat, lng, zoom)
+//   m.setPins(list, { popup, onSelect }); m.selectPin(id) · m.setMe(pos) · m.fit(points, { animate }) · m.setView(lat, lng, zoom)
 //   m.onClick(cb) · m.dragPin(lat, lng, onMove) · m.remove()
 import { GEO_BOX, inGeoBox } from './data.js';
 import { safeImg, esc, colorFor, initials } from './ui.js';
@@ -86,7 +86,7 @@ const node = (html) => { const d = document.createElement('div'); d.innerHTML = 
 const latOf = (p) => (typeof p.lat === 'function' ? p.lat() : p.lat);
 const lngOf = (p) => (typeof p.lng === 'function' ? p.lng() : p.lng);
 
-async function googleMap(el, { center, zoom, interactive }) {
+async function googleMap(el, { center, zoom, interactive, userMarker }) {
   const g = await loadGoogle();
   const map = new g.Map(el, {
     center: { lat: center[0], lng: center[1] }, zoom, mapId: MAP_ID, clickableIcons: false,
@@ -95,7 +95,8 @@ async function googleMap(el, { center, zoom, interactive }) {
   });
   const AM = g.marker.AdvancedMarkerElement;
   const info = new g.InfoWindow();
-  let pins = [], me = null, drag = null, crowds = [];
+  const pins = new Map();
+  let me = null, drag = null, crowds = [];
   const onTap = (marker, fn) => {
     let last = 0; const go = () => { const t = Date.now(); if (t - last > 300) { last = t; fn(); } };
     if (marker.addListener) marker.addListener('click', go);
@@ -103,12 +104,22 @@ async function googleMap(el, { center, zoom, interactive }) {
   };
   return {
     engine: 'google', raw: map,
-    setPins(list, { popup } = {}) {
-      pins.forEach((p) => { p.map = null; }); pins = [];
+    setPins(list, { popup, onSelect } = {}) {
+      pins.forEach((p) => { p.marker.map = null; }); pins.clear(); info.close();
       list.filter(hasPin).forEach((m) => {
-        const mk = new AM({ map, position: { lat: m.lat, lng: m.lng }, title: m.name || '', content: node(pinHTML(m)), gmpClickable: !!popup });
-        if (popup) onTap(mk, () => { info.setContent(node(`<div>${popup(m)}</div>`)); info.open({ anchor: mk, map }); });
-        pins.push(mk);
+        const content = node(pinHTML(m));
+        const marker = new AM({ map, position: { lat: m.lat, lng: m.lng }, title: m.name || '', content, gmpClickable: !!(popup || onSelect) });
+        if (popup || onSelect) onTap(marker, () => {
+          if (popup) { info.setContent(node('<div>' + popup(m) + '</div>')); info.open({ anchor: marker, map }); }
+          onSelect?.(m);
+        });
+        pins.set(m.id, { marker, content });
+      });
+    },
+    selectPin(id) {
+      pins.forEach(({ marker, content }, key) => {
+        content.classList.toggle('is-selected', key === id);
+        marker.zIndex = key === id ? 900 : null;
       });
     },
     // "Here now" groups: each item { lat, lng, html, title, onTap }, drawn beside its shop pin.
@@ -123,7 +134,8 @@ async function googleMap(el, { center, zoom, interactive }) {
     setMe(pos) {
       if (!pos) { if (me) me.map = null; me = null; return; }
       if (me) me.position = { lat: pos.lat, lng: pos.lng };
-      else me = new AM({ map, position: { lat: pos.lat, lng: pos.lng }, title: 'You', content: node(meHTML()), zIndex: 1000 });
+      else me = new AM({ map, position: { lat: pos.lat, lng: pos.lng }, title: 'You', content: node(userMarker?.html || meHTML()), zIndex: 1000,
+        ...(userMarker && { anchorLeft: -userMarker.anchor[0] + 'px', anchorTop: -userMarker.anchor[1] + 'px' }) });
     },
     fit(points) {
       if (!points.length) return;
@@ -143,7 +155,7 @@ async function googleMap(el, { center, zoom, interactive }) {
       } else drag.position = { lat, lng };
     },
     zoom: () => map.getZoom(),
-    remove() { pins.forEach((p) => { p.map = null; }); crowds.forEach((c) => { c.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
+    remove() { pins.forEach((p) => { p.marker.map = null; }); crowds.forEach((c) => { c.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
   };
 }
 
@@ -161,7 +173,7 @@ function loadLeaflet() {
   }
   return leafletLoading;
 }
-async function leafletMap(el, { center, zoom, interactive }) {
+async function leafletMap(el, { center, zoom, interactive, userMarker }) {
   const L = await loadLeaflet();
   const map = L.map(el, { zoomControl: interactive, dragging: interactive, scrollWheelZoom: false, tap: true, zoomAnimation: false, markerZoomAnimation: false,
     maxBounds: [[GEO_BOX.latMin - 0.03, GEO_BOX.lngMin - 0.03], [GEO_BOX.latMax + 0.03, GEO_BOX.lngMax + 0.03]], minZoom: 13 }).setView(center, zoom);
@@ -172,14 +184,23 @@ async function leafletMap(el, { center, zoom, interactive }) {
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   const resizeTimer = setTimeout(() => map.invalidateSize(), 60);
   const icon = (html, size = [40, 48], anchor = [20, 46]) => L.divIcon({ className: 'kk-pin-wrap', iconSize: size, iconAnchor: anchor, popupAnchor: [0, -42], html });
+  const pins = new Map();
   const layer = L.layerGroup().addTo(map); const crowdLayer = L.layerGroup().addTo(map); let me = null, drag = null;
   return {
     engine: 'leaflet', raw: map,
-    setPins(list, { popup } = {}) {
-      layer.clearLayers();
+    setPins(list, { popup, onSelect } = {}) {
+      layer.clearLayers(); pins.clear();
       list.filter(hasPin).forEach((m) => {
         const mk = L.marker([m.lat, m.lng], { icon: icon(pinHTML(m)), title: m.name || '', alt: m.name || '' }).addTo(layer);
         if (popup) mk.bindPopup(popup(m), { minWidth: 200, autoPanPadding: [12, 12], keepInView: true });
+        if (onSelect) mk.on('click', () => onSelect(m));
+        pins.set(m.id, mk);
+      });
+    },
+    selectPin(id) {
+      pins.forEach((marker, key) => {
+        marker.getElement()?.querySelector('.kk-pin')?.classList.toggle('is-selected', key === id);
+        marker.setZIndexOffset(key === id ? 900 : 0);
       });
     },
     setCrowds(list) {
@@ -192,11 +213,17 @@ async function leafletMap(el, { center, zoom, interactive }) {
     setMe(pos) {
       if (!pos) { if (me) map.removeLayer(me); me = null; return; }
       if (me) me.setLatLng([pos.lat, pos.lng]);
-      else me = L.marker([pos.lat, pos.lng], { icon: icon(meHTML(), [22, 22], [11, 11]), title: 'You', zIndexOffset: 1000 }).addTo(map);
+      else me = L.marker([pos.lat, pos.lng], { icon: icon(userMarker?.html || meHTML(), userMarker?.size || [22, 22], userMarker?.anchor || [11, 11]), title: 'You', zIndexOffset: 1000, interactive: false, keyboard: false }).addTo(map);
     },
-    fit(points) {
-      if (points.length > 1) map.fitBounds(points, { padding: [36, 36], maxZoom: 17, animate: false });
-      else if (points.length === 1) map.setView(points[0], 17, { animate: false });
+    // { animate: true } glides between views (filter changes) so pins don't jump across the map;
+    // the first placement and reduced motion still snap.
+    fit(points, { animate = false } = {}) {
+      if (!points.length) return;
+      const glide = animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      const opts = { padding: [36, 36], maxZoom: 17, duration: 0.5, easeLinearity: 0.4 };
+      if (!glide) { if (points.length > 1) map.fitBounds(points, { ...opts, animate: false }); else map.setView(points[0], 17, { animate: false }); return; }
+      map.stop();
+      if (points.length > 1) map.flyToBounds(points, opts); else map.flyTo(points[0], 17, opts);
     },
     setView(lat, lng, z) { map.setView([lat, lng], z || map.getZoom()); },
     onClick(cb) { map.on('click', (e) => cb(e.latlng.lat, e.latlng.lng)); },
@@ -212,11 +239,11 @@ async function leafletMap(el, { center, zoom, interactive }) {
 }
 
 // ------------------------------------------------------------------ public API
-export async function createMap(el, { center = UM_CENTER, zoom = 16, interactive = true } = {}) {
+export async function createMap(el, { center = UM_CENTER, zoom = 16, interactive = true, userMarker } = {}) {
   if (mapEngine() === 'google') {
-    try { return await googleMap(el, { center, zoom, interactive }); } catch (e) { console.warn('Google Maps unavailable, using the basic map', e); googleBroken = true; }
+    try { return await googleMap(el, { center, zoom, interactive, userMarker }); } catch (e) { console.warn('Google Maps unavailable, using the basic map', e); googleBroken = true; }
   }
-  return leafletMap(el, { center, zoom, interactive });
+  return leafletMap(el, { center, zoom, interactive, userMarker });
 }
 
 // Merchant pin picker. Calls onChange({lat, lng}) whenever the pin moves.

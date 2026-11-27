@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39.600 55.440" fill="none">
+<svg x="6.819" y="19.920" width="28.821" height="6.719" viewBox="0 0 28.82 6.72154" preserveAspectRatio="none" overflow="visible">
+<g id="w27_Group">
+<path id="w27_Vector" d="M22.88 2.74154C25.08 0.101538 26.9867 -0.631795 28.6 0.541538L25.96 3.62154L28.82 6.70154C26.9133 6.84821 25.0067 6.18821 23.1 4.72154L22.88 2.74154Z" fill="url(#w27_paint0_linear_0_313)"/>
+<path id="w27_Vector_2" d="M0 1.20154C7.62667 1.78821 15.84 1.42154 24.64 0.101539L24.42 4.94154C16.5 6.84821 8.50667 7.06821 0.44 5.60154L0 1.20154Z" fill="url(#w27_paint1_linear_0_313)"/>
+<path id="w27_Vector_3" d="M1.98 2.74154C8.14 4.06154 14.3 4.13487 20.46 2.96154" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" stroke="#BDA989"/>
+</g>
+<defs>
+<linearGradient id="w27_paint0_linear_0_313" x1="25.85" y1="0" x2="25.85" y2="6.72154" gradientUnits="userSpaceOnUse">
+<stop stop-color="#D9C9AA"/>
+<stop offset="1" stop-color="#FFF7DE"/>
+</linearGradient>
+<linearGradient id="w27_paint1_linear_0_313" x1="12.32" y1="0.101539" x2="12.32" y2="6.55806" gradientUnits="userSpaceOnUse">
+<stop stop-color="#D9C9AA"/>
+<stop offset="1" stop-color="#FFF7DE"/>
+</linearGradient>
+</defs>
+</svg>
+
+</svg>

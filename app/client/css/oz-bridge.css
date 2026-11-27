@@ -17,7 +17,7 @@
   box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); }
 
 /* Buttons (Button 431:75): default = ghost, .primary = blue, .go = lime primary action */
-.btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-2); min-height:var(--oz-touch); padding:11px 20px;
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-2); min-height:var(--oz-touch); padding:var(--oz-space-3) 20px;
   border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); color:var(--oz-blue-700);
   font:700 15px/20px var(--oz-font-ui); box-shadow:none; text-decoration:none; transform:none; }
 .btn .ic { width:18px; height:18px; }
@@ -30,13 +30,13 @@
 .btn.go:hover { background:var(--oz-action-pressed); border-color:var(--oz-action-pressed); color:var(--oz-text-on-accent); }
 .btn.warn, .btn.danger { background:var(--oz-danger-bg); border-color:var(--oz-danger-bg); color:var(--oz-text-danger); }
 .btn.ghost, .btn.clear { background:transparent; }
-.btn.small { min-height:40px; padding:9px 16px; font:600 14px/20px var(--oz-font-ui); }
+.btn.small { min-height:40px; padding:var(--oz-space-2) 16px; font:600 14px/20px var(--oz-font-ui); }
 .btn.block { display:flex; width:100%; }
 .btn:disabled, .btn[aria-disabled="true"] { background:var(--oz-bg-subtle); border-color:var(--oz-bg-subtle); color:var(--oz-text-disabled); cursor:not-allowed; opacity:1; }
 .danger-link { color:var(--oz-text-danger); }
 
 /* Badges → Tag (431:100) */
-.badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100);
+.badge { display:inline-flex; align-items:center; gap:4px; padding:4px var(--oz-space-3); border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100);
   color:var(--oz-blue-700); font:500 12px/16px var(--oz-font-ui); box-shadow:none; }
 .badge.ok { background:var(--oz-success-bg); color:var(--oz-text-success); border:0; }
 .badge.warn { background:var(--oz-warning-bg); color:var(--oz-text-warning); }
@@ -45,7 +45,7 @@
 /* Form fields (Search field 773:50 / inputs) */
 .field { color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); }
 .field input, .field select, .field textarea, input.input, select.input, textarea.input {
-  min-height:48px; padding:12px 14px; border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface);
+  min-height:48px; padding:12px var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface);
   color:var(--oz-text-primary); font:400 16px/24px var(--oz-font-ui); box-shadow:none; }
 .field input:focus, .field select:focus, .field textarea:focus { outline:2px solid var(--oz-focus-ring); outline-offset:0; border-color:var(--oz-focus-ring); }
 .field input::placeholder, .field textarea::placeholder { color:var(--oz-text-disabled); }
@@ -58,7 +58,7 @@
 .empty > .ic { color:var(--oz-blue-700); }
 
 /* Chips (category / filter pills): hug labels, 44px hit area, active = blue */
-.chips button { min-height:34px; padding:6px 14px; border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface);
+.chips button { min-height:34px; padding:var(--oz-space-2) var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface);
   color:var(--oz-text-primary); font:600 13px/18px var(--oz-font-ui); box-shadow:none; }
 .chips button.on, .chips button[aria-pressed="true"] { background:var(--oz-blue-700); border-color:var(--oz-blue-700); color:var(--oz-text-on-brand); }
 
@@ -74,8 +74,8 @@
 .lb-row.me { background:var(--oz-lime-100); border-color:var(--oz-lime-600); }
 
 /* Skeleton loading */
-.skeleton { background:linear-gradient(90deg, var(--oz-bg-subtle), var(--oz-neutral-200), var(--oz-bg-subtle)); background-size:200% 100%; border-radius:var(--oz-radius-lg); }
+/* .skeleton is styled with the oz loading blocks in oz-components.css */
 
 /* Progress bars */
-.progress { background:var(--oz-bg-subtle); border-radius:99px; }
-.progress > i { background:var(--oz-lime-500); border-radius:99px; }
+.progress { background:var(--oz-bg-subtle); border-radius:var(--oz-radius-pill); }
+.progress > i { background:var(--oz-lime-500); border-radius:var(--oz-radius-pill); }

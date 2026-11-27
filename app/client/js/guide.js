@@ -120,7 +120,12 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
   };
 
   function place() {
-    const s = steps[i]; const el = s.target && document.querySelector(s.target);
+    // A target hidden at this width (web-only rows) has no box: treat it as no target, or the spotlight ring
+    // collapses into a stray corner mark at 0,0.
+    // Use the first *visible* match: a selector can also match a hidden copy (e.g. a nav item kept for the other
+    // layout). Pointing at that drew a tiny stray ring at the screen corner.
+    const s = steps[i];
+    const el = s.target ? [...document.querySelectorAll(s.target)].find((x) => x.getClientRects().length && x.getBoundingClientRect().width > 1) || null : null;
     root.classList.toggle('no-target', !el);
     if (!el) { card.style.top = card.style.bottom = ''; return; }
     // Bring it to the middle of the screen if the top bar or tab bar would cover it (items in those bars never scroll).
@@ -129,7 +134,12 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
     const bottomSafe = (document.querySelector('.tabbar')?.getBoundingClientRect().top || innerHeight) - 8;
     if (!el.closest('.topbar, .tabbar') && (r0.top < topSafe || r0.bottom > bottomSafe)) el.scrollIntoView({ block: 'center' });
     const r = el.getBoundingClientRect(); const pad = 6;
-    Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+    // Moved with `translate` (compositor), not left/top, so the spotlight glides without repainting every frame.
+    // The first placement snaps into place (otherwise the ring grows out of the screen corner); later steps glide.
+    const firstPlacement = !spot.style.width;
+    if (firstPlacement) spot.style.transition = 'none';
+    Object.assign(spot.style, { left: '0px', top: '0px', translate: `${r.left - pad}px ${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+    if (firstPlacement) { void spot.offsetWidth; spot.style.transition = ''; }
     // Put the card next to the highlighted element, on the side with room for it, and never off the screen.
     const h = card.offsetHeight, gap = 16, edge = 8;
     const fitsAbove = r.top - gap - h >= edge, fitsBelow = r.bottom + gap + h <= innerHeight - edge;
@@ -139,17 +149,19 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
   }
 
   function show(n) {
+    const dir = Math.sign(n - i); // stepper: the next step slides in from the side you're going, not a crossfade
     i = Math.max(0, Math.min(steps.length - 1, n));
     const s = steps[i];
     const last = i === steps.length - 1;
-    const dots = `<div class="guide-dots" aria-hidden="true">${steps.map((_, k) => `<span class="${k === i ? 'on' : ''}"></span>`).join('')}</div>`;
+    // +Onz tour card (Figma 1374:82152 / 938:54936): step label, title, body, then a ghost Skip and a lime Next pill.
+    // Buttons are the design-system oz-btn (no arrow icons, no dots), so every step has the same smooth pills.
+    const btn = (label, kind, data) => `<button type="button" class="oz-btn oz-btn-${kind} oz-btn-sm" ${data}><span>${esc(label)}</span></button>`;
     let html;
     if (s.kind === 'welcome') {
       html = `<div class="guide-hero" aria-hidden="true">${icon(s.icon)}</div>
         <h2 id="guide-title">${esc(s.title)}</h2><p>${esc(s.body)}</p>
         <ul class="guide-chips">${s.chips.map(([ic, t]) => `<li>${icon(ic)}<span>${esc(t)}</span></li>`).join('')}</ul>
-        <div class="guide-actions"><button type="button" class="btn ghost" data-skip>Skip for now</button>
-          <button type="button" class="btn primary" data-next>Show me around ${icon('arrow-right')}</button></div>`;
+        <div class="guide-actions">${btn('Skip for now', 'ghost', 'data-skip')}${btn('Show me around', 'primary', 'data-next')}</div>`;
     } else if (s.kind === 'finish') {
       const t = s.tasks;
       html = `<div class="guide-hero done" aria-hidden="true">${icon(s.icon)}</div>
@@ -160,16 +172,14 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
           ${x.done ? '<span class="visually-hidden">Done</span>' : icon('chevron-right')}</a></li>`).join('')}</ol>
         ${t.note ? `<p class="guide-note">${esc(t.note)}</p>` : ''}
         <p class="guide-note">You can replay this tour from your account menu.</p>
-        ${dots}<div class="guide-actions"><button type="button" class="btn ghost" data-back>${icon('arrow-left')} Back</button>
-          <button type="button" class="btn primary" data-go="${esc(t.go)}">${esc(t.cta)}</button></div>`;
+        <div class="guide-actions">${btn('Back', 'ghost', 'data-back')}${btn(t.cta, 'primary', `data-go="${esc(t.go)}"`)}</div>`;
     } else {
       html = `<p class="guide-step">Step ${tourSteps.indexOf(s) + 1} of ${tourSteps.length}</p>
-        <div class="guide-head"><span class="tile-icon" aria-hidden="true">${icon(s.icon)}</span><h2 id="guide-title">${esc(s.title)}</h2></div>
+        <h2 id="guide-title">${esc(s.title)}</h2>
         <p>${esc(s.body)}</p>
-        ${dots}<div class="guide-actions">${last ? '' : '<button type="button" class="btn ghost small" data-skip>Skip tour</button>'}<span class="spacer"></span>
-          ${i > 0 ? `<button type="button" class="btn" data-back aria-label="Back">${icon('arrow-left')}</button>` : ''}
-          ${last ? `<button type="button" class="btn primary" data-skip>Got it ${icon('check')}</button>`
-            : `<button type="button" class="btn primary" data-next>Next ${icon('arrow-right')}</button>`}</div>`;
+        <div class="guide-actions">${i > 0 ? '<button type="button" class="guide-link" data-back>Back</button>' : ''}
+          ${last ? '' : btn('Skip tour', 'ghost', 'data-skip')}
+          ${last ? btn('Got it', 'primary', 'data-skip') : btn('Next', 'primary', 'data-next')}</div>`;
     }
     card.className = `guide-card is-${s.kind || 'tour'}`;
     card.innerHTML = html;
@@ -178,7 +188,11 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
     $$('[data-skip]', card).forEach((b) => { b.onclick = () => close(); });
     $$('[data-go]', card).forEach((b) => { b.onclick = (e) => { e.preventDefault(); close(b.dataset.go); }; });
     place();
-    ($('[data-next]', card) || $('.guide-actions .btn.primary', card) || card).focus();
+    if (dir && card.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      card.getAnimations().forEach((x) => x.cancel());
+      card.animate([{ opacity: 0, translate: `${dir * 24}px 0` }, { opacity: 1, translate: '0 0' }], { duration: 260, easing: 'cubic-bezier(.22,1,.36,1)' });
+    }
+    ($('[data-next]', card) || $('.guide-actions .oz-btn-primary', card) || card).focus();
   }
 
   // Keyboard: Esc skips, arrows move, Tab stays inside the card.
@@ -209,7 +223,7 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
 const PAGE_KEY = (uid, page) => `onz-page-tour-v1:${page}:${uid}`;
 export const PAGE_TOURS = {
   leagues: () => [
-    { target: '#league-kk .community-league-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. Positive earned points add to it; welfare grants do not.' },
+    { target: '#league-kk .oz-lg-summary', icon: 'trophy', title: 'Your KK', body: 'This is your college, its rank and its total points. Positive earned points add to it; welfare grants do not.' },
     { target: '#league-kk [data-board]', icon: 'chart-column', title: 'The leaderboard', body: 'See how your KK compares with the others. The KK with the most points wins prizes!' },
   ],
   // Merchants, the first time they open the (required) stall survey.

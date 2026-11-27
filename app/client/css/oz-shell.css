@@ -5,7 +5,7 @@
 
 /* ---------- Mobile top bar ---------- */
 .oz-topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:var(--oz-space-3); min-height:56px;
-  padding:10px 12px 10px 16px; padding-top:max(10px, env(safe-area-inset-top)); margin:0;
+  min-height:calc(56px + env(safe-area-inset-top, 0px)); padding:env(safe-area-inset-top, 0px) var(--oz-space-3) 0 var(--oz-space-4); margin:0; /* Top Bar 431:356: 56px */
   background:var(--oz-bg-app); border:0; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
 .oz-wordmark, .oz-side-brand { font:800 28px/34px var(--oz-font-display); color:var(--oz-blue-700); text-decoration:none; letter-spacing:0; white-space:nowrap; width:auto; }
 .oz-wordmark:hover, .oz-side-brand:hover { text-decoration:none; }
@@ -26,24 +26,24 @@
 .oz-sidebar { display:contents; }
 .oz-side-brand, .oz-side-role, .oz-tab-short { display:none; }
 .oz-tabbar { position:fixed; z-index:30; left:16px; right:16px; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); top:auto;
-  max-width:480px; margin:0 auto; width:auto; height:64px; padding:6px; display:flex; align-items:stretch; gap:4px;
-  grid-template-columns:none; background:var(--oz-bg-surface); border:1px solid var(--oz-border); border-radius:32px;
-  box-shadow:var(--oz-shadow-nav); overflow:hidden; }
+  max-width:480px; margin:0 auto; width:auto; height:64px; padding:var(--oz-space-2); display:flex; align-items:stretch; gap:4px;
+  grid-template-columns:none; background:var(--oz-bg-surface); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill);
+  box-shadow:none; overflow:hidden; }
 .oz-tabbar::after, .oz-tabbar::before { content:none; display:none; }
 .oz-tab { position:relative; flex:1 1 0; min-width:var(--oz-touch); display:flex; flex-direction:row; align-items:center; justify-content:center;
-  gap:var(--oz-space-2); height:auto; margin:0; padding:0; border:0; border-radius:26px; background:transparent; box-shadow:none;
+  gap:var(--oz-space-2); height:auto; margin:0; padding:0; border:0; border-radius:var(--oz-radius-pill); background:transparent; box-shadow:none;
   color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); text-decoration:none; white-space:nowrap;
-  transition:flex-grow var(--oz-dur-tab) var(--oz-ease-out), background-color var(--oz-dur-tab) var(--oz-ease-out), color var(--oz-dur-tab) var(--oz-ease-out); }
+  transition:background-color var(--oz-dur-tab) var(--oz-ease-out), color var(--oz-dur-tab) var(--oz-ease-out); }
 .oz-tab .ic, .oz-tab .oz-ic { width:24px; height:24px; color:inherit; }
 .oz-tab-label { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
-.oz-tab.on { flex:0 0 auto; padding:0 18px 0 16px; background:var(--oz-blue-100); color:var(--oz-nav-active); }
+.oz-tab.on { flex:0 0 auto; padding:0 var(--oz-space-5) 0 16px; background:var(--oz-blue-100); color:var(--oz-nav-active); }
 .oz-tab.on .oz-tab-label { position:static; width:auto; height:auto; overflow:visible; clip:auto; clip-path:none; }
 .oz-tab.pending { color:var(--oz-nav-active); }
 .oz-tab.nav-desktop-only { display:none; }
 @media (hover:hover) { .oz-tab:not(.on):hover { background:var(--oz-bg-subtle); } }
 
 /* ---------- Page area ---------- */
-.oz-shell main.view { max-width:640px; margin:0 auto; padding:var(--oz-space-2) var(--oz-space-4) var(--oz-space-6); }
+.oz-shell main.view { max-width:640px; margin:0 auto; padding:var(--oz-space-4) var(--oz-space-4) var(--oz-space-6); } /* title 16px under the top bar */
 .oz-shell main.view.wide { max-width:var(--oz-content-max); }
 @media (min-width:768px) and (max-width:1023.98px) {
   .oz-shell main.view { max-width:720px; padding-inline:var(--oz-space-6); }
@@ -73,7 +73,7 @@
   .oz-tagline { display:block; }
 
   .oz-shell main.view, .oz-shell main.view.wide { grid-column:2; grid-row:2; width:100%; max-width:calc(var(--oz-content-max) + 80px);
-    margin:0; padding:var(--oz-space-4) 40px 40px; }
+    margin:0 auto; padding:var(--oz-space-4) 40px 40px; } /* one 1120px content width, centred when the window is wider than the 1440 frame */
 }
 @media (min-width:1024px) and (max-width:1199.98px) {
   .oz-shell { --oz-sidebar-w:216px; }
@@ -81,9 +81,9 @@
 }
 
 /* Merchant chrome from the mobile and web counter frames. */
-.oz-merchant .oz-gear { width:auto; min-width:var(--oz-touch); background:transparent; color:var(--oz-text-secondary); }
+/* Merchant uses the same gear as students (one account affordance across roles). */
 @media (max-width:1023.98px) {
-  .oz-merchant .oz-topbar { padding:6px var(--oz-space-4); padding-top:max(6px, env(safe-area-inset-top)); background:var(--oz-bg-surface); }
+  .oz-merchant .oz-topbar { padding:env(safe-area-inset-top, 0px) var(--oz-space-4) 0; background:var(--oz-bg-surface); } /* 56px like the student Top Bar */
   .oz-merchant .oz-wordmark { font-size:22px; line-height:28px; }
   .oz-merchant .demo-ribbon.in-bar { display:none; }
   .oz-merchant .oz-tabbar { inset:auto 0 0; max-width:none; height:calc(88px + env(safe-area-inset-bottom, 0px));
@@ -101,7 +101,7 @@
   .oz-shell.oz-merchant { --oz-sidebar-w:240px; }
   .oz-merchant .oz-tagline { color:var(--oz-text-primary); font:600 18px/22px var(--oz-font-ui); }
   .oz-merchant .oz-sidebar { gap:0; padding-block-start:var(--oz-space-6); }
-  .oz-merchant .oz-side-role { display:block; margin:6px 0 9px; text-transform:uppercase;
+  .oz-merchant .oz-side-role { display:block; margin:var(--oz-space-2) 0 var(--oz-space-2); text-transform:uppercase;
     color:var(--oz-text-secondary); font:600 12px/16px var(--oz-font-ui); }
 }
 

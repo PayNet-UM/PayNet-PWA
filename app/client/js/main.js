@@ -3,20 +3,20 @@
 import { initBackend } from './backend.js';
 import { captureSource } from './initiatives.js';
 import * as D from './data.js';
-import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, errText, routeLoadingHTML } from './ui.js';
+import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, errText } from './ui.js';
 import * as Auth from './views/auth.js';
 import { trySignInByAlias } from './link-email.js';
-import { initI18n, langToggleHTML, getLang } from './i18n.js';
-import { avatarSVG, defaultFor } from './avatar.js';
+import { initI18n, langToggleHTML } from './i18n.js';
+import { accountMenuHTML, mountAccountMenu } from './account-menu.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
 import { startPageTime } from './page-time.js';
 import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
 import { INFORMATION_ROUTES } from './information.js';
-import { mountPageMotion } from './motion.js';
+import { routeLeave, routeEnter, mountThumbs, nextRouteDir, flyPoints, fillOnView } from './oz-motion.js';
 import { installOzIcons, ozIcon } from './oz-icons.js';
-import { ozPointsPill } from './oz-ui.js';
+import { ozPointsPill, ozRouteSkeleton } from './oz-ui.js';
 installOzIcons();
 initI18n();
 
@@ -65,7 +65,7 @@ async function onUser(user) {
   render.token=Symbol();
   if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   stopWatchers(); closeSheet();
-  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.stallSurveyDone = undefined; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
+  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.stallSurveyDone = undefined; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.streakMotion = null; app.redeemMotion = null; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return informationRoute()?renderPublicInformation():Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -99,14 +99,23 @@ function startRole(role) {
   const { sdk, db } = app.backend;
   app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'users', app.ctx.uid), (s) => {
     if (!s.exists()) return;
+    const before = app.profile && JSON.stringify(app.profile.avatar);
+    const prevPoints = app.profile ? Number(app.profile.points) || 0 : null;
     app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
-    $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
+    // Points come from where they were earned (the control just tapped) and land on the pill.
+    if (prevPoints !== null && (Number(app.profile.points) || 0) > prevPoints) flyPoints((Number(app.profile.points) || 0) - prevPoints);
+    $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points, el.matches('.oz-balance-value') ? 220 : undefined));
+    // A changed look (saved here or on another device) redraws live pages, e.g. Home's hero and the header picture.
+    if (before !== undefined && before !== JSON.stringify(app.profile.avatar)) app.emit && app.emit('profile');
   }, () => {}));
   if (role === 'student') {
 
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.ledgerLoaded = true; app.emit && app.emit('ledger'); }, () => {}));
     app.watchers.push(D.watchAppDays(app.ctx, (days) => { app.appDays = days; app.emit && app.emit('app-activity'); }, () => {}));
-    app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
+    app.watchers.push(startDailyAppActivity(app.ctx, { onRecorded: (day) => {
+      app.streakMotion = { day };
+      app.emit('streak-recorded');
+    }, onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
     // Anonymous time on each page (privacy notice: "How the app is used").
     app.pageTime = startPageTime(app.ctx); app.watchers.push(app.pageTime.stop);
   }
@@ -149,7 +158,7 @@ function shell(role, routes) {
         <p class="oz-tagline">${role === 'merchant' ? 'Merchant workspace' : 'your campus, all added up'}</p>
         <span class="spacer"></span>
         ${role === 'student' ? ozPointsPill(p.points || 0) : ''}
-        <button class="avatar oz-gear" id="avatar" aria-label="Account menu">${role === 'student' ? ozIcon('settings') : 'Merchant'}</button>
+        <button class="avatar oz-gear" id="avatar" aria-label="Account menu" title="Account">${ozIcon('settings')}</button>
       </header>
       <aside class="oz-sidebar">
         <a class="oz-side-brand" href="#/home" aria-label="+Onz home" data-no-i18n tabindex="-1">+Onz</a>
@@ -161,46 +170,21 @@ function shell(role, routes) {
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
+  mountThumbs(document.querySelector(".oz-sidebar") || document);
   paintFeedbackDot(); // the reply check may finish before the top bar exists
 }
-// Account menu (Figma "Me · Account menu" 525:10476): grouped rows, shown as a sheet from the settings gear so every
-// existing entry point and id (#tour, #install, #terms, #signout, #to-feedback, #to-mpp) keeps working.
+// Account menu (Figma "Me · Account menu" 525:10476). Students get it as the page #/me/account; merchants as a sheet.
+// The header gear opens Account as a page pushed over wherever you are (a toolbar button, like Instagram or Revolut),
+// not a jump to the Me tab: the current tab stays selected and Back returns to the page you came from.
+const ACCOUNT_PAGES = /^(me\/(account|settings|language)|delete-account)(\/|$)/;
 function accountSheet() {
-  const p = app.profile || {};
-  const student = app.role === 'student';
-  const chev = ozIcon('s:chevron-right', 'oz-menu-chev');
-  const row = (label, { href, id, badge = '' } = {}) => {
-    const inner = `<span class="oz-menu-label">${label}${badge}</span>${chev}`;
-    return href ? `<a class="oz-menu-row" href="${esc(href)}"${id ? ` id="${id}"` : ''} data-close>${inner}</a>`
-      : `<button type="button" class="oz-menu-row" id="${id}">${inner}</button>`;
-  };
-  const group = (title, rows) => `<h3 class="oz-menu-title">${title}</h3><div class="oz-menu-group">${rows.join('')}</div>`;
-  const lang = getLang();
-  const el = sheet(`<div class="oz-account">
-    <div class="oz-account-id">${student ? `<span class="oz-account-av">${avatarSVG(p.avatar || defaultFor(app.ctx?.uid), { variant: 'head', size: 52, title: p.name })}</span>` : ''}
-      <div class="oz-account-text"><h2 class="oz-account-name">${esc(p.name || app.user.email)}</h2><p class="oz-account-sub">${esc(app.user.email)}</p></div></div>
-    ${student ? group('Profile and preferences', [row('Profile and settings', { href: '#/me' }), row('Customise avatar', { href: '#/avatar' })]) : ''}
-    ${group('Help and information', [
-      ...(student ? [row('Questions and feedback', { href: '#/feedback', id: 'to-feedback', badge: app.feedbackNew ? ` <span class="oz-tag oz-tag-success">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : '' })] : []),
-      row('About +Onz', { href: '#/about' }), row('Contact us', { href: '#/contact' }), row('Points guide', { href: '#/points' })])}
-    ${group('App', [row('Take the tour', { id: 'tour' }), row('Install +Onz', { id: 'install' }), row('Terms of Use and Privacy', { id: 'terms' }),
-      ...(!student && app.backend.mode === 'demo' ? [row('Demo mode', { id: 'demo-account' })] : [])])}
-    <h3 class="oz-menu-title" id="oz-lang-title">Language</h3>
-    <div class="oz-menu-group oz-lang" role="group" aria-labelledby="oz-lang-title" data-no-i18n>
-      <button type="button" class="oz-menu-row" data-lang-set="en" aria-pressed="${lang === 'en'}"><span class="oz-menu-label">English</span>${ozIcon('s:check', 'oz-menu-check')}</button>
-      <button type="button" class="oz-menu-row" data-lang-set="ms" aria-pressed="${lang === 'ms'}"><span class="oz-menu-label">Bahasa Malaysia</span>${ozIcon('s:check', 'oz-menu-check')}</button>
-    </div>
-    <div class="oz-menu-group oz-menu-end">
-      ${app.isMpp ? `<a class="oz-menu-row" href="${esc(siteUrls.admin)}" id="to-mpp"><span class="oz-menu-label">Open the Admin dashboard</span>${chev}</a>` : ''}
-      <button type="button" class="oz-menu-row" id="signout"><span class="oz-menu-label">${ozIcon('s:logout')}Sign out</span></button>
-      <a class="oz-menu-row is-danger" href="#/delete-account" data-close><span class="oz-menu-label">${ozIcon('s:trash')}${app.role === 'merchant' ? 'Close my account' : 'Delete my account'}</span></a>
-    </div></div>`);
-  $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
-  $('#install', el).onclick = () => installApp();
-  $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
-  const demo = $('#demo-account', el);
-  if (demo) demo.onclick = () => import('./demo-seed.js').then((m) => m.demoSheet(app));
-  $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
+  if (app.role === 'student') {
+    const here = location.hash.replace(/^#\/?/, '') || 'home';
+    if (!ACCOUNT_PAGES.test(here) && !/^me(\/|$)/.test(here)) { app.accountFrom = '#/' + here; nextRouteDir(1); }
+    location.hash = '#/me/account'; return;
+  }
+  const el = sheet(accountMenuHTML(app, { siteUrls }));
+  mountAccountMenu(el, app);
 }
 app.accountSheet = accountSheet;
 
@@ -246,7 +230,7 @@ async function renderPublicInformation() {
   if(render.token!==token)return;
   view.innerHTML=html;window.scrollTo(0,0);
   const cleanup=route.mount?.(view,app,requested.args);
-  const stopMotion=mountPageMotion(view);
+  const stopMotion=mountThumbs(view);
   app.viewCleanup=()=>{stopMotion();cleanup?.();};
 }
 async function render() {
@@ -258,9 +242,14 @@ async function render() {
   if(sheetOpen())closeSheet();
   const requestedPath=location.hash.replace(/^#\/?/,'')||'home';
   const previousView=$('#view');
-  if(previousView){previousView.setAttribute('aria-busy','true');previousView.innerHTML=routeLoadingHTML(requestedPath);}
+  previousView?.setAttribute('aria-busy','true');
   $$('.tabbar a').forEach(a=>a.classList.toggle('pending',a.dataset.tab===requestedPath.split('/')[0]));
-  let view=previousView;
+  let view=previousView, loadingPath=requestedPath, savedView=null, captured=false;
+  const loading=setTimeout(()=>{
+    if(render.token!==token||!view)return;
+    if(!captured&&!view.querySelector('.route-loading'))savedView=view.cloneNode(true);
+    view.innerHTML=ozRouteSkeleton(loadingPath);
+  },500);
   try {
     // Fetch in parallel, and ignore any request superseded by a later tap or sign-in change.
     const [next,mod]=await Promise.all([D.getRules(app.ctx).catch(()=>app.rules),loadRoleModule(app.role)]);
@@ -276,23 +265,29 @@ async function render() {
     if(render.token!==token)return;
     if(gate&&gate!==route){history.replaceState(null,'','#/'+gate);route=gate;parts=[gate];if(mod.gateMessage)toast(mod.gateMessage);}
     const r=mod.routes[route];
-    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route)||(a.dataset.tab===route&&!$(`.tabbar a[data-tab="${r.tab}"]`));a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-    view=$('#view');view.className='view'+(r.wide?' wide':'');view.setAttribute('aria-busy','true');
-    view.innerHTML=routeLoadingHTML(route);
+    if(!ACCOUNT_PAGES.test(canonical)){if(app.accountFrom&&'#/'+canonical===app.accountFrom)nextRouteDir(-1);app.accountFrom=null;}
+    const fromRoute=app.accountFrom?app.accountFrom.slice(2).split('/')[0]:null;
+    const tabKey=fromRoute?(mod.routes[fromRoute]?.tab||fromRoute):(r.tab||route);
+    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===tabKey||(a.dataset.tab===route&&!$(`.tabbar a[data-tab="${r.tab}"]`));a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    const leaving=routeLeave($('#view'),canonical,savedView);
+    captured=true; loadingPath=route;
+    view=$('#view');view.setAttribute('aria-busy','true');
     document.title=`${r.title} · +Onz ${app.role==='student'?'Student':'Merchant'}`;
     const html=await r.render(app,parts.slice(1));
-    if(render.token!==token)return;
+    if(render.token!==token){leaving?.ghost.remove();return;}
+    clearTimeout(loading);
+    view.className='view'+(r.wide?' wide':'')+' route-'+route;
     view.innerHTML=html;window.scrollTo(0,0);
     const cleanup=r.mount?await r.mount(view,app,parts.slice(1)):null;
-    if(render.token!==token){cleanup?.();return;}
-    const stopMotion=mountPageMotion(view);app.viewCleanup=()=>{stopMotion();cleanup?.();};
+    if(render.token!==token){leaving?.ghost.remove();cleanup?.();return;}
+    routeEnter(view,leaving,canonical);const stopMotion=mountThumbs(view);requestAnimationFrame(()=>fillOnView(view));app.viewCleanup=()=>{stopMotion();cleanup?.();};
     view.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
     $$('[data-bind=points]',view).forEach(el=>{el.dataset.v=app.profile?.points||0;});
   }catch(e){
     if(render.token!==token)return;
     console.error(e);view?.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
-    if(view)view.innerHTML=`<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p><button class="btn" style="margin-top:12px" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
-  }
+    if(view)view.innerHTML=`<div class="oz-empty">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p><button class="oz-btn oz-btn-ghost oz-btn-md" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
+  }finally{clearTimeout(loading);}
 }
 app.render = render;
 

@@ -1,5 +1,5 @@
 import { livePointEarningOn } from '../points-policy.js';
-import { pointsSummaryHTML } from '../points-guide.js';
+import { learningPlan } from '../points-policy.js';
 import { INFORMATION_ROUTES } from '../information.js';
 // Merchant app: shop setup, readiness, live-deal QR claims, applied discounts and counter poster.
 import * as D from '../data.js';
@@ -14,6 +14,9 @@ import { merchantHeading, merchantMetric, merchantEmpty, merchantSetup, merchant
 import { closeRender, closeMount } from './close.js';
 import { stallSurveyRender, stallSurveyMount } from '../stall-survey-view.js';
 import { isCurrentStallSurvey } from '../stall-survey.js';
+import { ozIcon } from '../oz-icons.js';
+import { ozListRow, ozButton, ozTag } from '../oz-ui.js';
+import { merchantBack } from '../merchant-ui.js';
 
 export const defaultRoute = 'home';
 
@@ -30,16 +33,16 @@ export async function gateRoute(app, route) {
 }
 export const gateMessage = 'Finish the merchant assessment first. It takes about 5 minutes.';
 const toMs = D.toMs;
-const statusBadge = (m) => !m ? '<span class="badge grey">Not applied</span>'
-  : m.status === 'verified' ? `<span class="badge ok">${icon('badge-check')}Verified</span>`
-  : m.status === 'rejected' ? '<span class="badge bad">Needs changes</span>'
-  : m.status === 'suspended' ? '<span class="badge bad">Suspended</span>' : '<span class="badge warn">The Admin team is reviewing</span>';
+const statusText = (m) => !m ? 'Not applied' : m.status === 'verified' ? 'Admin verified' : m.status === 'rejected' ? 'Needs changes'
+  : m.status === 'suspended' ? 'Suspended' : 'The Admin team is reviewing';
 
+const merchantEmptyTile = (glyph) => `<span class="oz-mzero-ic" aria-hidden="true">${ozIcon(glyph)}</span>`;
 function needVerified(app) {
   if (app.merchant && app.merchant.status === 'verified') return null;
-  return `<div class="card empty mer-access-card" style="margin-top:16px"><span class="mer-access-icon">${icon('store')}</span><h3>${app.merchant ? 'Waiting for the Admin team to verify your shop' : 'Apply to join first'}</h3>
+  // Figma "Merchant · Verification required" 523:11969.
+  return `<div class="oz-mpage"><section class="oz-mcard oz-mzero-card mer-access-card">${merchantEmptyTile('shield')}<h2>${app.merchant ? 'Waiting for the Admin team to verify your shop' : 'Apply to join first'}</h2>
     <p>${app.merchant ? 'Usually reviewed within 1–2 working days.' : 'Submit your shop details for Admin team verification.'}</p>
-    <a class="btn primary" style="margin-top:12px" href="#/shop">${app.merchant ? 'View application' : 'Apply now'}</a></div>`;
+    ${ozButton(app.merchant ? 'View application' : 'Apply now', { href: '#/shop', block: true })}</section></div>`;
 }
 
 // ------------------------------------------------------------- home
@@ -69,24 +72,29 @@ function startSteps(app, m, deals, liveOn, stall) {
 const START_DONE = (uid) => `onz-merchant-start-done:${uid}`;
 const startDone = (uid) => { try { return localStorage.getItem(START_DONE(uid)) === '1'; } catch { return false; } };
 const markStartDone = (uid) => { try { localStorage.setItem(START_DONE(uid), '1'); } catch { /* private mode */ } };
+// Figma "Start here" card (phone 1102:58335, web 1102:59069): progress bar, one status per step, next step's help,
+// one lime action. Same steps and logic as before; mount still ticks the claims step ([data-step-claims]).
+const STEP_ICON = { store: 'stall', 'list-checks': 'learn', 'badge-check': 'shield', 'shield-check': 'check', 'badge-percent': 'voucher', 'qr-code': 'scan' };
 function startHereHTML(steps) {
-  // The last step ("claims") can only be ticked once the claims load, in homeMount.
-  // "Next" is the first step the merchant can actually do; while they wait for the Admin team, that's usually the stall survey.
   if (!steps.some(([, , , , done]) => done !== true)) return '';
   const next = steps.find(([, , , , done, canDo]) => done !== true && canDo) || steps.find(([, , , , done]) => done !== true);
   const doneCount = steps.filter(([, , , , done]) => done === true).length;
-  return `<section class="section mer-start" id="start-here"><div class="mer-voucher-card mer-start-card">
-    <div class="mer-voucher-head"><span class="mer-voucher-new">Start here</span><h2>Get your shop ready for students</h2></div>
-    <p class="mer-start-lead">Follow these steps in order. Each one ticks off when it’s done. <b data-start-count>${doneCount} of ${steps.length} done</b></p>
-    <ol class="mer-start-steps">${steps.map(([, title, desc, route, done], i) => `<li class="${done === true ? 'is-done' : next[1] === title ? 'is-next' : done === 'waiting' ? 'is-waiting' : ''}" ${done === 'claims' ? 'data-step-claims' : ''}><a href="#/${route}">
-        <span class="mer-start-num" aria-hidden="true">${done === true ? icon('check') : i + 1}</span>
-        <span><b>${title}</b><small>${desc}</small></span>${done === 'waiting' ? '<span class="mer-start-wait">In progress</span>' : icon('chevron-right')}</a></li>`).join('')}</ol>
-    <div><a class="btn mer-voucher-cta" href="#/${next[3]}">${icon(next[0])} Next: ${next[1]} ${icon('arrow-right')}</a></div>
-  </div></section>`;
+  const state = (done, title, canDo) => done === true ? ['is-done', 'Completed'] : next[1] === title ? ['is-next', 'Next step'] : done === 'waiting' ? ['is-waiting', 'In progress'] : canDo ? ['', 'To do'] : ['is-locked', 'Not started'];
+  return `<section class="oz-mstart mer-start" id="start-here" aria-labelledby="start-title">
+    <p class="oz-mstart-kicker">Start here</p><h2 id="start-title">Get your shop ready for students</h2>
+    <p class="oz-mstart-count" data-start-count>${doneCount} of ${steps.length} done</p>
+    <span class="oz-mstart-bar" aria-hidden="true"><i style="width:${Math.round((doneCount / steps.length) * 100)}%"></i></span>
+    <ol class="oz-mstart-steps">${steps.map(([glyph, title, , route, done, canDo]) => { const [cls, label] = state(done, title, canDo);
+      return `<li class="${cls}" ${done === 'claims' ? 'data-step-claims' : ''}><a href="#/${route}">
+        <span class="oz-mstart-ic mer-start-num" aria-hidden="true">${ozIcon(done === true ? 'check' : cls === 'is-locked' ? 'lock' : STEP_ICON[glyph] || 'check')}</span>
+        <span class="oz-mstart-text"><b>${title}</b><small class="oz-mstart-state">${label}</small></span></a></li>`; }).join('')}</ol>
+    <p class="oz-mstart-help">${next[2]}</p>
+    <a class="oz-btn oz-btn-primary oz-btn-md oz-mstart-cta" href="#/${next[3]}"><span>Next: ${next[1]}</span></a>
+  </section>`;
 }
 async function homeRender(app) {
   const m = app.merchant; const name = m ? m.name : app.profile.name;
-  const liveOn=livePointEarningOn(app.rules);
+  const liveOn = livePointEarningOn(app.rules);
   const verified = m?.status === 'verified'; const toolsOn = D.featureOn(app.rules, 'merchantTools');
   const deals = verified && liveOn ? (await D.myDeals(app.ctx).catch(() => [])).length : 0;
   // A new readiness update from the Admin team for a shop that was already set up shows the readiness card
@@ -95,76 +103,90 @@ async function homeRender(app) {
   const stall = m ? await D.getStallSurvey(app.ctx).catch(() => null) : null;
   const start = updated || startDone(app.ctx.uid) ? '' : startHereHTML(startSteps(app, m, deals, liveOn, stall));
   const readiness = start ? '' : merchantSetup(m, hasPin, app.rules);
-  const shortcuts = [
-    ['shop', 'store', 'My shop', 'Your shop details, logo, map pin and counter poster.'],
-    ...(m ? [['stall-survey', 'list-checks', 'Merchant assessment', isCurrentStallSurvey(stall) ? 'Done. See your stall type or edit your answers.' : '15 questions about your business. See your stall type.']] : []),
-    ...(verified && liveOn ? [
-      ['scan', 'qr-code', 'Deal QR', 'Show this at your counter. Students scan it to claim your deal.'],
-      ['promote', 'badge-percent', 'Promote your shop', 'Live deals, where students earn points, and the voucher program, where they spend them.'],
-    ] : []),
-    ...(toolsOn ? [['survey', 'target', 'Cashless readiness check', '7 quick questions so we know how to help your shop.']] : []),
+  const staffReady = D.merchantReadinessCurrent(m, app.rules);
+  const status = !m ? 'Not applied yet' : m.status === 'verified' ? 'Admin verified' : m.status === 'rejected' ? 'Needs changes' : m.status === 'suspended' ? 'Suspended' : 'The Admin team is reviewing';
+  // "Your shop" rows (Figma order). Production conditions decide which rows exist.
+  const rows = [
+    ['shop', 'stall', 'My shop', 'Profile, verification and map location'],
+    ...(m ? [['stall-survey', 'learn', 'Merchant assessment', isCurrentStallSurvey(stall) ? 'See your stall type and answers' : '15 questions about your business']] : []),
+    ...(toolsOn ? [['survey', 'check', 'Cashless readiness', 'Review your QR readiness']] : []),
+    ...(verified && liveOn ? [['promote', 'voucher', 'Promote your shop', 'Live deals and voucher program'], ['scan', 'scan', 'Deal QR', 'Show your deal QR at the counter']] : []),
+    ...(toolsOn && verified ? [['insights', 'wallet', 'Insights', 'Claims and performance']] : []),
   ];
-  return `<div class="merchant-page mer-home"><section class="kk-hero merchant-home-hero">
-      <div class="merchant-home-logo">${m ? merchantLogo(m) : icon('store')}</div>
-      <div class="mer-home-copy"><span class="mer-eyebrow">Your merchant hub</span><h1>${esc(name)}</h1>${m?.location ? `<p class="mer-hero-location">${icon('map-pin')} ${esc(m.location)}</p>` : ''}<div class="row merchant-home-status">${statusBadge(m)}${D.merchantReadinessCurrent(m, app.rules) ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div></div>
-      <div class="mer-hero-art" aria-hidden="true"><span>${icon('store')}</span><i>${icon('star')}</i><b>+</b></div>
-    </section>
-    ${start}
-    ${verified && !hasPin(m) && !start ? `<div class="notice" style="margin-top:12px">${icon('map-pin')}<span>Students can’t find you on the map yet. <a href="#/shop">Add your shop location</a> so they can walk straight to you.</span></div>` : ''}
-    <div class="mer-home-grid ${readiness ? '' : 'is-ready'}"><section class="mer-quick-section"><div class="mer-section-head"><h2>Explore</h2><span class="mer-eyebrow">Let's go</span></div>
-      <p class="mer-section-lead">Everything for your shop. You can also find these in the menu.</p>
-      <nav class="mer-actions" aria-label="Merchant shortcuts">${shortcuts.map((args, index) => merchantAction(...args, index)).join('')}</nav></section>
-      ${readiness}</div>
-    ${pointsSummaryHTML(app)}
-    ${verified ? `
-      <section class="section"><div class="mer-section-head"><h2>Live-deal activity</h2>${toolsOn ? `<a href="#/insights">Insights ${icon('arrow-right')}</a>` : ''}</div>
-      <p class="mer-section-lead">What has happened with your live deals so far.</p>
-      <div class="stats mer-stats" id="merchant-wallet"><div class="skeleton" style="height:130px"></div></div><div id="merchant-wallet-empty"></div></section>` : ''}</div>`;
+  return `<div class="oz-mhome merchant-page mer-home"><h1 class="oz-mhome-title">Merchant home</h1>
+    <div class="oz-mhome-grid mer-home-grid ${readiness ? '' : 'is-ready'}">
+      <div class="oz-mhome-main">
+        <section class="oz-mhub" aria-label="Your merchant hub"><p class="oz-mhub-kicker">Your merchant hub</p><h2 data-no-i18n>${esc(name)}</h2>
+          <p class="oz-mhub-status">${verified ? ozIcon('check') : ''}<span>${status}${staffReady ? ' · Staff ready' : ''}</span></p></section>
+        ${start}
+        ${verified && !hasPin(m) && !start ? `<a class="oz-mnotice" href="#/shop">${ozIcon('map-pin')}<span><b>Add your shop location</b><small>Students can’t find you on the map yet.</small></span>${ozIcon('s:chevron-right')}</a>` : ''}
+        ${readiness}
+        ${verified ? `<section class="oz-mactivity" aria-labelledby="mact-title"><div class="oz-mhome-head"><h2 id="mact-title">Live-deal activity</h2>${toolsOn ? '<a class="oz-link" href="#/insights">Insights</a>' : ''}</div>
+          <div class="oz-mstats stats mer-stats" id="merchant-wallet"><span class="oz-skel oz-skel-md"></span><span class="oz-skel oz-skel-md"></span><span class="oz-skel oz-skel-md"></span></div><div id="merchant-wallet-empty"></div></section>` : ''}
+        <a class="oz-mlink" href="#/points"><span class="oz-mlink-ic" aria-hidden="true">${ozIcon('sparkles')}</span>
+          <span class="oz-mlink-text"><b>Student points explained</b><small>How students earn points at your counter. Vouchers are fulfilled by the Admin team.</small></span>
+          <span class="oz-tag oz-tag-points"><span class="num">${n(learningPlan(app.rules).total)}</span>&nbsp;pts</span>${ozIcon('s:chevron-right')}</a>
+      </div>
+      <aside class="oz-mhome-side"><h2 class="oz-mhome-side-title">Your shop</h2>
+        <nav class="oz-mrows mer-actions" aria-label="Your shop">${rows.map(([route, glyph, title, sub]) => ozListRow({ title, sub, iconName: glyph, href: '#/' + route, chevron: false })).join('')}</nav>
+      </aside>
+    </div></div>`;
 }
 function homeMount(root, app) {
   const off = app.on((topic) => { if (topic === 'merchant' || topic === 'merchant-readiness') app.render(); });
   const stop = $('#merchant-wallet', root) ? L.watchMerchantClaims(app.ctx, (claims) => {
     const waiting = claims.filter((c) => c.status === 'claimed' && !L.claimExpired(c)).length;
-    $('#merchant-wallet', root).innerHTML = merchantMetric('Deal claims', n(claims.length), 'qr-code', 'violet', 'Students who scanned your deal QR.')
-      + merchantMetric('Discounts applied', n(claims.filter((c) => c.status === 'applied').length), 'badge-percent', 'lime', 'Claims you gave the discount for.')
-      + merchantMetric('Awaiting discount', n(waiting), 'clock', 'sky', waiting ? 'Open Deal QR and tap Apply discount.' : 'Students waiting for their discount right now.');
-    $('#merchant-wallet-empty', root).innerHTML = claims.length ? '' : `<div class="mer-empty-hint">${icon('info')}<span>No claims yet. Create a live deal, then show its QR at your counter.</span><a class="btn small primary" href="#/promote">Create a deal</a></div>`;
+    const stat = (label, value, hint) => `<div class="oz-mstat stat"><span class="oz-mstat-label">${label}</span><strong>${value}</strong><small>${hint}</small></div>`;
+    $('#merchant-wallet', root).innerHTML = stat('Deal claims', n(claims.length), 'Students who scanned your deal QR')
+      + stat('Discounts applied', n(claims.filter((c) => c.status === 'applied').length), 'Claims you gave the discount for')
+      + stat('Awaiting discount', n(waiting), waiting ? 'Open Deal QR and tap Apply discount' : 'Nobody waiting right now');
+    $('#merchant-wallet-empty', root).innerHTML = claims.length ? '' : `<div class="oz-mempty">${ozIcon('info')}<span>No claims yet. Create a live deal, then show its QR at your counter.</span><a class="oz-btn oz-btn-primary oz-btn-sm" href="#/promote"><span>Create a deal</span></a></div>`;
     // The last "Start here" step ticks off once a student has claimed a deal.
     const li = $('[data-step-claims]', root);
-    if (li && claims.length) { li.classList.remove('is-next'); li.classList.add('is-done'); $('.mer-start-num', li).innerHTML = icon('check'); }
+    if (li && claims.length) { li.classList.remove('is-next', 'is-locked'); li.classList.add('is-done'); $('.mer-start-num', li).innerHTML = ozIcon('check'); const st = $('.oz-mstart-state', li); if (st) st.textContent = 'Completed'; }
     // Every step done: the banner goes away for good.
     const banner = $('#start-here', root);
     if (banner && !$('#start-here li:not(.is-done)', root)) { markStartDone(app.ctx.uid); banner.remove(); }
   }, () => {}) : () => {};
   return () => { off(); stop(); };
 }
-const miniStat = (label, value, ic, alert = false) => `<div class="mer-mini ${alert && value ? 'is-alert' : ''}"><span aria-hidden="true">${icon(ic)}</span><b class="num">${typeof value === 'number' ? n(value) : esc(value)}</b><small>${label}</small></div>`;
+const miniStat = (label, value) => `<div class="oz-mstat mer-mini"><span class="oz-mstat-label">${label}</span><strong class="num">${typeof value === 'number' ? n(value) : esc(value)}</strong></div>`;
 
 // ------------------------------------------------------------- café occupancy: how full the café is right now
-// Big − and + buttons for the counter. Each tap shows straight away; the change is saved once tapping stops.
+// Counting people one tap at a time is slow at a busy counter, so the card offers three speeds:
+//  - drag the slider to any count (one gesture for "the lunch rush just arrived")
+//  - quick-set chips: Empty, ¼, Half, ¾, Full
+//  - − / + for one seat; press and hold to keep counting (accelerates after a moment)
+// Every change shows straight away and is saved once the merchant stops (700 ms debounce).
+const SEAT_PRESETS = [['Empty', 0], ['¼', 0.25], ['Half', 0.5], ['¾', 0.75], ['Full', 1]];
 function seatsWidget(m) {
   const seats = Math.max(0, Number(m?.seats) || 0), occupied = Math.min(seats, Math.max(0, Number(m?.occupied) || 0));
   const pct = seats ? Math.round(occupied / seats * 100) : 0;
-  return `<section class="card mer-seats" id="seats" data-seats="${seats}" data-occupied="${occupied}">
-    <div class="mer-section-head"><h2>${icon('coffee')} Café occupancy</h2></div>
-    ${seats ? `<div class="mer-stepper">
-        <button type="button" class="mer-step" data-step="-1" aria-label="One fewer seat taken" ${occupied ? '' : 'disabled'}>−</button>
-        <div class="mer-stepper-value"><div class="mer-progress-ring" data-ring style="--progress:${pct}%" aria-hidden="true"><span><b data-pct>${pct}</b><small>%</small></span></div>
-          <p aria-live="polite"><b class="num" data-occupied>${n(occupied)}</b> <span>of <span class="num">${n(seats)}</span> seats taken</span></p></div>
-        <button type="button" class="mer-step" data-step="1" aria-label="One more seat taken" ${occupied < seats ? '' : 'disabled'}>+</button></div>
-      <div class="mer-seats-foot"><span data-saved>${m.occupancyAt ? `Updated ${timeAgo(m.occupancyAt)}` : 'Tap − or + as people come and go.'}</span><button type="button" class="btn small ghost" data-edit-seats>${icon('pencil')} Change total seats</button></div>`
-    : `<p class="mer-seats-empty">Set how many seats you have. A live deal only shows while your café is less full than the deal’s limit.</p><button type="button" class="btn primary" data-edit-seats>${icon('coffee')} Set my seats</button>`}
-    ${seats ? '<p class="mer-seats-note">A live deal only shows while your café is less full than the deal’s limit.</p>' : ''}
+  return `<section class="oz-mcard oz-mseats mer-seats" id="seats" data-seats="${seats}" data-occupied="${occupied}" aria-labelledby="seats-title">
+    <div class="oz-mcard-head oz-mseats-head"><div><h2 id="seats-title">Café occupancy</h2>${seats ? `<p class="oz-mseats-foot" data-saved>${m.occupancyAt ? `Updated ${timeAgo(m.occupancyAt)}` : 'Drag, tap a level, or hold + to count fast.'}</p>` : ''}</div>${seats ? `<button type="button" class="oz-link" data-edit-seats>Edit total</button>` : ''}</div>
+    ${seats ? `<div class="oz-mseats-read" aria-live="polite"><strong class="num" data-occupied>${n(occupied)}</strong><span>of <span class="num">${n(seats)}</span> seats taken</span><b class="oz-mseats-pct"><span data-pct>${pct}</span>%</b></div>
+      <div class="oz-mseats-ctl">
+        <button type="button" class="oz-mstep" data-step="-1" aria-label="One fewer seat taken" ${occupied ? '' : 'disabled'}>${ozIcon('s:minus')}</button>
+        <input type="range" class="oz-mseats-range" data-ring style="--progress:${pct}%" min="0" max="${seats}" step="1" value="${occupied}" aria-label="Seats taken now" aria-valuetext="${n(occupied)} of ${n(seats)} seats taken">
+        <button type="button" class="oz-mstep" data-step="1" aria-label="One more seat taken" ${occupied < seats ? '' : 'disabled'}>${ozIcon('s:plus')}</button>
+      </div>
+      <div class="oz-mseats-presets" role="group" aria-label="Set quickly">${SEAT_PRESETS.map(([label, f]) => `<button type="button" data-seat-preset="${f}" aria-pressed="${occupied === Math.round(seats * f)}">${label}</button>`).join('')}</div>
+      <p class="oz-mnote oz-mseats-note">Live deals show only while you’re below their seat limit.</p>`
+    : `<p class="oz-mnote">Set how many seats you have. A live deal only shows while your café is less full than the deal’s limit.</p>${ozButton('Set my seats', { block: true, attr: { 'data-edit-seats': '' } })}`}
   </section>`;
 }
 function seatsMount(root, app) {
   const box = $('#seats', root); if (!box) return () => {};
-  let seats = +box.dataset.seats, occupied = +box.dataset.occupied, saved = occupied, timer = 0;
+  let seats = +box.dataset.seats, occupied = +box.dataset.occupied, saved = occupied, timer = 0, hold = 0;
+  const range = $('.oz-mseats-range', box);
   const draw = () => {
+    if (!range) return;
     $('[data-occupied]', box).textContent = n(occupied);
     const pct = seats ? Math.round(occupied / seats * 100) : 0;
-    $('[data-ring]', box).style.setProperty('--progress', `${pct}%`); $('[data-pct]', box).textContent = pct;
+    range.value = occupied; range.style.setProperty('--progress', `${pct}%`); range.setAttribute('aria-valuetext', `${occupied} of ${seats} seats taken`);
+    $('[data-pct]', box).textContent = pct;
     $('[data-step="-1"]', box).disabled = occupied <= 0; $('[data-step="1"]', box).disabled = occupied >= seats;
+    $$('[data-seat-preset]', box).forEach((b) => b.setAttribute('aria-pressed', String(occupied === Math.round(seats * +b.dataset.seatPreset))));
   };
   const save = async () => {
     timer = 0; if (occupied === saved) return;
@@ -172,15 +194,26 @@ function seatsMount(root, app) {
     try { await D.setOccupancy(app.ctx, seats, want); saved = want; if (box.isConnected) $('[data-saved]', box).textContent = 'Saved just now'; }
     catch (err) { occupied = saved; if (box.isConnected) { draw(); $('[data-saved]', box).textContent = ''; } toast(errText(err), true); }
   };
-  $$('[data-step]', box).forEach((b) => { b.onclick = () => {
-    occupied = Math.min(seats, Math.max(0, occupied + Number(b.dataset.step))); draw();
-    clearTimeout(timer); timer = setTimeout(save, 700);
-  }; });
+  const set = (v) => { occupied = Math.min(seats, Math.max(0, v)); draw(); clearTimeout(timer); timer = setTimeout(save, 700); };
+  // Press and hold: one step now, repeat after 400 ms, faster (and by 5) after a second.
+  const stopHold = () => { clearTimeout(hold); hold = 0; };
+  $$('[data-step]', box).forEach((b) => {
+    const step = Number(b.dataset.step); let held = false;
+    b.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return; held = false; const t0 = performance.now();
+      const tick = () => { held = true; const fast = performance.now() - t0 > 1400; set(occupied + step * (fast ? 5 : 1)); if (b.disabled) return stopHold(); hold = setTimeout(tick, fast ? 90 : 140); };
+      hold = setTimeout(tick, 400);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => b.addEventListener(t, stopHold));
+    b.onclick = () => { if (held) { held = false; return; } set(occupied + step); };
+  });
+  if (range) range.oninput = () => set(Math.round(+range.value));
+  $$('[data-seat-preset]', box).forEach((b) => { b.onclick = () => set(Math.round(seats * +b.dataset.seatPreset)); });
   $('[data-edit-seats]', box).onclick = () => {
-    const el = sheet(`<h2>Your seats</h2><form id="seats-form" class="stack" style="margin-top:12px">
-      <div class="grid-2"><label class="field">Total seats<input name="seats" type="number" inputmode="numeric" min="1" max="2000" required value="${seats || ''}"></label>
-      <label class="field">Seats taken now<input name="occupied" type="number" inputmode="numeric" min="0" max="2000" required value="${seats ? occupied : ''}"></label></div>
-      <button class="btn primary">${icon('check')} Save seats</button></form>`);
+    const el = sheet(`<h2 class="oz-msheet-title">Change total seats</h2><form id="seats-form" class="oz-form">
+      <div class="oz-mgrid2"><label class="oz-field">Total seats<input name="seats" type="number" inputmode="numeric" min="1" max="2000" required value="${seats || ''}"></label>
+      <label class="oz-field">Seats taken<input name="occupied" type="number" inputmode="numeric" min="0" max="2000" required value="${seats ? occupied : ''}"></label></div>
+      <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block"><span>Save seats</span></button></form>`);
     $('#seats-form', el).onsubmit = (e) => {
       e.preventDefault(); const s = Math.floor(+e.target.seats.value), o = Math.floor(+e.target.occupied.value);
       if (o > s) return toast('Seats taken can’t be more than total seats.', true);
@@ -188,7 +221,7 @@ function seatsMount(root, app) {
     };
   };
   // Leaving the page mid-tap still saves the last count.
-  return () => { if (timer) { clearTimeout(timer); save(); } };
+  return () => { stopHold(); if (timer) { clearTimeout(timer); save(); } };
 }
 
 // ------------------------------------------------------------- shop: application, readiness, seats, poster
@@ -205,9 +238,9 @@ const READY_CHECKS = ['Staff confirm every payment in our own banking app or ter
 let readyLang = 'English';
 // A file picker that looks like a button (the browser's "Choose File / No file chosen" can't be styled or translated).
 // The real input stays in the page, visually hidden, so keyboard, screen readers and tests still use it.
-const uploadField = (name, accept, label, help, { required = false, current = '' } = {}) => `<div class="field mer-upload-field"><span>${label}</span>
+const uploadField = (name, accept, label, help, { required = false, current = '' } = {}) => `<div class="oz-field mer-upload-field"><span>${label}</span>
   <label class="mer-upload"><input type="file" name="${name}" accept="${accept}" class="visually-hidden" ${required ? 'required' : ''}>
-    <span class="btn small">${icon('image')} ${current ? 'Choose a new photo' : 'Choose a photo'}</span><span class="mer-upload-name" data-file-name>${current ? esc(current) : 'No photo chosen yet'}</span></label>
+    <span class="oz-btn oz-btn-ghost oz-btn-sm"><span>${current ? 'Choose a new photo' : 'Choose a photo'}</span></span><span class="mer-upload-name" data-file-name>${current ? esc(current) : 'No photo chosen yet'}</span></label>
   ${help ? `<small>${help}</small>` : ''}</div>`;
 function mountUploads(root) {
   $$('.mer-upload input[type=file]', root).forEach((input) => input.addEventListener('change', () => {
@@ -223,24 +256,24 @@ async function shopRender(app) {
   const v = (k) => esc((m && m[k]) || (priv && priv[k]) || '');
   const sel = (name, opts, cur) => `<select name="${name}">${opts.map((o) => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   const head = `${merchantHeading('My shop', 'How students see your shop, and what you need at the counter.', 'store')}
-    ${m && m.status === 'rejected' ? `<div class="notice bad">${icon('circle-alert')}<span>The Admin team asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</span></div>` : ''}
-    ${m && m.status === 'pending' ? `<div class="notice">${icon('clock')}<span>Sent ${fmtDate(m.submittedAt)}. The Admin team will check that your QR name matches your business.</span></div>` : ''}`;
+    ${m && m.status === 'rejected' ? `<div class="oz-mnotice is-bad">${ozIcon('alert')}<span><b>Needs changes</b><small>The Admin team asked for changes: ${esc(m.reviewNote || 'see details')}. Update and send again.</small></span></div>` : ''}
+    ${m && m.status === 'pending' ? `<div class="oz-mnotice">${ozIcon('clock')}<span><b>Verification pending</b><small>Sent ${fmtDate(m.submittedAt)}. The Admin team will check that your QR name matches your business.</small></span></div>` : ''}`;
 
   // Not verified yet: the application form, with friendlier upload buttons.
   if (editable) return `<div class="merchant-page mer-shop">${head}
-    <section class="section mer-business"><div class="head"><h2>${icon('store')} ${m ? 'Your application' : 'Apply to join +Onz'}</h2></div>
-    <form id="app-form" class="card stack">
-      <label class="field">Business name, as students know it<input name="name" required minlength="2" maxlength="100" value="${v('name')}"></label>
-      <label class="field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>The Admin team checks this matches the QR.</small></label>
-      <div class="grid-2"><label class="field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
-      <div class="grid-2"><label class="field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
-      <div class="grid-2"><label class="field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
-      <div id="event-fields" class="grid-2"><label class="field">Event name<input name="eventName" value="${v('eventName')}"></label><label class="field">Event ends<input name="eventEnd" type="date" value="${v('eventEnd')}"></label></div>
+    <section class="oz-msection mer-business"><div class="oz-mcard-head"><h2>${m ? 'Your application' : 'Apply to join +Onz'}</h2></div>
+    <form id="app-form" class="oz-mcard oz-form">
+      <label class="oz-field">Business name, as students know it<input name="name" required minlength="2" maxlength="100" value="${v('name')}"></label>
+      <label class="oz-field">Account name on your DuitNow QR<input name="accountName" required value="${v('accountName')}"><small>The Admin team checks this matches the QR.</small></label>
+      <div class="oz-mgrid2"><label class="oz-field">Type${sel('type', D.MERCHANT_TYPES, m?.type)}</label><label class="oz-field">Category${sel('segment', D.SEGMENTS, m?.segment)}</label></div>
+      <div class="oz-mgrid2"><label class="oz-field">Location<input name="location" required placeholder="e.g. KK3 cafeteria" value="${v('location')}"></label><label class="oz-field">Campus zone${sel('zone', D.ZONES, m?.zone)}</label></div>
+      <div class="oz-mgrid2"><label class="oz-field">Contact phone<input name="phone" type="tel" value="${v('phone')}"></label><label class="oz-field">Ambassador ID (optional)<input name="ambassadorId" value="${v('ambassadorId')}" placeholder="e.g. AMB-003"></label></div>
+      <div id="event-fields" class="oz-mgrid2"><label class="oz-field">Event name<input name="eventName" value="${v('eventName')}"></label><label class="oz-field">Event ends<input name="eventEnd" type="date" value="${v('eventEnd')}"></label></div>
       ${logoBlock(m)}
       ${pinBlock(m)}
       ${uploadField('qr', 'image/*', 'Photo of your DuitNow QR', 'A clear, straight photo. It goes on the monthly list PayNet uses to count your transactions.', { required: !(priv && priv.qrImage), current: priv && priv.qrImage ? 'Photo uploaded' : '' })}
       ${priv && safeImg(priv.qrImage) ? `<img class="qr-thumb" style="width:120px;height:120px" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR">` : ''}
-      <button class="btn primary">${m ? 'Send updated details to the Admin team' : 'Send to the Admin team for verification'}</button>
+      <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block">${m ? 'Send updated details to the Admin team' : 'Send to the Admin team for verification'}</button>
     </form></section></div>`;
 
   // Verified: the things a merchant changes or uses first, the locked details last as a plain list.
@@ -248,48 +281,47 @@ async function shopRender(app) {
     ['Location', m.location], ['Campus zone', m.zone], ['Contact phone', priv?.phone || m.phone], ['Ambassador ID', priv?.ambassadorId || m.ambassadorId],
     ...(m.eventName ? [['Event', `${m.eventName}${m.eventEnd ? ` · until ${m.eventEnd}` : ''}`]] : [])].filter(([, val]) => val);
   const facts = [m.type, m.zone].filter(Boolean);
-  return `<div class="merchant-page mer-shop">
-    <form id="logo-form" class="kk-hero merchant-home-hero mer-shop-hero">
-      <label class="mer-logo-pick" title="Change logo"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" aria-label="Change your shop logo">
-        <span class="logo-preview" id="logo-prev">${safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span><span class="mer-logo-edit" aria-hidden="true">${icon('pencil')}</span></label>
+  const readyNotice = app.rules.merchantReadinessUpdate?.message ? `<div class="oz-mnotice mer-readiness-notice">${ozIcon('bell')}<span><b>New readiness update</b><small data-no-i18n>${esc(app.rules.merchantReadinessUpdate.message)}</small></span></div>` : '';
+  return `<div class="merchant-page mer-shop oz-mshop">
+    <form id="logo-form" class="oz-mshop-head mer-shop-hero">
+      <label class="oz-mlogo" title="Change logo (square works best)"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" aria-label="Change your shop logo">
+        <span class="oz-mlogo-img" id="logo-prev">${safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : ozIcon('stall')}</span><span class="oz-mlogo-edit" aria-hidden="true">${ozIcon('edit')}</span></label>
       <input type="hidden" name="logoData" value="">
-      <div class="mer-home-copy"><span class="mer-eyebrow">My shop</span><h1 data-no-i18n>${esc(m.name)}</h1>${m.location ? `<p class="mer-hero-location">${icon('map-pin')} <span data-no-i18n>${esc(m.location)}</span></p>` : ''}
-        <div class="row merchant-home-status">${statusBadge(m)}${ready ? `<span class="badge ok">${icon('shield-check')}Staff ready</span>` : ''}</div>
-        <a class="btn small mer-hero-preview" href="#/preview">${icon('eye')} Preview as a student</a>
-        ${facts.length ? `<p class="mer-shop-facts">${facts.map((f) => `<span>${esc(f)}</span>`).join('')}</p>` : ''}
-        <small class="mer-logo-help">Tap your logo to change it. Square works best.</small>
-        <button class="btn small mer-hero-save" id="logo-save" hidden>${icon('check')} Save new logo</button></div>
-      <div class="mer-hero-art" aria-hidden="true"><span>${icon('store')}</span><i>${icon('star')}</i><b>+</b></div>
+      <div class="oz-mshop-copy"><p class="oz-mkicker">My shop</p><h1 data-no-i18n>${esc(m.name)}</h1>
+        <p class="oz-mshop-meta">${ozTag(statusText(m), m.status === 'verified' ? 'success' : 'warning')}${ready ? ozTag('Staff ready', 'success') : ''}${[m.location, ...facts].filter(Boolean).length ? `<span data-no-i18n>${[m.location, ...facts].filter(Boolean).map(esc).join(' · ')}</span>` : ''}</p></div>
+      <div class="oz-mshop-actions">
+        <button class="oz-btn oz-btn-secondary oz-btn-sm" id="logo-save" hidden><span>Save new logo</span></button>
+        ${ozButton('Open poster', { href: '#/poster', kind: 'ghost', size: 'sm' })}${ozButton('Preview as a student', { href: '#/preview', size: 'sm' })}
+      </div>
     </form>
-    <div class="mer-shop-grid is-verified">
-      <section class="section mer-shop-map"><div class="head"><h2>${icon('map-pin')} Where students find you</h2></div>
-        <form id="pin-form" class="card stack">${pinBlock(m, true)}<button class="btn primary" id="pin-save" hidden>${icon('map-pin')} Save new location</button></form></section>
-      <div class="mer-shop-side"><section class="section mer-counter-kit"><div class="head"><h2>${icon('printer')} Poster for your counter</h2></div>
-        <div class="card mer-poster-card"><div class="mer-poster-copy"><p>Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.</p><a class="btn primary" href="#/poster">${icon('printer')} Open poster</a></div>
-          <a class="mer-poster-mini" href="#/poster" aria-label="Open your poster"><img src="icons/onz-logo-dark.svg" alt="" width="680" height="214"><b>Find us on +Onz.</b><span id="poster-mini-qr" aria-hidden="true"></span><small data-no-i18n>${esc(m.name)}</small></a></div></section>
-      <section class="section mer-readiness" id="ready" tabindex="-1">
-        ${ready ? `<details class="card mer-ready-done"><summary><span class="mer-ready-tick">${icon('check')}</span><span><b>Staff readiness</b><small>Done ${fmtDate(m.readyAt)}. Tap to review the checklist.</small></span>${icon('chevron-right')}</summary>${readinessBody(app, m, ready)}</details>`
-          : `<div class="head"><h2>${icon('shield-check')} Staff readiness</h2><span class="badge warn">To do</span></div>
-        ${app.rules.merchantReadinessUpdate?.message ? `<div class="notice mer-readiness-notice">${icon('bell')}<div><strong>New readiness update</strong><p data-no-i18n>${esc(app.rules.merchantReadinessUpdate.message)}</p></div></div>` : ''}
-        <div class="card">${readinessBody(app, m, ready)}</div>`}
-      </section></div>
-      <section class="section mer-shop-details" id="shop-details"><div class="head"><h2>${icon('store')} Business details</h2><span class="badge grey">${icon('lock')} Locked</span></div>
-        <div class="card"><dl class="mer-details">${details.map(([k, val]) => `<div><dt>${k}</dt><dd data-no-i18n>${esc(val)}</dd></div>`).join('')}
+    <div class="mer-shop-grid is-verified oz-mshop-grid">
+      <section class="oz-mcard mer-shop-map" aria-labelledby="map-title"><div class="oz-mcard-head"><h2 id="map-title">Where students find you</h2></div>
+        <form id="pin-form" class="oz-form">${pinBlock(m, true)}<button class="oz-btn oz-btn-primary oz-btn-md" id="pin-save" hidden><span>Save new location</span></button></form></section>
+      <section class="oz-mcard mer-counter-kit oz-mposter" aria-labelledby="poster-title"><div class="oz-mcard-head"><h2 id="poster-title">Counter poster</h2></div>
+        <div class="oz-mposter-body"><a class="mer-poster-mini" href="#/poster" aria-label="Open your poster"><img src="icons/onz-logo-dark.svg" alt="" width="680" height="214"><b>Find us on +Onz.</b><span id="poster-mini-qr" aria-hidden="true"></span><small data-no-i18n>${esc(m.name)}</small></a>
+          <div class="mer-poster-copy"><p>Print it and put it next to your DuitNow QR. Students scan it to open your shop in +Onz.</p>${ozButton('Print poster', { href: '#/poster', kind: 'secondary', size: 'sm' })}</div></div></section>
+      <section class="oz-mcard mer-readiness oz-mready" id="ready" tabindex="-1" aria-labelledby="ready-title">
+        ${ready ? `<details class="mer-ready-done"><summary><span class="oz-mstart-ic" aria-hidden="true">${ozIcon('shield')}</span><span class="oz-mready-text"><b id="ready-title">Staff readiness</b><small>Done ${fmtDate(m.readyAt)}</small></span><span class="oz-mready-toggle"><span class="oz-mready-more">Review checklist</span><span class="oz-mready-less">Hide checklist</span>${ozIcon('s:chevron-right')}</span></summary>${readinessBody(app, m, ready)}</details>`
+          : `<div class="oz-mready-head"><span class="oz-mstart-ic" aria-hidden="true">${ozIcon('shield')}</span><span class="oz-mready-text"><b id="ready-title">Staff readiness</b><small>A short checklist so everyone at the counter knows what to do.</small></span>${ozTag('To do', 'warning')}</div>
+        ${readyNotice}${readinessBody(app, m, ready)}`}
+      </section>
+      <section class="oz-mcard mer-shop-details" id="shop-details" aria-labelledby="details-title"><div class="oz-mcard-head"><h2 id="details-title">Business details</h2>${ozTag('Locked', 'lilac')}</div>
+        <dl class="mer-details">${details.map(([k, val]) => `<div><dt>${k}</dt><dd data-no-i18n>${esc(val)}</dd></div>`).join('')}
           ${priv && safeImg(priv.qrImage) ? `<div><dt>Your DuitNow QR</dt><dd><img class="qr-thumb" src="${safeImg(priv.qrImage)}" alt="Your uploaded DuitNow QR"></dd></div>` : ''}</dl>
-          <p class="mer-details-note">${icon('info')}<span>These were checked by the Admin team, so they’re locked. Need to change something? <a href="#/contact">Contact the Admin team</a>.</span></p></div></section>
+        <p class="oz-mnote mer-details-note">Checked by the Admin team, so these are locked. <a href="#/contact">Contact the Admin team</a> to change something.</p></section>
     </div></div>`;
 }
 function readinessBody(app, m, ready) {
-  return `<div class="stack mer-readiness-content"><div class="chips">${Object.keys(READY_TEXT).map((l) => `<button type="button" data-lang="${l}" class="${l === readyLang ? 'on' : ''}">${l}</button>`).join('')}</div>
-    ${READY_TEXT[readyLang].map(([t, d]) => `<div><h3>${esc(t)}</h3><p class="muted" style="font-size:14px;margin-top:4px">${esc(d)}</p></div>`).join('')}
-    <form id="ready-form" data-update="${toMs(app.rules.merchantReadinessUpdate?.publishedAt) || 0}">${READY_CHECKS.map((c) => `<label class="check"><input type="checkbox" required ${ready ? 'checked' : ''}> ${esc(c)}</label>`).join('')}
-      <button class="btn ${ready ? '' : 'primary'}" ${m.status === 'rejected' ? 'disabled' : ''}>${ready ? 'Checklist complete' : 'Confirm my staff are ready'}</button></form></div>`;
+  return `<div class="oz-mready-body"><div class="oz-mchips" role="group" aria-label="Checklist language">${Object.keys(READY_TEXT).map((l) => `<button type="button" data-lang="${l}" class="${l === readyLang ? 'on' : ''}" aria-pressed="${l === readyLang}">${l}</button>`).join('')}</div>
+    <div class="oz-mready-help">${READY_TEXT[readyLang].map(([t, d]) => `<div><h3>${esc(t)}</h3><p class="oz-mnote">${esc(d)}</p></div>`).join('')}</div>
+    <form id="ready-form" class="oz-mready-form" data-update="${toMs(app.rules.merchantReadinessUpdate?.publishedAt) || 0}"><div class="oz-mready-checks">${READY_CHECKS.map((c) => `<label class="oz-mcheck"><input type="checkbox" required ${ready ? 'checked' : ''}><span>${esc(c)}</span></label>`).join('')}</div>
+      <button class="oz-btn ${ready ? 'oz-btn-ghost' : 'oz-btn-primary'} oz-btn-md" ${m.status === 'rejected' ? 'disabled' : ''}><span>${ready ? 'Checklist complete' : 'Confirm my staff are ready'}</span></button></form></div>`;
 }
 function logoBlock(m) {
-  return `<div class="field logo-field"><span>Shop logo</span>
-    <div class="row" style="gap:14px;flex-wrap:nowrap"><span class="logo-preview" id="logo-prev">${m && safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span>
-      <div style="flex:1"><label class="mer-upload"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" ${m && m.logo ? '' : 'required'} aria-label="Upload your logo">
-        <span class="btn small">${icon('image')} ${m && m.logo ? 'Choose a new logo' : 'Choose your logo'}</span></label>
+  return `<div class="oz-field logo-field"><span>Shop logo</span>
+    <div class="oz-mlogo-row"><span class="logo-preview" id="logo-prev">${m && safeImg(m.logo) ? `<img src="${safeImg(m.logo)}" alt="Your logo">` : icon('image')}</span>
+      <div class="oz-mlogo-copy"><label class="mer-upload"><input name="logo" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden" ${m && m.logo ? '' : 'required'} aria-label="Upload your logo">
+        <span class="oz-btn oz-btn-ghost oz-btn-sm"><span>${m && m.logo ? 'Choose a new logo' : 'Choose your logo'}</span></span></label>
       <small>Square works best. It appears on the map pin and your shop page. Shrunk to 256 px automatically.</small></div></div>
     <input type="hidden" name="logoData" value=""></div>`;
 }
@@ -321,11 +353,10 @@ function mountLogo(root, form) {
 }
 function pinBlock(m, standalone = false) {
   const has = hasPin(m);
-  return `<div class="field pin-field">${standalone ? '' : '<span>Shop location on the map</span>'}
+  return `<div class="oz-field pin-field">${standalone ? '' : '<span>Shop location on the map</span>'}
     <div class="pin-map" id="pin-map" aria-label="Map to place your shop"></div>
-    <div class="row between pin-bar"><button type="button" class="btn small" id="locate">${icon('locate-fixed')} Use my current location</button>
-      <span class="mer-pin-status ${has ? 'is-set' : ''}" id="pin-read" ${has ? `data-lat="${m.lat}" data-lng="${m.lng}"` : ''}>${has ? `${icon('check')} Your pin is set. Students can walk straight to you.` : 'No pin yet. Tap the map or use your current location.'}</span></div>
-    <small>Stand at your counter and tap “Use my current location”, or tap the map and drag the pin to your exact spot. Students use this pin for directions to your shop.</small>
+    <div class="oz-mpin-bar pin-bar"><button type="button" class="oz-btn oz-btn-ghost oz-btn-sm" id="locate">${ozIcon('locate')}<span>Use my current location</span></button>
+      <span class="mer-pin-status ${has ? 'is-set' : ''}" id="pin-read" ${has ? `data-lat="${m.lat}" data-lng="${m.lng}"` : ''}>${has ? 'Pin saved' : 'No pin yet. Tap the map or use your current location.'}</span></div>
     <input type="hidden" name="lat" value="${has ? m.lat : ''}"><input type="hidden" name="lng" value="${has ? m.lng : ''}"></div>`;
 }
 async function mountPin(root, form, onMove = () => {}) {
@@ -336,7 +367,7 @@ async function mountPin(root, form, onMove = () => {}) {
     const picker = await pinPicker(el, { lat: parseFloat(form.lat.value), lng: parseFloat(form.lng.value) }, ({ lat, lng }) => {
       form.lat.value = lat; form.lng.value = lng; read.dataset.lat = lat; read.dataset.lng = lng;
       const ok = inGeoBox(lat, lng);
-      read.innerHTML = ok ? `${icon('check')} ${placed ? 'Pin placed. Students will walk straight to this spot.' : 'Your pin is set. Students can walk straight to you.'}` : `${icon('circle-alert')} This spot is outside the UM campus. Drag the pin to your shop.`;
+      read.textContent = ok ? (placed ? 'Pin moved. Save to update it.' : 'Pin saved') : 'This spot is outside the UM campus. Drag the pin to your shop.';
       read.classList.toggle('bad-text', !ok); read.classList.toggle('is-set', ok); if (placed) onMove();
     });
     placed = true;
@@ -411,9 +442,9 @@ function shopMount(root, app, [section] = []) {
 
 // "Preview as a student": the real student shop page, inside a frame, with its buttons switched off.
 async function previewRender(app) {
-  if (app.merchant?.status !== 'verified') return `<div class="merchant-page"><a class="back" href="#/shop">${icon('arrow-left')} My shop</a><div class="card empty"><h1>Preview as a student</h1><p>Students can see your shop once the Admin team has verified it.</p></div></div>`;
-  return `<div class="merchant-page mer-preview"><a class="back" href="#/shop">${icon('arrow-left')} My shop</a>
-    <div class="mer-preview-note">${icon('eye')}<div><b>This is what students see</b><p>Your shop page in the student app, with your logo, location and live deals. Buttons are switched off in this preview.</p></div></div>
+  if (app.merchant?.status !== 'verified') return `<div class="merchant-page">${merchantBack('#/shop', 'My shop')}<section class="oz-mcard oz-mzero-card">${merchantEmptyTile('eye')}<h1>Preview as a student</h1><p>Students can see your shop once the Admin team has verified it.</p></section></div>`;
+  return `<div class="merchant-page mer-preview">${merchantBack('#/shop', 'My shop')}
+    <div class="oz-mnotice">${ozIcon('eye')}<span><b>This is what students see</b><small>Your shop page in the student app, with your logo, location and live deals. Buttons are switched off in this preview.</small></span></div>
     <div class="mer-preview-device"><div class="mer-preview-bar"><span>${icon('user')} Student app</span><span>Preview</span></div>
       <div class="mer-preview-screen" tabindex="0" aria-label="Your shop page, as students see it"><div inert>${await studentShopRender(app, [app.ctx.uid])}</div></div></div>
     <p class="mer-preview-tip">Something looks wrong? Change your logo or map pin in <a href="#/shop">My shop</a>. For other details, <a href="#/contact">contact the Admin team</a>.</p></div>`;
@@ -422,11 +453,11 @@ function previewMount(root, app) { return studentShopMount(root, app, [app.ctx.u
 
 async function posterRender(app) {
   const m = app.merchant; if (!m) return needVerified(app);
-  return `<div class="merchant-page mer-poster"><a class="back no-print" href="#/shop">${icon('arrow-left')} My shop</a>
+  return `<div class="merchant-page mer-poster"><span class="no-print">${merchantBack('#/shop', 'My shop')}</span>
     <div class="poster" style="margin-top:8px"><img src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214" style="width:190px;height:auto;max-width:100%;border-radius:0">
       <h1>Find us on +Onz.</h1><p class="muted" style="max-width:36ch">Find ${esc(m.name)} on +Onz, explore our offers, and pay cashless with DuitNow QR.</p>
       <div class="qr-frame"><div id="pqr"></div></div><p><b>${esc(m.name)}</b><br><span class="faint">Scan to open this shop in +Onz</span></p></div>
-    <div class="row no-print" style="justify-content:center;margin-top:16px"><button class="btn primary" onclick="window.print()">${icon('printer')} Print poster</button></div></div>`;
+    <div class="no-print oz-mposter-actions"><button type="button" class="oz-btn oz-btn-primary oz-btn-md oz-btn-block" onclick="window.print()">${ozIcon('printer')}<span>Print poster</span></button></div></div>`;
 }
 function posterMount(root, app) {
   const url = `${location.origin}${location.pathname}#/merchant/${app.ctx.uid}`;
@@ -442,46 +473,57 @@ async function promoteRender(app, [section] = []) {
   app._voucherApp = vapp; app._promoDeals = deals;
   // The two tabs only swap the banner; your deals and café occupancy stay below either way.
   // The subtitles keep the difference (earn vs spend) visible. #/promote/vouchers opens on the voucher banner.
-  const tabs = `<div class="mer-seg" role="group" aria-label="Ways to promote your shop">
-    <button type="button" data-way="deal" class="is-deal ${vouchers ? '' : 'on'}" aria-pressed="${!vouchers}" aria-controls="way-deal"><span class="mer-seg-icon" aria-hidden="true">${icon('badge-percent')}</span><span><b>Live deals</b><small>Students earn points</small></span></button>
-    <button type="button" data-way="voucher" class="is-voucher ${vouchers ? 'on' : ''}" aria-pressed="${vouchers}" aria-controls="voucher-program"><span class="mer-seg-icon" aria-hidden="true">${icon('ticket')}</span><span><b>Voucher program</b><small>Students spend points</small></span>${vapp ? '' : '<span class="mer-voucher-new">New</span>'}</button></div>`;
+  const tabs = `<div class="oz-seg oz-mseg mer-seg" role="group" aria-label="Ways to promote your shop">
+    <button type="button" data-way="deal" class="oz-seg-item is-deal ${vouchers ? '' : 'on'}" aria-pressed="${!vouchers}" aria-controls="way-deal"><b>Live deals</b><small class="sr">Students earn points</small></button>
+    <button type="button" data-way="voucher" class="oz-seg-item is-voucher ${vouchers ? 'on' : ''}" aria-pressed="${vouchers}" aria-controls="voucher-program"><b>Voucher program</b><small class="sr">Students spend points</small>${vapp ? '' : '<span class="oz-mnew">New</span>'}</button></div>`;
   const liveDeals = await D.dealOverview(app.ctx, deals, [m]);
   const liveNow = liveDeals.filter((d) => d.status === 'Available').length, paused = deals.filter((d) => !d.enabled).length;
   const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
-  return `<div class="merchant-page mer-promote" id="promote-view">${merchantHeading('Promote your shop', 'Two ways to bring students to your counter.', 'megaphone')}${tabs}
-    <div id="way-deal" ${vouchers ? 'hidden' : ''}>${dealCardHTML(app, deals.length)}</div>
-    <div id="way-voucher" ${vouchers ? '' : 'hidden'}>${voucherCardHTML(vapp)}</div>
+  const dealActions = (d, live, published) => [
+    d.status === 'pending' ? `<button class="oz-btn oz-btn-primary oz-btn-sm" data-publish-deal="${esc(d.id)}"><span>Publish deal</span></button>` : '',
+    live ? `<a class="oz-btn oz-btn-primary oz-btn-sm" href="#/scan/${esc(d.id)}"><span>Show deal QR</span></a>` : '',
+    published ? `<button class="oz-btn ${d.enabled ? 'oz-btn-ghost' : 'oz-btn-secondary'} oz-btn-sm" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}"><span>${d.enabled ? 'Pause' : 'Resume'}</span></button>` : ''].join('');
+  return `<div class="merchant-page mer-promote oz-mpromote" id="promote-view">
+    <div class="oz-mtitlebar">${merchantHeading('Promote your shop', 'Two ways to bring students to your counter.', 'megaphone')}${tabs}</div>
     <div class="mer-promote-grid">
-    <section class="section mer-deals"><div class="mer-section-head"><div><h2>Your live deals</h2>
-        <p class="mer-deals-summary">${deals.length ? `<span class="num">${n(liveNow)}</span> <span>live now</span> · <span class="num">${n(paused)}</span> <span>paused</span>` : 'Publish instantly, with no approval needed.'}</p></div></div>
-      ${deals.length ? `<p class="mer-deals-results" id="deal-results"></p>` : ''}
-      <div class="mer-deal-grid">${liveDeals.map(({ deal: d, status }) => {
-        const live = status === 'Available', published = ['approved', 'published'].includes(d.status);
-        return `<article class="card mer-deal-card ${live ? 'is-live' : ''}">
-        <span class="badge ${live ? 'ok' : d.status === 'rejected' ? 'bad' : d.status === 'pending' ? 'warn' : 'grey'}">${live ? '<span class="mer-live-dot" aria-hidden="true"></span>' : ''}${esc(live ? 'Live now' : status)}</span>
-        <h3 data-no-i18n>${esc(d.title)}</h3>${d.benefit && !same(d.benefit, d.title) ? `<p class="deal-benefit" data-no-i18n>${esc(d.benefit)}</p>` : ''}
-        <div class="mer-deal-meta"><span>${icon('clock')} ${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)}</span><span>${icon('users')} under ${d.threshold}% full</span></div>
-        <div class="mer-deal-actions">${d.status === 'pending' ? `<button class="btn small primary" data-publish-deal="${esc(d.id)}">${icon('megaphone')} Publish deal</button>` : ''}${live ? `<a class="btn small primary" href="#/scan/${esc(d.id)}">${icon('qr-code')} Show deal QR</a>` : ''}${published ? `<button class="btn small ${d.enabled ? '' : 'primary'}" data-toggle="${esc(d.id)}" data-en="${d.enabled ? '0' : '1'}">${icon(d.enabled ? 'moon' : 'zap')} ${d.enabled ? 'Pause' : 'Resume'}</button>` : ''}</div>
-        <div class="mer-deal-manage">${d.status !== 'rejected' ? `<button class="btn small ghost" data-edit-deal="${esc(d.id)}">${icon('pencil')} Edit</button>` : ''}<button class="btn small ghost mer-deal-remove" data-remove-deal="${esc(d.id)}">${icon('trash-2')} Remove</button></div>
-      </article>`; }).join('') || merchantEmpty('badge-percent', 'No live deals yet.', 'Open the Live deals tab above and tap Create a deal.')}</div></section>
-    ${seatsWidget(m)}
+      <div class="oz-mpromote-main">
+        <div id="way-deal" ${vouchers ? 'hidden' : ''}>
+          <section class="oz-mcard mer-deals" aria-labelledby="deals-title">
+            <div class="oz-mcard-head mer-section-head"><div><h2 id="deals-title">Your live deals</h2>
+              <p class="mer-deals-summary">${deals.length ? `<span class="num">${n(liveNow)}</span> <span>live now</span> · <span class="num">${n(paused)}</span> <span>paused</span>` : 'Publish instantly, with no approval needed.'}</p></div>
+              <button type="button" class="oz-btn oz-btn-primary oz-btn-sm mer-way-cta" id="new-deal">${ozIcon('s:plus')}<span>${deals.length ? 'Create another deal' : 'Create a deal'}</span></button></div>
+            ${deals.length ? `<p class="mer-deals-results" id="deal-results"></p>` : ''}
+            <div class="mer-deal-grid">${liveDeals.map(({ deal: d, status }) => {
+              const live = status === 'Available', published = ['approved', 'published'].includes(d.status);
+              return `<article class="mer-deal-card oz-mdeal ${live ? 'is-live' : ''}">
+                <div class="oz-mdeal-top"><h3 data-no-i18n>${esc(d.title)}</h3><span class="oz-tag oz-tag-${live ? 'success' : d.status === 'rejected' ? 'peach' : d.status === 'pending' ? 'warning' : 'lilac'}">${esc(live ? 'Live now' : status)}</span></div>
+                ${d.benefit && !same(d.benefit, d.title) ? `<p class="deal-benefit" data-no-i18n>${esc(d.benefit)}</p>` : ''}
+                <p class="oz-mdeal-meta"><span>${D.hhmm(d.startMin)}–${D.hhmm(d.endMin)} MYT</span> · <span>under ${d.threshold}% full</span></p>
+                <div class="oz-mdeal-foot mer-deal-actions">${dealActions(d, live, published)}${d.status !== 'rejected' ? `<button class="oz-btn oz-btn-ghost oz-btn-sm" data-edit-deal="${esc(d.id)}"><span>Edit</span></button>` : ''}<button class="oz-btn oz-btn-sm oz-mdanger mer-deal-remove" data-remove-deal="${esc(d.id)}"><span>Remove</span></button></div>
+              </article>`; }).join('') || merchantEmpty('badge-percent', 'No live deals yet.', 'Create a deal for your quiet hours. It goes live straight away.')}</div>
+          </section>
+        </div>
+        <div id="way-voucher" ${vouchers ? '' : 'hidden'}>${voucherCardHTML(vapp)}</div>
+      </div>
+      <aside class="oz-mpromote-side">${seatsWidget(m)}<div data-way-side="deal" ${vouchers ? 'hidden' : ''}>${dealCardHTML(app, deals.length)}</div></aside>
     </div></div>`;
 }
 
-const wayFacts = (list) => `<ul class="mer-way-facts">${list.map(([ic, t]) => `<li>${icon(ic)}<span>${t}</span></li>`).join('')}</ul>`;
+const WAY_GLYPH = { zap: 'check', 'qr-code': 'scan', store: 'stall', ticket: 'voucher', sparkles: 'coin', 'shield-check': 'shield' };
+const wayFacts = (list) => `<ul class="mer-way-facts oz-mfacts">${list.map(([ic, t]) => `<li>${ozIcon(WAY_GLYPH[ic] || ic)}<span>${t}</span></li>`).join('')}</ul>`;
 // The live-deal builder, for a new deal or (with a deal) for editing one.
 function dealSheet(app, deal = null) {
   const v = (k, d = '') => esc(deal?.[k] ?? d);
   const time = (min, d) => (Number.isFinite(min) ? D.hhmm(Math.min(min, 1439)) : d);
-  const el = sheet(`<div class="mer-sheet-head"><span class="mer-panel-emblem">${icon(deal ? 'pencil' : 'megaphone')}</span><div><span class="mer-eyebrow">${deal ? 'Change your deal' : 'Make some noise'}</span><h2>${deal ? 'Edit live deal' : 'New live deal'}</h2></div></div>
-    <div class="mer-deal-preview"><span class="mer-eyebrow">Student preview</span><h3 id="deal-preview-title" data-no-i18n></h3><div class="mer-deal-meta"><span>${icon('clock')}<span id="deal-preview-time"></span></span><span>${icon('users')}<span>Occupancy threshold</span><b id="deal-preview-threshold"></b></span></div><span class="badge warn">${deal ? 'Changes show to students straight away' : 'Publish instantly — no approval needed'}</span></div>
-    <form id="df" class="stack mer-builder" style="margin-top:18px">
-    <label class="field">Name<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Afternoon study break" value="${v('title')}"></label>
-    <label class="field">Discount details<input name="benefit" required minlength="3" maxlength="160" placeholder="e.g. 20% off any coffee" value="${v('benefit')}"></label>
-    <div class="grid-2"><label class="field">From<input name="start" type="time" required value="${time(deal?.startMin, '14:00')}"></label><label class="field">Until<input name="end" type="time" required value="${time(deal?.endMin, '17:00')}"></label></div>
-    <div class="grid-2"><label class="field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="${v('threshold', 60)}"></label></div>
-    <ul class="mer-deal-rules"><li>${icon('users')}<span>Each student can claim each deal once a day.</span></li><li>${icon('clock')}<span>A claim lasts 15 minutes. Apply the discount before then.</span></li></ul>
-    <button class="btn primary">${icon(deal ? 'check' : 'megaphone')} ${deal ? 'Save changes' : 'Publish deal'}</button></form>`);
+  const el = sheet(`<h2 class="oz-msheet-title">${deal ? 'Edit live deal' : 'New live deal'}</h2>
+    <div class="oz-mdeal-preview mer-deal-preview"><p class="oz-mkicker">Student preview</p><h3 id="deal-preview-title" data-no-i18n></h3><p class="oz-mdeal-meta"><span id="deal-preview-time"></span> · <span>under <b id="deal-preview-threshold"></b> full</span></p>${ozTag(deal ? 'Changes show to students straight away' : 'Publishes instantly, no approval needed', 'warning')}</div>
+    <form id="df" class="oz-form mer-builder">
+    <label class="oz-field">Name<input name="title" required minlength="3" maxlength="60" placeholder="e.g. Afternoon study break" value="${v('title')}"></label>
+    <label class="oz-field">Discount details<input name="benefit" required minlength="3" maxlength="160" placeholder="e.g. 20% off any coffee" value="${v('benefit')}"></label>
+    <div class="oz-mgrid2"><label class="oz-field">From<input name="start" type="time" required value="${time(deal?.startMin, '14:00')}"></label><label class="oz-field">Until<input name="end" type="time" required value="${time(deal?.endMin, '17:00')}"></label></div>
+    <div class="oz-mgrid2"><label class="oz-field">Only while seats taken under (%)<input name="threshold" type="number" min="1" max="100" required value="${v('threshold', 60)}"></label></div>
+    <ul class="oz-mfacts"><li>${ozIcon('community')}<span>Each student can claim each deal once a day.</span></li><li>${ozIcon('clock')}<span>A claim lasts 15 minutes. Apply the discount before then.</span></li></ul>
+    <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block"><span>${deal ? 'Save changes' : 'Publish deal'}</span></button></form>`);
   const preview = () => {
     const form = $('#df', el);
     const title = $('#deal-preview-title', el);
@@ -507,24 +549,23 @@ function dealSheet(app, deal = null) {
 // Live deals: students EARN points at your counter.
 function dealCardHTML(app, dealCount) {
   const pts = Number(app.rules?.liveDealPoints) || 0;
-  return `<section class="section mer-ways"><article class="mer-way is-deal">
-    <h2 class="mer-way-title">Students <em>earn</em> points</h2>
+  return `<section class="oz-msection mer-ways"><article class="mer-way is-deal oz-mway">
+    <h2 class="mer-way-title">Students earn points</h2>
     <p class="mer-way-lead">A discount you give at your counter during your quiet hours.</p>
     ${wayFacts([['zap', 'You set it up yourself. It goes live straight away.'], ['qr-code', `Students scan your deal QR${pts ? ` and earn ${pts} points` : ''}.`], ['store', 'You give the discount at your counter.']])}
-    <button type="button" class="btn mer-way-cta" id="new-deal">${icon('plus')} ${dealCount ? 'Create another deal' : 'Create a deal'} ${icon('arrow-right')}</button>
   </article></section>`;
 }
 // Voucher program: students SPEND points on your shop's voucher.
 function voucherCardHTML(a) {
-  const status = a ? `<div class="mer-voucher-status is-${esc(a.status)}"><div class="row between"><b>Your application</b><span class="badge ${a.status === 'approved' ? 'ok' : a.status === 'declined' ? 'bad' : 'warn'}">${esc(D.VOUCHER_APP_STATUS[a.status] || 'Sent')}</span></div>
+  const status = a ? `<div class="mer-voucher-status is-${esc(a.status)}"><div class="oz-mcard-head"><b>Your application</b><span class="oz-tag oz-tag-${a.status === 'approved' ? 'success' : a.status === 'declined' ? 'peach' : 'warning'}">${esc(D.VOUCHER_APP_STATUS[a.status] || 'Sent')}</span></div>
       <p data-no-i18n><b>${esc(a.offer)}</b></p><p class="faint"><span>Value</span> ${rm(a.valueCents)} · <span data-no-i18n>${n(a.perMonth)}</span> <span>a month</span> · <span>Sent</span> ${fmtDate(a.submittedAt)}</p>
       ${a.reviewNote ? `<p class="mer-voucher-note"><b>Note from the Admin team:</b> <span data-no-i18n>${esc(a.reviewNote)}</span></p>` : ''}
       ${a.status === 'approved' ? '<p class="faint">The Admin team will contact you to set up your voucher.</p>' : a.status === 'pending' ? '<p class="faint">We’ll contact you within a few working days.</p>' : ''}</div>` : '';
-  const button = !a ? `<button class="btn mer-voucher-cta" id="voucher-apply">${icon('ticket')} Apply to join ${icon('arrow-right')}</button>`
-    : a.status === 'pending' ? `<button class="btn mer-voucher-ghost" id="voucher-apply">${icon('pencil')} Edit application</button>`
-    : a.status === 'declined' ? `<button class="btn mer-voucher-cta" id="voucher-apply">${icon('ticket')} Apply again</button>` : '';
-  return `<section class="section mer-ways" id="voucher-program"><article class="mer-way is-voucher mer-voucher">
-    <h2 class="mer-way-title">Students <em>spend</em> points</h2>
+  const button = !a ? `<button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block mer-voucher-cta" id="voucher-apply"><span>Apply to join</span></button>`
+    : a.status === 'pending' ? `<button class="oz-btn oz-btn-ghost oz-btn-md oz-btn-block mer-voucher-ghost" id="voucher-apply"><span>Edit application</span></button>`
+    : a.status === 'declined' ? `<button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block mer-voucher-cta" id="voucher-apply"><span>Apply again</span></button>` : '';
+  return `<section class="oz-msection mer-ways" id="voucher-program"><article class="mer-way is-voucher mer-voucher oz-mway">
+    <h2 class="mer-way-title">Students spend points</h2>
     <p class="mer-way-lead">A voucher for your shop that students swap their points for in Rewards.</p>
     ${wayFacts([['ticket', 'You apply. The Admin team agrees the details with you.'], ['sparkles', 'Students spend their points to get your voucher.'], ['shield-check', 'Applying is free and doesn’t commit you to anything.']])}
     ${status}${button ? `<div>${button}</div>` : ''}
@@ -532,15 +573,15 @@ function voucherCardHTML(a) {
 }
 function voucherForm(app) {
   const a = app._voucherApp; const v = (k, d = '') => esc(a?.[k] ?? d);
-  const el = sheet(`<div class="mer-sheet-head"><span class="mer-panel-emblem">${icon('ticket')}</span><div><span class="mer-eyebrow">Voucher program</span><h2>Apply to join</h2></div></div>
-    <form id="vf" class="stack" style="margin-top:18px">
-      <label class="field">What students get<input name="offer" required minlength="3" maxlength="160" value="${v('offer')}" placeholder="e.g. RM5 off any meal"></label>
-      <div class="grid-2"><label class="field">Voucher value (RM)<input name="value" type="number" min="0.5" max="1000" step="0.5" required value="${a ? a.valueCents / 100 : ''}" placeholder="e.g. 5"></label>
-        <label class="field">Vouchers you can honour a month<input name="perMonth" type="number" min="1" max="10000" step="1" required value="${v('perMonth')}" placeholder="e.g. 50"></label></div>
-      <label class="field">Conditions (optional)<textarea name="conditions" rows="3" maxlength="500" placeholder="e.g. Minimum spend RM10. Weekdays only, 2–5 pm.">${v('conditions')}</textarea></label>
-      <div class="grid-2"><label class="field">Contact person<input name="contactName" required minlength="2" maxlength="80" value="${v('contactName', app.profile?.name || '')}"></label>
-        <label class="field">Contact phone<input name="contactPhone" type="tel" required minlength="8" maxlength="20" value="${v('contactPhone', app._merchantPhone || '')}" placeholder="e.g. 012-345 6789"></label></div>
-      <button class="btn primary">${icon('ticket')} ${a ? 'Send updated application' : 'Send application'}</button></form>`);
+  const el = sheet(`<p class="oz-mkicker">Voucher program</p><h2 class="oz-msheet-title">${a ? 'Edit application' : 'Apply to join'}</h2>
+    <form id="vf" class="oz-form">
+      <label class="oz-field">What students get<input name="offer" required minlength="3" maxlength="160" value="${v('offer')}" placeholder="e.g. RM5 off any meal"></label>
+      <div class="oz-mgrid2"><label class="oz-field">Voucher value (RM)<input name="value" type="number" min="0.5" max="1000" step="0.5" required value="${a ? a.valueCents / 100 : ''}" placeholder="e.g. 5"></label>
+        <label class="oz-field">Vouchers you can honour a month<input name="perMonth" type="number" min="1" max="10000" step="1" required value="${v('perMonth')}" placeholder="e.g. 50"></label></div>
+      <label class="oz-field">Conditions (optional)<textarea name="conditions" rows="3" maxlength="500" placeholder="e.g. Minimum spend RM10. Weekdays only, 2–5 pm.">${v('conditions')}</textarea></label>
+      <div class="oz-mgrid2"><label class="oz-field">Contact person<input name="contactName" required minlength="2" maxlength="80" value="${v('contactName', app.profile?.name || '')}"></label>
+        <label class="oz-field">Contact phone<input name="contactPhone" type="tel" required minlength="8" maxlength="20" value="${v('contactPhone', app._merchantPhone || '')}" placeholder="e.g. 012-345 6789"></label></div>
+      <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block"><span>${a ? 'Send updated application' : 'Send application'}</span></button></form>`);
   $('#vf', el).onsubmit = (e) => {
     e.preventDefault(); const f = e.target;
     busy($('button', el), async () => {
@@ -557,12 +598,12 @@ function promoteMount(root, app) {
   const results = $('#deal-results', root), insightsOn = D.featureOn(app.rules, 'merchantTools');
   const stopResults = results ? L.watchMerchantClaims(app.ctx, (claims) => {
     const since = D.clock(app.ctx) - 7 * 86400000, week = claims.filter((c) => (toMs(c.createdAt) || 0) >= since).length;
-    results.innerHTML = `${icon('chart-column')}<span>${week ? `${n(week)} ${week === 1 ? 'claim' : 'claims'} in the last 7 days` : 'No claims in the last 7 days yet.'}</span>${insightsOn ? `<a href="#/insights">See insights ${icon('arrow-right')}</a>` : ''}`;
+    results.innerHTML = `${ozIcon('chart')}<span>${week ? `${n(week)} ${week === 1 ? 'claim' : 'claims'} in the last 7 days` : 'No claims in the last 7 days yet.'}</span>${insightsOn ? `<a class="oz-link" href="#/insights">See insights</a>` : ''}`;
   }, () => {}) : () => {};
   $$('[data-way]', root).forEach((b) => { b.onclick = () => {
     const voucher = b.dataset.way === 'voucher';
     $$('[data-way]', root).forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
-    $('#way-deal', root).hidden = voucher; $('#way-voucher', root).hidden = !voucher;
+    $('#way-deal', root).hidden = voucher; $('#way-voucher', root).hidden = !voucher; $$('[data-way-side]', root).forEach((x) => { x.hidden = voucher; });
     // Keep the address in step (without reloading the page) so Back and shared links land on the same banner.
     history.replaceState(null, '', voucher ? '#/promote/vouchers' : '#/promote');
   }; });
@@ -594,9 +635,9 @@ const hourOf = (ms) => new Date(ms + MYT).getUTCHours();
 const hourLabel = (h) => `${((h + 11) % 12) + 1}${h < 12 ? 'am' : 'pm'}`;
 async function insightsRender(app) {
   const block = needVerified(app); if (block) return block;
-  return `<div class="merchant-page mer-insights">${merchantHeading('Insights', 'When students claim your live deals, and how many become sales.', 'chart-column')}
-    <div class="chips mer-period" role="group" aria-label="Period">${PERIODS.map(([k, l]) => `<button type="button" data-period="${k}" class="${k === insightsPeriod ? 'on' : ''}" aria-pressed="${k === insightsPeriod}">${l}</button>`).join('')}</div>
-    <div id="ins"><div class="skeleton" style="height:140px"></div></div></div>`;
+  return `<div class="merchant-page mer-insights oz-minsights"><div class="oz-mtitlebar">${merchantHeading('Insights', 'Deal claims and discounts at your counter.', 'chart-column')}
+    <div class="oz-seg oz-mseg mer-period" role="group" aria-label="Period">${PERIODS.map(([k, l]) => `<button type="button" data-period="${k}" class="oz-seg-item ${k === insightsPeriod ? 'on' : ''}" aria-pressed="${k === insightsPeriod}">${l}</button>`).join('')}</div></div>
+    <div id="ins" class="oz-mins"><span class="oz-skel oz-skel-lg"></span><span class="oz-skel oz-skel-md"></span><span class="oz-skel oz-skel-md"></span></div></div>`;
 }
 function insightsMount(root, app) {
   if (!$('#ins', root)) return null;
@@ -622,14 +663,23 @@ function insightsMount(root, app) {
     }
     const busiest = blocks.reduce((a, b) => (!a || b.count > a.count ? b : a), null);
     const sorted = [...inPeriod].sort((a, b) => toMs(b.createdAt) - toMs(a.createdAt));
-    $('#ins', root).innerHTML = `<div class="mer-mini-stats">${miniStat('Deal claims', inPeriod.length, 'qr-code')}${miniStat('Discounts applied', applied, 'badge-percent')}${miniStat('Claims used at the counter', `${rate}%`, 'check')}</div>
-      <section class="section card mer-chart"><div class="mer-section-head"><h2>Claims in the last 7 days</h2></div>
-        ${barChart(week.map((d) => d.count), week.map((d) => d.label), { highlight: 6 })}
-        <p class="mer-chart-note">${busiestDay.count ? `Busiest day: ${esc(busiestDay.label)}, ${n(busiestDay.count)} ${busiestDay.count === 1 ? 'claim' : 'claims'}.` : 'No claims in the last 7 days yet.'}</p></section>
-      ${blocks.length ? `<section class="section card mer-chart"><div class="mer-section-head"><h2>Busiest times</h2></div>
-        ${barChart(blocks.map((b) => b.count), blocks.map((b) => b.label), { highlight: blocks.indexOf(busiest) })}
-        <p class="mer-chart-note">Most claims come in between ${hourLabel(busiest.h)} and ${hourLabel((busiest.h + 2) % 24)}. Run deals in your quieter hours to fill seats.</p></section>` : ''}
-      <section class="section card mer-redemption-history"><div class="mer-section-head"><h2>Recent deal claims</h2><span class="mer-count">${n(inPeriod.length)}</span></div><div class="list">${sorted.slice(0, 50).map((c) => `<div class="item"><span class="mer-redemption-stamp">${icon('qr-code')}</span><div class="grow"><h3 data-no-i18n>${esc(c.title)}</h3><p><span data-no-i18n>${esc(c.studentName)}</span> · ${fmtDate(c.createdAt)} ${fmtTime(c.createdAt)}</p></div><span class="badge ${c.status === 'applied' ? 'ok' : 'grey'}">${c.status === 'applied' ? 'Discount applied' : L.claimExpired(c, now) ? 'Expired' : 'Claim confirmed'}</span></div>`).join('') || merchantEmpty('qr-code', 'No deal claims in this period.', 'Student QR scans will appear here.')}</div></section>`;
+    const waiting = inPeriod.filter((c) => c.status === 'claimed' && !L.claimExpired(c, now)).length, label = PERIODS.find(([k]) => k === insightsPeriod)[1];
+    $('#ins', root).innerHTML = `<section class="oz-mcard oz-mins-main" aria-label="${esc(label)}">
+        <div class="oz-mkpis">
+          <div class="oz-mkpi is-lead"><span>Deal claims</span><strong class="num">${n(inPeriod.length)}</strong><small>${esc(label)}</small></div>
+          <div class="oz-mkpi"><span>Discounts applied</span><strong class="num">${n(applied)}</strong><small>Given at your counter</small></div>
+          <div class="oz-mkpi"><span>Waiting</span><strong class="num">${n(waiting)}</strong><small>${waiting ? 'Open Deal QR to apply' : 'Nobody waiting'}</small></div>
+          <div class="oz-mkpi"><span>Used at the counter</span><strong class="num">${rate}%</strong><small>Claims that became a discount</small></div>
+        </div>
+        <div class="oz-mchart mer-chart"><div class="oz-mcard-head"><h2>Claims in the last 7 days</h2><p class="oz-mnote mer-chart-note">${busiestDay.count ? `Busiest day: ${esc(busiestDay.label)}, ${n(busiestDay.count)} ${busiestDay.count === 1 ? 'claim' : 'claims'}.` : 'No claims in the last 7 days yet.'}</p></div>
+          ${barChart(week.map((d) => d.count), week.map((d) => d.label), { highlight: 6 })}</div>
+      </section>
+      <div class="oz-mins-grid ${blocks.length ? '' : 'is-single'}">
+        ${blocks.length ? `<section class="oz-mcard oz-mchart mer-chart"><div class="oz-mcard-head"><h2>Busiest times</h2></div>
+          ${barChart(blocks.map((b) => b.count), blocks.map((b) => b.label), { highlight: blocks.indexOf(busiest) })}
+          <p class="oz-mnote mer-chart-note">Most claims come in between ${hourLabel(busiest.h)} and ${hourLabel((busiest.h + 2) % 24)}. Run deals in your quieter hours to fill seats.</p></section>` : ''}
+        <section class="oz-mcard mer-redemption-history"><div class="oz-mcard-head"><h2>Recent deal claims</h2><span class="oz-mcount">${n(inPeriod.length)}</span></div><div class="oz-mlist">${sorted.slice(0, 50).map((c) => `<div class="oz-mlist-item"><div class="oz-mlist-text"><h3 data-no-i18n>${esc(c.studentName)}</h3><p><span>${c.status === 'applied' ? 'Discount applied' : L.claimExpired(c, now) ? 'Expired' : 'Waiting for discount'}</span> · <span data-no-i18n>${esc(c.title)}</span></p></div><small class="oz-mlist-time">${fmtDate(c.createdAt)} ${fmtTime(c.createdAt)}</small></div>`).join('') || merchantEmpty('qr-code', 'No deal claims yet', 'Student QR scans will appear here.')}</div></section>
+      </div>`;
   };
   $$('[data-period]', root).forEach((b) => { b.onclick = () => { insightsPeriod = b.dataset.period; $$('[data-period]', root).forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); draw(); }; });
   return L.watchMerchantClaims(app.ctx, (list) => { claims = list; draw(); }, () => {});
@@ -637,7 +687,7 @@ function insightsMount(root, app) {
 
 async function surveyRender(app) {
   const existing = await D.getSurvey(app.ctx).catch(() => null);
-  return `<div class="merchant-page mer-survey"><a class="back" href="#/home">${icon('arrow-left')} Home</a>${merchantHeading('Cashless readiness check', 'Your answers help the Admin team decide who needs an ambassador visit or staff training.', 'target', 'Build your confidence')}${surveyHTML('merchant', existing)}</div>`;
+  return `<div class="merchant-page mer-survey">${merchantBack('#/home', 'Merchant home')}${merchantHeading('Cashless readiness check', 'Your answers help the Admin team decide who needs an ambassador visit or staff training.', 'target', 'Build your confidence')}${surveyHTML('merchant', existing)}</div>`;
 }
 
 export const routes = {
