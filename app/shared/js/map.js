@@ -48,12 +48,12 @@ const meHTML = () => '<span class="kk-me"><span></span></span>';
 const KIT_W = 52, KIT_H = 56; // the kit's 182×195 pin canvas at 56 px high (≈ 46 px visible, ≥ 36 px rule)
 const KIT_TIP = [26, 45]; // pin tip (91, 157.3 on the canvas) sits on the shop
 const KIT_HEAD = [26, 21]; // cluster: the head's centre (91, 72.8) sits on the group's centre
-const DOT_ZOOM = 15, LABEL_ZOOM = 18, MERGE_PX = 40;
+const DOT_ZOOM = 13, LABEL_ZOOM = 18, MERGE_PX = 40; // the whole campus fits at 13 on a phone: pins (clusters handle overlap); dots only when zoomed out beyond campus
 const KIT_RANK = { live: 0, claimed: 1, shop: 2, closed: 3 };
 const KIT_STATES = new Set(Object.keys(KIT_RANK));
 const kitState = (v) => (KIT_STATES.has(v) ? v : 'shop');
 const kitPin = (m, state = 'shop') => `<span class="kk-pin oz-pin is-${state}"><img src="assets/onz/map/pin-${state}.svg" width="${KIT_W}" height="${KIT_H}" alt="">${m && m.name ? `<span class="oz-pin-label" data-no-i18n>${esc(m.name)}</span>` : ''}</span>`;
-const kitCluster = (count) => `<span class="oz-pin oz-pin-cluster"><img src="assets/onz/map/pin-cluster.svg" width="${KIT_W}" height="${KIT_H}" alt=""><b data-no-i18n>${count > 99 ? '99+' : count}</b></span>`;
+const kitCluster = (count) => `<span class="oz-pin oz-pin-cluster"><img src="assets/onz/map/pin-cluster.svg" width="${KIT_W}" height="${KIT_H}" alt=""><b class="oz-pin-count" data-no-i18n>${count > 99 ? '99+' : count}</b></span>`;
 const kitDot = (state, count = 1) => `<span class="oz-pin-dot is-${state}${count > 1 ? ' is-cluster' : ''}"></span>`;
 // Web Mercator world pixels at a zoom level (both engines use it), so grouping is the same on Google and Leaflet.
 const worldPx = (lat, lng, z) => { const size = 256 * 2 ** z, sin = Math.sin(lat * Math.PI / 180);

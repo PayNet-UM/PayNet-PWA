@@ -12,7 +12,7 @@
 /* Cluster: the kit's ringed head with the real count over it. */
 .oz-pin-cluster { position:relative; display:block; width:52px; height:56px; cursor:pointer; }
 .oz-pin-cluster > img { display:block; width:52px; height:56px; }
-.oz-pin-cluster > b { position:absolute; left:0; right:0; top:13px; text-align:center; color:var(--oz-text-on-brand); font:700 14px/16px var(--oz-font-ui); }
+.oz-pin-cluster > .oz-pin-count { position:absolute; left:0; right:0; top:13px; text-align:center; color:var(--oz-text-on-brand); font:700 14px/16px var(--oz-font-ui); }
 /* Zoomed-out dots: blue, lime (live), grey (closed), ringed for a cluster. */
 .oz-pin-dot { display:block; width:14px; height:14px; margin:4px; border-radius:50%; background:var(--oz-blue-700); box-shadow:0 0 0 2px var(--oz-bg-surface), var(--oz-shadow-card); cursor:pointer; }
 .oz-pin-dot.is-live { background:var(--oz-lime-500); box-shadow:0 0 0 2px var(--oz-blue-900); }
