@@ -343,3 +343,66 @@ a.oz-pg-row:active { background:var(--oz-bg-subtle); }
 .oz-survey-grade { display:grid; place-items:center; width:56px; height:56px; border-radius:var(--oz-radius-lg); background:var(--oz-blue-100); color:var(--oz-blue-700); font:800 28px/1 var(--oz-font-display); flex:none; }
 @media (min-width:1024px) { .oz-survey, .oz-survey-last { max-width:720px; } }
 @media (prefers-reduced-motion:reduce) { .oz-survey-opt { transition:none; } }
+
+/* Flame tiers: the colour deepens as the run grows (Duolingo / Snapchat-style streak milestones). Only fills change, so the burn animation is untouched. */
+.oz-flame[data-tier] .oz-flame-outer { fill:var(--oz-flame-t); transition:fill 300ms var(--oz-ease-out); }
+.oz-flame[data-tier] .oz-flame-inner { fill:var(--oz-flame-t-core); }
+.oz-flame[data-tier] .oz-flame-glow { fill:var(--oz-flame-t); }
+.oz-flame[data-tier="1"] { --oz-flame-t:var(--oz-flame-1); --oz-flame-t-core:var(--oz-flame-1-core); }
+.oz-flame[data-tier="2"] { --oz-flame-t:var(--oz-flame-2); --oz-flame-t-core:var(--oz-flame-2-core); }
+.oz-flame[data-tier="3"] { --oz-flame-t:var(--oz-flame-3); --oz-flame-t-core:var(--oz-flame-3-core); }
+.oz-flame[data-tier="4"] { --oz-flame-t:var(--oz-flame-4); --oz-flame-t-core:var(--oz-flame-4-core); }
+
+/* Round 7: balance reads as the hero of its card; voucher cards get a clear hierarchy
+   (title → price → stock caption) with a compact Swap aligned to the price row. */
+.oz-balance-value { display:flex; align-items:center; gap:var(--oz-space-2); font:800 32px/40px var(--oz-font-display); color:var(--oz-blue-700); }
+.oz-balance-value .oz-plus { scale:1.4; margin-inline:var(--oz-space-1); }
+.oz-balance-unit { align-self:flex-end; margin-bottom:6px; font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-voucher-value { min-width:88px; padding:var(--oz-space-4) var(--oz-space-3); }
+.oz-voucher-foot { flex-wrap:nowrap; align-items:flex-end; }
+.oz-voucher-meta { flex-direction:column; align-items:flex-start; gap:0; min-width:0; }
+.oz-voucher-cost { font:700 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-voucher-left { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); white-space:nowrap; }
+.oz-voucher-foot .oz-btn-sm { flex:none; min-height:36px; padding:var(--oz-space-2) var(--oz-space-4); }
+
+/* Learn & Earn "Up next": caption, then title with its points tag, the bar, then the running total. */
+.oz-learn-eyebrow { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-learn-next { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); margin-top:calc(var(--oz-space-2) * -1); }
+.oz-learn-next strong { min-width:0; font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); text-wrap:pretty; }
+.oz-learn-next .oz-tag { flex:none; font-weight:600; }
+.oz-learn-progress .oz-learn-count { display:block; margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-learn-count b { color:var(--oz-text-primary); font-weight:600; }
+
+/* Money check: plain header, then roomier question cards (12 px from badge to question, 16 px to the options). */
+.oz-survey-page { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-survey-page .oz-help-back { align-self:flex-start; }
+.oz-survey-head .oz-page-title { margin:0; }
+.oz-survey-lede { display:flex; flex-wrap:wrap; align-items:center; gap:var(--oz-space-2); margin:var(--oz-space-2) 0 0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-survey-lede .oz-tag { font-weight:600; }
+.oz-survey-q legend { gap:var(--oz-space-3); margin-bottom:var(--oz-space-4); }
+.oz-survey-num { margin-top:0; }
+@media (min-width:1024px) { .oz-survey-page { max-width:720px; } }
+
+/* Points guide, round 7: one quiet line under the rate; the protection disclosure is compact and opens smoothly (oz-motion). */
+.oz-pg-value .oz-pg-fine { font:500 12px/16px var(--oz-font-ui); opacity:.8; }
+.oz-pg-more { padding:0 var(--oz-space-4); }
+.oz-pg-more summary { min-height:52px; border-radius:var(--oz-radius-lg); transition:color 150ms var(--oz-ease-out); -webkit-tap-highlight-color:transparent; }
+.oz-pg-more summary:active { color:var(--oz-blue-700); }
+.oz-pg-more summary .oz-ic { transition:rotate 250ms var(--oz-ease-out), transform 250ms var(--oz-ease-out); }
+.oz-pg-more[open] summary .oz-ic { transform:none; }
+.oz-smooth[open]:not([data-oz-animating]) > summary .oz-ic, .oz-smooth.is-open > summary .oz-ic { rotate:90deg; }
+.oz-pg-more p { margin:0 0 var(--oz-space-3); }
+.oz-pg-more p:last-child { margin-bottom:var(--oz-space-4); }
+@media (hover:hover) { .oz-pg-more summary:hover { color:var(--oz-blue-700); } }
+
+/* Voucher sheet (pass 3): centred on the sheet, not on the space left of the close button. */
+.oz-vsheet { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-4); text-align:center; }
+.oz-vsheet-title { margin:0; padding-inline:var(--oz-space-8); font:700 22px/28px var(--oz-font-display); color:var(--oz-text-primary); text-wrap:balance; }
+.oz-vsheet-note { margin:calc(var(--oz-space-2) * -1) 0 0; max-width:300px; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); text-wrap:pretty; }
+.oz-vsheet-qr { display:grid; place-items:center; padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); }
+.oz-vsheet-qr.is-dead { opacity:.35; filter:grayscale(1); }
+.oz-vsheet-code { display:inline-flex; align-items:center; gap:var(--oz-space-2); margin:0; padding:var(--oz-space-2) var(--oz-space-4); border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); }
+.oz-vsheet-code span { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-vsheet-code b { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); font-variant-numeric:tabular-nums; }
+.oz-vsheet-qr canvas, .oz-vsheet-qr img { display:block; width:min(60vw, 240px) !important; height:auto !important; image-rendering:pixelated; }
+.oz-vsheet-code b.code-text { padding:0; border:0; background:none; box-shadow:none; }

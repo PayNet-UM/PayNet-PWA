@@ -29,7 +29,7 @@ window.__umc = app; // handy for debugging in the console
 // +Onz redesign navigation (Bottom Tab Bar 721:20421 on mobile, Web · Sidebar 915:33484 from 1024px).
 // Students: five destinations. Events are reached from Home and About from the account menu.
 const nav = {
-  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['home', 'Home', 'house'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  student: [['home', 'Home', 'house'], ['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
   merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Deal QR', 'qr-code'], ['insights', 'Insights', 'wallet'], ['promote', 'Promote your shop', 'megaphone'], ['about', 'About us', 'info', 'desktop']],
 };
 
@@ -193,9 +193,9 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); defe
 function installApp() {
   if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; closeSheet(); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  sheet(`<h2>Install +Onz</h2><p class="muted">${ios
+  sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">Install +Onz</h2><p class="oz-fsheet-body">${ios
     ? 'In Safari, tap the Share button, then “Add to Home Screen”.'
-    : 'Open your browser menu and choose “Install app” or “Add to Home screen”. If it’s already installed, open it from your home screen.'}</p>`);
+    : 'Open your browser menu and choose “Install app” or “Add to Home screen”.'}</p></div>`);
 }
 app.installApp = installApp;
 

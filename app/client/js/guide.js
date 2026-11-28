@@ -112,8 +112,11 @@ export function start(app, { first = false, steps: pageSteps = null, onDone = nu
     if (!active) return;
     if (onDone) onDone(); else if (uid) write(uid, 'done');
     removeEventListener('resize', place); removeEventListener('keydown', onKey, true); removeEventListener('hashchange', onLeave);
-    root.classList.add('leaving');
-    setTimeout(() => root.remove(), 180);
+    // A closing tour is no longer interactive (its buttons can't be pressed twice or by a stray tap), and with
+    // reduced motion there is no leave animation to wait for: it is removed at once.
+    root.inert = true;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) root.remove();
+    else { root.classList.add('leaving'); setTimeout(() => root.remove(), 180); }
     active = null;
     if (route && app.go) app.go(route);
     else if (returnFocus && returnFocus.focus) returnFocus.focus();

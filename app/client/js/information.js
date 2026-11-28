@@ -3,6 +3,7 @@ import { POINT_LEVELS, learningPlan, livePointEarningOn, earnedPoints, DEFAULT_P
 import { HATS } from './avatar.js';
 import { ozIcon } from './oz-icons.js';
 import { ozListRow, ozTag } from './oz-ui.js';
+import { feedbackFormHTML, mountFeedbackForm } from './feedback.js';
 // Public programme information. Team details are transcribed from the supplied November core-team slide.
 import { $, esc, icon, toast, n } from './ui.js';
 
@@ -115,13 +116,24 @@ export function aboutMount(root,app,[section]=[]) {
 
 export function contactRender(app={},[topic]=[]) {
   const selected=TOPICS.some(([key])=>key===topic)?topic:'general';
-  return `<div class="oz-help oz-contact"><header class="oz-help-heading"><a class="oz-help-back" href="#/about">${icon('chevron-left')} About +Onz</a><h1>Contact us</h1><p>A partnership, an event, an idea or a question.</p></header>
-    <div class="oz-help-grid"><div class="oz-help-options"><section class="oz-help-panel"><h2>Say hello.</h2><p>For partnerships, collaborations and general enquiries.</p><div class="oz-help-email"><a href="mailto:${CONTACT_EMAIL}" data-no-i18n>${CONTACT_EMAIL}</a><button type="button" id="info-copy-email" aria-label="Copy email address">${icon('copy')}</button></div></section>
-      <section class="oz-help-panel oz-help-social"><h2>Follow the journey.</h2><p>Campus updates, new collaborations and what’s next.</p>${SOCIALS.map(s=>`${ozListRow({ title:s.name, sub:'@addonz.my', leadHtml:`<img src="assets/about/${s.asset}" alt="" width="24" height="24">`, href:s.url, attr:{ target:'_blank', rel:'noopener noreferrer', 'aria-label':s.name + ' (opens in a new tab)' } })}`).join('')}</section>
-      ${app.role==='student'&&app.profile?`${ozListRow({ title:'Questions and feedback', sub:'Prefer to message inside the app?', iconName:'mail', href:'#/feedback' })}`:''}</div>
-      <section class="oz-help-panel oz-help-query"><h2>What’s on your mind?</h2><p>Prepare your query below, then send it from your email app.</p><form id="info-contact-form"><div class="oz-help-form-pair"><label class="oz-help-field">Your name<input name="name" autocomplete="name" required maxlength="100" value="${esc(app.profile?.name||'')}"></label><label class="oz-help-field">Your email<input name="email" type="email" autocomplete="email" required maxlength="254" value="${esc(app.user?.email||'')}"></label></div><label class="oz-help-field">I’m getting in touch about<select name="topic">${TOPICS.map(([key,label])=>`<option value="${key}" ${key===selected?'selected':''}>${label}</option>`).join('')}</select></label><label class="oz-help-field">Your message<textarea name="message" rows="6" required minlength="10" maxlength="2000" placeholder="Tell us a little about your question or idea."></textarea></label><p class="oz-help-note">This form prepares an email draft. Your message is only sent when you send it in your email app.</p><button type="submit" class="oz-btn oz-btn-primary oz-btn-md oz-btn-block">Prepare email</button></form>
-      <div class="oz-help-draft" id="info-email-draft" hidden tabindex="-1"><p class="info-draft-status" role="status">Your draft is ready. Open it in your email app to send.</p><div class="oz-help-draft-actions"><a class="oz-btn oz-btn-primary oz-btn-md" id="info-open-draft">${icon('mail')}Open email draft</a><button class="oz-btn oz-btn-ghost oz-btn-md" type="button" id="info-copy-message">${icon('copy')}Copy message</button></div><details><summary>Preview your email ${icon('chevron-right')}</summary><b id="info-draft-subject" data-no-i18n></b><pre id="info-draft-body" data-no-i18n></pre></details><p class="info-form-note">No email app? Copy the message and send it to partnerships@addonz.my.</p></div>
-      </section></div></div>`;
+  const inApp=app.role==='student'&&!!app.profile;
+  // Email row: the address opens the mail app; Copy morphs to "Copied" for a moment (Lightyear account details on Mobbin).
+  const email=`<div class="oz-contact-email"><a class="oz-contact-mail" href="mailto:${CONTACT_EMAIL}"><span class="oz-row-lead">${ozIcon('mail')}</span><span class="oz-contact-addr" data-no-i18n>${CONTACT_EMAIL}</span></a>
+    <button type="button" class="oz-copy" id="info-copy-email" aria-label="Copy email address"><span class="oz-copy-state oz-copy-idle">${ozIcon('copy')}<span>Copy</span></span><span class="oz-copy-state oz-copy-done" aria-hidden="true">${ozIcon('s:check')}<span>Copied</span></span></button></div>`;
+  const socials=`<div class="oz-contact-socials">${SOCIALS.map(s=>`<a class="oz-contact-social" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(s.name)} (opens in a new tab)"><img src="assets/about/${s.asset}" alt="" width="28" height="28"><span><b>${esc(s.name)}</b><small data-no-i18n>@addonz.my</small></span></a>`).join('')}</div>`;
+  // Students write to the team inside the app (one composer, replies come back to Questions and feedback);
+  // everyone else gets the same composer shape, which prepares an email.
+  const composer=inApp?`${feedbackFormHTML()}<a class="oz-link oz-contact-history" href="#/feedback">Your messages and replies <span aria-hidden="true">→</span></a>`
+    :`<form id="info-contact-form" class="oz-help-panel oz-composer"><h2 class="oz-composer-title">What’s on your mind?</h2>
+      <fieldset class="oz-chips"><legend class="oz-sr">Topic</legend>${TOPICS.map(([key,label])=>`<label class="oz-chip"><input type="radio" name="topic" value="${key}" ${key===selected?'checked':''}><span>${label}</span></label>`).join('')}</fieldset>
+      <div class="oz-help-form-pair"><label class="oz-help-field">Your name<input name="name" autocomplete="name" required maxlength="100" value="${esc(app.profile?.name||'')}"></label><label class="oz-help-field">Your email<input name="email" type="email" autocomplete="email" required maxlength="254" value="${esc(app.user?.email||'')}"></label></div>
+      <label class="oz-composer-box"><span class="oz-sr">Your message</span><textarea name="message" rows="5" required minlength="10" maxlength="2000" placeholder="Ask a question or share an idea"></textarea></label>
+      <button type="submit" class="oz-btn oz-btn-primary oz-btn-md oz-btn-block">${ozIcon('mail')}<span>Write email</span></button></form>
+      <div class="oz-help-draft" id="info-email-draft" hidden tabindex="-1"><p class="info-draft-status" role="status">Your draft is ready.</p><div class="oz-help-draft-actions"><a class="oz-btn oz-btn-primary oz-btn-md" id="info-open-draft">${icon('mail')}Open email draft</a><button class="oz-btn oz-btn-ghost oz-btn-md" type="button" id="info-copy-message">${icon('copy')}Copy message</button></div><details class="oz-smooth"><summary>Preview your email ${icon('chevron-right')}</summary><b id="info-draft-subject" data-no-i18n></b><pre id="info-draft-body" data-no-i18n></pre></details></div>`;
+  return `<div class="oz-help oz-contact"><header class="oz-help-heading"><a class="oz-help-back" href="#/about">${icon('chevron-left')} About +Onz</a><h1>Contact us</h1></header>
+    <div class="oz-help-grid"><div class="oz-help-options"><section class="oz-help-panel oz-contact-card oz-contact-emailcard"><h2>Email us</h2>${email}</section>
+      <section class="oz-help-panel oz-contact-card"><h2>Follow us</h2>${socials}</section></div>
+      <section class="oz-help-query">${composer}</section></div></div>`;
 }
 const line=(value,max=120)=>String(value||'').replace(/[\r\n]+/g,' ').trim().slice(0,max);
 export function buildInquiry({name,email,topic,message}) {
@@ -130,11 +142,18 @@ export function buildInquiry({name,email,topic,message}) {
   const body=`Name: ${line(name,100)}\nEmail: ${line(email,254)}\nTopic: ${label}\n\n${String(message||'').trim().slice(0,2000)}`;
   return {subject,body,url:`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`};
 }
-export function contactMount(root) {
-  let draft=null;
+export function contactMount(root,app={}) {
+  let draft=null,copiedTimer=0;
   const form=$('#info-contact-form',root), preview=$('#info-email-draft',root);
   const copy=async(text)=>{try{await navigator.clipboard.writeText(text);toast('Copied to clipboard.');}catch{toast('Copy is unavailable here. Select the email or preview text to copy it.',true);}};
-  $('#info-copy-email',root).onclick=()=>copy(CONTACT_EMAIL);
+  // The button itself confirms the copy (no toast): icon and label cross-fade to "Copied", then back.
+  const copyBtn=$('#info-copy-email',root);
+  copyBtn.onclick=async()=>{
+    try{await navigator.clipboard.writeText(CONTACT_EMAIL);}catch{toast('Copy is unavailable here. Select the email to copy it.',true);return;}
+    copyBtn.classList.add('is-copied');copyBtn.setAttribute('aria-label','Email address copied');
+    clearTimeout(copiedTimer);copiedTimer=setTimeout(()=>{copyBtn.classList.remove('is-copied');copyBtn.setAttribute('aria-label','Copy email address');},1600);
+  };
+  if(!form){mountFeedbackForm(root,app);return()=>clearTimeout(copiedTimer);}
   form.onsubmit=(event)=>{
     event.preventDefault();
     if(!form.reportValidity())return;
@@ -150,6 +169,7 @@ export function contactMount(root) {
   };
   $('#info-copy-message',root).onclick=()=>{if(draft)copy(`${draft.subject}\n\n${draft.body}`);};
   form.oninput=()=>{if(draft){draft=null;preview.hidden=true;}};
+  return()=>clearTimeout(copiedTimer);
 }
 // Points guide for the student app (Figma 16 · Points guide 696:13525, Web · Points guide 929:37412). The Admin dashboard
 // keeps the shared long-form guide; the policy details are still here under "How points are protected".
@@ -182,17 +202,16 @@ function ozPointsRender(app = {}) {
     <div class="oz-pg-grid">
       <div class="oz-pg-main">
         <section class="oz-pg-card" aria-labelledby="pg-earn"><h2 id="pg-earn">Ways to earn</h2><ul class="oz-pg-list">${earn.map(row).join('')}</ul>
-          <p class="oz-pg-note">Referrals and browsing the campus map don’t award points. Welfare grants move points from the shared fund and don’t count for levels or leagues.</p></section>
-        <section class="oz-pg-card" aria-labelledby="pg-levels"><h2 id="pg-levels">Levels, hats and your KK</h2><div class="oz-pg-rows">${POINT_LEVELS.map(level).join('')}</div>
-          <p class="oz-pg-note">Levels and the KK and Faculty Leagues count points earned, not spent. Hats unlock with levels; they aren’t bought.</p></section>
+          <p class="oz-pg-note">Referrals and browsing the campus map don’t award points.</p></section>
+        <section class="oz-pg-card" aria-labelledby="pg-levels"><h2 id="pg-levels">Levels, hats and your KK</h2><div class="oz-pg-rows">${POINT_LEVELS.map(level).join('')}</div></section>
       </div>
       <div class="oz-pg-side">
-        <section class="oz-pg-value" aria-label="What points are worth"><p class="oz-pg-big">100 pts = RM1</p><p>100 points is about RM1. Each reward has its own price, set by HEP. Points have no cash value.</p></section>
+        <section class="oz-pg-value" aria-label="What points are worth"><p class="oz-pg-big">100 pts = RM1</p><p class="oz-pg-fine">Points have no cash value.</p></section>
         ${student ? `<section class="oz-pg-card oz-pg-facts" aria-label="Your points"><div><span>Earned for levels &amp; leagues</span><b><span data-policy-earned>${app.ledgerLoaded === false ? '—' : n(earnedPoints(app.ledger || []))}</span> pts</b></div>
           <div><span>Learning points still available</span><b><span data-policy-remaining>${app.ledgerLoaded === false ? '—' : n(plan.remaining)}</span> pts</b></div></section>` : ''}
         <section class="oz-pg-card" aria-labelledby="pg-use"><h2 id="pg-use">Two ways to use them</h2><div class="oz-pg-rows">
           ${use('Swap for a voucher', 'Collected at the HEP counter', 'voucher', student ? '#/rewards' : '#/home')}${use('Donate to student welfare', 'Every point goes to the fund', 'heart', student ? '#/community/fund' : '#/home')}</div></section>
-        <details class="oz-pg-card oz-pg-more"><summary>How points are protected ${ozIcon('s:chevron-right')}</summary>
+        <details class="oz-pg-card oz-pg-more oz-smooth"><summary>How points are protected ${ozIcon('s:chevron-right')}</summary>
           <p>Each balance change and its points-history entry are saved together. The history can’t be edited or deleted, and the rules block repeat lesson bonuses, duplicate daily deal claims and negative balances.</p>
           <p>Changing a bonus affects future awards only. The Admin team can correct mistakes with a recorded reason.</p></details>
       </div>

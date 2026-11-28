@@ -5,14 +5,15 @@
 //    Back reverses it (phones only; the web keeps instant page changes)
 //  - segmented controls move their thumb; content switches instantly
 //  - Onzo settles when an item goes on; images cross-fade
-import { tapOrigin } from './ui.js';
+import { tapOrigin, toast } from './ui.js';
+import { ozIcon } from './oz-icons.js';
 export { tapOrigin };
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const can = () => typeof Element.prototype.animate === 'function';
 const phone = () => matchMedia('(max-width: 1023.98px)').matches;
 export const EASE = { out: 'cubic-bezier(.22,1,.36,1)', push: 'cubic-bezier(.32,.72,0,1)', spring: 'cubic-bezier(.25,1,.5,1)' }; // "spring" = critically damped: no bounce past the target
 
-let lastPath = '', forced = 0;
+let lastPath = '', forced = 0, risenFromLauncher = '';
 /** Force the next route change to push (1) or pop (-1), for links that open a page in the current context. */
 export const nextRouteDir = (d) => { forced = d; };
 const depth = (p) => p.split('/').filter(Boolean).length;
@@ -23,6 +24,10 @@ const PEER_ROUTES = new Set(['leagues', 'community', 'explore']);
 // Pages that are separate routes but are children of another page: opening one pushes, going back pops.
 const PARENT = { activities: 'home', learn: 'home', explore: 'home', bayar: 'home', 'claim-deal': 'home', survey: 'learn', merchant: 'explore',
   avatar: 'me', feedback: 'me', about: 'me', contact: 'about', 'delete-account': 'me', points: 'rewards' };
+// Tab roots (student and merchant): moving between these is a tab switch, never a push.
+const TABS = new Set(['home', 'community', 'leagues', 'rewards', 'me', 'shop', 'scan', 'insights', 'promote']);
+// Where you've been this session, so "back to the previous page" can pop even without a declared parent.
+const trail = [];
 const activeRouteMotion = new WeakMap();
 export function routeLeave(view, path, snapshot = null) {
   activeRouteMotion.get(view)?.();
@@ -31,10 +36,19 @@ export function routeLeave(view, path, snapshot = null) {
   const a = prev.split('/')[0], b = path.split('/')[0];
   let dir;
   if (f) dir = f;
+  // All activities is a launcher: every tile opens its page the way Campus events does (rise), and going back to
+  // the launcher drops that page down again. Tab-bar switches elsewhere stay instant.
+  else if (a === 'activities' && b !== 'home') { dir = 2; risenFromLauncher = b; }
+  else if (b === 'activities' && a === risenFromLauncher) { dir = -2; risenFromLauncher = ''; }
   else if (a !== b) {
     // Tab switches stay instant; only the rise pages animate, and only when entered from / left to another page.
     if (RISE.has(b) && !RISE.has(a)) dir = 2; else if (RISE.has(a) && !RISE.has(b)) dir = -2;
     else if (PARENT[b] === a) dir = 1; else if (PARENT[a] === b) dir = -1; // child pages push from their parent
+    // Consistency (pass 2): returning to the page you came from always pops, and any sub-page opens with the same
+    // push wherever it was opened from (Live deals → Claim, Leagues → a shop, Home → Points guide…). Only switches
+    // between tab roots stay instant.
+    else if (trail.at(-2) === path && !TABS.has(a)) dir = -1;
+    else if (!TABS.has(b)) dir = 1;
     else return null;
   } else {
     if (PEER_ROUTES.has(a)) return null;
@@ -56,6 +70,8 @@ export function routeLeave(view, path, snapshot = null) {
 /** After it renders: run the push (dir 1) or pop (dir -1). Tab switches pass null and stay instant. */
 export function routeEnter(view, leaving, path) {
   lastPath = path;
+  if (trail.at(-2) === path) trail.pop(); else if (trail.at(-1) !== path) trail.push(path);
+  if (trail.length > 30) trail.shift();
   if (!leaving?.ghost.isConnected) return;
   const { ghost, dir } = leaving;
   const opts = { duration: dir > 0 ? 300 : 230, easing: dir > 0 ? EASE.push : 'cubic-bezier(.4,0,1,1)' };
@@ -113,6 +129,22 @@ export function pop(el, delay = 0) {
 export function wear(stage, kind, ghostHTML = '') {
   if (!can() || reduced() || !kind) return;
   const svg = stage.querySelector('svg'); if (!svg) return;
+  // Taking a piece off: only that piece (copied from the previous Onzo) lifts away and fades; Onzo stays put.
+  if (kind.endsWith(':off')) {
+    const piece = { 'hat:off': 'onz-hat', 'eyewear:off': 'onz-eyewear', 'neck:off': 'onz-neck' }[kind];
+    const ghost = document.createElement('div'); ghost.className = 'oz-wear-ghost'; ghost.setAttribute('aria-hidden', 'true'); ghost.innerHTML = ghostHTML;
+    const old = ghost.querySelector('svg'), keep = piece && ghost.querySelector('.' + piece);
+    if (!old || !keep) return;
+    // Strip everything that isn't the piece (or a <defs> it may need), keeping its ancestors so transforms still apply.
+    const prune = (node) => [...node.children].forEach((c) => { if (c === keep || c.tagName.toLowerCase() === 'defs') return; if (c.contains(keep)) prune(c); else c.remove(); });
+    prune(old);
+    stage.append(ghost);
+    const done = () => ghost.remove();
+    const lift = { 'hat:off': '0 -24px', 'eyewear:off': '0 -12px', 'neck:off': '0 8px' }[kind];
+    ghost.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: lift }], { duration: 260, easing: EASE.out }).finished.then(done, done);
+    pop(svg, 60);
+    return;
+  }
   const layer = (cls) => svg.querySelector(`.${cls}`);
   const enter = (el, from, ms = 360) => { if (!el) return null; el.style.transformBox = 'fill-box'; el.style.transformOrigin = '50% 100%';
     return el.animate([{ opacity: 0, ...from }, { opacity: 1, translate: '0 0', scale: '1' }], { duration: ms, easing: EASE.out, fill: 'backwards' }); };
@@ -276,4 +308,77 @@ export function fillOnView(root = document) {
     e.target.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: 600, easing: EASE.out, delay: 80, fill: 'backwards' });
   }), { threshold: .6 });
   root.querySelectorAll(FILL).forEach((bar) => { if (filled.has(bar) || !bar.offsetWidth) return; filled.add(bar); fillIO.observe(bar); });
+}
+
+/** Disclosures that open and close smoothly (any <details class="oz-smooth">): the height eases between the summary
+ *  and the full content over 250 ms while the body fades, instead of jumping. Reduced motion keeps the instant toggle. */
+if (typeof document !== 'undefined') document.addEventListener('click', (event) => {
+  const summary = event.target.closest?.('details.oz-smooth > summary');
+  if (!summary || !can() || reduced()) return;
+  const d = summary.parentElement;
+  event.preventDefault();
+  if (d.dataset.ozAnimating) return;
+  d.dataset.ozAnimating = '1';
+  const cs = getComputedStyle(d);
+  const closedH = summary.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const from = d.offsetHeight;
+  const opening = !d.open;
+  if (opening) { d.open = true; d.classList.add('is-open'); }
+  else d.classList.remove('is-open');
+  const to = opening ? d.offsetHeight : closedH;
+  d.style.overflow = 'hidden';
+  const body = [...d.children].filter((c) => c !== summary);
+  body.forEach((c) => c.animate([{ opacity: opening ? 0 : 1 }, { opacity: opening ? 1 : 0 }], { duration: opening ? 250 : 150, easing: EASE.out, fill: 'forwards' }));
+  d.animate([{ height: from + 'px' }, { height: to + 'px' }], { duration: 250, easing: EASE.out }).finished.finally(() => {
+    if (!opening) d.open = false;
+    d.style.overflow = ''; delete d.dataset.ozAnimating;
+    body.forEach((c) => c.getAnimations().forEach((a) => a.cancel()));
+  });
+});
+
+/** One copy interaction everywhere (Lightyear on Mobbin): the button itself confirms. A text button reads "Copied",
+ *  an icon button turns into a check, for 1.6 s; no toast. Only a failure falls back to a toast. */
+export async function copyWithFeedback(button, text, failMessage = 'Couldn’t copy. Select the text to copy it manually.') {
+  try { await navigator.clipboard.writeText(text); } catch { toast(failMessage, true); return false; }
+  if (!button || button.classList.contains('is-copied')) return true;
+  const html = button.innerHTML, label = button.getAttribute('aria-label');
+  const iconOnly = !button.textContent.trim();
+  button.classList.add('is-copied');
+  if (iconOnly) button.innerHTML = ozIcon('s:check'); else button.textContent = 'Copied';
+  if (label) button.setAttribute('aria-label', 'Copied');
+  if (can() && !reduced()) button.animate([{ scale: '.92' }, { scale: '1' }], { duration: 220, easing: EASE.out });
+  setTimeout(() => { button.classList.remove('is-copied'); button.innerHTML = html; if (label) button.setAttribute('aria-label', label); }, 1600);
+  return true;
+}
+
+/** A panel that opens under its trigger (Add friends): height from 0 plus a 6px drop and fade, 260 ms; closing reverses
+ *  in 200 ms. Resolves when done, so the caller can hide the panel afterwards. Reduced motion: instant. */
+export function slideOpen(el) {
+  if (!el || !can() || reduced()) return Promise.resolve();
+  const h = el.scrollHeight; el.style.overflow = 'hidden';
+  return el.animate([{ height: '0px', opacity: 0, translate: '0 -6px' }, { height: h + 'px', opacity: 1, translate: '0 0' }], { duration: 260, easing: EASE.out })
+    .finished.catch(() => {}).finally(() => { el.style.overflow = ''; });
+}
+export function slideClose(el) {
+  if (!el || !can() || reduced()) return Promise.resolve();
+  const h = el.offsetHeight; el.style.overflow = 'hidden';
+  return el.animate([{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0, translate: '0 -6px' }], { duration: 200, easing: EASE.out, fill: 'forwards' })
+    .finished.catch(() => {}).then((a) => { el.style.overflow = ''; el.getAnimations().forEach((x) => x.cancel()); return a; });
+}
+
+/** Poking Onzo (Abode / Me+ / Kit pets on Mobbin): a soft squash from the feet and one small emote that floats up from
+ *  the head and fades. Love sends a heart, Celebrate a sparkle, the rest Onzo's lime "+". Reduced motion: emote fades only. */
+const EMOTE = { love: 'heart', celebrate: 'sparkles' };
+export function poke(stage, expression) {
+  const svg = stage?.querySelector('svg'); if (!svg) return;
+  const still = !can() || reduced();
+  if (!still) { svg.style.transformOrigin = '50% 100%'; svg.animate([{ scale: '1' }, { scale: '1.03 .96', offset: .35 }, { scale: '1' }], { duration: 320, easing: EASE.out }); }
+  const e = document.createElement('span'); e.className = `oz-emote is-${expression}`; e.setAttribute('aria-hidden', 'true');
+  e.innerHTML = EMOTE[expression] ? ozIcon(EMOTE[expression]) : '<i class="oz-emote-plus"></i>';
+  stage.append(e);
+  const done = () => e.remove();
+  if (!can()) { setTimeout(done, 900); return; }
+  e.animate(still ? [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }]
+    : [{ opacity: 0, translate: '0 6px', scale: '.9' }, { opacity: 1, translate: '0 -10px', scale: '1', offset: .3 }, { opacity: 0, translate: '0 -30px', scale: '1' }],
+  { duration: 900, easing: EASE.out }).finished.then(done, done);
 }

@@ -83,3 +83,32 @@ details[open]::details-content { block-size:auto; transition-duration:260ms; tra
 /* "+N pts" chip that flies from where points were earned to the points pill (oz-motion.js flyPoints). */
 .oz-fly-pts { position:fixed; z-index:300; pointer-events:none; padding:4px 10px; border-radius:var(--oz-radius-pill); background:var(--oz-lime-500); color:var(--oz-text-on-accent, #0b0f3a); font:800 14px/20px var(--oz-font-ui); white-space:nowrap; box-shadow:0 6px 16px rgb(11 15 58 / .18); will-change:translate, scale, opacity; }
 @media (prefers-reduced-motion:reduce) { .oz-fly-pts { display:none; } }
+
+/* ---------- Consistency pass 2: one press language for the whole app ----------
+   Before this, tappable things pressed to .94/.96/.97/.98 depending on the file, and some (deal cards, voucher
+   tickets, hero chips, username copy) didn't respond at all. Now: small controls press to .96; cards, tiles and rows
+   to .98 with a light tint. Same 160 ms curve in and out, no overshoot. Reduced motion keeps only the tint. */
+:root { --oz-press-control:.96; --oz-press-card:.98; --oz-press-ms:160ms; }
+:is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+  .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+  .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop) {
+  transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out), color var(--oz-press-ms) var(--oz-ease-out), opacity var(--oz-press-ms) var(--oz-ease-out); }
+:is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+  .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+  .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop):active:not(:disabled) { scale:var(--oz-press-control); }
+:is(.av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard, .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a,
+  .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket, .oz-deal, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt, .oz-friend-row) {
+  transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out); }
+:is(.av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard, .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a,
+  .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt):active { scale:var(--oz-press-card); }
+.oz-deal:has(a:active, button:active) { scale:var(--oz-press-card); }
+/* "Copied" confirmation from copyWithFeedback(): success colour while the check / label shows. */
+body .is-copied:not(.oz-copy), body .is-copied:not(.oz-copy) .oz-ic { color:var(--oz-text-success); }
+@media (prefers-reduced-motion:reduce) {
+  :is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+    .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+    .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop, .av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard,
+    .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a, .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket,
+    .oz-deal, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt):active { scale:1; }
+}
+.oz-friend-x { transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out); } .oz-friend-x:active { scale:var(--oz-press-control); }

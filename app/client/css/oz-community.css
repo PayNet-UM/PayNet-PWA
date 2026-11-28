@@ -164,3 +164,79 @@
 .oz-friend-sheet-row .oz-ic { width:20px; height:20px; color:var(--oz-blue-700); }
 .oz-friend-sheet-row.is-danger { color:var(--oz-text-danger); } .oz-friend-sheet-row.is-danger .oz-ic { color:var(--oz-danger); }
 .oz-friend-dots i { display:block; flex:none; font-style:normal; margin:0; padding:0; } /* legacy rules squashed the <i> dots into a dash */
+
+/* ---------- Round 7: friends toolbar, sort sheet, compact empty states ---------- */
+/* Search + sort above the list (Insight Timer / LinkedIn on Mobbin). Same field look as the rest of the app. */
+.oz-friend-tools { display:flex; align-items:center; gap:var(--oz-space-2); margin:0 0 var(--oz-space-3); }
+.oz-friend-search { position:relative; flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--oz-space-2); height:44px;
+  padding:0 var(--oz-space-2) 0 var(--oz-space-3); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface);
+  transition:border-color 150ms var(--oz-ease-out), box-shadow 150ms var(--oz-ease-out); }
+.oz-friend-search:focus-within { border-color:var(--oz-blue-700); box-shadow:0 0 0 3px var(--oz-blue-100); }
+.oz-friend-search > .oz-ic { width:20px; height:20px; flex:none; color:var(--oz-text-secondary); }
+.oz-friend-search input { flex:1 1 auto; min-width:0; height:100%; margin:0; padding:0; border:0; outline:0; background:transparent; box-shadow:none;
+  font:400 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-friend-search input::-webkit-search-cancel-button { display:none; }
+.oz-friend-search .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.oz-friend-clear { display:grid; place-items:center; width:28px; height:28px; flex:none; padding:0; border:0; border-radius:50%; background:var(--oz-bg-subtle); color:var(--oz-text-secondary); cursor:pointer; }
+.oz-friend-clear[hidden] { display:none; }
+.oz-friend-clear .oz-ic { width:16px; height:16px; }
+.oz-friend-sort { display:inline-flex; align-items:center; gap:var(--oz-space-1); flex:none; height:44px; padding:0 var(--oz-space-3) 0 var(--oz-space-4);
+  border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); color:var(--oz-text-primary);
+  font:600 14px/20px var(--oz-font-ui); white-space:nowrap; cursor:pointer; transition:background-color 150ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-friend-sort:active { scale:.97; background:var(--oz-bg-subtle); }
+.oz-friend-sort-chev { width:16px; height:16px; rotate:90deg; }
+.oz-friend-none { margin:0 0 var(--oz-space-3); padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); text-align:center;
+  font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-friend-none[hidden], .community-page .friends-grid > .friend-row[hidden] { display:none; }
+.community-page .friends-grid:not(:has(.friend-row:not([hidden]))):has(.friend-row) { display:none; }
+
+/* Sort sheet: a short radio list, the chosen one ticked. */
+.oz-sort-sheet h2 { margin:0 var(--oz-space-7) var(--oz-space-3) 0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-sort-opts { display:flex; flex-direction:column; border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); overflow:hidden; background:var(--oz-bg-surface); }
+.oz-sort-opt { display:flex; align-items:center; justify-content:space-between; min-height:52px; padding:0 var(--oz-space-4); border:0; background:transparent;
+  font:500 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); text-align:left; cursor:pointer; transition:background-color 150ms var(--oz-ease-out); }
+.oz-sort-opt + .oz-sort-opt { border-top:1px solid var(--oz-border); }
+.oz-sort-opt:active { background:var(--oz-bg-subtle); }
+.oz-sort-opt[aria-checked="true"] { font-weight:600; color:var(--oz-blue-700); }
+.oz-sort-tick { width:20px; height:20px; color:var(--oz-blue-700); opacity:0; transition:opacity 150ms var(--oz-ease-out); }
+.oz-sort-opt[aria-checked="true"] .oz-sort-tick { opacity:1; }
+
+/* Empty sections: one quiet row in the list card (design-system empty line), not an illustration. */
+.community-page .friends-grid > .oz-friends-empty { display:flex; align-items:center; gap:var(--oz-space-3); padding:var(--oz-space-4); text-align:left; }
+.oz-friends-empty-ic { display:grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+.oz-friends-empty-ic .ic, .oz-friends-empty-ic .oz-ic { width:20px; height:20px; }
+.oz-friends-empty p { margin:0; font:500 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+
+/* Pass 2: Student ventures is discovery, not a friends action. Phones show it after the friends list under the same
+   "Campus connections" heading the web side column uses (Apple Games Friends, Messenger People on Mobbin). */
+@media (max-width:1023.98px) {
+  .community-page .oz-caside-title { display:block; order:7; margin:var(--oz-space-2) 0 0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+  .community-page .oz-cventures { order:8; }
+  .community-page[data-ctab="requests"] .oz-caside-title, .community-page[data-ctab="fund"] .oz-caside-title { display:none; }
+}
+
+/* Friends "Show" switch (Lex / BeReal on Mobbin) + the list body it slides open and closed. */
+.oz-friends-show { display:inline-flex; align-items:center; gap:var(--oz-space-2); margin-left:var(--oz-space-2); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); cursor:pointer; }
+.oz-friends-body { display:flex; flex-direction:column; }
+.oz-friends-body[hidden] { display:none; }
+/* Round 10: no count chip (the tab and the search already show it); the switch sits at the right edge. Name-only rows. */
+.oz-friends-show { margin-left:auto; }
+.community-page .friends-grid > .friend-row { min-height:56px; }
+.community-page .friend-state { margin-top:0; }
+/* Request rows: Accept + compact ✕; names stay on one line (ellipsis), never broken mid-word. */
+.oz-friend-x { display:grid; place-items:center; width:40px; height:40px; flex:none; padding:0; border:1px solid var(--oz-border); border-radius:50%; background:var(--oz-bg-surface); color:var(--oz-text-secondary); cursor:pointer; }
+.oz-friend-x .oz-ic { width:18px; height:18px; }
+@media (hover:hover) { .oz-friend-x:hover { background:var(--oz-bg-subtle); color:var(--oz-text-primary); } }
+.community-page .friend-identity h3 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; overflow-wrap:normal; }
+.community-page .friend-state { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.community-page .friend-actions { align-items:center; }
+/* The legacy rotate(90deg) stacked with the smooth-disclosure rotate (180° = pointing left). One rotation only. */
+.community-page :is(.welfare-history, .welfare-request-entry) > summary > .ic { transform:none; transition:rotate 250ms var(--oz-ease-out); }
+.community-page .welfare-history.is-open > summary > .ic,
+.community-page .welfare-history[open]:not([data-oz-animating]) > summary > .ic,
+.community-page .welfare-request-entry[open] > summary > .ic { rotate:90deg; }
+/* Add friends panel: even 12px padding, no stacked-card gap or empty result line adding space under the field. */
+.community-page .friends-search { padding:var(--oz-space-3); gap:0; }
+.community-page .friends-search > * { margin:0; }
+.community-page #friend-result:empty { display:none; }
+.community-page #friend-result:not(:empty) { margin-top:var(--oz-space-2); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }

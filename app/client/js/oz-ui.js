@@ -148,7 +148,9 @@ export function ozRouteSkeleton(path = '') {
 
 /** Streak flame (assets/onz/streak/flame.svg, inlined) so its two layers can burn: the outer flame sways slowly,
  *  the inner one flickers faster and out of phase, both pinned at the base. Still under reduced motion. */
-export const ozFlame = (size = 120, cls = '') => `<svg class="oz-flame${cls ? ' ' + cls : ''}" width="${size}" height="${size}" viewBox="0 0 120 120" fill="none" aria-hidden="true" focusable="false">
+// The flame warms up as a streak grows: 1–6 days orange, 7–13 red-orange, 14–29 magenta, 30+ blue (colours in oz-tokens.css).
+export const flameTier = (days = 0) => (days >= 30 ? 4 : days >= 14 ? 3 : days >= 7 ? 2 : 1);
+export const ozFlame = (size = 120, cls = '', days = 0) => `<svg class="oz-flame${cls ? ' ' + cls : ''}" data-tier="${flameTier(days)}" width="${size}" height="${size}" viewBox="0 0 120 120" fill="none" aria-hidden="true" focusable="false">
   <ellipse class="oz-flame-glow" cx="60" cy="96" rx="44" ry="20" fill="#FF8A1F" opacity=".18"/>
   <path class="oz-flame-outer" d="M71.25 3.75C78.75 26.25 103.125 41.25 103.125 75C103.125 101.25 86.25 116.25 60 116.25C35.625 116.25 16.875 99.375 16.875 75C16.875 58.125 26.25 46.875 33.75 31.875C37.5 45 41.25 50.625 48.75 54.375C46.875 33.75 54.375 15 71.25 3.75Z" fill="#FF8A1F"/>
   <path class="oz-flame-inner" d="M61.875 63.75C67.5 76.875 82.5 82.5 82.5 95.625C82.5 106.875 73.125 112.5 61.875 112.5C48.75 112.5 39.375 105 39.375 93.75C39.375 80.625 54.375 75 61.875 63.75Z" fill="#FFD23F"/>

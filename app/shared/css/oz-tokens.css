@@ -44,6 +44,9 @@
 
   /* streak screen (29 · Rewards · Streak 708:15284) */
   --oz-streak-fill:#FF8A1F; --oz-streak-track:#E8EAF5; --oz-streak-muted:#C9CDE2; --oz-streak-muted-text:#5B6090;
+  /* streak flame tiers (outer / inner): 1–6 days, 7–13, 14–29, 30+ */
+  --oz-flame-1:#FF8A1F; --oz-flame-1-core:#FFD23F; --oz-flame-2:#F2502B; --oz-flame-2-core:#FFB23F;
+  --oz-flame-3:#E0367A; --oz-flame-3-core:#FF9EC4; --oz-flame-4:#3D6BFF; --oz-flame-4-core:#9FE3FF;
 
   /* league summary and your-entry rows (Leagues · Production 787:498, 787:570) */
   --oz-league-tint:#E5EBFF;

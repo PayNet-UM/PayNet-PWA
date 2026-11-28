@@ -219,20 +219,26 @@ export async function studentDealClaimRender(app, [id] = []) {
   const claim = await L.myDealClaim(app.ctx, id);
   app._studentDeal = { deal, claim };
   const pts = claim?.rewardPoints ?? app.rules.liveDealPoints;
+  // Mobbin (Walmart One Pay, Chick-fil-A "Scan to earn", Target "Scan to apply savings"): the offer as one ticket,
+  // then one focused scan area with a single action. Back lives at the top, not as a second button at the bottom.
+  const benefit = deal.benefit && deal.benefit.trim() !== deal.title.trim() ? deal.benefit : '';
   return claimPage(`<header class="oz-claim-heading">
+      ${claim ? '' : `<a class="oz-help-back oz-claim-backlink" href="#/explore/deals">${ozIcon('s:chevron-left')}<span>Live deals</span></a>`}
       <h1 class="oz-claim-title" id="deal-claim-title" tabindex="-1">${claim ? 'Your deal claim' : 'Claim a live deal'}</h1>
-      <p id="deal-claim-subtitle">${claim ? 'At the counter' : 'Scan the QR shown by the merchant.'}</p>
+      <p id="deal-claim-subtitle"${claim ? '' : ' hidden'}>${claim ? 'At the counter' : ''}</p>
     </header>
-    <section class="oz-claim-card oz-claim-summary">
-      <h2 data-no-i18n>${esc(deal.title)}</h2><p data-no-i18n>${esc(merchant.name)}</p>
-      ${deal.benefit ? `<p class="oz-claim-benefit" data-no-i18n>${esc(deal.benefit)}</p>` : ''}
-      ${pts > 0 ? `<p class="oz-claim-credit">+${n(pts)} <span>points on a successful scan</span></p>` : ''}
+    <section class="oz-claim-card oz-claim-ticket" aria-label="Deal">
+      <div class="oz-claim-ticket-top"><span class="oz-deal-badge" aria-hidden="true">${ozIcon('stall')}</span>
+        <div class="oz-claim-ticket-text"><p class="oz-claim-shop" data-no-i18n>${esc(merchant.name)}</p><h2 data-no-i18n>${esc(deal.title)}</h2></div>
+        ${pts > 0 ? `<span class="oz-tag oz-tag-points oz-claim-pts">+${n(pts)} pts</span>` : ''}</div>
+      ${benefit ? `<p class="oz-claim-benefit" data-no-i18n>${esc(benefit)}</p>` : ''}
     </section>
     ${claim ? '<div id="deal-confirmation" aria-live="polite"></div>' : `
       <section class="oz-claim-card oz-claim-ready" id="deal-camera-idle">
-        ${ozIcon('scan')}<h2>Ready to claim?</h2><p>Ask staff to show this deal’s QR.</p>
-        ${ozButton('Scan to claim', { attr: { id: 'start-deal-scan' } })}
-        <p class="oz-claim-caption">Scan once per deal each day to earn points immediately.</p>
+        <div class="oz-claim-frame" aria-hidden="true"><i></i><i></i><i></i><i></i>${ozIcon('scan')}<span class="oz-claim-sweep"></span></div>
+        <p class="oz-claim-ready-text">Ask staff for this deal’s QR</p>
+        ${ozButton('Scan to claim', { block: true, attr: { id: 'start-deal-scan' } })}
+        <p class="oz-claim-caption">Once per deal, each day · points land straight away</p>
       </section>
       <section id="deal-scanner-panel" hidden class="oz-claim-card oz-claim-scanner">
         <div class="oz-claim-preview"><video id="deal-cam" muted playsinline hidden></video>
@@ -245,8 +251,7 @@ export async function studentDealClaimRender(app, [id] = []) {
           <p class="oz-claim-error-title"></p><p class="oz-claim-caption"></p>
         </div>
         ${ozButton('Try again', { attr: { id: 'retry-deal-scan', hidden: true } })}
-      </section>
-      ${claimBack()}`}`);
+      </section>`}`);
 }
 
 function mountClaimStatus(root, app, claim) {
@@ -304,7 +309,6 @@ export function studentDealClaimMount(root, app) {
   const begin = (event) => busy(event.currentTarget, async () => {
     ready.hidden = true; scanner.hidden = false;
     title.textContent = 'Scan the deal QR';
-    $('#deal-claim-subtitle', root).textContent = 'At the counter';
     title.focus({ preventScroll: true });
     report('', '', false);
     try {

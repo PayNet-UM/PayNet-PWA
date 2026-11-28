@@ -203,3 +203,22 @@
 .oz-shop-link:focus-visible { outline:none; } .oz-shop-link:focus-visible::after { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
 .oz-shop-row:active .oz-shop-main { scale:.98; }
 .checkout-shop-action { position:relative; z-index:1; }
+
+/* ---------- Level sheet (Home hero level chip) ---------- */
+/* Header, one goal line, design-system rows with a one-line points tag, then a quiet link to the full guide. */
+.oz-lvl { display:flex; flex-direction:column; gap:var(--oz-space-4); }
+.oz-lvl-head { display:flex; align-items:center; gap:var(--oz-space-3); padding-right:var(--oz-space-7); }
+.oz-lvl-badge { display:grid; place-items:center; width:48px; height:48px; flex:none; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-lvl-badge .oz-ic { width:24px; height:24px; }
+.oz-lvl-now { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-lvl-head h2 { margin:0; font:800 22px/28px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-lvl-goal { display:flex; align-items:baseline; gap:var(--oz-space-1); margin:0; color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-lvl-goal strong { font:800 24px/28px var(--oz-font-display); color:var(--oz-blue-700); }
+.oz-lvl-list { display:flex; flex-direction:column; border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); overflow:hidden; }
+.oz-lvl-list .oz-row { border-radius:0; background:transparent; }
+.oz-lvl-list .oz-row + .oz-row { border-top:1px solid var(--oz-border); }
+.oz-lvl-list .oz-tag { flex:none; font-weight:600; }
+.oz-lvl-guide { align-self:flex-start; font:600 14px/20px var(--oz-font-ui); }
+/* Pass 2: the number and "points to your next level" need real breathing room (8px), number on the H2 scale. */
+.oz-lvl-goal { gap:var(--oz-space-2); }
+.oz-lvl-goal strong { font:700 22px/28px var(--oz-font-display); }

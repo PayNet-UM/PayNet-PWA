@@ -52,8 +52,11 @@ try {
               assert.equal(await page.locator('.tabbar [data-tab="about"]').count(),0,`${label}: About now lives in the account menu`);
               if(viewport.width<1024){
                 const box=async(t)=>(await page.locator(`.tabbar [data-tab="${t}"]`).boundingBox()).x;
-                const xs=[await box('community'),await box('leagues'),await box('home'),await box('rewards'),await box('me')];
-                assert.ok(xs.every((x,i)=>!i||xs[i-1]<x),`${label}: tabs should read Community, Leagues, Home, Rewards, Me`);
+                const xs=[await box('home'),await box('community'),await box('leagues'),await box('rewards'),await box('me')];
+                assert.ok(xs.every((x,i)=>!i||xs[i-1]<x),`${label}: tabs should read Home, Community, Leagues, Rewards, Me`);
+                // Every tab stays inside the floating bar, whichever one is lit (Me used to slip out when Community was active).
+                const bar=await page.locator('.oz-tabbar').boundingBox(), me=await page.locator('.tabbar [data-tab="me"]').boundingBox();
+                assert.ok(me.x+me.width<=bar.x+bar.width+1,`${label}: Me tab leaves the tab bar`);
               }
               assert.equal(await home.getAttribute('aria-current'),'page');
               if(viewport.width===390||viewport.width===1440){

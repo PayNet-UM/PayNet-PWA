@@ -189,3 +189,79 @@
 body .info-page, body .information-page { --info-blue:var(--oz-blue-700); --info-ink:var(--oz-text-primary); --info-muted:var(--oz-text-secondary); --info-line:var(--oz-border); }
 .overview-directory .directory-cafes > summary { color:var(--oz-text-primary); }
 .oz-about-mini { color:var(--oz-text-primary); }
+
+/* ---------- Contact + "What's on your mind?" composer (round 7) ---------- */
+.oz-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; padding:0; border:0; }
+.oz-contact-card h2 { margin:0; }
+/* Email row: address opens the mail app; Copy confirms itself (icon + label cross-fade, no toast). */
+.oz-contact-email { display:flex; align-items:center; gap:var(--oz-space-2); min-width:0; padding:var(--oz-space-2); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); }
+.oz-contact-mail { flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--oz-space-3); color:var(--oz-text-primary); text-decoration:none; border-radius:var(--oz-radius-md); }
+.oz-contact-mail:active { opacity:.7; }
+.oz-contact-addr { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 14px/20px var(--oz-font-ui); color:var(--oz-blue-700); }
+.oz-copy { position:relative; display:grid; flex:none; height:36px; min-width:92px; padding:0 var(--oz-space-3); border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-blue-700); font:600 14px/20px var(--oz-font-ui); cursor:pointer; transition:background-color 200ms var(--oz-ease-out), color 200ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-copy:active { scale:.96; }
+.oz-copy-state { grid-area:1/1; display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-1); transition:opacity 200ms var(--oz-ease-out), translate 200ms var(--oz-ease-out); }
+.oz-copy-state .oz-ic { width:16px; height:16px; }
+.oz-copy-done { opacity:0; translate:0 6px; }
+.oz-copy.is-copied { background:var(--oz-success-bg); color:var(--oz-text-success); }
+.oz-copy.is-copied .oz-copy-idle { opacity:0; translate:0 -6px; }
+.oz-copy.is-copied .oz-copy-done { opacity:1; translate:0 0; }
+/* Socials: two equal tiles, logo + handle. */
+.oz-contact-socials { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-2); }
+.oz-contact-social { display:flex; align-items:center; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-3); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); color:var(--oz-text-primary); text-decoration:none; transition:background-color 150ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-contact-social:active { scale:.97; background:var(--oz-bg-subtle); }
+.oz-contact-social img { flex:none; }
+.oz-contact-social span { display:flex; flex-direction:column; min-width:0; }
+.oz-contact-social b { font:600 14px/20px var(--oz-font-ui); }
+.oz-contact-social small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (hover:hover) { .oz-contact-social:hover { background:var(--oz-bg-subtle); } .oz-contact-mail:hover .oz-contact-addr { text-decoration:underline; } }
+.oz-contact-history { justify-self:start; margin-top:var(--oz-space-1); font:600 14px/20px var(--oz-font-ui); }
+.oz-help-query { display:grid; gap:var(--oz-space-3); align-content:start; min-width:0; }
+
+/* Composer: title, topic chips, one message box, Send, then one fine line. */
+.oz-help .oz-composer { gap:var(--oz-space-4); }
+.oz-composer-title { margin:0; }
+.oz-chips { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); min-inline-size:0; margin:0; padding:0; border:0; }
+.oz-chip { position:relative; display:inline-flex; align-items:center; min-height:36px; padding:0 var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill);
+  background:var(--oz-bg-surface); color:var(--oz-text-primary); font:500 14px/20px var(--oz-font-ui); cursor:pointer;
+  transition:background-color 150ms var(--oz-ease-out), border-color 150ms var(--oz-ease-out), color 150ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-chip input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.oz-chip:active { scale:.96; }
+.oz-chip:has(input:checked) { border-color:var(--oz-blue-700); background:var(--oz-blue-700); color:var(--oz-text-on-brand); font-weight:600; }
+.oz-chip:has(input:focus-visible) { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-composer-box { position:relative; display:block; }
+.oz-composer-box textarea { display:block; width:100%; min-height:120px; padding:var(--oz-space-3) var(--oz-space-3) var(--oz-space-6); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-subtle); color:var(--oz-text-primary); font:400 16px/24px var(--oz-font-ui); resize:vertical; transition:border-color 150ms var(--oz-ease-out), background-color 150ms var(--oz-ease-out); }
+.oz-composer-box textarea:focus { outline:0; border-color:var(--oz-blue-700); background:var(--oz-bg-surface); }
+.oz-composer-box .fb-count { position:absolute; right:var(--oz-space-3); bottom:var(--oz-space-2); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-composer .oz-btn .oz-ic { width:20px; height:20px; }
+.oz-composer-fine { margin:calc(var(--oz-space-2) * -1) 0 0; text-align:center; font:500 12px/16px var(--oz-font-ui); }
+/* Phones: the address must always show in full, so Copy is a 40px icon button (copy → green check) and the address may wrap. */
+.oz-contact-email .oz-row-lead { width:36px; height:36px; }
+.oz-contact-email .oz-row-lead .oz-ic { width:20px; height:20px; }
+.oz-contact-addr { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; }
+.oz-copy { min-width:40px; width:40px; height:40px; padding:0; border-radius:50%; }
+.oz-copy-state > span:not(.oz-ic) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.oz-copy-state .oz-ic { width:20px; height:20px; }
+@media (min-width:1024px) {
+  .oz-copy { width:auto; min-width:92px; padding:0 var(--oz-space-3); border-radius:var(--oz-radius-pill); height:36px; }
+  .oz-copy-state > span:not(.oz-ic) { position:static; width:auto; height:auto; overflow:visible; clip-path:none; }
+  .oz-copy-state .oz-ic { width:16px; height:16px; }
+}
+
+/* "Email us" (Octopus Energy / Gusto on Mobbin): the address is the hero of its card — a large tinted tile that opens
+   the mail app, with Copy beside it. */
+.oz-contact-emailcard .oz-contact-email { padding:var(--oz-space-3); border:0; border-radius:var(--oz-radius-lg); background:var(--oz-blue-50, var(--oz-blue-100)); }
+.oz-contact-emailcard .oz-row-lead { width:44px; height:44px; background:var(--oz-action-secondary); color:var(--oz-text-on-brand); }
+.oz-contact-emailcard .oz-row-lead .oz-ic { width:22px; height:22px; }
+#view .oz-contact-emailcard .oz-contact-addr { font:600 16px/24px var(--oz-font-ui); color:var(--oz-blue-700); }
+.oz-contact-emailcard .oz-copy { background:var(--oz-bg-surface); }
+/* Copy lives in the card header (labelled pill), so the address gets the whole tile and never wraps mid-domain. */
+.oz-contact-emailcard { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+.oz-contact-emailcard > h2 { grid-column:1; grid-row:1; }
+.oz-contact-emailcard .oz-contact-email { display:contents; }
+.oz-contact-emailcard .oz-contact-mail { grid-column:1 / -1; grid-row:2; padding:var(--oz-space-3); border-radius:var(--oz-radius-lg); background:var(--oz-blue-50, var(--oz-blue-100)); }
+.oz-contact-emailcard .oz-copy { grid-column:2; grid-row:1; width:auto; min-width:92px; height:36px; padding:0 var(--oz-space-3); border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); }
+.oz-contact-emailcard .oz-copy-state > span:not(.oz-ic) { position:static; width:auto; height:auto; overflow:visible; clip-path:none; }
+.oz-contact-emailcard .oz-copy-state .oz-ic { width:16px; height:16px; }
+#view .oz-contact-emailcard .oz-contact-addr { overflow-wrap:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

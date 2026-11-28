@@ -20,7 +20,7 @@ export function hereNowSection() {
 }
 export function mountHereNow() { return { stop() {}, redraw() {} }; }
 export function mapSettingsSheet(app) {
-  const el = sheet(`<h2>Place sharing is paused</h2><p class="muted">Your GPS location stays private.</p><a class="btn primary block" href="#/community/friends" data-close>Manage friends</a>`);
+  const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">Place sharing is paused</h2><p class="oz-fsheet-body">Your GPS location stays private.</p><a class="oz-btn oz-btn-primary oz-btn-md oz-btn-block" href="#/community/friends" data-close><span>Manage friends</span></a></div>`);
 }
 
 // Waves for me: a short message while the app is open.

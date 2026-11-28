@@ -213,26 +213,19 @@ function homeMount(root, app) {
     const lvl = levelOf(earnedTotal(app.ledger)), r = app.rules;
     const claimed = new Set(app.ledger.map((entry) => entry.id));
     const remaining = D.LESSONS.filter((_, index) => !claimed.has('lesson' + index)).length;
+    // Ways to reach the next level, as design-system rows: icon, title + one short line, then a one-line points tag.
     const choices = [
-      {route:'rewards/streak',glyph:'flame',title:'Daily check-in streak',points:'+'+n(pointsRules(r).streakBonus),detail:'Open daily. Earn points every 7 days.'},
-      ...(!claimed.has('survey') ? [{
-        route: 'survey', glyph: 'target', title: 'Money check', points: '+' + n(r.surveyBonus),
-        detail: 'One-time survey bonus.',
-      }] : []),
-      ...(remaining ? [{
-        route: 'learn', glyph: 'book-open', title: 'Learn & Earn', points: '+' + n(r.lessonBonus),
-        detail: `${remaining} lessons left · points per correct quiz, once per lesson.`,
-      }] : []),
-
+      { route: 'rewards/streak', glyph: 'streak', title: 'Daily check-in streak', points: pointsRules(r).streakBonus, detail: 'Every 7 days in a row' },
+      ...(!claimed.has('survey') ? [{ route: 'survey', glyph: 'target', title: 'Money check', points: r.surveyBonus, detail: 'One-time bonus' }] : []),
+      ...(remaining ? [{ route: 'learn', glyph: 'learn', title: 'Learn & Earn', points: r.lessonBonus, detail: `${remaining} lessons left` }] : []),
+      ...(livePointEarningOn(r) ? [{ route: 'explore/deals', glyph: 'voucher', title: 'Live deals', points: r.liveDealPoints, detail: 'Per eligible deal' }] : []),
     ];
-    sheet(`<div class="points-guide">
-      <div class="points-guide-heading"><span class="tile-icon">${icon('medal')}</span><div><span class="faint">${esc(lvl.name)}</span><h2>${lvl.next ? 'Reach ' + esc(lvl.next) : 'Keep earning'}</h2></div></div>
-      <p class="points-guide-goal">${lvl.next ? `<strong>${n(lvl.toNext)}</strong> points to your next level` : 'You’ve reached the top level.'}</p>
-      <div class="points-guide-choices">${choices.map((choice) => `<a href="#/${choice.route}" class="points-guide-choice" data-close>
-        <span class="tile-icon">${icon(choice.glyph)}</span><div><h3>${esc(choice.title)}</h3><p>${esc(choice.detail)}</p></div>
-        <span class="points-guide-reward">${choice.points}<small>pts</small></span>${icon('chevron-right')}</a>`).join('')}</div>
-      ${livePointEarningOn(app.rules)?`<a class="points-guide-deals" href="#/explore/deals" data-close>${icon('qr-code')} Live deals <b>+${n(app.rules.liveDealPoints)} <span>pts per eligible deal</span></b>${icon('chevron-right')}</a>`:''}
-      <p class="faint points-guide-note">Levels count positive earned points, excluding welfare grants. Spending or donating keeps your progress and unlocked hats.</p><a class="points-policy-link" href="#/points" data-close>${icon('info')} Full points guide ${icon('arrow-right')}</a>
+    sheet(`<div class="oz-lvl">
+      <div class="oz-lvl-head"><span class="oz-lvl-badge" aria-hidden="true">${ozIcon('medal')}</span><div><p class="oz-lvl-now">${esc(lvl.name)}</p><h2>${lvl.next ? 'Reach ' + esc(lvl.next) : 'Keep earning'}</h2></div></div>
+      <p class="oz-lvl-goal">${lvl.next ? `<strong>${n(lvl.toNext)}</strong><span>points to your next level</span>` : '<span>You’ve reached the top level.</span>'}</p>
+      <div class="oz-lvl-list">${choices.map((c) => ozListRow({ title: c.title, sub: c.detail, iconName: c.glyph, href: '#/' + c.route,
+        trailHtml: ozTag(`+${n(c.points)} pts`, 'points'), attr: { 'data-close': true } })).join('')}</div>
+      <a class="oz-link oz-lvl-guide" href="#/points" data-close>Full points guide <span aria-hidden="true">→</span></a>
     </div>`);
   };
   const events = app._homeEvents || [];
@@ -367,9 +360,10 @@ function directoryMount(root, app, [mode] = []) {
     $('.checkout-card', root).classList.toggle('location-found', !!pos);
     $('#nearby-location-key', root).hidden = !pos;
   };
-  const popup = (m) => `<div class="mpop">${merchantLogo(m, 'mpop-logo')}<b>${esc(m.name)}</b><p>${esc(m.type)} · ${esc(m.location)}</p>
-    ${pos ? `<p class="dist">${esc(fmtDistance(distanceM(pos, m)))}</p>` : ''}
-    <a href="#/merchant/${esc(m.id)}">View shop</a><a href="${directionsUrl(m)}" target="_blank" rel="noopener">Directions ↗</a></div>`;
+  // Map pin card: identity on top, then two equal small buttons in the app's own type (not Leaflet's).
+  const popup = (m) => `<div class="mpop oz-mpop"><div class="oz-mpop-head">${merchantLogo(m, 'mpop-logo')}<div><b data-no-i18n>${esc(m.name)}</b><p>${esc(m.type)} · <span data-no-i18n>${esc(m.location)}</span></p>
+    ${pos ? `<p class="dist">${esc(fmtDistance(distanceM(pos, m)))}</p>` : ''}</div></div>
+    <div class="oz-mpop-actions">${ozButton('View shop', { kind: 'secondary', size: 'sm', href: '#/merchant/' + m.id })}${ozButton('Directions', { kind: 'ghost', size: 'sm', iconName: 'navigation', href: directionsUrl(m), attr: { target: '_blank', rel: 'noopener' } })}</div></div>`;
   function selectShop(shop) {
     selectedId = shop?.id ?? null;
     map?.selectPin(selectedId);
@@ -403,8 +397,8 @@ function directoryMount(root, app, [mode] = []) {
     const primary = mode === 'deals' ? rows.find((row) => row.claimHref) : null;
     writeDeals(rows.map((row) => {
       const { merchant } = row;
-      const footerHtml = `<a class="oz-link" href="#/merchant/${esc(merchant.id)}">View shop</a>${hasPin(merchant)
-        ? `<a class="oz-link" href="${esc(directionsUrl(merchant))}" target="_blank" rel="noopener">Directions</a>` : ''}`;
+      const footerHtml = ozButton('View shop', { kind: 'secondary', size: 'sm', href: '#/merchant/' + merchant.id }) + (hasPin(merchant)
+        ? ozButton('Directions', { kind: 'ghost', size: 'sm', iconName: 'navigation', href: directionsUrl(merchant), attr: { target: '_blank', rel: 'noopener' } }) : '');
       return ozLiveDealCard({ ...row, primary: row === primary, claimLabel: 'Scan to claim', footerHtml });
     }).join('') || dealMessage(message));
   }, () => merchants) : null;
@@ -528,13 +522,13 @@ function appStreakSection(app) {
     return `<li class="${completed ? 'checked' : ''} ${day === today ? 'today' : ''}" aria-label="${day}: ${completed ? 'App opened' : 'No app activity'}"><span>${label}</span><span class="streak-day" aria-hidden="true">${completed ? ozIcon('s:check') : '<i class="oz-streak-dash"></i>'}</span></li>`;
   }).join('');
   const status = credited ? `+${n(credited.delta)} <span>pts earned</span>` : esc(f.status);
-  const sub = current ? 'You’re building a daily habit. Keep opening +Onz.' : `Open +Onz 7 days in a row to earn ${n(bonus)} pts.`;
+  const sub = current ? '' : `Open +Onz 7 days in a row to earn ${n(bonus)} pts.`;
   // Figma 29 · Rewards · Streak (708:15284) and Web · Rewards · Streak (929:34615): on the web the parts sit in one 800px card.
   // #rewards-streak, .streak-calendar and .streak-guidance are test hooks.
   return `<section class="oz-streak rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading">
-    <div class="oz-streak-hero">${ozFlame(120, 'oz-streak-flame')}
+    <div class="oz-streak-hero">${ozFlame(120, 'oz-streak-flame', current)}
       <div class="oz-streak-hero-text"><h2 id="app-streak-heading"><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</h2>
-      <span class="oz-streak-status badge">${status}</span><p class="oz-streak-sub">${sub}</p></div></div>
+      <span class="oz-streak-status badge">${status}</span>${sub ? `<p class="oz-streak-sub">${sub}</p>` : ''}</div></div>
     <div class="oz-streak-card"><div class="oz-streak-row"><h3 class="oz-streak-label">Past 7 days</h3><a class="oz-link oz-streak-cal-link" href="#/rewards/streak/calendar">${ozIcon('events')}<span>View calendar</span></a></div>
       <ul class="streak-calendar" aria-label="App activity over the past seven days">${recent}</ul></div>
     <div class="oz-streak-card"><div class="oz-streak-next"><p class="streak-guidance"><span class="oz-streak-label">Next bonus</span><span class="oz-streak-day"><span>Day</span> <strong>${next}</strong></span></p>
@@ -570,8 +564,8 @@ function streakMonthHTML(f, ym) {
 function streakCalendarHTML(app) {
   const f = streakFacts(app); const ym = f.today.slice(0, 7);
   return `<section class="oz-streak-cal" aria-labelledby="streak-cal-title">
-    <div class="oz-streak-cal-summary">${ozFlame(84)}
-      <div><h2 id="streak-cal-title">${f.current}-day streak</h2><p class="oz-streak-cal-status">${esc(f.status)}</p><p class="oz-streak-sub">Open +Onz daily to keep your streak going.</p></div></div>
+    <div class="oz-streak-cal-summary">${ozFlame(84, '', f.current)}
+      <div><h2 id="streak-cal-title">${f.current}-day streak</h2><p class="oz-streak-cal-status">${esc(f.status)}</p></div></div>
     <div class="oz-cal-nav">${ozButton('Prev', { kind: 'ghost', size: 'sm', attr: { 'data-cal': '-1', 'aria-label': 'Previous month' } })}<p class="oz-cal-month" id="cal-month" aria-live="polite">${CAL_MONTHS[Number(ym.slice(5)) - 1]} ${ym.slice(0, 4)}</p>
       ${ozButton('Next', { kind: 'ghost', size: 'sm', attr: { 'data-cal': '1', 'aria-label': 'Next month', disabled: true } })}</div>
     <div id="cal-body" data-month="${ym}">${streakMonthHTML(f, ym)}</div>
@@ -612,15 +606,15 @@ async function rewardsRender(app) {
   const live = livePointEarningOn(app.rules) && D.featureOn(app.rules, 'overview') && D.featureOn(app.rules, 'dealsAndPay');
   return `<div class="rewards-page oz-rewards">
     <h1 class="oz-page-title">Rewards</h1>
-    <div class="rewards-hero oz-balance"><p class="oz-balance-value" data-bind="points">${n(p.points)}</p><p class="oz-balance-label">Available points</p></div>
-    ${ozSegmented([{ key: 'shop', label: 'Shop' }, { key: 'vouchers', label: 'My vouchers' }, { key: 'badges', label: 'Badges' }], 'shop', { label: 'Rewards sections', cls: 'oz-rewards-tabs' })}
+    <div class="rewards-hero oz-balance"><p class="oz-balance-value"><span class="oz-plus" aria-hidden="true"></span><span data-bind="points">${n(p.points)}</span><span class="oz-balance-unit">pts</span></p><p class="oz-balance-label">Available points</p></div>
+    ${ozSegmented([{ key: 'shop', label: 'Shop' }, { key: 'vouchers', label: 'Vouchers' }, { key: 'badges', label: 'Badges' }], 'shop', { label: 'Rewards sections', cls: 'oz-rewards-tabs' })}
     <section class="oz-rewards-panel rewards-shelf" id="reward-shelf" data-panel="shop" tabindex="-1" aria-label="Swap points">
       <div class="reward-grid">${rewards.map((r) => {
         const left = available(r); const can = canSwap(r);
         return `<article class="oz-voucher reward-prize ${left <= 0 ? 'sold-out' : ''}">
           <div class="oz-voucher-value"><strong>${rm(r.valueCents).replace(/\.00$/, '')}</strong><span>voucher value</span></div>
           <div class="oz-voucher-body"><h3>${esc(r.title)}</h3><p class="oz-voucher-where">Redeem with the Admin team · valid ${n(Number(r.validDays) || 30)} days</p>
-            <div class="oz-voucher-foot"><span class="oz-voucher-meta"><span class="oz-voucher-cost">${n(r.cost)} pts</span>${left > 0 ? ozTag(`${left} left`, 'sky') : ozTag('All claimed', 'expiry')}</span>
+            <div class="oz-voucher-foot"><span class="oz-voucher-meta"><span class="oz-voucher-cost">${n(r.cost)} pts</span>${left > 0 ? `<span class="oz-voucher-left">${n(left)} left</span>` : ozTag('All claimed', 'expiry')}</span>
             ${ozButton(left <= 0 ? 'All claimed' : can ? 'Swap' : `${n(Math.max(0, r.cost - p.points))} more`, { size: 'sm', kind: can ? 'primary' : 'ghost', attr: { 'data-redeem': r.id, disabled: !can } })}</div></div></article>`;
       }).join('') || ozEmpty({ title: 'No rewards yet', body: 'The Admin team hasn’t added rewards yet.' })}</div>
     </section>
@@ -700,9 +694,13 @@ function rewardsMount(root, app, [section, sub] = []) {
 }
 function showVoucher(app, vid, list) {
   const v = list ? list.find((x) => x.id === vid) : null;
-  const el = sheet(`<div class="qr-stage"><h2>${esc(v ? v.title : 'Your voucher')}</h2>
-    <p class="muted">${v?.status==='used'?'This voucher has been used.':v&&D.voucherExpired(v)?'This voucher has expired.':'Show this voucher to the Admin team for redemption.'}</p>
-    <div class="qr-frame ${v&&(v.status==='used'||D.voucherExpired(v))?'dead':''}"><div id="vqr"></div></div><p>Code <span class="code-text">${esc(vid.slice(0, 8).toUpperCase())}</span></p></div>`);
+  // Design-system voucher sheet: the title is centred on the sheet itself (equal space both sides, so the close button
+  // no longer pushes it left), then the QR, then the code as a readable chip (Inter, not monospace). .code-text is a test hook.
+  const dead = !!v && (v.status === 'used' || D.voucherExpired(v));
+  const el = sheet(`<div class="oz-vsheet"><h2 class="oz-vsheet-title" data-no-i18n>${esc(v ? v.title : 'Your voucher')}</h2>
+    <p class="oz-vsheet-note">${v?.status === 'used' ? 'This voucher has been used.' : dead ? 'This voucher has expired.' : 'Show this voucher to the Admin team for redemption.'}</p>
+    <div class="oz-vsheet-qr${dead ? ' is-dead' : ''}"><div id="vqr"></div></div>
+    <p class="oz-vsheet-code"><span>Code</span><b class="code-text" data-no-i18n>${esc(vid.slice(0, 8).toUpperCase())}</b></p></div>`);
   renderQR($('#vqr', el), 'UMV1:' + vid, 240);
 }
 
@@ -746,10 +744,12 @@ async function learnRender(app) {
     <header class="oz-learn-head"><h1 class="oz-page-title">Learn &amp; Earn</h1><p class="oz-learn-lede">Short money lessons. One question each, points earned once.</p></header>
     <div class="oz-learn-grid">
       <section class="oz-learn-list" aria-labelledby="learn-practice-title"><h2 id="learn-practice-title">Practice anytime</h2><ul>${rows}</ul>
-        <p class="oz-learn-note learning-practice-note">Practice is always available. Lesson points are earned once.</p></section>
+</section>
       <aside class="oz-learn-side" aria-label="Your progress">
-        <div class="oz-learn-progress"><p><strong>${next ? `Next: ${esc(next[0])} · +${n(next[1])} pts` : 'All lessons and the Money check done'}</strong><span>${n(earned)} / ${n(total)}</span></p>
-          <div class="oz-learn-track" role="progressbar" aria-label="Learn &amp; Earn points earned" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${earned}"><i style="width:${total ? (earned / total * 100).toFixed(1) : 0}%"></i></div></div>
+        <div class="oz-learn-progress">${next ? `<p class="oz-learn-eyebrow">Up next</p><div class="oz-learn-next"><strong>${esc(next[0])}</strong>${ozTag(`+${n(next[1])} pts`, 'points')}</div>`
+            : '<div class="oz-learn-next"><strong>All lessons and the Money check done</strong></div>'}
+          <div class="oz-learn-track" role="progressbar" aria-label="Learn &amp; Earn points earned" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${earned}"><i style="width:${total ? (earned / total * 100).toFixed(1) : 0}%"></i></div>
+          <p class="oz-learn-count"><b>${n(earned)}</b> / ${n(total)} pts earned</p></div>
         <span class="oz-learn-onzo" aria-hidden="true">${AV.avatarSVG(myAvatar(app), { size: 88, bg: false })}</span>
         ${ozButton(surveyDone ? 'See your Money Check' : 'Open Money Check survey', { kind: surveyDone ? 'ghost' : 'secondary', href: '#/survey', block: true, cls: 'oz-learn-survey' })}
       </aside>
@@ -825,8 +825,12 @@ export function surveyResultText(role, r) {
 }
 async function surveyRender(app) {
   const existing = await D.getSurvey(app.ctx).catch(() => null);
-  return `<a class="back" href="#/home">${icon('arrow-left')} Home</a><div class="page-title"><h1>Money check</h1>
-    <p>Four scenario questions and three about your confidence. It helps the Admin team plan support; it isn’t a test. First completion: ${app.rules.surveyBonus} points.</p></div>${surveyHTML('student', existing)}`;
+  const count = D.SURVEY_KNOWLEDGE.length + D.SURVEY_DIGITAL.student.length, firstTime = !app.ledger.some((l) => l.id === 'survey');
+  // Written for the student: how long it takes and what they get. (Why the Admin team runs it is in the Points guide.)
+  return `<div class="oz-survey-page"><a class="oz-help-back" href="#/learn">${ozIcon('s:chevron-left')} Learn &amp; Earn</a>
+    <header class="oz-survey-head"><h1 class="oz-page-title">Money check</h1>
+      <p class="oz-survey-lede"><span>${n(count)} quick questions · about 2 minutes</span>${firstTime ? ozTag(`+${n(app.rules.surveyBonus)} pts`, 'points') : ''}</p></header>
+    ${surveyHTML('student', existing)}</div>`;
 }
 export function surveyMount(root, app, role, back) {
   $('#survey', root).onsubmit = (e) => {
@@ -836,8 +840,10 @@ export function surveyMount(root, app, role, back) {
       try {
         const r = D.scoreSurvey(role, answers); const bonus = await D.submitSurvey(app.ctx, r, app.rules);
         const t = surveyResultText(role, r); if (bonus) { confetti(); pointsFx(); }
-        sheet(`<h2>${esc(t.title)}</h2><p class="muted">Knowledge ${r.knowledge}% · Digital confidence ${r.digital}%. ${esc(t.tip)}</p>${bonus ? `<p class="badge ok" style="margin-top:12px">+${bonus} points</p>` : ''}
-          <div class="row end" style="margin-top:16px"><a class="btn primary" href="#/${back}" data-close>Continue</a></div>`);
+        sheet(`<div class="oz-fsheet oz-fsheet-center"><h2 class="oz-fsheet-title">${esc(t.title)}</h2>
+          <div class="oz-fsheet-stats"><span><b>${r.knowledge}%</b><small>Knowledge</small></span><span><b>${r.digital}%</b><small>Digital confidence</small></span></div>
+          ${bonus ? ozTag(`+${n(bonus)} pts`, 'points') : ''}<p class="oz-fsheet-fine">${esc(t.tip)}</p>
+          <a class="oz-btn oz-btn-primary oz-btn-md oz-btn-block" href="#/${back}" data-close><span>Continue</span></a></div>`);
       } catch (err) { toast(errText(err), true); }
     });
   };
@@ -970,9 +976,10 @@ function fillLeague(root, totals, { keys, mineKey, noun, nameOf, codeOf, artOf, 
   pod.innerHTML = podium.map((r, i) => `<li class="oz-lg-pod${r.key === mineKey ? ' is-mine' : ''}" aria-label="${esc(`#${r.rank} ${codeOf(r.key)}, ${n(r.points)} pts`)}">
     <span class="oz-lg-pod-place">${ozIcon(i ? 'medal' : 'leagues')}<span data-no-i18n>#${r.rank}</span></span>
     <span class="oz-lg-pod-art" aria-hidden="true">${artOf(r.key)}</span>
-    <strong class="oz-lg-pod-name" data-no-i18n>${esc(codeOf(r.key))}</strong><span class="oz-lg-pod-pts">${n(r.points)} pts</span></li>`).join('')
-    + [podium.length + 1, podium.length + 2, podium.length + 3].filter((k) => k <= 3).map((k) => `<li class="oz-lg-pod-open">
-    <span class="oz-lg-pod-place">${ozIcon('medal')}<span data-no-i18n>#${k}</span></span><strong class="oz-lg-pod-name">—</strong><span class="oz-lg-pod-pts">No ${noun} yet</span></li>`).join('');
+    <strong class="oz-lg-pod-name" data-no-i18n>${esc(codeOf(r.key))}</strong><span class="oz-lg-pod-pts">${n(r.points)} pts</span></li>`).join('');
+  // No placeholder cards for places nobody holds yet (they were mostly empty space). The podium sizes to what's
+  // there: one leader is a single row card, two share the width, three is the full podium.
+  pod.dataset.count = String(podium.length);
   list.innerHTML = rest.map((r) => leagueRow(r, { mine: r.key === mineKey, noun, nameOf, codeOf, artOf, crest, rows })).join('');
   list.hidden = !rest.length;
   fillUnranked();
@@ -1022,14 +1029,11 @@ function leaguesMount(root, app, [section] = []) {
     const top = s?.top || [];
     el.innerHTML = top.length ? top.map((r, i) => `<li class="oz-lg-row${r.uid === app.ctx.uid ? ' is-mine' : ''}">
       <span class="oz-lg-rank" data-no-i18n>#${i + 1}</span><span class="oz-lg-crest" aria-hidden="true">${AV.collegeLionSVG(r.college, { size: 40 })}</span>
-      <span class="oz-lg-name"><strong data-no-i18n>${esc(r.label)}</strong>${r.college ? `<small data-no-i18n>${esc(r.college)}</small>` : ''}${r.uid === app.ctx.uid ? '<em class="oz-lg-gap">You</em>' : ''}</span>
+      <span class="oz-lg-name"><strong data-no-i18n>${esc(r.label)}</strong>${r.college || r.uid === app.ctx.uid ? `<small class="oz-lg-ref-meta">${r.college ? `<span data-no-i18n>${esc(r.college)}</span>` : ''}${r.college && r.uid === app.ctx.uid ? ' · ' : ''}${r.uid === app.ctx.uid ? '<em class="oz-lg-gap">You</em>' : ''}</small>` : ''}</span>
       <span class="oz-lg-pts">${n(r.count)} ${r.count === 1 ? 'friend' : 'friends'}</span></li>`).join('')
       : `<li class="oz-lg-ref-empty">${ozEmpty({ title: 'No one has joined with a code yet. Be the first.' })}</li>`;
   }, () => { const el = $('#referral-list', root); if (el) el.innerHTML = `<li class="oz-lg-empty">${esc('The board is temporarily unavailable.')}</li>`; });
-  $('#copy-referral', root).onclick = async () => {
-    try { await navigator.clipboard.writeText(p.referralCode); toast('Referral code copied.'); }
-    catch { toast('Couldn’t copy. Select the referral code to copy it manually.', true); }
-  };
+  $('#copy-referral', root).onclick = (e) => motion.copyWithFeedback(e.currentTarget, p.referralCode, 'Couldn’t copy. Select the referral code to copy it manually.');
   $('#share-referral', root).onclick = async () => {
     const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Enter my referral code ${p.referralCode} when you sign up: ${location.origin}${location.pathname}`);
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Referral message copied. Paste it to a friend.'); } } catch { /* cancelled */ }
@@ -1051,12 +1055,12 @@ async function communityRender(app, [section] = []) {
   const circle = friends.replace('<nav class="community-shortcuts"', `${tabs}<nav class="community-shortcuts"`).replace('</nav>', `</nav>${aside}`);
   return `<div class="community-page${section === 'add' ? ' is-adding' : ''}" data-ctab="${tab}"><section class="community-circle" id="community-circle" aria-label="Your circle" tabindex="-1">${circle}</section>
     <div class="community-main-grid"><div class="community-welfare-pair" id="community-welfare" tabindex="-1"><section class="community-welfare" aria-labelledby="welfare-title"><span class="community-heart" aria-hidden="true">${icon('hand-heart')}</span>
-      <h2 id="welfare-title">Student welfare fund</h2><p>Points given here are pooled for UM students who need help with essentials.</p>
+      <h2 id="welfare-title">Student welfare fund</h2>
       <div class="community-welfare-total"><strong id="welfare">—</strong><span class="community-welfare-caption">points available</span></div>
       <button class="oz-btn oz-btn-primary oz-btn-md" type="button" id="donate">Give points</button></section>
-    <section class="community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Ask the Admin team for up to 1,000 pooled points per request. Grants do not count for levels or leagues.</p>
+    <section class="community-support" aria-labelledby="support-title"><span class="community-support-icon" aria-hidden="true">${icon('wallet')}</span><h2 id="support-title">Need support?</h2><p>Up to 1,000 pts per request</p>
       <button class="oz-btn oz-btn-ghost oz-btn-md" type="button" id="request-welfare">Request points</button>
-      <details class="welfare-history"><summary>My requests <span id="welfare-request-count">0</span>${icon('chevron-right')}</summary><div id="welfare-requests"><div class="oz-skel-list" role="status"><span class="visually-hidden">Loading requests…</span><span class="oz-skel oz-skel-row"></span><span class="oz-skel oz-skel-row"></span></div></div></details>
+      <details class="welfare-history oz-smooth"><summary>My requests <span id="welfare-request-count">0</span>${icon('chevron-right')}</summary><div id="welfare-requests"><div class="oz-skel-list" role="status"><span class="visually-hidden">Loading requests…</span><span class="oz-skel oz-skel-row"></span><span class="oz-skel oz-skel-row"></span></div></div></details>
     </section></div></div></div>`;
 }
 const COMMUNITY_TABS = [['friends', 'Friends'], ['requests', 'Requests'], ['fund', 'Fund']];
@@ -1076,7 +1080,15 @@ function communityMount(root, app, [section] = []) {
   const addBtn = $('.community-shortcuts [data-friends-jump="friend-search"]', page);
   if (addBtn) {
     addBtn.setAttribute('aria-expanded', String(page.classList.contains('is-adding')));
-    addBtn.onclick = () => { page.classList.add('is-adding'); addBtn.setAttribute('aria-expanded', 'true'); const input = $('#friend-search input', page); (input && !input.disabled ? input : $('#friend-search', page))?.focus(); };
+    // The button toggles the search open (slides down under it, input focused) and closed (slides back up).
+    addBtn.onclick = () => {
+      const form = $('#friend-search', page), open = !page.classList.contains('is-adding');
+      addBtn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        page.classList.add('is-adding'); motion.slideOpen(form);
+        const input = $('#friend-search input', page); (input && !input.disabled ? input : form)?.focus({ preventScroll: true });
+      } else motion.slideClose(form).then(() => page.classList.remove('is-adding'));
+    };
   }
   // The tab counts mirror the live friend totals that friends.js keeps up to date.
   const mirror = () => {
@@ -1093,11 +1105,18 @@ function communityMount(root, app, [section] = []) {
   }
   const u2 = D.watchStats(app.ctx, 'welfare', (s) => { const el = $('#welfare', root); if (el) countUp(el, s?.points || 0); }, () => {});
   $('#donate', root).onclick = () => {
-    const el = sheet(`<h2>Give points to the welfare fund</h2><p class="muted">You have ${n(app.profile.points)} points.</p>
-      <form id="don" class="stack" style="margin-top:14px"><div class="chips">${[20, 50, 100, 250].map((v) => `<button type="button" data-v="${v}">${v}</button>`).join('')}</div>
-      <label class="field">Points to give<input name="pts" type="number" min="1" max="${app.profile.points}" step="1" required value="${Math.min(50, app.profile.points)}"></label>
-      <button class="btn go block">Give points</button></form>`);
-    $$('[data-v]', el).forEach((b) => { b.onclick = () => { el.querySelector('[name=pts]').value = b.dataset.v; }; });
+    // Mobbin (Alan "How many … do you want to give?", Whatnot tip presets): one question, one amount, presets, one action.
+    const have = app.profile.points, start = Math.min(50, have);
+    const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">How many points to give?</h2>
+      <form id="don" class="oz-fsheet-form">
+        <label class="oz-amount"><span class="oz-sr">Points to give</span><input name="pts" type="number" inputmode="numeric" min="1" max="${have}" step="1" required value="${start}"><span class="oz-amount-unit">pts</span></label>
+        <p class="oz-fsheet-fine">You have ${n(have)} pts</p>
+        <div class="oz-fsheet-presets">${[20, 50, 100, 250].map((v) => `<button type="button" class="oz-chip" data-v="${v}" aria-pressed="${v === start}" ${v > have ? 'disabled' : ''}><span>${v}</span></button>`).join('')}</div>
+        <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block go"><span>Give <span data-give>${n(start)}</span> pts</span></button></form></div>`);
+    const ptsIn = el.querySelector('[name=pts]');
+    const sync = () => { const v = Math.max(0, Math.floor(+ptsIn.value) || 0); $('[data-give]', el).textContent = n(v); $$('[data-v]', el).forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === v))); };
+    ptsIn.oninput = sync;
+    $$('[data-v]', el).forEach((b) => { b.onclick = () => { ptsIn.value = b.dataset.v; sync(); }; });
     $('#don', el).onsubmit = (e) => {
       e.preventDefault(); const v = Math.floor(+e.target.pts.value);
       if (!v || v < 1) return; if (v > app.profile.points) return toast('You don’t have that many points.', true);
@@ -1105,10 +1124,13 @@ function communityMount(root, app, [section] = []) {
     };
   };
   $('#request-welfare', root).onclick = () => {
-    const el = sheet(`<div class="welfare-form-heading"><span class="community-support-icon">${icon('wallet')}</span><div><h2>Request welfare points</h2><p class="faint">The Admin team reviews each request.</p></div></div>
-      <form id="welfare-request-form" class="stack" style="margin-top:18px"><label class="field">Points requested<input name="amount" type="number" min="1" max="${D.WELFARE_MAX_POINTS}" step="1" inputmode="numeric" required></label>
-      <label class="field">What do you need help with?<textarea name="reason" rows="3" minlength="10" maxlength="1000" placeholder="Meals, study materials or other essentials" required></textarea></label>
-      <p class="faint">Only you and the Admin team can see your request.</p><button class="btn primary block" type="submit">Send request ${icon('arrow-right')}</button></form>`);
+    const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">Request welfare points</h2>
+      <form id="welfare-request-form" class="oz-fsheet-form">
+        <label class="oz-amount"><span class="oz-sr">Points requested</span><input name="amount" type="number" inputmode="numeric" min="1" max="${D.WELFARE_MAX_POINTS}" step="1" placeholder="0" required><span class="oz-amount-unit">pts</span></label>
+        <p class="oz-fsheet-fine">Up to ${n(D.WELFARE_MAX_POINTS)} pts per request</p>
+        <label class="oz-composer-box"><span class="oz-sr">What do you need help with?</span><textarea name="reason" rows="3" minlength="10" maxlength="1000" placeholder="What do you need help with?" required></textarea></label>
+        <button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block" type="submit"><span>Send request</span></button>
+        <p class="oz-fsheet-fine">Only you and the Admin team see this</p></form></div>`);
     $('#welfare-request-form', el).onsubmit = (event) => {
       event.preventDefault(); const form = event.target;
       busy($('button[type=submit]', form), async () => {
@@ -1261,10 +1283,14 @@ function avatarMount(root, app) {
   // saw a detached button and ignored the click, and Save stored the old look ("sometimes it doesn't save").
   const onPick = (e) => {
     const b = e.target.closest('button[data-k]'); if (!b || !root.contains(b)) return;
-    const k = b.dataset.k, v = b.dataset.v;
+    const k = b.dataset.k; let v = b.dataset.v;
     if (b.dataset.locked) return unlockSheet(k, v);
+    // Tapping the glasses, scarf or hat you're wearing takes it off (as outfit pickers do); "None" still works too.
+    const removable = k === 'eyewear' || k === 'neck' || k === 'hat';
+    const was = current(k);
+    if (removable && v !== 'none' && was === v) v = 'none';
     if (WEAR_KEYS[k]) a.wear = { ...a.wear, [k]: v }; else a[k] = v;
-    paint(k === 'backdrop' ? false : k); // the background cross-fades on its own
+    paint(k === 'backdrop' ? false : removable && v === 'none' && was !== 'none' ? k + ':off' : k); // the background cross-fades on its own
   };
   root.addEventListener('click', onPick);
   $('#av-rand', root).onclick = () => {
@@ -1290,7 +1316,20 @@ function avatarMount(root, app) {
     if (await confirmSheet('Leave without saving?', 'Your changes to Onzo will be lost.', 'Leave')) { dirty = false; app.go('me'); }
   };
   paint(false);
-  return () => root.removeEventListener('click', onPick);
+  // Poke Onzo: each tap shows the next expression from the Figma set (416:8732) with a small emote, then back to Calm.
+  const stagePrev = $('#av-prev', root);
+  const POKES = ['happy', 'wink', 'love', 'surprised', 'celebrate', 'shy'];
+  let pokeAt = 0, cancelFace = () => {};
+  const pokeOnzo = () => {
+    cancelFace();
+    const name = POKES[pokeAt++ % POKES.length];
+    cancelFace = AV.showExpression(stagePrev.querySelector('svg'), name);
+    motion.poke(stagePrev, name);
+  };
+  stagePrev.setAttribute('role', 'button'); stagePrev.tabIndex = 0; stagePrev.setAttribute('aria-label', 'Poke Onzo');
+  stagePrev.onclick = pokeOnzo;
+  stagePrev.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pokeOnzo(); } };
+  return () => { root.removeEventListener('click', onPick); cancelFace(); };
 }
 
 // Me and its pages (Figma 13 · Me 441:2458, Edit profile 449:5060, Points history 449:5109, Account menu 525:10476,
@@ -1357,10 +1396,10 @@ function meProfileHTML(app) {
       <label class="oz-field"><span>Name</span><input name="name" required minlength="2" maxlength="100" value="${esc(p.name)}" autocomplete="name"></label>
       <label class="oz-field"><span>Matric number</span><input value="${esc(p.matric || '')}" readonly aria-readonly="true"></label>
       <label class="oz-field"><span>Residential college</span><input value="${esc(D.collegeName(p.college))}" readonly aria-readonly="true" aria-describedby="college-locked">
-        <small id="college-locked">${ozIcon('lock')} Your college is set when you sign up, so KK League points stay fair.</small></label>
+        <small id="college-locked">${ozIcon('lock')} Picked the wrong one? Ask the Admin team.</small></label>
       ${p.faculty
     ? `<label class="oz-field"><span>Faculty</span><input value="${esc(p.faculty)}" readonly aria-readonly="true" aria-describedby="faculty-locked">
-        <small id="faculty-locked">${ozIcon('lock')} Your faculty is set when you sign up, so Faculty League points stay fair. Picked the wrong one? Ask the Admin team.</small></label>`
+        <small id="faculty-locked">${ozIcon('lock')} Picked the wrong one? Ask the Admin team.</small></label>`
     : `<label class="oz-field"><span>Faculty</span><select name="faculty" aria-describedby="faculty-once"><option value="" selected>Choose your faculty</option>${D.FACULTIES.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join('')}</select>
         <small id="faculty-once">${ozIcon('lock')} You can only choose your faculty once, so check it’s the right one.</small></label>`}
       ${ozButton('Save profile', { kind: 'primary', block: true, attr: { type: 'submit' } }).replace('type="button" ', '')}
@@ -1370,8 +1409,7 @@ function meProfileHTML(app) {
       <div class="oz-lg-invite-head"><span class="oz-lg-invite-ic" aria-hidden="true">${ozIcon('community')}</span>
         <div><h2 id="add-friends-title">Add friends</h2><p>For friends already on +Onz</p></div></div>
       ${p.username ? `<div class="oz-lg-code"><strong data-no-i18n>@${esc(p.username)}</strong><button type="button" class="oz-lg-link" id="copy-username" aria-label="Copy username">Copy</button></div>
-        ${ozButton('Add friends', { kind: 'ghost', block: true, href: '#/community/add' })}
-        <p class="oz-me-note">Search for their username, or give them yours. You can add friends any time.</p>`
+        ${ozButton('Add friends', { kind: 'ghost', block: true, href: '#/community/add' })}`
     : `<p class="oz-me-note">Choose a username first, then add friends by theirs any time.</p>${ozButton('Choose a username', { kind: 'ghost', block: true, href: '#/community/add' })}`}
     </section></div>`;
 }
@@ -1428,10 +1466,7 @@ function meMount(root, app, [page] = []) {
   }
   if (page === 'profile') {
     mountSignInEmails(root, app);
-    on('#copy-username', 'onclick', async () => {
-      try { await navigator.clipboard.writeText('@' + app.profile.username); toast('Username copied.'); }
-      catch { toast('Couldn’t copy. Select your username to copy it manually.', true); }
-    });
+    on('#copy-username', 'onclick', (e) => motion.copyWithFeedback(e.currentTarget, '@' + app.profile.username, 'Couldn’t copy. Select your username to copy it manually.'));
     on('#prof', 'onsubmit', (e) => {
       e.preventDefault(); const f = e.target;
       busy($('button', f), async () => { try { const fields = { name: f.name.value.trim() };
@@ -1440,10 +1475,7 @@ function meMount(root, app, [page] = []) {
     });
     return;
   }
-  on('#copy-referral', 'onclick', async () => {
-    try { await navigator.clipboard.writeText(app.profile.referralCode); toast('Referral code copied.'); }
-    catch { toast('Couldn’t copy. Select the referral code to copy it manually.', true); }
-  });
+  on('#copy-referral', 'onclick', (e) => motion.copyWithFeedback(e.currentTarget, app.profile.referralCode, 'Couldn’t copy. Select the referral code to copy it manually.'));
   on('#share', 'onclick', async () => {
     const text = tr(`Join +Onz, UM’s campus app for merchants, events and rewards. Enter my referral code ${app.profile.referralCode} when you sign up: ${location.origin}${location.pathname}`);
     try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Referral message copied. Paste it to a friend.'); } } catch { /* cancelled */ }
@@ -1514,7 +1546,7 @@ function mountSignInEmails(root, app) {
       } catch (err) { toast(linkErrorText(err), true); }
     });
     if (mode !== 'demo') return run('');
-    const el = sheet(`<h2>Add another Google account</h2><form id="le" class="stack" style="margin-top:12px"><label class="field">Google email<input name="email" type="email" required placeholder="you@siswa.um.edu.my"></label><button class="btn primary block">Add</button></form>`);
+    const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">Add another Google account</h2><form id="le" class="oz-fsheet-form"><label class="oz-field"><span>Google email</span><input name="email" type="email" required placeholder="you@siswa.um.edu.my" autocomplete="email"></label><button class="oz-btn oz-btn-primary oz-btn-md oz-btn-block"><span>Add</span></button></form></div>`);
     $('#le', el).onsubmit = (e) => { e.preventDefault(); const v = e.target.email.value; closeSheet(); run(v); };
   };
 }

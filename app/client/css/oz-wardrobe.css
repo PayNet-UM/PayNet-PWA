@@ -176,3 +176,13 @@
 .av-unlock-progress strong { text-align:center; }
 @keyframes oz-bar-fill { from { scale:0 1; } }
 @media (prefers-reduced-motion:reduce) { .av-unlock-bar i { animation:none; } }
+
+/* Poke Onzo: the preview is tappable; the emote floats from just above the head. */
+.oz-wardrobe #av-prev { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.oz-wardrobe #av-prev:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:4px; border-radius:var(--oz-radius-lg); }
+.oz-emote { position:absolute; left:62%; top:8%; display:grid; place-items:center; width:32px; height:32px; pointer-events:none; color:var(--oz-blue-700); }
+.oz-emote .oz-ic { width:24px; height:24px; }
+.oz-emote.is-love { color:#FF5C8A; }
+.oz-emote-plus { width:24px; height:24px; background:url(../assets/onz/lion/plus-badge.svg) center / contain no-repeat; }
+.oz-emote { left:64%; top:16%; width:36px; height:36px; }
+.oz-emote .oz-ic, .oz-emote-plus { width:28px; height:28px; }

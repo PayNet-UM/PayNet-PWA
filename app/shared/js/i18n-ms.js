@@ -2551,6 +2551,37 @@ Delete my account|Padam akaun saya
 Close my account|Tutup akaun saya
 Close my business account|Tutup akaun perniagaan saya
 Back|Kembali
+Give|Beri
+How many points to give?|Berapa banyak mata untuk diberi?
+Only you and the Admin team see this|Hanya anda dan pasukan Admin boleh melihatnya
+Digital confidence|Keyakinan digital
+Up to 1,000 pts per request|Sehingga 1,000 mata bagi setiap permintaan
+Show friends list|Tunjukkan senarai rakan
+Email us|E-mel kami
+Ask staff for this deal’s QR|Minta kakitangan tunjukkan QR tawaran ini
+Once per deal, each day · points land straight away|Sekali bagi setiap tawaran, setiap hari · mata masuk serta-merta
+Deal|Tawaran
+Every 7 days in a row|Setiap 7 hari berturut-turut
+One-time bonus|Bonus sekali sahaja
+Per eligible deal|Bagi setiap tawaran yang layak
+Up next|Seterusnya
+Picked the wrong one? Ask the Admin team.|Tersalah pilih? Hubungi pasukan Admin.
+Vouchers|Baucar
+No requests right now|Tiada permintaan buat masa ini
+Recently added|Baru ditambah
+Oldest first|Paling lama dahulu
+Sort friends|Susun rakan
+Search your friends|Cari rakan anda
+Clear search|Kosongkan carian
+Say hello|Sapa kami
+Follow us|Ikuti kami
+Copied|Disalin
+Email address copied|Alamat e-mel disalin
+Write email|Tulis e-mel
+Your draft is ready.|Draf anda sudah sedia.
+Your messages and replies|Mesej dan balasan anda
+Topic|Topik
+Ask a question or share an idea|Tanya soalan atau kongsi idea
 vs last week|berbanding minggu lalu
 No change|Tiada perubahan
 Programme|Program

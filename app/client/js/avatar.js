@@ -26,6 +26,29 @@ export const HATS = [['none', 'No hat'], ['beanie', 'Beanie'], ['cap', 'Cap'],
 // Skins in the order and with the level locks of the wardrobe colours grid (696:13715). Every lock is a level,
 // which production already grants; nothing is bought. Palette = shell top, shell bottom, face top, face bottom.
 // The last seven are also the KK League college colours (COLLEGE_SKIN below).
+// Onzo's faces, from Figma "Hats & Expressions v2 › Expressions" (416:8732), on the Lion v2 canvas (200×280).
+// Only the eyes, mouth and cheeks change between expressions; the nose and everything else stay put.
+const SMILE = (x, y, w, h) => `<path transform="translate(${x} ${y}) scale(${w / 20} ${h / 10})" d="M20 0C20 1.31 19.74 2.61 19.24 3.83C18.74 5.04 18 6.14 17.07 7.07C16.14 8 15.04 8.74 13.83 9.24C12.61 9.74 11.31 10 10 10C8.69 10 7.39 9.74 6.17 9.24C4.96 8.74 3.86 8 2.93 7.07C2 6.14 1.26 5.04 0.76 3.83C0.26 2.61 0 1.31 0 0H3.8C3.8 .81 3.96 1.62 4.27 2.37C4.58 3.12 5.04 3.81 5.62 4.38C6.19 4.96 6.88 5.42 7.63 5.73C8.38 6.04 9.19 6.2 10 6.2C10.81 6.2 11.62 6.04 12.37 5.73C13.12 5.42 13.81 4.96 14.38 4.38C14.96 3.81 15.42 3.12 15.73 2.37C16.04 1.62 16.2 .81 16.2 0H20Z" fill="#1A1A1A"/>`;
+const PLUS_EYE = (cx) => `<path d="M${cx} 113a3.33 3.33 0 0 1 3.33 3.33v3.34h3.34a3.33 3.33 0 0 1 0 6.66h-3.34v3.34a3.33 3.33 0 0 1-6.66 0v-3.34h-3.34a3.33 3.33 0 0 1 0-6.66h3.34v-3.34A3.33 3.33 0 0 1 ${cx} 113Z" fill="url(#onz-love-eye)"/>`;
+export const EXPRESSIONS = {
+  calm: '<rect x="71" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/><rect x="118" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/>',
+  happy: '<rect x="71" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/><rect x="118" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/>' + SMILE(90, 150, 20, 10),
+  wink: '<rect x="71" y="111" width="11" height="24" rx="5.5" fill="#1A1A1A"/><rect x="113" y="123" width="20" height="6" rx="3" fill="#1A1A1A"/>',
+  love: '<linearGradient id="onz-love-eye" x1="0" y1="113" x2="0" y2="133" gradientUnits="userSpaceOnUse"><stop stop-color="#1325F5"/><stop offset="1" stop-color="#5A78FF"/></linearGradient>'
+    + PLUS_EYE(76.5) + PLUS_EYE(123.5) + SMILE(90, 150, 20, 10),
+  surprised: '<rect x="70" y="106" width="12" height="29" rx="6" fill="#1A1A1A"/><rect x="118" y="106" width="12" height="29" rx="6" fill="#1A1A1A"/>',
+  celebrate: '<rect x="69" y="116" width="13" height="11" rx="5.5" fill="#1A1A1A"/><rect x="118" y="116" width="13" height="11" rx="5.5" fill="#1A1A1A"/>' + SMILE(87, 148, 26, 13),
+  // Cheeks use the skin's lighter shell colour (blue Onzo: #8CBEFB), passed in at poke time.
+  shy: (cheek = '#8CBEFB') => `<rect x="66" y="122" width="11" height="13" rx="5.5" fill="#1A1A1A"/><rect x="113" y="122" width="11" height="13" rx="5.5" fill="#1A1A1A"/><ellipse cx="60" cy="141" rx="10" ry="5" fill="${cheek}"/><ellipse cx="140" cy="141" rx="10" ry="5" fill="${cheek}"/>`,
+};
+/** Swap an Onzo SVG's face to an expression for `ms`, then back to Calm. Returns a cancel function. */
+export function showExpression(svg, name, ms = 1400) {
+  const face = svg?.querySelector('.onz-face'); if (!face || !EXPRESSIONS[name]) return () => {};
+  const cheek = svg.querySelector('linearGradient stop:last-child')?.getAttribute('stop-color') || '#8CBEFB';
+  face.innerHTML = typeof EXPRESSIONS[name] === 'function' ? EXPRESSIONS[name](cheek) : EXPRESSIONS[name];
+  const t = setTimeout(() => { if (face.isConnected) face.innerHTML = EXPRESSIONS.calm; }, ms);
+  return () => { clearTimeout(t); if (face.isConnected) face.innerHTML = EXPRESSIONS.calm; };
+}
 export const ONZ_SKINS = [
   ['blue', 'Blue', null, ['#4DA1F8', '#8CBEFB', '#BBD0F5', '#DDE8FA']],
   ['red', 'Red', null, ['#FF7A6B', '#FFB0A6', '#FFD3CC', '#FFE9E5']],
@@ -145,7 +168,7 @@ function lionSVG(skinId, [shellTop, shellBottom, faceTop, faceBottom], { variant
     <image href="${p}ears.svg" x="43" y="53" width="114" height="33" preserveAspectRatio="xMidYMax meet"/>
     <path d="M91.3 75H108.7A58.8 58.8 0 0 1 167.5 133.8V133.8A41.2 41.2 0 0 1 126.3 175H73.7A41.2 41.2 0 0 1 32.5 133.8V133.8A58.8 58.8 0 0 1 91.3 75Z" fill="url(#${id}s)"/>
     <rect x="42.5" y="97.5" width="115" height="71" rx="35.5" fill="url(#${id}f)"/>
-    <rect x="71" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/><rect x="118" y="113" width="11" height="19" rx="5.5" fill="#1A1A1A"/>
+    <g class="onz-face">${EXPRESSIONS.calm}</g>
     <image href="${A}lion/nose.svg" x="93" y="135.5" width="14" height="9" preserveAspectRatio="none"/>
     <image href="${A}hero/smile.svg" x="90" y="150" width="20" height="10" preserveAspectRatio="none"/>
     ${look ? '' : `<image href="${p}badge.svg" x="85" y="163" width="30" height="30" preserveAspectRatio="none"/>`}
@@ -164,10 +187,12 @@ const BACKDROP_SKY = { sky: ['#8CC8FF', '#D8EEFF'], campus: ['#FFD27A', '#FFF1CF
 
 // Each residential college's colour in the KK League (Figma "Onzo · <colour>" in 08 · Leagues · Production 696:13575).
 export const COLLEGE_SKIN = { KK1: 'blue', KK2: 'red', KK3: 'orange', KK4: 'yellow', KK5: 'green', KK6: 'teal', KK7: 'purple',
-  KK8: 'pink', KK9: 'midnight', KK10: 'cocoa', KK11: 'aqua', KK12: 'plum', KK13: 'slate' };
-/** A college's Sir Onz for the KK League. Colleges without Figma artwork (IHAJ, off campus) use the standard blue lion. */
+  KK8: 'pink', KK9: 'midnight', KK10: 'cocoa', KK11: 'aqua', KK12: 'plum', KK13: 'slate', IHAJ: 'lime' };
+// League-only colours: IHAJ shared KK1's blue, so it gets its own lime lion (recoloured from green; not a Wardrobe colour).
+const LEAGUE_SKINS = [['lime', 'Lime', null, ['#A8D62E', '#CDEB7C', '#E6F4BC', '#F4FBDD']]];
+/** A college's Sir Onz for the KK League. Off campus (no college) uses the standard blue lion. */
 export function collegeLionSVG(code, { size = 38 } = {}) {
-  const skin = ONZ_SKINS.find((s) => s[0] === COLLEGE_SKIN[code]) || ONZ_SKINS[0];
+  const skin = [...ONZ_SKINS, ...LEAGUE_SKINS].find((s) => s[0] === COLLEGE_SKIN[code]) || ONZ_SKINS[0];
   return lionSVG(skin[0], skin[3], { size, cls: 'oz-lg-lion' });
 }
 

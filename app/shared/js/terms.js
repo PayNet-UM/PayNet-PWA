@@ -199,21 +199,26 @@ export function termsHTML(lang = pickLang()) {
 }
 
 // Language switch inside the terms (they're kept out of the app's automatic translation).
+// Design-system segmented control (two equal halves), not two heavy pills.
 export function termsLangSwitch(lang) {
-  return `<div class="terms-lang" role="group" aria-label="Language" data-no-i18n>
-    <button type="button" class="${lang === 'en' ? 'on' : ''}" data-terms-lang="en">English</button>
-    <button type="button" class="${lang === 'ms' ? 'on' : ''}" data-terms-lang="ms">Bahasa Melayu</button></div>`;
+  return `<div class="terms-lang oz-seg" role="group" aria-label="Language" data-no-i18n>
+    <button type="button" class="oz-seg-item${lang === 'en' ? ' on' : ''}" aria-pressed="${lang === 'en'}" aria-selected="${lang === 'en'}" data-terms-lang="en">English</button>
+    <button type="button" class="oz-seg-item${lang === 'ms' ? ' on' : ''}" aria-pressed="${lang === 'ms'}" aria-selected="${lang === 'ms'}" data-terms-lang="ms">Bahasa Melayu</button></div>`;
 }
 export function bindTermsLang(root, render) {
   $$('[data-terms-lang]', root).forEach((b) => { b.onclick = () => render(b.dataset.termsLang); });
 }
 
-// Read-only view (sign-in screen, onboarding link, Me page).
+// Read-only view (sign-in screen, onboarding link, Me page). Switching language swaps the text in place
+// (the sheet stays open and scrolls back to the top) instead of closing and reopening.
 export function termsSheet() {
-  const show = (lang) => {
-    const el = sheet(`<h2 data-no-i18n>${esc(termsText(lang).title)}</h2>${termsLangSwitch(lang)}<div class="terms-scroll">${termsHTML(lang)}</div>`);
-    bindTermsLang(el, show);
+  const lang0 = pickLang();
+  const el = sheet(`<div class="terms-sheet"><h2 data-no-i18n>${esc(termsText(lang0).title)}</h2>${termsLangSwitch(lang0)}<div class="terms-scroll">${termsHTML(lang0)}</div></div>`);
+  const swap = (lang) => {
+    $$('[data-terms-lang]', el).forEach((b) => { const on = b.dataset.termsLang === lang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-selected', on); });
+    el.querySelector('.terms-sheet h2').textContent = termsText(lang).title;
+    const scroll = el.querySelector('.terms-scroll'); scroll.innerHTML = termsHTML(lang); scroll.scrollTop = 0;
   };
-  show(pickLang());
+  bindTermsLang(el, swap);
 }
 export { pickLang as termsLang };

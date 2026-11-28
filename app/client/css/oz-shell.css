@@ -26,7 +26,7 @@
 .oz-sidebar { display:contents; }
 .oz-side-brand, .oz-side-role, .oz-tab-short { display:none; }
 .oz-tabbar { position:fixed; z-index:30; left:16px; right:16px; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); top:auto;
-  max-width:480px; margin:0 auto; width:auto; height:64px; padding:var(--oz-space-2); display:flex; align-items:stretch; gap:4px;
+  max-width:480px; margin:0 auto; width:auto; height:64px; padding:var(--oz-space-2); display:flex; align-items:stretch; gap:2px;
   grid-template-columns:none; background:var(--oz-bg-surface); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill);
   box-shadow:none; overflow:hidden; }
 .oz-tabbar::after, .oz-tabbar::before { content:none; display:none; }
@@ -36,8 +36,10 @@
   transition:background-color var(--oz-dur-tab) var(--oz-ease-out), color var(--oz-dur-tab) var(--oz-ease-out); }
 .oz-tab .ic, .oz-tab .oz-ic { width:24px; height:24px; color:inherit; }
 .oz-tab-label { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
-.oz-tab.on { flex:0 0 auto; padding:0 var(--oz-space-5) 0 16px; background:var(--oz-blue-100); color:var(--oz-nav-active); }
-.oz-tab.on .oz-tab-label { position:static; width:auto; height:auto; overflow:visible; clip:auto; clip-path:none; }
+/* The lit tab shows its label but may shrink (ellipsis) so the other four never leave the bar (Community at 320–390). */
+.oz-tab.on { flex:0 1 auto; min-width:0; gap:6px; padding:0 var(--oz-space-3); background:var(--oz-blue-100); color:var(--oz-nav-active); }
+.oz-tab.on .oz-tab-label { position:static; width:auto; height:auto; overflow:hidden; text-overflow:ellipsis; clip:auto; clip-path:none; min-width:0; }
+.oz-tab.on .ic, .oz-tab.on .oz-ic { flex:none; }
 .oz-tab.pending { color:var(--oz-nav-active); }
 .oz-tab.nav-desktop-only { display:none; }
 @media (hover:hover) { .oz-tab:not(.on):hover { background:var(--oz-bg-subtle); } }
@@ -63,7 +65,6 @@
   .oz-tab-label { position:static; width:auto; height:auto; overflow:visible; clip:auto; clip-path:none; }
   .oz-tab.on { flex:none; padding:0 var(--oz-space-3); background:var(--oz-blue-100); color:var(--oz-nav-active); }
   .oz-tab.on .ic, .oz-tab.on .oz-ic { color:var(--oz-nav-active); }
-  .oz-tab[data-tab="home"] { order:-1; }
   .oz-tab.nav-desktop-only { display:flex; }
   .oz-merchant .oz-tab[data-tab="about"] { order:99; }
 
@@ -143,3 +144,10 @@ dialog.sheet .close:focus-visible { outline:2px solid var(--oz-focus-ring); outl
 .oz-lang [aria-pressed="true"] .oz-menu-check { visibility:visible; }
 
 @media (prefers-reduced-motion:reduce) { .oz-tab { transition-duration:var(--oz-dur-dissolve); } }
+
+/* Very narrow phones (<360px): a clipped label ("Ho…") reads worse than none, so the lit tab is an icon pill there;
+   the label stays for screen readers. */
+@media (max-width:359.98px) {
+  .oz-tab.on { flex:1 1 0; padding:0; }
+  .oz-tab.on .oz-tab-label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+}

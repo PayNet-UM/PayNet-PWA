@@ -141,8 +141,9 @@ export const sheetOpen = () => !!($('#sheet') && $('#sheet').open);
 export function confirmSheet(title, body, okLabel = 'Confirm', danger = false) {
   return new Promise((resolve) => {
     let done = false;
-    const el = sheet(`<h2>${esc(title)}</h2><p class="muted">${body}</p><div class="row end" style="margin-top:20px">
-      <button class="btn" data-no>Cancel</button><button class="btn ${danger ? 'warn' : 'primary'}" data-yes>${esc(okLabel)}</button></div>`,
+    // +Onz confirm (design system, shared with Admin): question, one line, then two equal buttons.
+    const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">${esc(title)}</h2><p class="oz-fsheet-body">${body}</p><div class="oz-fsheet-actions">
+      <button type="button" class="oz-btn oz-btn-ghost oz-btn-md" data-no>Cancel</button><button type="button" class="oz-btn ${danger ? 'oz-btn-destructive' : 'oz-btn-primary'} oz-btn-md" data-yes>${esc(okLabel)}</button></div></div>`,
     { onClose: () => { if (!done) resolve(false); } });
     $('[data-no]', el).onclick = () => { done = true; resolve(false); closeSheet(); };
     $('[data-yes]', el).onclick = () => { done = true; resolve(true); closeSheet(); };

@@ -327,3 +327,50 @@ dialog.sheet.no-exit, dialog.sheet.no-exit::backdrop { transition:none !importan
 #view a:not([class]), #view .oz-link-inline { color:var(--oz-blue-700); }
 #view :is(b, strong):not([class]):not(a *) { color:inherit; }
 .points-summary b, .app-streak .streak-bonus, .points-summary > strong { color:var(--oz-text-primary); }
+
+/* ---------- Terms of Use and Privacy Notice (sheet, onboarding, re-accept page) ---------- */
+/* Round 7: the language switch is the design-system segmented control; the body reads as UI/Body SM, not bold navy. */
+.terms-lang.oz-seg { display:flex; gap:4px; width:100%; margin:var(--oz-space-3) 0 0; }
+.terms-lang.oz-seg button.oz-seg-item { flex:1 1 0; border:0; background:transparent; color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); padding:8px var(--oz-space-3); }
+.terms-lang.oz-seg button.oz-seg-item.on { background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:var(--oz-shadow-card); }
+.terms-sheet h2 { margin:0; padding-right:var(--oz-space-8); font:700 20px/28px var(--oz-font-display); color:var(--oz-text-primary); }
+.terms { font:400 14px/22px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.terms .lede { margin:0 0 var(--oz-space-3); color:var(--oz-text-primary); }
+.terms section { margin-top:var(--oz-space-4); }
+.terms h3 { margin:0 0 var(--oz-space-1); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); }
+.terms p { margin:var(--oz-space-1) 0; }
+.terms ul { margin:var(--oz-space-1) 0; padding-left:var(--oz-space-5); display:grid; gap:var(--oz-space-1); }
+.terms .faint { margin-top:var(--oz-space-4); font:500 12px/16px var(--oz-font-ui); }
+.terms-sheet .terms-scroll { margin-top:var(--oz-space-4); padding:0 var(--oz-space-1) var(--oz-space-2) 0; }
+
+/* ---------- Sheet content (design system) ----------
+   Every bottom sheet: H2 question/title, optional one-line body, the input, at most one fine line, one action row.
+   Replaces the legacy .btn/.field/.muted/.stack sheets (fund, request, confirm, install, survey result). */
+.oz-fsheet { display:flex; flex-direction:column; gap:var(--oz-space-4); }
+.oz-fsheet-title { margin:0; padding-right:var(--oz-space-8); font:700 22px/28px var(--oz-font-display); color:var(--oz-text-primary); text-wrap:balance; }
+.oz-fsheet-body { margin:calc(var(--oz-space-2) * -1) 0 0; font:400 16px/24px var(--oz-font-ui); color:var(--oz-text-secondary); text-wrap:pretty; }
+.oz-fsheet-fine { margin:calc(var(--oz-space-2) * -1) 0 0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-fsheet-form { display:flex; flex-direction:column; gap:var(--oz-space-4); margin:0; }
+.oz-fsheet-form > .oz-fsheet-fine:last-child { margin:calc(var(--oz-space-2) * -1) 0 0; text-align:center; }
+.oz-fsheet-actions { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-3); }
+.oz-fsheet-actions .oz-btn { width:100%; }
+.oz-fsheet-center { align-items:center; text-align:center; }
+.oz-fsheet-center .oz-fsheet-title { padding-inline:var(--oz-space-8); }
+.oz-fsheet-center .oz-btn-block { align-self:stretch; }
+/* Big amount entry: the number is the hero (Bricolage H1), unit beside it. */
+.oz-amount { display:flex; align-items:baseline; gap:var(--oz-space-2); padding:var(--oz-space-3) var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg);
+  background:var(--oz-bg-surface); transition:border-color 150ms var(--oz-ease-out), box-shadow 150ms var(--oz-ease-out); }
+.oz-amount:focus-within { border-color:var(--oz-blue-700); box-shadow:0 0 0 3px var(--oz-blue-100); }
+.oz-amount input { flex:1 1 auto; min-width:0; margin:0; padding:0; border:0; outline:0; background:transparent; box-shadow:none;
+  font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); font-variant-numeric:tabular-nums; -moz-appearance:textfield; }
+.oz-amount input::-webkit-outer-spin-button, .oz-amount input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.oz-amount-unit { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-fsheet-presets { display:grid; grid-template-columns:repeat(4, 1fr); gap:var(--oz-space-2); }
+.oz-fsheet-presets .oz-chip { justify-content:center; }
+.oz-fsheet-presets .oz-chip[aria-pressed="true"] { border-color:var(--oz-blue-700); background:var(--oz-blue-700); color:var(--oz-text-on-brand); }
+.oz-fsheet-presets .oz-chip:disabled { opacity:.4; cursor:not-allowed; }
+.oz-fsheet-stats { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-3); align-self:stretch; }
+.oz-fsheet-stats span { display:flex; flex-direction:column; gap:var(--oz-space-1); padding:var(--oz-space-3); border-radius:var(--oz-radius-lg); background:var(--oz-bg-subtle); }
+.oz-fsheet-stats b { font:700 22px/28px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-fsheet-stats small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-fsheet-presets .oz-chip span { font:600 14px/20px var(--oz-font-ui); }

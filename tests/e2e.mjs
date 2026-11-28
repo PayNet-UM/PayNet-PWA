@@ -37,7 +37,7 @@ for (const route of ['explore', 'community', 'learn', 'activities']) {
 for (const route of ['bayar', 'explore/idea']) {
   if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
 }
-if ((await stu.locator('.tabbar a[data-tab]').evaluateAll((links) => links.map((a) => a.dataset.tab))).join() !== 'community,leagues,home,rewards,me') throw new Error('student navigation should be Community, Leagues, Home, Rewards, Me');
+if ((await stu.locator('.tabbar a[data-tab]').evaluateAll((links) => links.map((a) => a.dataset.tab))).join() !== 'home,community,leagues,rewards,me') throw new Error('student navigation should be Home, Community, Leagues, Rewards, Me');
 if (await stu.locator('#view a[href="#/events"]').count() < 1) throw new Error('missing Campus Events link on Home');
 if (await stu.locator('#to-mpp').count() !== 0) throw new Error('student app offers the HEP dashboard to a student');
 const before = await pointsOf(stu);

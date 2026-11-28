@@ -24,11 +24,11 @@ const map = { position: null, pins: [], setMe(p) { this.position = p; }, setPins
 const D = new Proxy({ featureOn: () => true, listVerifiedMerchants: async () => shops, approvedDeals: async () => [], dealOverview: async () => [], clock: () => 0, dayKey: () => '1970-01-01' }, {
   get(target, key) { if (!(key in target)) throw new Error('Discovery accessed unexpected data operation: ' + key); return target[key]; },
 });
-const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n', 'ozSectionHead', 'ozListRow', 'window', 'document'];
+const names = ['D', '$', '$$', 'hasPin', 'icon', 'esc', 'cashlessSteps', 'merchantLogo', 'isIdea', 'directionsUrl', 'distanceM', 'fmtDistance', 'watchLocation', 'createMap', 'UM_CENTER', 'navigator', 'setInterval', 'clearInterval', 'hereNowSection', 'cafeListings', 'mountHereNow', 'n', 'ozSectionHead', 'ozListRow', 'window', 'document', 'ozButton'];
 const values = [D, (selector) => el(selector), () => filters, (m) => Number.isFinite(m.lat) && Number.isFinite(m.lng), (name) => `<i>${name}</i>`, String, () => '',
   () => '', (shop) => shop.venture, (shop) => `https://maps.example/${shop.id}`, (a, b) => Math.abs(a.lat - b.lat) * 100000, (d) => `${d} m away`,
   (onPos, onErr) => { watchCalls++; watch = { onPos, onErr }; return () => { stopped++; }; }, async () => map, [3.12, 101.65],
-  { onLine: true, permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String, (title) => '<h2>' + title + '</h2>', ({ href, title }) => href + ' ' + title, { addEventListener() {}, removeEventListener() {} }, {}];
+  { onLine: true, permissions: { query: async () => permission } }, () => 1, () => { clearedTimer = true; }, () => '', () => '', () => ({ stop() {}, redraw() {} }), String, (title) => '<h2>' + title + '</h2>', ({ href, title }) => href + ' ' + title, { addEventListener() {}, removeEventListener() {} }, {}, (label, { href = '' } = {}) => `<a href="${href}">${label}</a>`];
 const { directoryRender, directoryMount } = new Function(...names, source.slice(dealStart, dealEnd) + source.slice(start, end) + '\nreturn { directoryRender, directoryMount };')(...values);
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 let passed = 0;
