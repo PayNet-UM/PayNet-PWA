@@ -20,8 +20,8 @@ export const FACES = [['smile', 'Smile'], ['grin', 'Grin'], ['wink', 'Wink']];
 
 // Hats (Figma "Hats" 416:123, wardrobe 696:13625). Ids are unchanged from production; a third value is the level that unlocks it.
 // Order follows the wardrobe grid (696:13647): free hats, the level hats, then the songkok.
-export const HATS = [['none', 'No hat'], ['beanie', 'Beanie'], ['cap', 'Cap'],
-  ['mushroom', 'Barista cap', 'Regular'], ['grad', 'Explorer hat', 'Explorer'], ['crown', 'Crown', 'Campus champion'], ['songkok', 'Songkok']];
+export const HATS = [['none', 'No hat'], ['beanie', 'Beanie'], ['cap', 'Cap'], ['party', 'Party hat'],
+  ['mushroom', 'Barista cap', 'Regular'], ['headband', 'KK headband'], ['grad', 'Explorer hat', 'Explorer'], ['crown', 'Crown', 'Campus champion'], ['songkok', 'Songkok']];
 
 // Skins in the order and with the level locks of the wardrobe colours grid (696:13715). Every lock is a level,
 // which production already grants; nothing is bought. Palette = shell top, shell bottom, face top, face bottom.

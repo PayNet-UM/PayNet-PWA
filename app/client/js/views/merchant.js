@@ -369,7 +369,7 @@ async function mountPin(root, form, onMove = () => {}) {
       const ok = inGeoBox(lat, lng);
       read.textContent = ok ? (placed ? 'Pin moved. Save to update it.' : 'Pin saved') : 'This spot is outside the UM campus. Drag the pin to your shop.';
       read.classList.toggle('bad-text', !ok); read.classList.toggle('is-set', ok); if (placed) onMove();
-    });
+    }, { kit: true });
     placed = true;
     $('#locate', root).onclick = (e) => busy(e.currentTarget, async () => {
       try { const p = await picker.useMyLocation(); if (!inGeoBox(p.lat, p.lng)) toast('That location is outside the UM campus area. Drag the pin to your shop.', true); else toast(p.accuracy > 50 ? `Pin placed (accurate to about ${p.accuracy} m). Drag it if it’s off.` : 'Pin placed at your location.'); }

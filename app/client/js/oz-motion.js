@@ -275,11 +275,100 @@ export function flyPoints(delta) {
   a.finished.then(() => { done(); flash(); }, done);
 }
 
+/** A few design-system dots pop out from a point in `stage` (fractions of its box) and fade: used when the party hat
+ *  goes on. Small and quick, no bounce; nothing under reduced motion. */
+export function burst(stage, { x = .5, y = .2, count = 8 } = {}) {
+  if (!stage || !can() || reduced()) return;
+  const colors = ['var(--oz-lime-500)', 'var(--oz-blue-500)', 'var(--oz-tag-lilac, #FF5FA2)', 'var(--oz-warning)'];
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('i'); d.className = 'oz-burst-dot'; d.setAttribute('aria-hidden', 'true');
+    d.style.background = colors[i % colors.length];
+    const ang = (i / count) * Math.PI * 2 + Math.random() * .4, r = 28 + Math.random() * 18;
+    const x0 = w * x, y0 = h * y;
+    stage.append(d);
+    const a = d.animate([{ translate: `${x0}px ${y0}px`, scale: '.4', opacity: 1 },
+      { translate: `${x0 + Math.cos(ang) * r}px ${y0 + Math.sin(ang) * r}px`, scale: '1', opacity: 0 }], { duration: 520, easing: EASE.out, fill: 'forwards' });
+    const done = () => d.remove(); a.finished.then(done, done);
+  }
+}
+
 /** The streak flame flares once (a check-in), on top of its continuous burn. Animates the wrapper's `scale`. */
 export function flare(el) {
   if (!el || !can() || reduced()) return;
   el.style.transformOrigin = '50% 100%';
   el.animate([{ scale: '1' }, { scale: '1.12', filter: 'brightness(1.15)', offset: .35 }, { scale: '1' }], { duration: 620, easing: EASE.out });
+}
+
+/** Tap the streak flame to stoke it (Mobbin: yope's flame burst on a streak, Me+ / Yazio / Deepstash streak flames).
+ *  Each tap adds heat: the flame grows from its base, burns faster, glows and throws a few embers. Fully stoked, it
+ *  bursts once (plus a short buzz where supported). Stop tapping and it cools back to its normal burn. Heat is eased
+ *  every frame toward its target, so growth is smooth and never overshoots. Reduced motion: glow only, no movement.
+ *  `btn` wraps an `ozFlame` svg. Returns a cleanup. */
+export function stokeFlame(btn) {
+  const svg = btn?.querySelector('.oz-flame');
+  if (!svg) return () => {};
+  const still = reduced(), anim = can();
+  let target = 0, heat = 0, lastTap = 0, prev = 0, raf = 0, peaked = false, rate = 1, embers = 0;
+  const tone = (sel) => { const p = svg.querySelector(sel); return p ? getComputedStyle(p).fill : '#FF8A1F'; };
+  const setRate = (r) => {
+    if (Math.abs(r - rate) < .05 && r !== 1) return; rate = r;
+    svg.getAnimations?.({ subtree: true }).forEach((a) => (a.updatePlaybackRate ? a.updatePlaybackRate(r) : (a.playbackRate = r)));
+  };
+  const ember = (burst = false) => {
+    if (!anim || still || embers > 36) return;
+    const e = document.createElement('i'); e.className = 'oz-ember'; e.setAttribute('aria-hidden', 'true');
+    const s = 5 + Math.random() * (burst ? 6 : 4); e.style.width = e.style.height = `${s}px`;
+    e.style.background = Math.random() < .5 ? tone('.oz-flame-inner') : tone('.oz-flame-outer');
+    const w = btn.offsetWidth, h = btn.offsetHeight, grow = 1 + heat * .4;
+    const tip = h * .92 * (1 - grow) + h * .12; // top of the (scaled) flame; it grows from 92% down
+    const x0 = w / 2 + (Math.random() - .5) * w * .4 - s / 2;
+    let x = x0, y0 = tip + Math.random() * h * .15 - s / 2, dx, dy;
+    if (burst) { const ang = Math.random() * Math.PI * 2; y0 = h * .5; x = w / 2 - s / 2; dx = Math.cos(ang) * (w * .6 + Math.random() * 30); dy = Math.sin(ang) * (h * .5 + Math.random() * 24) - 20; }
+    else { dx = (Math.random() - .5) * 40; dy = -(48 + Math.random() * 56) * grow; }
+    btn.append(e); embers++;
+    const a = e.animate([
+      { translate: `${x}px ${y0}px`, scale: '1', opacity: 1 },
+      { translate: `${x + dx}px ${y0 + dy}px`, scale: '.3', opacity: 0 },
+    ], { duration: 650 + Math.random() * 350, easing: EASE.out, fill: 'forwards' });
+    const done = () => { e.remove(); embers--; };
+    a.finished.then(done, done);
+  };
+  const paint = () => {
+    const glow = tone('.oz-flame-outer');
+    svg.style.scale = still ? '' : String(1 + heat * .4);
+    svg.style.filter = heat > .01 ? `drop-shadow(0 0 ${(heat * 18).toFixed(1)}px ${glow}) brightness(${(1 + heat * .15).toFixed(3)})` : '';
+    if (!still) setRate(1 + heat * 1.6);
+  };
+  const frame = (t) => {
+    const dt = prev ? Math.min(64, t - prev) / 1000 : 1 / 60; prev = t;
+    if (performance.now() - lastTap > 450) target = Math.max(0, target - dt * .6); // cools after a pause
+    heat += (target - heat) * Math.min(1, dt * 9);
+    if (heat < .6) peaked = false; // it has to cool down before it can burst again
+    paint();
+    if (target === 0 && heat < .003) { heat = 0; paint(); setRate(1); raf = 0; prev = 0; return; }
+    raf = requestAnimationFrame(frame);
+  };
+  const stoke = () => {
+    lastTap = performance.now();
+    target = Math.min(1, target + .16);
+    for (let i = 0; i < 2 + Math.round(target * 2); i++) ember();
+    if (target >= 1 && !peaked) {
+      peaked = true;
+      for (let i = 0; i < 14; i++) ember(true);
+      navigator.vibrate?.(12);
+    }
+    if (!raf) raf = requestAnimationFrame(frame);
+  };
+  // Touch and mouse feed it on press (no click delay); keyboard (Enter/Space) arrives as a click with detail 0.
+  const onDown = (e) => { if (e.button === 0) stoke(); };
+  const onClick = (e) => { if (e.detail === 0) stoke(); };
+  btn.addEventListener('pointerdown', onDown);
+  btn.addEventListener('click', onClick);
+  return () => {
+    btn.removeEventListener('pointerdown', onDown); btn.removeEventListener('click', onClick);
+    if (raf) cancelAnimationFrame(raf);
+  };
 }
 
 /** A removed row folds away (height, padding, margin and opacity) instead of the list jumping. Resolves when gone. */

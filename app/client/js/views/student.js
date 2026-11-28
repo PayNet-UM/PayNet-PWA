@@ -286,7 +286,7 @@ export const studentShopMount = (root, app, args) => merchantMount(root, app, ar
 function merchantMount(root, app, [id]) {
   const el = $('#shop-map', root); if (!el) return;
   let map = null;
-  D.getMerchant(app.ctx, id).then((m) => shopPinMap(el, m)).then((mm) => { if (root.isConnected) map = mm; else mm.remove(); })
+  D.getMerchant(app.ctx, id).then((m) => shopPinMap(el, m, { kit: true })).then((mm) => { if (root.isConnected) map = mm; else mm.remove(); })
     .catch((err) => { el.innerHTML = `<div class="empty">${esc(err.message)}</div>`; });
   return () => { if (map) map.remove(); };
 }
@@ -329,7 +329,9 @@ async function directoryRender(app, [mode] = []) {
       <section class="oz-shops-map-area" aria-label="Campus map"><div class="oz-shops-map">
         <span class="oz-shops-verified">Admin verified</span>
         <div id="cmap" class="mmap" aria-label="Campus shops and your location, when permitted"></div>
-        <div class="nearby-map-legend"><span class="nearby-location-key" id="nearby-location-key" hidden><span class="nearby-you-dot" aria-hidden="true"></span><span>You</span></span></div>
+        <div class="nearby-map-legend"><span class="nearby-location-key oz-map-key" id="nearby-location-key" hidden><img src="assets/onz/map/pin-you.svg" width="17" height="18" alt=""><span>You</span></span>
+          <span class="oz-map-key" data-map-key="live" hidden><img src="assets/onz/map/pin-live.svg" width="17" height="18" alt=""><span>Live deal</span></span>
+          <span class="oz-map-key" data-map-key="claimed" hidden><img src="assets/onz/map/pin-claimed.svg" width="17" height="18" alt=""><span>Claimed today</span></span></div>
         </div><div class="oz-shops-preview" hidden></div><span class="visually-hidden" role="status" id="shop-pin-status"></span>
       </section>
     </div>
@@ -347,6 +349,8 @@ function directoryMount(root, app, [mode] = []) {
   const merchants = [...app._merchants];
   const preview = $('.oz-shops-preview', root);
   let selectedId = focusId;
+  let pinState = new Map();
+  const stateOf = (m) => pinState.get(m.id) || 'shop';
   const visibleMerchants = () => merchants.filter((m) =>
     (activeType === 'All' || (activeType === 'Student ventures' ? isIdea(m) : m.type === activeType))
     && `${m.name} ${m.location} ${m.zone || ''}`.toLowerCase().includes(query));
@@ -360,24 +364,23 @@ function directoryMount(root, app, [mode] = []) {
     $('.checkout-card', root).classList.toggle('location-found', !!pos);
     $('#nearby-location-key', root).hidden = !pos;
   };
-  // Map pin card: identity on top, then two equal small buttons in the app's own type (not Leaflet's).
-  const popup = (m) => `<div class="mpop oz-mpop"><div class="oz-mpop-head">${merchantLogo(m, 'mpop-logo')}<div><b data-no-i18n>${esc(m.name)}</b><p>${esc(m.type)} · <span data-no-i18n>${esc(m.location)}</span></p>
-    ${pos ? `<p class="dist">${esc(fmtDistance(distanceM(pos, m)))}</p>` : ''}</div></div>
-    <div class="oz-mpop-actions">${ozButton('View shop', { kind: 'secondary', size: 'sm', href: '#/merchant/' + m.id })}${ozButton('Directions', { kind: 'ghost', size: 'sm', iconName: 'navigation', href: directionsUrl(m), attr: { target: '_blank', rel: 'noopener' } })}</div></div>`;
   function selectShop(shop) {
     selectedId = shop?.id ?? null;
     map?.selectPin(selectedId);
     $$('.oz-shop-row', root).forEach((row) => row.classList.toggle('focus', row.dataset.shopId === selectedId));
     preview.hidden = !shop;
-    preview.innerHTML = shop ? ozListRow({
-      title: shop.name, sub: shop.location, href: '#/merchant/' + encodeURIComponent(shop.id),
-      leadHtml: '<span class="oz-shop-logo">' + merchantLogo(shop) + '</span>',
-    }) : '';
+    // Peek guide card (Figma 33:3400): your Onzo peeks in from the left; name, where, how far on foot, Navigate.
+    const far = shop && pos && hasPin(shop) ? distanceM(pos, shop) : null;
+    preview.innerHTML = shop ? `<article class="oz-peek"><span class="oz-peek-tile" aria-hidden="true"><span class="oz-peek-onzo">${AV.avatarSVG(myAvatar(app), { size: 112, bg: false })}</span></span>
+      <div class="oz-peek-body"><h3><a href="#/merchant/${encodeURIComponent(shop.id)}" data-no-i18n>${esc(shop.name)}</a></h3>
+        <p><span data-no-i18n>${esc(shop.location)}</span>${far != null ? ` · <span>${esc(fmtDistance(far))}</span> · <span>about ${Math.max(1, Math.ceil(far / 80))} min walk</span>` : ''}</p>
+        ${hasPin(shop) ? ozButton('Navigate', { kind: 'primary', size: 'sm', href: directionsUrl(shop), attr: { target: '_blank', rel: 'noopener' } }) : ''}</div></article>` : '';
     $('#shop-pin-status', root).textContent = shop?.name ?? '';
   }
   function setPins() {
     const pinned = visibleMerchants().filter(hasPin);
-    map?.setPins(pinned, { popup, onSelect: selectShop });
+    map?.setPins(pinned, { onSelect: selectShop, state: stateOf }); // the peek card below the map is the pin's card
+    $$('[data-map-key]', root).forEach((key) => { key.hidden = !pinned.some((m) => stateOf(m) === key.dataset.mapKey); });
     selectShop(pinned.find((m) => m.id === selectedId));
   }
   function centerMap(animate = false) {
@@ -391,6 +394,13 @@ function directoryMount(root, app, [mode] = []) {
   }
   const writeDeals = dealListWriter($('#checkout-deals', root));
   const liveDeals = D.featureOn(app.rules, 'dealsAndPay') ? mountLiveDeals(app, (deals, message) => {
+    // Pins follow the same rows: a deal you can claim now wins over one you already claimed today.
+    const next = new Map();
+    deals.forEach(({ merchant, status }) => {
+      const st = status === 'Available' ? 'live' : status === 'Claimed today' ? 'claimed' : null;
+      if (st && next.get(merchant.id) !== 'live') next.set(merchant.id, st);
+    });
+    if ([...next].join() !== [...pinState].join()) { pinState = next; setPins(); }
     const visible = new Set(visibleMerchants().map((merchant) => merchant.id));
     const rows = deals.filter(({ merchant }) => visible.has(merchant.id))
       .sort((a, b) => availableFirst(a, b) || (pos ? distance(a.merchant) - distance(b.merchant) : 0));
@@ -458,7 +468,7 @@ function directoryMount(root, app, [mode] = []) {
   });
   const hn = mountHereNow(root, app, { getMap: () => map, merchants: visibleMerchants, discovery: true });
   createMap($('#cmap', root), {
-    center: UM_CENTER, zoom: 16,
+    center: UM_CENTER, zoom: 16, kit: true,
     userMarker: {
       html: '<img class="kk-me oz-user-pin" src="assets/onz/map/pin-you.svg" width="42" height="45" alt="">',
       size: [42, 45], anchor: [21, 36.6],
@@ -526,7 +536,7 @@ function appStreakSection(app) {
   // Figma 29 · Rewards · Streak (708:15284) and Web · Rewards · Streak (929:34615): on the web the parts sit in one 800px card.
   // #rewards-streak, .streak-calendar and .streak-guidance are test hooks.
   return `<section class="oz-streak rewards-streak app-streak" id="rewards-streak" tabindex="-1" aria-labelledby="app-streak-heading">
-    <div class="oz-streak-hero">${ozFlame(120, 'oz-streak-flame', current)}
+    <div class="oz-streak-hero"><button type="button" class="oz-flame-tap" aria-label="Stoke the flame">${ozFlame(120, 'oz-streak-flame', current)}</button>
       <div class="oz-streak-hero-text"><h2 id="app-streak-heading"><strong>${current}</strong> ${current === 1 ? 'day running' : 'days running'}</h2>
       <span class="oz-streak-status badge">${status}</span>${sub ? `<p class="oz-streak-sub">${sub}</p>` : ''}</div></div>
     <div class="oz-streak-card"><div class="oz-streak-row"><h3 class="oz-streak-label">Past 7 days</h3><a class="oz-link oz-streak-cal-link" href="#/rewards/streak/calendar">${ozIcon('events')}<span>View calendar</span></a></div>
@@ -564,7 +574,7 @@ function streakMonthHTML(f, ym) {
 function streakCalendarHTML(app) {
   const f = streakFacts(app); const ym = f.today.slice(0, 7);
   return `<section class="oz-streak-cal" aria-labelledby="streak-cal-title">
-    <div class="oz-streak-cal-summary">${ozFlame(84, '', f.current)}
+    <div class="oz-streak-cal-summary"><button type="button" class="oz-flame-tap" aria-label="Stoke the flame">${ozFlame(84, '', f.current)}</button>
       <div><h2 id="streak-cal-title">${f.current}-day streak</h2><p class="oz-streak-cal-status">${esc(f.status)}</p></div></div>
     <div class="oz-cal-nav">${ozButton('Prev', { kind: 'ghost', size: 'sm', attr: { 'data-cal': '-1', 'aria-label': 'Previous month' } })}<p class="oz-cal-month" id="cal-month" aria-live="polite">${CAL_MONTHS[Number(ym.slice(5)) - 1]} ${ym.slice(0, 4)}</p>
       ${ozButton('Next', { kind: 'ghost', size: 'sm', attr: { 'data-cal': '1', 'aria-label': 'Next month', disabled: true } })}</div>
@@ -640,8 +650,13 @@ function badges(app) {
   ];
 }
 function rewardsMount(root, app, [section, sub] = []) {
-  if (section === 'streak' && sub === 'calendar') { mountStreakCalendar(root, app); return null; }
-  if (section === 'streak') { showStreakMotion(root, app); $('#rewards-streak', root)?.focus({ preventScroll: true }); return null; }
+  if (section === 'streak') {
+    // Tapping the flame stokes it: each tap feeds it, it grows, burns faster and throws embers, then cools down.
+    const stoke = $$('.oz-flame-tap', root).map((b) => motion.stokeFlame(b));
+    if (sub === 'calendar') mountStreakCalendar(root, app);
+    else { showStreakMotion(root, app); $('#rewards-streak', root)?.focus({ preventScroll: true }); }
+    return () => stoke.forEach((off) => off());
+  }
   const tabs = $$('.oz-rewards-tabs [data-seg]', root);
   const revealNewVoucher = () => {
     const cue = app.redeemMotion;
@@ -888,17 +903,20 @@ function leagueGap(rows, mine, noun) {
   return below ? `Your ${noun} · leading by ${n(mine.points - below.points)} pts` : `Your ${noun}`;
 }
 
-function leagueBoard({ id, noun, findLabel, mine, mineCode, active, guide = false }) {
+function leagueBoard({ id, noun, findLabel, mine, mineCode, active, guide = false, mascot = '' }) {
   return `<section class="oz-lg-board" id="${id}" tabindex="-1" aria-labelledby="${id}-title"${active ? '' : ' hidden'}>
     <div class="oz-lg-top">
       <i class="oz-lg-card" aria-hidden="true"></i>
-      <div class="oz-lg-standings-head"><h2 id="${id}-title">Overall standings</h2>
-        <button type="button" class="oz-lg-link" ${guide ? 'id="league-help"' : 'data-rules'} aria-haspopup="dialog">Scoring rules</button></div>
-      <div class="oz-lg-sum-wrap"><div class="oz-lg-summary">
-        <div class="oz-lg-sum-text"><p class="oz-lg-sum-label"><span>Your ${noun}</span>${mine ? ` · <span data-no-i18n>${esc(mineCode)}</span>` : ''}</p>
-          <p class="oz-lg-sum-value">${mine ? '<span data-no-i18n data-rank>—</span> · <span data-points>—</span>' : `<span>No ${noun} set</span>`}</p></div>
+      <div class="oz-lg-sum-wrap"><div class="oz-lg-summary oz-lg-race">
+        <div class="oz-lg-race-hero"><span class="oz-lg-race-me" aria-hidden="true">${mascot}</span>
+          ${mine ? '<span class="oz-lg-race-rank" data-no-i18n data-rank>—</span>' : ''}</div>
+        <div class="oz-lg-sum-text"><p class="oz-lg-sum-label"><span>Your ${noun}</span></p>
+          <p class="oz-lg-sum-value">${mine ? `<span data-no-i18n>${esc(mineCode)}</span> · <span data-points>—</span>` : `<span>No ${noun} set</span>`}</p></div>
+        ${mine ? '<div class="oz-lg-race-track" data-track hidden></div><p class="oz-lg-race-gap" data-gap hidden></p>' : ''}
         ${mine ? `<button type="button" class="oz-lg-find" data-find>${esc(findLabel)}</button>` : '<a class="oz-lg-find" href="#/me">Add it in Me</a>'}
       </div></div>
+      <div class="oz-lg-standings-head"><h2 id="${id}-title">Overall standings</h2>
+        <button type="button" class="oz-lg-link" ${guide ? 'id="league-help"' : 'data-rules'} aria-haspopup="dialog">Scoring rules</button></div>
       <ol class="oz-lg-podium" data-podium aria-label="Top three">${'<li class="oz-lg-pod skeleton"></li>'.repeat(3)}</ol>
     </div>
     <ol class="oz-lg-ranks" data-board aria-label="All standings">${'<li class="oz-lg-row skeleton"></li>'.repeat(4)}</ol>
@@ -917,8 +935,8 @@ async function leaguesRender(app, [section] = []) {
       ${refs ? '<p class="oz-lg-sub">The 10 students whose codes were used most.</p>' : ''}</header>
     <nav class="oz-seg oz-lg-tabs" aria-label="Leagues">${LEAGUE_TABS.map(([k, label]) =>
       `<a class="oz-seg-item" href="#/leagues/${k}" data-tab-board="${k}"${k === board ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
-    ${leagueBoard({ id: 'league-kk', noun: 'college', findLabel: 'Find my KK', mine: p.college && p.college !== 'OFF' ? p.college : '', mineCode: p.college, active: board === 'kk', guide: true })}
-    ${leagueBoard({ id: 'league-faculty', noun: 'faculty', findLabel: 'Find my faculty', mine: FACULTY_INFO[p.faculty] || p.faculty === 'Other' ? p.faculty : '', mineCode: facultyCode(p.faculty || ''), active: board === 'faculty' })}
+    ${leagueBoard({ id: 'league-kk', noun: 'college', findLabel: 'Find my KK', mine: p.college && p.college !== 'OFF' ? p.college : '', mineCode: p.college, active: board === 'kk', guide: true, mascot: AV.collegeLionSVG(p.college && p.college !== 'OFF' ? p.college : '', { size: 120 }) })}
+    ${leagueBoard({ id: 'league-faculty', noun: 'faculty', findLabel: 'Find my faculty', mine: FACULTY_INFO[p.faculty] || p.faculty === 'Other' ? p.faculty : '', mineCode: facultyCode(p.faculty || ''), active: board === 'faculty', mascot: facultyArt(p.faculty) })}
     <section class="oz-lg-board oz-lg-refs" id="league-referrals" tabindex="-1" aria-labelledby="leagues-title"${refs ? '' : ' hidden'}>
       <ol class="oz-lg-ranks oz-lg-ref-list" id="referral-list" aria-label="Top referrers"><li class="oz-lg-row skeleton"></li></ol>
       <section class="oz-lg-invite" aria-labelledby="invite-title">
@@ -954,8 +972,9 @@ function fillLeague(root, totals, { keys, mineKey, noun, nameOf, codeOf, artOf, 
   const rows = rankLeague(totals, keys);
   const mine = rows.find((r) => r.key === mineKey);
   const rankEl = $('[data-rank]', root), ptsEl = $('[data-points]', root);
-  if (rankEl) rankEl.textContent = mine && mine.points > 0 ? '#' + mine.rank : '—';
+  if (rankEl) { rankEl.textContent = mine && mine.points > 0 ? '#' + mine.rank : '—'; rankEl.hidden = !(mine && mine.points > 0); } // no ribbon until it ranks
   if (ptsEl) ptsEl.textContent = `${n(mine ? mine.points : 0)} pts`;
+  raceBanner(root, rows, mine, { codeOf, artOf });
   // Everyone is listed (Leagues: "be transparent"): ranked entries as rows, and those with no points yet in a compact
   // "Yet to score" grid underneath instead of a long run of "– 0 pts" rows.
   const wrap = $('[data-unranked-wrap]', root), un = $('[data-unranked]', root);
@@ -985,6 +1004,30 @@ function fillLeague(root, totals, { keys, mineKey, noun, nameOf, codeOf, artOf, 
   fillUnranked();
   list.classList.remove('is-flat');
   list.style.setProperty('--oz-lg-half', String(Math.max(1, Math.ceil(rest.length / 2)))); // web: two rank columns
+}
+// Race card (HOD request). Mobbin: Brilliant / Mimo / Transit (the team emblem big and centred with a rank ribbon),
+// Life Reset ("166 XP to Silver IV"), Fi (you between your neighbours). Your KK's lion or your faculty's mascot, then a track: the entry behind runs along the lime fill toward the
+// entry ahead (you chasing the place above, or the runner-up chasing you at #1). Real scores only.
+function raceBanner(root, rows, mine, { codeOf, artOf }) {
+  const card = $('.oz-lg-race', root), track = $('[data-track]', root), gap = $('[data-gap]', root); if (!card) return;
+  const onzo = $('.oz-lg-race-me svg', card); // college lions have a face; faculty mascots are artwork
+  if (onzo && mine && mine.points > 0 && !card.dataset.cheered) { card.dataset.cheered = '1'; AV.showExpression(onzo, mine.rank === 1 ? 'celebrate' : 'happy', 1800); }
+  if (!track) return;
+  let runner, goal, text;
+  if (mine && mine.points > 0) {
+    const above = rows.filter((r) => r.points > mine.points).at(-1);
+    const chaser = rows.find((r) => r.points < mine.points && r.points > 0);
+    if (above) { runner = mine; goal = above; text = `${n(above.points - mine.points)} pts to pass ${codeOf(above.key)}`; }
+    else if (rows.filter((r) => r.points === mine.points).length > 1) text = `Tied at #${mine.rank}`;
+    else if (chaser) { runner = chaser; goal = mine; text = `${n(mine.points - chaser.points)} pts ahead of ${codeOf(chaser.key)}`; }
+  }
+  gap.textContent = text || ''; gap.hidden = !text; track.hidden = !runner;
+  if (!runner) { track.innerHTML = ''; return; }
+  const pct = runner ? Math.max(4, Math.min(100, Math.round(runner.points / goal.points * 100))) : 100;
+  const crest = (r, where) => `<span class="oz-lg-race-crest${r === mine ? ' is-mine' : ''}" style="${where}">${artOf(r.key)}</span>`;
+  track.innerHTML = (runner ? `<div class="oz-lg-race-bar" role="progressbar" aria-label="${esc(text)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+      <span class="oz-lg-race-rail"></span><i style="width:${pct}%"></i>
+      ${crest(goal, 'left:calc(100% - 16px)')}${crest(runner, `left:clamp(16px, ${pct}%, calc(100% - 56px))`)}</div>` : '');
 }
 function leagueRow(r, { mine, noun, nameOf, codeOf, artOf, crest, rows, compact = false }) {
   const name = nameOf(r.key), code = codeOf(r.key);
@@ -1155,7 +1198,8 @@ function communityMount(root, app, [section] = []) {
 // nothing here is bought with points (the Onzo shop is not built).
 // Art placement inside a 108 px tile, copied from the frames: [left, top, width] in tile pixels.
 const HAT_TILE = { beanie: [5.39, 27.99, 97.22], cap: [3.31, 26.47, 92.28], mushroom: [8.81, 17.86, 88.61], grad: [14.23, 20.14, 79.55],
-  crown: [7.33, 18.57, 93.33], songkok: [4.7, 9.12, 98.59] };
+  crown: [7.33, 18.57, 93.33], songkok: [4.7, 9.12, 98.59], party: [0.7, 27.1, 98.6], headband: [2.3, 21.6, 87.5] };
+const HAT_REACTION = { party: 'celebrate', crown: 'love', cap: 'wink', headband: 'wink' };
 const WEAR_TILE = { round: [-5.65, -47.51, 119.3], 'campus-scarf': [-8.96, -52.15, 125.93] };
 const WARDROBE_CATEGORIES = [
   ['av-hats', 'Hats', '<img src="assets/onz/hats/beanie.svg" alt="" class="av-ci-hat">'],
@@ -1248,6 +1292,7 @@ function avatarMount(root, app) {
     const on = wardrobe.classList.toggle('is-full');
     e.currentTarget.setAttribute('aria-pressed', String(on));
   };
+  let cancelFace = () => {}; // the expression currently on Onzo (hat reaction or poke)
   let dirty = false; // any change since the last save (drives the leave-without-saving prompt)
   const paint = (changed) => {
     if (changed) dirty = true;
@@ -1255,6 +1300,10 @@ function avatarMount(root, app) {
     prev.innerHTML = AV.avatarSVG(a, { size: 200, bg: false, title: 'Your Onzo' });
     // Animate only the piece that went on (a hat drops onto the head), not a jump of the whole Onzo.
     if (changed) motion.wear(prev, changed === true ? 'all' : changed, before);
+    if (changed === 'hat' && a.hat !== 'none') {
+      cancelFace?.(); cancelFace = AV.showExpression(prev.querySelector('svg'), HAT_REACTION[a.hat] || 'happy', 1200);
+      if (a.hat === 'party') motion.burst(prev, { x: .5, y: .1 });
+    }
     const bg = $('#av-bg', root); const src = `assets/onz/backgrounds/${a.wear.backdrop}.svg`;
     if (!bg.src.endsWith(src)) motion.crossfade(bg, src);
     fill('onz'); fill('look');
@@ -1319,7 +1368,7 @@ function avatarMount(root, app) {
   // Poke Onzo: each tap shows the next expression from the Figma set (416:8732) with a small emote, then back to Calm.
   const stagePrev = $('#av-prev', root);
   const POKES = ['happy', 'wink', 'love', 'surprised', 'celebrate', 'shy'];
-  let pokeAt = 0, cancelFace = () => {};
+  let pokeAt = 0;
   const pokeOnzo = () => {
     cancelFace();
     const name = POKES[pokeAt++ % POKES.length];

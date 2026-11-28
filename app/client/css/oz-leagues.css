@@ -163,3 +163,59 @@
 .oz-lg-ref-list .oz-lg-row { min-height:56px; padding-block:var(--oz-space-2); }
 .oz-lg-ref-meta { display:block; margin-top:0; }
 .oz-lg-ref-meta .oz-lg-gap { margin:0; font-style:normal; color:var(--oz-nav-active); }
+
+/* ---------- Race card (HOD request; Mobbin: Brilliant, Mimo, Transit, Life Reset, Fi) ----------
+   Flat surface card. Phone: your KK's lion / faculty mascot big and centred on a league-tint disc, rank ribbon under
+   it, then code · points, the race track to the next place, and the gap line with Find. */
+.oz-lg-summary.oz-lg-race { display:grid; grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"hero hero" "text text" "track track" "gap find";
+  align-items:center; justify-items:stretch; column-gap:var(--oz-space-3); row-gap:var(--oz-space-3); padding:var(--oz-space-5) var(--oz-space-4) var(--oz-space-4);
+  border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
+.oz-lg-race-hero { grid-area:hero; position:relative; justify-self:center; display:grid; place-items:center; width:136px; height:136px; margin-bottom:var(--oz-space-2);
+  border-radius:50%; background:var(--oz-league-tint); }
+.oz-lg-race-me { display:block; width:86px; height:120px; margin-top:-12px; }
+.oz-lg-race-me svg, .oz-lg-race-me img { display:block; width:86px; height:120px; }
+.oz-lg-race-rank { position:absolute; left:50%; bottom:calc(-1 * var(--oz-space-3)); translate:-50% 0; min-width:48px; padding:var(--oz-space-1) var(--oz-space-3);
+  border-radius:var(--oz-radius-pill); background:var(--oz-nav-active); color:var(--oz-text-on-brand); font:var(--oz-t-label); text-align:center;
+  box-shadow:0 0 0 3px var(--oz-bg-surface); }
+.oz-lg-race .oz-lg-sum-text { grid-area:text; text-align:center; }
+#view .oz-lg-race .oz-lg-sum-label, #view .oz-lg-race .oz-lg-sum-label span { font:var(--oz-t-caption); color:var(--oz-text-secondary); text-transform:none; letter-spacing:0; }
+#view .oz-lg-race .oz-lg-sum-value, #view .oz-lg-race .oz-lg-sum-value span { margin:0; font:var(--oz-t-h2); color:var(--oz-text-primary); }
+#view .oz-lg-race .oz-lg-sum-label + .oz-lg-sum-value { margin-top:var(--oz-space-1); }
+.oz-lg-race .oz-lg-find { grid-area:find; background:var(--oz-bg-subtle); }
+.oz-lg-race .oz-lg-find:hover { background:var(--oz-neutral-200); }
+.oz-lg-race-track { grid-area:track; display:flex; flex-direction:column; }
+.oz-lg-race-track[hidden] { display:none; }
+.oz-lg-race-bar { position:relative; height:32px; }
+.oz-lg-race-rail, .oz-lg-race-bar > i { position:absolute; left:0; top:10px; height:12px; border-radius:var(--oz-radius-pill); }
+.oz-lg-race-rail { right:0; background:var(--oz-neutral-100); }
+.oz-lg-race-bar > i { background:var(--oz-lime-500); }
+.oz-lg-race-crest { position:absolute; top:0; display:grid; place-items:center; width:32px; height:32px; margin-left:-16px; border-radius:50%;
+  background:var(--oz-bg-surface); box-shadow:0 0 0 2px var(--oz-border); overflow:hidden; }
+.oz-lg-race-crest.is-mine { box-shadow:0 0 0 2px var(--oz-lime-500); }
+.oz-lg-race-crest svg, .oz-lg-race-crest img { display:block; width:20px; height:28px; }
+#view .oz-lg-race-gap { grid-area:gap; margin:0; font:var(--oz-t-label); color:var(--oz-text-primary); }
+.oz-lg-race-gap[hidden] { display:none; }
+/* Nothing to race yet (no points, or alone at the top): Find centres under the standing. */
+.oz-lg-summary.oz-lg-race:not(:has([data-gap]:not([hidden]))) { grid-template-areas:"hero hero" "text text" "find find"; }
+.oz-lg-race:not(:has([data-gap]:not([hidden]))) .oz-lg-find { justify-self:center; }
+@media (prefers-reduced-motion:no-preference) {
+  .oz-lg-board:not([hidden]) .oz-lg-race-me { animation:oz-lg-race-in 420ms var(--oz-ease-out) both; }
+}
+@keyframes oz-lg-race-in { from { translate:0 8px; opacity:0; } }
+@media (min-width:1024px) {
+  /* Web: mascot left, everything else beside it (full-width card at 1024–1199, side column from 1200). */
+  .oz-lg-summary.oz-lg-race { grid-template-columns:auto minmax(0, 1fr) auto; grid-template-areas:"hero text text" "hero track track" "hero gap find"; padding:var(--oz-space-4) var(--oz-space-5); }
+  .oz-lg-summary.oz-lg-race:not(:has([data-gap]:not([hidden]))) { grid-template-areas:"hero text" "hero find"; grid-template-columns:auto minmax(0, 1fr); }
+  .oz-lg-race-hero { margin:0 var(--oz-space-3) var(--oz-space-3) 0; }
+  .oz-lg-race .oz-lg-sum-text { text-align:left; }
+  .oz-lg-race:not(:has([data-gap]:not([hidden]))) .oz-lg-find { justify-self:start; }
+}
+@media (min-width:1200px) {
+  /* Wide web: the card is the side column (the white "Your college" card it replaces), mascot centred on top. */
+  .oz-lg-sum-wrap { padding:0; background:none; align-self:stretch; display:flex; }
+  .oz-lg-summary.oz-lg-race { flex:1; align-content:center; grid-template-columns:auto minmax(0, 1fr); grid-template-areas:"hero text" "hero track" "hero gap" "hero find"; padding:var(--oz-space-4); row-gap:var(--oz-space-2); }
+  .oz-lg-race .oz-lg-find { justify-self:start; }
+  .oz-lg-race-hero { width:112px; height:112px; }
+  .oz-lg-race-me, .oz-lg-race-me svg, .oz-lg-race-me img { width:72px; height:100px; }
+}
+.oz-lg-race-rank[hidden] { display:none; }

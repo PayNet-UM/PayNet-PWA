@@ -45,7 +45,7 @@ await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
 ok(`student home shows the +Onz hub (${pillars} directories) and ${before} points`);
 
 await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#cmap .kk-pin', { timeout: 20000 });
-const pins = await stu.locator('#cmap .kk-pin').count(); const logos = await stu.locator('#cmap .kk-pin img').count();
+const pins = await stu.locator('#cmap .kk-pin').count(); const logos = await stu.locator('#cmap .kk-pin.oz-pin img[src*="assets/onz/map/pin-"]').count();
 const navHref = await stu.getAttribute('#clist .checkout-shop-action a', 'href');
 if (pins < 4 || logos < 4 || !/google\.com\/maps\/dir\/.*destination=3\.1\d+,101\.6\d+/.test(navHref)) throw new Error(`pins ${pins}, logos ${logos}, nav ${navHref}`);
 await stu.waitForSelector('#cmap .kk-me'); await stu.waitForSelector('#clist .nearby-distance');
@@ -53,11 +53,12 @@ const nearest = (await stu.textContent('#clist .checkout-shop h3')).trim();
 if (nearest !== 'Fresh Laundry') throw new Error('nearest should be Fresh Laundry, got ' + nearest);
 // Location centres the map on the nearby shop; the first marker in DOM order
 // may be outside the map viewport. Exercise the visible shop at that location.
-await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
+await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.oz-shops-preview:not([hidden]) .oz-peek a[href*="google.com/maps/dir"]');
+if (!/Fresh Laundry/.test(await stu.textContent('.oz-shops-preview .oz-peek h3'))) throw new Error('the peek card should show the tapped shop');
 if (await stu.locator('.tabbar a.on[data-tab="home"]').count() !== 1) throw new Error('Home should stay active when browsing its directory');
 if (await stu.locator('.tabbar a[data-tab="explore"]').count()) throw new Error('Overview should only be accessed through the homepage');
 await stu.screenshot({ path: `${shots}/02-campus-shops.png` });
-ok(`central directory shows ${pins} logo pins; live location puts ${nearest} first`);
+ok(`central directory shows ${pins} Sir Onz pins; live location puts ${nearest} first`);
 
 await stu.goto(BASE + '#/checkin');
 await stu.waitForFunction(() => location.hash === '#/explore');
@@ -493,11 +494,11 @@ const gp = await gctx.newPage(); watch(gp, 'google-maps');
 await login(gp, 'aina@siswa.um.edu.my'); await gp.waitForSelector('.kk-hero', { timeout: 90000 });
 await gp.goto(BASE + '#/explore'); await gp.waitForSelector('#cmap .gm-stub .kk-pin', { timeout: 20000 });
 const gpins = await gp.locator('#cmap .gm-stub-marker .kk-pin').count();
-await gp.locator('#cmap .gm-stub-marker').first().click(); await gp.waitForSelector('.gm-stub-info .mpop a[href*="google.com/maps/dir"]');
+await gp.locator('#cmap .gm-stub-marker').first().click(); await gp.waitForSelector('.oz-shops-preview:not([hidden]) .oz-peek a[href*="google.com/maps/dir"]');
 await gp.click('#nearby-locate'); await gp.waitForSelector('#cmap .kk-me');
 if (!/key=TEST_KEY/.test(mapsUrl) || !/libraries=marker/.test(mapsUrl)) throw new Error('Maps script URL: ' + mapsUrl);
 await gp.screenshot({ path: `${shots}/07-google-maps-path.png` });
-ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, info window, live location)`);
+ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, peek card with directions, live location)`);
 await gctx.close();
 
 // ---------- feature switches, using the real Settings form

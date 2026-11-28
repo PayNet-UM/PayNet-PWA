@@ -103,7 +103,7 @@ export function ozHeroMascot({ hat = 'none', skin = null, wear = null } = {}) {
     </span></span></span>`;
 }
 // Hat overlays drawn for the hero pose. Hats without Figma artwork yet show no hat rather than an invented one.
-export const HERO_HATS = { beanie: 'beanie.svg', cap: 'cap.svg', songkok: 'songkok.svg', mushroom: 'mushroom.svg', grad: 'grad.svg', crown: 'crown.svg' };
+export const HERO_HATS = { beanie: 'beanie.svg', cap: 'cap.svg', songkok: 'songkok.svg', mushroom: 'mushroom.svg', grad: 'grad.svg', crown: 'crown.svg', party: 'party.svg', headband: 'headband.svg' };
 
 /**
  * Points Hero (433:115). levelName/streakDays/nextLine come from points-policy and the streak model.

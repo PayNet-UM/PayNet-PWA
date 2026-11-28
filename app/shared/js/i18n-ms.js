@@ -2551,6 +2551,9 @@ Delete my account|Padam akaun saya
 Close my account|Tutup akaun saya
 Close my business account|Tutup akaun perniagaan saya
 Back|Kembali
+Party hat|Topi parti
+KK headband|Ikat kepala KK
+Stoke the flame|Marakkan api
 Give|Beri
 How many points to give?|Berapa banyak mata untuk diberi?
 Only you and the Admin team see this|Hanya anda dan pasukan Admin boleh melihatnya

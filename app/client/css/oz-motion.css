@@ -112,3 +112,6 @@ body .is-copied:not(.oz-copy), body .is-copied:not(.oz-copy) .oz-ic { color:var(
     .oz-deal, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt):active { scale:1; }
 }
 .oz-friend-x { transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out); } .oz-friend-x:active { scale:var(--oz-press-control); }
+
+/* Party-hat burst (motion.burst) */
+.oz-burst-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; pointer-events:none; z-index:2; }
