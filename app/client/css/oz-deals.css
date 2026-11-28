@@ -1,0 +1,159 @@
+/* Live deals, claiming and merchant tools (feature-gated). Live Deal Card 754:6209; deals 492:7353 / 523:9596–9867;
+   merchant 523:11087–11321, 1108:57830. Client only; restyles production markup and keeps every flow and id. */
+
+/* ---------- Live Deal Card ---------- */
+.oz-home-live { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-deal { display:flex; flex-direction:column; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-4);
+  border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); color:var(--oz-text-primary); }
+.oz-deal-top { display:flex; align-items:center; flex-wrap:wrap; gap:var(--oz-space-3); }
+.oz-deal-badge { display:grid; place-items:center; width:48px; height:48px; flex:none; border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-subtle); color:var(--oz-text-disabled); }
+.oz-deal.is-live .oz-deal-badge { width:40px; height:40px; background:var(--oz-peach-bg); color:var(--oz-peach); }
+.oz-deal-badge .oz-ic { width:24px; height:24px; }
+.oz-deal-text { flex:1 1 7rem; min-width:0; display:flex; flex-direction:column; gap:2px; overflow-wrap:anywhere; }
+.oz-deal-shop { margin:0; font:600 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-deal-title { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-secondary); } /* Live Deal Card 754:6209: Inter semibold */
+.oz-deal.is-live .oz-deal-title { color:var(--oz-text-primary); }
+.oz-deal-pill { padding:4px var(--oz-space-3); border-radius:var(--oz-radius-pill); font:700 12px/16px var(--oz-font-ui); }
+.oz-deal-pill.is-busy { background:var(--oz-warning-bg); color:var(--oz-text-warning); }
+.oz-deal-pill.is-later { background:var(--oz-blue-100); color:var(--oz-nav-active); }
+.oz-deal-pill.is-claimed { background:var(--oz-success-bg); color:var(--oz-text-success); }
+.oz-deal-bottom { display:flex; flex-wrap:wrap; align-items:center; gap:var(--oz-space-2); }
+.oz-deal-clock { width:16px; height:16px; flex:none; color:var(--oz-text-secondary); }
+.oz-deal-note { flex:1 1 6rem; min-width:0; margin:0; font:500 13px/18px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-deal-bottom .oz-btn { margin-inline-start:auto; }
+.oz-deal-points { font:700 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); white-space:nowrap; }
+.oz-deal-links { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); padding-top:var(--oz-space-3); border-top:1px solid var(--oz-border); }
+.oz-deal-message { grid-column:1/-1; margin:0; padding:var(--oz-space-4); border:1px solid var(--oz-border);
+  border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+
+.overview-directory .checkout-deals { padding:0; border:0; background:transparent; }
+#directory-deals[hidden] { display:none; }
+.checkout-deals > .oz-section-head { margin-bottom:var(--oz-space-3); }
+.checkout-deal-grid { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:var(--oz-space-3); }
+@media (min-width:1024px) {
+  .checkout-deal-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--oz-space-4) var(--oz-space-6); }
+}
+
+/* Student claim and scanner, including the 640 px web workspace. */
+.oz-claim-workspace { display:grid; align-items:start; max-width:var(--oz-content-max); margin-block-start:calc(-1 * var(--oz-space-2)); }
+.oz-claim-main { display:grid; gap:var(--oz-space-3); width:100%; max-width:640px; min-width:0; margin-inline:auto; }
+.oz-claim-heading { display:grid; gap:var(--oz-space-3); }
+.oz-claim-title { margin:0; color:var(--oz-text-primary); font:800 28px/34px var(--oz-font-display); }
+.oz-claim-heading p, .oz-claim-card p { margin:0; color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-claim-card { display:grid; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-4);
+  border-radius:var(--oz-radius-xl); background:var(--oz-bg-surface); overflow-wrap:anywhere; }
+.oz-claim-card h2 { margin:0; color:var(--oz-text-primary); font:700 22px/28px var(--oz-font-display); }
+.oz-claim-card > .oz-ic { width:24px; height:24px; color:var(--oz-text-primary); }
+.oz-claim-summary { gap:var(--oz-space-2); }
+.oz-claim-card .oz-claim-benefit, .oz-claim-instructions p:first-child { color:var(--oz-text-primary); font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-card .oz-claim-credit { color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); }
+.oz-claim-card .oz-claim-caption { font:500 12px/16px var(--oz-font-ui); }
+.oz-claim-workspace [hidden] { display:none!important; }
+.oz-claim-counter { display:none; }
+.oz-claim-workspace .oz-btn { min-height:48px; padding-block:var(--oz-space-3); white-space:normal; text-align:center; }
+.oz-claim-preview { position:relative; display:grid; width:min(100%,326px); height:210px; justify-self:center;
+  place-items:center; border-radius:var(--oz-radius-lg); overflow:hidden; background:var(--oz-blue-900); }
+.oz-claim-preview video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+#deal-camera-placeholder { display:grid; justify-items:center; gap:var(--oz-space-5); padding-top:var(--oz-space-6);
+  color:var(--oz-text-on-brand); font:600 14px/20px var(--oz-font-ui); }
+#deal-camera-placeholder .oz-ic { width:24px; height:24px; color:var(--oz-nav-active); }
+.oz-claim-instructions, #deal-scan-status { display:grid; gap:var(--oz-space-3); }
+#deal-scan-status { max-width:none; margin:0; text-align:start; }
+.oz-claim-card .oz-claim-error-title { color:var(--oz-text-danger); font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-confirmation.is-expired h2 { color:var(--oz-text-danger); }
+.oz-claim-card .deal-points-earned { display:block; padding:0; border:0; background:transparent; color:var(--oz-nav-active);
+  font:600 16px/24px var(--oz-font-ui); }
+.oz-claim-card .deal-points-earned span { font:inherit; }
+.oz-claim-countdown { display:grid; justify-items:center; gap:var(--oz-space-2); padding:var(--oz-space-4); text-align:center;
+  border-radius:var(--oz-radius-lg); background:var(--oz-blue-100); color:var(--oz-nav-active); font:600 14px/20px var(--oz-font-ui); }
+.oz-claim-countdown strong { font:800 28px/34px var(--oz-font-display); font-variant-numeric:tabular-nums; }
+@media (min-width:1024px) {
+  .oz-claim-workspace { gap:var(--oz-space-6); margin-block-start:0; }
+  .oz-claim-counter { display:grid; width:100%; max-width:456px; justify-self:center; }
+  .oz-claim-workspace .oz-btn { justify-self:start; }
+  .oz-claim-scanner .oz-btn { justify-self:center; }
+  .oz-claim-confirmation .oz-claim-back { border-color:var(--oz-border); background:transparent; color:var(--oz-nav-active); }
+  .oz-claim-confirmation .oz-claim-back:hover { background:var(--oz-bg-subtle); }
+}
+@media (min-width:1280px) {
+  .oz-claim-workspace { grid-template-columns:minmax(0,640px) minmax(0,1fr); }
+}
+
+/* Merchant Deal QR and counter use the same reading column as the student claim. */
+.oz-counter { margin-block-start:0; }
+.oz-counter .mer-qr-intro { margin:0; border:0; background:var(--oz-bg-surface); }
+.oz-counter .mer-qr-intro p { color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-counter-list, .oz-counter-claims, .oz-counter-unavailable { display:grid; gap:var(--oz-space-3); }
+.oz-counter-list > h2 { margin:0; color:var(--oz-text-primary); font:700 22px/28px var(--oz-font-display); }
+.oz-counter .oz-claim-card h3 { margin:0; color:var(--oz-text-primary); font:600 18px/24px var(--oz-font-ui); }
+.oz-counter-unavailable > p { margin:0; color:var(--oz-text-secondary); font:400 14px/20px var(--oz-font-ui); }
+.oz-counter-claims:empty, .oz-counter-result:empty { display:none; }
+.oz-counter-claims .mer-claim p { margin:0; }
+.oz-counter-new, .oz-counter .oz-counter-result h3 { color:var(--oz-nav-active); }
+.oz-counter-new { font:600 14px/20px var(--oz-font-ui); }
+.oz-counter-code { min-height:276px; justify-items:center; align-content:center; gap:var(--oz-space-6); text-align:center;
+  padding-block-start:calc(var(--oz-space-6) + var(--oz-space-3)); }
+.oz-counter-code #live-deal-qr { width:180px; max-width:100%; padding:0; border:0; box-shadow:none; }
+.oz-counter-code #live-deal-qr :is(canvas, img) { max-width:100%; height:auto; }
+.oz-counter-meta { display:grid; gap:var(--oz-space-3); }
+.oz-counter-meta p { margin:0; color:var(--oz-text-secondary); font:500 12px/16px var(--oz-font-ui); }
+.oz-counter-meta #deal-counter-total { color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); }
+.oz-counter-meta #deal-qr-clock { padding:0; background:transparent; font-variant-numeric:tabular-nums; }
+@media (min-width:1024px) { .oz-counter-unavailable .oz-btn { justify-self:start; } }
+
+/* ---------- Merchant shell and screens ---------- */
+.oz-merchant .mer-actions a, .oz-merchant .mer-actions button { border-radius:var(--oz-radius-lg); }
+.oz-merchant .card.mcard, .oz-merchant .card { border-radius:var(--oz-radius-lg); }
+.oz-merchant .stat { padding:var(--oz-space-4); }
+.oz-merchant .stat .v { font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+
+/* ---------- Map pin card (Campus shops) ---------- */
+/* Same type and button pair as the deal cards, so the map never falls back to Leaflet's font or bare links. */
+.leaflet-popup-content-wrapper:has(.oz-mpop) { border-radius:var(--oz-radius-lg); box-shadow:var(--oz-shadow-card); }
+.leaflet-popup-content:has(.oz-mpop) { margin:var(--oz-space-4); }
+.oz-mpop { display:flex; flex-direction:column; gap:var(--oz-space-3); min-width:220px; font-family:var(--oz-font-ui); }
+.oz-mpop-head { display:flex; align-items:flex-start; gap:var(--oz-space-3); }
+.oz-mpop-head .mpop-logo { float:none; order:0; margin:0; width:40px; height:40px; border-radius:var(--oz-radius-md); flex:none; }
+.oz-mpop-head b { display:block; font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-mpop-head p { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-mpop-head .dist { margin-top:var(--oz-space-1); color:var(--oz-text-success); font-weight:600; }
+.oz-mpop-actions { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-2); }
+.oz-mpop-actions .oz-btn { width:100%; }
+.leaflet-container .oz-mpop-actions a.oz-btn-secondary { color:var(--oz-text-on-brand); }
+.leaflet-container .oz-mpop-actions a.oz-btn-ghost { color:var(--oz-blue-700); }
+
+/* ---------- Claim a live deal, pass 2 (Mobbin: Walmart One Pay, Chick-fil-A, Target) ---------- */
+/* One rhythm: 16px between blocks, 16px inside cards, 12px between a card's parts. */
+.oz-claim-heading { gap:var(--oz-space-1); }
+.oz-claim-backlink { margin-bottom:var(--oz-space-1); }
+.oz-claim-backlink .oz-ic { width:20px; height:20px; }
+.oz-claim-main { gap:var(--oz-space-4); }
+/* The deal as a ticket: shop + title + points, with the perforation notches of a voucher. */
+.oz-claim-ticket { position:relative; gap:var(--oz-space-3); }
+.oz-claim-ticket::before, .oz-claim-ticket::after { content:''; position:absolute; top:50%; width:16px; height:16px; margin-top:-8px; border-radius:50%; background:var(--oz-bg-app); }
+.oz-claim-ticket::before { left:-8px; } .oz-claim-ticket::after { right:-8px; }
+.oz-claim-ticket-top { display:flex; align-items:center; gap:var(--oz-space-3); }
+.oz-claim-ticket-text { flex:1 1 auto; min-width:0; }
+.oz-claim-card .oz-claim-shop { margin:0; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-claim-ticket h2 { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-claim-pts { flex:none; }
+.oz-claim-ticket .oz-claim-benefit { padding-top:var(--oz-space-3); border-top:1px dashed var(--oz-border); font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); }
+/* Scan card: a viewfinder with a slow sweep, one line, the action, one caption. */
+.oz-claim-ready { justify-items:center; gap:var(--oz-space-4); padding:var(--oz-space-5) var(--oz-space-4) var(--oz-space-4); text-align:center; }
+.oz-claim-frame { position:relative; display:grid; place-items:center; width:120px; height:120px; overflow:hidden; border-radius:var(--oz-radius-md); background:var(--oz-blue-50, var(--oz-bg-subtle)); color:var(--oz-blue-700); }
+.oz-claim-frame > .oz-ic { width:40px; height:40px; }
+.oz-claim-frame > i { position:absolute; width:24px; height:24px; border:3px solid var(--oz-blue-700); }
+.oz-claim-frame > i:nth-child(1) { top:8px; left:8px; border-right:0; border-bottom:0; border-top-left-radius:8px; }
+.oz-claim-frame > i:nth-child(2) { top:8px; right:8px; border-left:0; border-bottom:0; border-top-right-radius:8px; }
+.oz-claim-frame > i:nth-child(3) { bottom:8px; left:8px; border-right:0; border-top:0; border-bottom-left-radius:8px; }
+.oz-claim-frame > i:nth-child(4) { bottom:8px; right:8px; border-left:0; border-top:0; border-bottom-right-radius:8px; }
+.oz-claim-sweep { position:absolute; left:16px; right:16px; top:16px; height:2px; border-radius:1px; background:var(--oz-lime-500); box-shadow:0 0 8px var(--oz-lime-500);
+  animation:oz-claim-sweep 2.4s var(--oz-ease-in-out) infinite alternate; }
+@keyframes oz-claim-sweep { to { translate:0 86px; } }
+.oz-claim-card .oz-claim-ready-text { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-claim-ready .oz-btn { width:100%; justify-self:stretch; }
+@media (prefers-reduced-motion:reduce) { .oz-claim-sweep { animation:none; top:50%; } }
+@media (min-width:1024px) { .oz-claim-ready .oz-btn { max-width:360px; justify-self:center; } }
+.oz-claim-workspace > .oz-claim-head { margin-bottom:var(--oz-space-4); }
+@media (min-width:1024px) { .oz-claim-workspace > .oz-claim-head { margin-bottom:0; } }

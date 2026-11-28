@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="95.9456" height="27.7737" viewBox="0 0 95.9456 27.7737" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Ears">
+<circle id="Ear L" cx="13.8869" cy="13.8869" r="13.8869" fill="url(#paint0_linear_0_335)"/>
+<circle id="Ear R" cx="82.0588" cy="13.8869" r="13.8869" fill="url(#paint1_linear_0_335)"/>
+<circle id="Inner Ear L" cx="13.8869" cy="13.8869" r="6.73303" fill="#E3E6F5"/>
+<circle id="Inner Ear R" cx="82.0588" cy="13.8869" r="6.73303" fill="#E3E6F5"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_335" x1="13.8869" y1="0" x2="13.8869" y2="27.7737" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4A507F"/>
+<stop offset="1" stop-color="#7279A8"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_335" x1="82.0588" y1="0" x2="82.0588" y2="27.7737" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4A507F"/>
+<stop offset="1" stop-color="#7279A8"/>
+</linearGradient>
+</defs>
+</svg>

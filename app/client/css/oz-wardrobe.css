@@ -1,0 +1,188 @@
+/* Wardrobe (15 · Wardrobe · Hats 696:13625 / Colours 696:13693, Web 929:35008) and Sir Onz avatar placements. Client only. */
+
+.oz-sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
+.onz-avatar { display:block; }
+
+/* Mobile: the wardrobe is full-bleed, as in the frame: no app top bar or floating nav; Close returns to Me. */
+@media (max-width:1023px) {
+  .oz-shell:has(.view.route-avatar) .oz-topbar, .oz-shell:has(.view.route-avatar) .oz-sidebar { display:none; }
+  .oz-shell .view.route-avatar { padding:0; margin:0; max-width:none; }
+}
+
+.oz-wardrobe { position:relative; display:flex; flex-direction:column; min-height:100dvh; background:var(--oz-bg-surface); }
+.av-title { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; margin:0; }
+
+/* Stage (Wardrobe Stage 439:5478): sky, ground, Sir Onz, floating controls */
+.oz-wardrobe .av-stage { position:relative; flex:none; height:460px; overflow:hidden; margin:0; padding:0; border:0; border-radius:0; box-shadow:none;
+  background:linear-gradient(var(--oz-sky-top), var(--oz-sky-bottom)); transition:height var(--oz-dur-push) var(--oz-ease-out); }
+.oz-wardrobe .av-stage > img { position:absolute; pointer-events:none; }
+.av-stage-contact { left:50%; top:413px; width:140px; height:20px; transform:translateX(-50%); }
+.oz-wardrobe #av-prev { position:absolute; left:50%; top:164px; width:200px; height:280px; margin:0; padding:0; border:0; background:none; transform:translateX(-50%); }
+.oz-wardrobe #av-prev svg { width:200px; height:280px; }
+.av-float { position:absolute; display:grid; place-items:center; width:var(--oz-touch); height:var(--oz-touch); padding:0; border:0; border-radius:var(--oz-radius-xl);
+  background:rgba(255,255,255,.9); color:var(--oz-text-primary); cursor:pointer; text-decoration:none; box-shadow:none; }
+.av-float .oz-ic { width:24px; height:24px; }
+.av-float[aria-pressed="true"] { background:var(--oz-blue-900); color:var(--oz-text-on-brand); }
+.av-undo { font:600 18px/24px var(--oz-font-ui); }
+.av-float:focus-visible, .av-save-pill:focus-visible, .av-tile:focus-visible, .av-categories button:focus-visible, .av-points:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.av-close { left:16px; top:56px; }
+.av-float-stack { position:absolute; right:16px; top:150px; display:flex; flex-direction:column; gap:12px; }
+.av-float-stack .av-float { position:static; }
+/* Wardrobe · Points (696:13639) */
+.av-points { position:absolute; left:50%; top:60px; transform:translateX(-50%); display:inline-flex; align-items:center; gap:var(--oz-space-2); height:36px; padding:var(--oz-space-2) var(--oz-space-4) var(--oz-space-2) var(--oz-space-2);
+  border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); text-decoration:none; white-space:nowrap; }
+.av-coin { position:relative; flex:none; width:24px; height:24px; border-radius:12px; background:var(--oz-lime-500); }
+.av-coin::before, .av-coin::after { content:''; position:absolute; border-radius:7.5px; background:var(--oz-blue-900); }
+.av-coin::before { left:5.28px; top:9px; width:13.44px; height:6px; }
+.av-coin::after { left:9px; top:5.28px; width:6px; height:13.44px; }
+.av-save-pill { position:absolute; right:16px; top:58px; min-height:42px; padding:var(--oz-space-3) var(--oz-space-5); border:0; border-radius:var(--oz-radius-pill);
+  background:var(--oz-blue-900); color:var(--oz-text-on-brand); font:600 14px/20px var(--oz-font-ui); cursor:pointer; }
+
+/* Sheet: handle, category icons, tiles */
+.av-sheet { position:relative; z-index:1; flex:1; margin-top:-20px; padding:var(--oz-space-4) var(--oz-space-5) var(--oz-space-6); border-radius:var(--oz-radius-xl) var(--oz-radius-xl) 0 0; background:var(--oz-bg-surface);
+  transition:transform var(--oz-dur-push) var(--oz-ease-out); }
+.av-sheet::before { content:''; display:block; width:40px; height:5px; margin:-8px auto var(--oz-space-3); border-radius:3px; background:var(--oz-border); }
+/* Wardrobe Tabs (696:13646): icon per category with a 28 px indicator under the active one */
+.oz-wardrobe .av-categories { display:flex; justify-content:space-between; gap:0; height:64px; margin:0 0 var(--oz-space-3); padding:0 3px; border:0; background:none; box-shadow:none; }
+.oz-wardrobe .av-categories button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-width:var(--oz-touch); min-height:var(--oz-touch);
+  padding:0; border:0; border-radius:var(--oz-radius-sm); background:none; box-shadow:none; cursor:pointer; }
+.av-cat-icon { position:relative; display:block; width:36px; height:30px; overflow:hidden; opacity:.45; }
+.av-categories button[aria-pressed="true"] .av-cat-icon { opacity:1; }
+.av-cat-icon img { position:absolute; }
+.av-cat-icon .av-ci-hat { left:-5.61px; top:2.37px; width:47.22px; height:66.11px; }
+.av-cat-icon .av-ci-eye { left:-1.88px; top:-15.84px; width:39.77px; height:auto; }
+.av-cat-icon .av-ci-neck { left:-13.48px; top:-44.66px; width:62.96px; height:auto; }
+.av-cat-icon .av-bg-swatch { position:absolute; left:5px; top:4px; width:26px; height:22px; border-radius:6px; background:linear-gradient(var(--oz-sky-top), var(--oz-ground)); }
+.av-cat-icon .av-colour-dot { position:absolute; left:6px; top:3px; }
+.av-colour-dot { display:block; width:24px; height:24px; border-radius:50%; background:conic-gradient(var(--oz-danger), var(--oz-warning), var(--oz-lime-500), var(--oz-success), var(--oz-sky), var(--oz-lilac), var(--oz-danger)); }
+.av-cat-bar { display:block; width:28px; height:3px; border-radius:2px; background:transparent; }
+.av-categories button[aria-pressed="true"] .av-cat-bar { background:var(--oz-blue-900); }
+
+.oz-wardrobe .av-opts { display:grid; grid-template-columns:repeat(3, minmax(0, 108px)); justify-content:space-between; gap:12px; margin:0; }
+.av-tile { position:relative; display:block; aspect-ratio:1; overflow:hidden; min-height:0; padding:0; border:0; border-radius:var(--oz-radius-lg); background:var(--oz-bg-subtle);
+  color:var(--oz-text-primary); cursor:pointer; box-shadow:none; }
+.av-tile::after { content:''; position:absolute; inset:0; border:3px solid transparent; border-radius:var(--oz-radius-lg); pointer-events:none; }
+.av-tile[aria-pressed="true"]::after { border-color:var(--oz-blue-900); }
+.av-tile .av-thumb { position:absolute; inset:0; }
+.av-tile-hat .av-thumb img { position:absolute; height:auto; }
+.av-tile-onz .av-thumb svg { position:absolute; left:-11.5%; top:-17.6%; width:123%; height:auto; }
+.av-none { position:absolute; left:50%; top:50%; width:30px; height:30px; margin:-15px 0 0 -15px; /* centres the 30px circle */ border:3px solid var(--oz-neutral-400); border-radius:50%; }
+.av-none::after { content:''; position:absolute; left:50%; top:-2px; width:3px; height:calc(100% + 4px); margin-left:-1.5px; background:var(--oz-neutral-400); transform:rotate(45deg); }
+.av-tile .av-name, .av-tile .av-lock-pill { position:absolute; left:8px; bottom:8px; padding:3px 8px; border-radius:var(--oz-radius-pill); font:600 12px/16px var(--oz-font-ui); }
+.av-tile .av-name { background:var(--oz-bg-surface); color:var(--oz-text-primary); }
+.av-tile .av-lock-pill { background:var(--oz-blue-900); color:var(--oz-text-on-brand); }
+.av-tile[data-locked] { cursor:help; } /* the frame shows locked items at full colour; the level label marks the lock */
+.av-tile .av-check { position:absolute; right:6px; top:6px; z-index:1; display:none; width:22px; height:22px; color:var(--oz-blue-900); background:none; }
+.av-tile .av-check .oz-ic { width:22px; height:22px; }
+.av-tile[aria-pressed="true"] .av-check { display:block; }
+
+/* Full view: the sheet steps aside so Sir Onz fills the screen; the scene stays anchored to the ground */
+@media (max-width:1023px) {
+  .oz-wardrobe.is-full .av-stage { height:100dvh; }
+  .oz-wardrobe.is-full .av-sheet { transform:translateY(100%); visibility:hidden; }
+}
+
+@media (min-width:1024px) {
+  /* Web · Wardrobe (929:35008): visible title, 516 × 589 stage, 580 px panel */
+  .oz-wardrobe { display:grid; grid-template-columns:minmax(0, 516px) minmax(0, 580px); grid-template-rows:auto auto; column-gap:var(--oz-space-6); row-gap:var(--oz-space-4); align-items:start; min-height:0;
+    padding:0 0 var(--oz-space-6); background:none; }
+  .av-title { position:static; width:auto; height:auto; overflow:visible; clip-path:none; grid-column:1 / -1; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+  .oz-wardrobe .av-stage { height:589px; border-radius:var(--oz-radius-xl); }
+  .av-stage-contact { top:535px; width:180px; height:26px; }
+  .oz-wardrobe #av-prev { top:216px; width:256px; height:358px; }
+  .oz-wardrobe #av-prev svg { width:256px; height:358px; }
+  .av-float { width:56px; height:56px; border-radius:var(--oz-radius-xl); }
+  .av-float .oz-ic { width:24px; height:24px; }
+  .av-close { left:20px; top:72px; }
+  .av-float-stack { right:21px; top:192px; gap:var(--oz-space-4); }
+  .av-points { top:77px; height:46px; padding:8px var(--oz-space-5) 8px 8px; gap:8px; font-size:18px; }
+  .av-coin { width:30px; height:30px; border-radius:var(--oz-radius-lg); transform:scale(1); }
+  .av-coin::before { left:6.6px; top:11.25px; width:16.8px; height:7.5px; }
+  .av-coin::after { left:11.25px; top:6.6px; width:7.5px; height:16.8px; }
+  .av-save-pill { right:20px; top:74px; min-height:54px; padding:0 var(--oz-space-6); font-size:18px; }
+  .av-sheet { margin:0; padding:24px; border-radius:var(--oz-radius-xl); flex:none; }
+  .av-sheet::before { display:none; }
+  .oz-wardrobe .av-categories { padding:0 var(--oz-space-6); margin-bottom:var(--oz-space-3); }
+  .oz-wardrobe .av-opts { grid-template-columns:repeat(auto-fill, minmax(88px, 108px)); gap:12px clamp(12px, 2.3vw, var(--oz-space-7)); justify-content:start; }
+  .oz-wardrobe.is-full { grid-template-columns:minmax(0, 1fr); }
+  .oz-wardrobe.is-full .av-stage { height:589px; }
+  .oz-wardrobe.is-full .av-sheet { display:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .oz-wardrobe .av-stage, .av-sheet { transition:opacity var(--oz-dur-dissolve) linear; }
+}
+
+/* The editor keeps its test hooks (#av-prev, .av-opts, .av-thumb), which the pre-redesign app.css / onz.css still style.
+   Reset every property those rules set (app.css 870-882, onz.css 369-454) until that legacy CSS is retired. */
+.oz-wardrobe #av-prev { border:0; border-radius:0; box-shadow:none; overflow:visible; }
+.oz-wardrobe .av-stage { position:relative; top:auto; text-align:left; border-color:transparent; }
+.oz-wardrobe .av-category:not([hidden]) { display:block; gap:0; }
+.oz-wardrobe .av-category .av-opts button { width:auto; align-content:normal; }
+.oz-wardrobe .av-opts .av-tile .av-thumb { width:auto; height:auto; border-radius:0; overflow:visible; filter:none; }
+.oz-wardrobe .av-opts .av-tile .av-thumb svg { height:auto; }
+.oz-wardrobe .av-category .av-opts .av-tile[aria-pressed="true"] { background:var(--oz-bg-subtle); box-shadow:none; }
+.oz-wardrobe .av-category .av-opts .av-tile::after { content:''; position:absolute; inset:0; width:auto; height:auto; top:0; left:0; right:0; bottom:0;
+  display:block; padding:0; border:3px solid transparent; border-radius:var(--oz-radius-lg); background:none; color:transparent; font-size:0; box-shadow:none; transform:none; }
+.oz-wardrobe .av-category .av-opts .av-tile[aria-pressed="true"]::after { border-color:var(--oz-blue-900); }
+.oz-wardrobe .av-opts .av-tile::before { content:none; display:none; }
+.oz-wardrobe .av-categories { flex-wrap:nowrap; }
+
+/* Stage background (Wardrobe Stage 439:5478): the chosen scene, top-anchored; full view reveals more ground */
+.oz-wardrobe .av-stage > .av-stage-bg { position:absolute; left:0; top:0; width:100%; height:auto; pointer-events:none; }
+
+/* Faculty looks / Mix & match (Wardrobe · shop and collections 1230:72876) */
+.av-modes { position:relative; display:grid; grid-template-columns:1fr 1px 1fr; align-items:center; height:44px; margin:0 0 var(--oz-space-1); border-bottom:1px solid var(--oz-border); }
+.av-modes > i { width:1px; height:24px; background:var(--oz-border); }
+.av-modes button { display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-2); height:44px; padding:0; border:0; background:none; box-shadow:none;
+  color:var(--oz-text-secondary); font:600 14px/20px var(--oz-font-ui); cursor:pointer; }
+.av-modes button[aria-selected="true"] { color:var(--oz-text-primary); }
+.av-modes button .oz-ic { width:20px; height:20px; }
+.av-modes button:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:-2px; border-radius:var(--oz-radius-sm); }
+
+/* Item tiles: centred name under eyewear, scarves and backgrounds (783:6848, 783:6864, 783:6878) */
+.av-tile .av-tile-label { position:absolute; left:0; right:0; top:74%; padding:0 var(--oz-space-1); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-primary); text-align:center; }
+.av-tile-eyewear .av-thumb img, .av-tile-neck .av-thumb img { position:absolute; height:auto; }
+.oz-wardrobe .av-opts .av-tile-backdrop .av-thumb { position:absolute; inset:auto; left:8.33%; top:0; width:83.33%; height:76.85%; overflow:hidden; }
+.av-bg-thumb { display:block; width:100%; height:auto; margin-top:-25.56%; }
+.av-tile-look .av-thumb svg { position:absolute; left:50%; top:4%; width:52%; height:auto; transform:translateX(-50%); }
+.av-tile-look .av-tile-label { font-weight:600; }
+.av-tile-look .av-name { top:var(--oz-space-2); bottom:auto; left:var(--oz-space-2); padding:2px var(--oz-space-2); background:var(--oz-lime-500); color:var(--oz-text-on-accent); font-size:11px; line-height:14px; }
+.av-tile .av-lock-ic { position:absolute; top:var(--oz-space-2); right:var(--oz-space-2); display:grid; place-items:center; width:24px; height:24px; border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); color:var(--oz-text-secondary); }
+.av-tile .av-lock-ic .oz-ic { width:14px; height:14px; }
+.av-opts-looks { margin-bottom:var(--oz-space-3); }
+.av-note { margin:var(--oz-space-3) 0 0; font:400 13px/18px var(--oz-font-ui); color:var(--oz-text-secondary); text-align:center; }
+
+/* Unlock sheet (15 · Wardrobe · Unlock 696:13752) */
+.av-unlock { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-4); padding:var(--oz-space-2) 0 var(--oz-space-4); text-align:center; }
+.av-unlock-art { position:relative; display:grid; place-items:center; width:132px; height:132px; overflow:hidden; border-radius:var(--oz-radius-xl); background:var(--oz-bg-subtle); }
+.av-unlock-art svg { width:104px; height:auto; }
+.av-unlock-hat { position:absolute; left:3%; top:22%; width:94%; height:auto; }
+.av-unlock h2 { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.av-unlock p { margin:0; max-width:320px; font:400 16px/24px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.av-unlock-progress { display:flex; justify-content:space-between; align-items:center; width:100%; min-height:44px; padding:var(--oz-space-3) var(--oz-space-4);
+  border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.av-unlock-progress strong { font-weight:600; color:var(--oz-text-primary); }
+.av-unlock .oz-btn { width:100%; min-height:48px; }
+.av-unlock-back { min-height:var(--oz-touch); border:0; background:none; color:var(--oz-nav-active); font:600 16px/20px var(--oz-font-ui); cursor:pointer; }
+.oz-wardrobe .av-opts > .av-tile { width:100%; height:auto; min-width:0; } /* legacy .av-opts button set a fixed 72px width */
+.oz-wardrobe .av-opts .av-tile[data-locked] .av-thumb { opacity:1; filter:none; } /* app.css 882 greyed locked items; the frames show them in full colour */
+.oz-wardrobe #av-prev .oz-wear-ghost { position:absolute; inset:0; pointer-events:none; } /* previous Onzo, cross-fading out (oz-motion wear) */
+/* Item sheet: centre every line explicitly (legacy .sheet h2/p rules set text-align:left), and show progress as a bar. */
+.av-unlock h2, .av-unlock p, .av-unlock .oz-tag { text-align:center; align-self:center; margin-inline:auto; }
+.av-unlock h2 { width:100%; } /* symmetric padding comes from the centred-sheet rule in oz-components.css */
+.av-unlock-progress { flex-direction:column; align-items:stretch; gap:var(--oz-space-2); }
+.av-unlock-bar { display:block; height:8px; border-radius:var(--oz-radius-pill); background:var(--oz-neutral-200); overflow:hidden; }
+.av-unlock-bar i { display:block; height:100%; border-radius:inherit; background:var(--oz-blue-700); transform-origin:left; animation:oz-bar-fill 600ms var(--oz-ease-out); }
+.av-unlock-progress strong { text-align:center; }
+@keyframes oz-bar-fill { from { scale:0 1; } }
+@media (prefers-reduced-motion:reduce) { .av-unlock-bar i { animation:none; } }
+
+/* Poke Onzo: the preview is tappable; the emote floats from just above the head. */
+.oz-wardrobe #av-prev { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.oz-wardrobe #av-prev:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:4px; border-radius:var(--oz-radius-lg); }
+.oz-emote { position:absolute; left:62%; top:8%; display:grid; place-items:center; width:32px; height:32px; pointer-events:none; color:var(--oz-blue-700); }
+.oz-emote .oz-ic { width:24px; height:24px; }
+.oz-emote.is-love { color:#FF5C8A; }
+.oz-emote-plus { width:24px; height:24px; background:url(../assets/onz/lion/plus-badge.svg) center / contain no-repeat; }
+.oz-emote { left:64%; top:16%; width:36px; height:36px; }
+.oz-emote .oz-ic, .oz-emote-plus { width:28px; height:28px; }

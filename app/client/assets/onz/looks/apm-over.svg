@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39.600 55.440" fill="none">
+<svg x="7.259" y="3.520" width="25.522" height="15.839" viewBox="0 0 25.52 15.84" preserveAspectRatio="none" overflow="visible">
+<g id="w64_Group">
+<path id="w64_Vector" d="M0 13.42L3.08 4.62L9.68 7.92L18.04 0L22.88 9.46L25.52 12.32L22.88 15.4L4.62 15.84L0 13.42Z" fill="url(#w64_paint0_linear_0_394)"/>
+<path id="w64_Vector_2" d="M1.98 12.32L18.26 0.44L14.96 9.9L6.16 14.3L1.98 12.32Z" fill="#566BB7"/>
+<path id="w64_Vector_3" d="M0.66 12.98L21.78 9.24L24.2 12.54L3.52 15.62L0.66 12.98Z" fill="url(#w64_paint1_linear_0_394)"/>
+<path id="w64_Vector_4" d="M3.96 14.08L20.9 11Z" fill="url(#w64_paint2_linear_0_394)"/>
+</g>
+<defs>
+<linearGradient id="w64_paint0_linear_0_394" x1="12.76" y1="0" x2="12.76" y2="15.84" gradientUnits="userSpaceOnUse">
+<stop stop-color="#364D91"/>
+<stop offset="1" stop-color="#748AC9"/>
+</linearGradient>
+<linearGradient id="w64_paint1_linear_0_394" x1="12.43" y1="9.24" x2="12.43" y2="15.62" gradientUnits="userSpaceOnUse">
+<stop stop-color="#364D91"/>
+<stop offset="1" stop-color="#748AC9"/>
+</linearGradient>
+<linearGradient id="w64_paint2_linear_0_394" x1="12.43" y1="11" x2="12.43" y2="14.08" gradientUnits="userSpaceOnUse">
+<stop stop-color="#364D91"/>
+<stop offset="1" stop-color="#748AC9"/>
+</linearGradient>
+</defs>
+</svg>
+
+</svg>

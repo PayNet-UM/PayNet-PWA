@@ -1,0 +1,267 @@
+/* About +Onz hub (Figma phone 747:16162, web 938:53363 / 1210:67284). Client only; rebuilt with oz tokens so the
+   legacy information.css rules no longer apply here. Spacing comes from tokens and scales with the container
+   (clamp) instead of fixed pixel jumps, so 390 → 1024 → 1440 stays proportional. */
+.oz-about { display:flex; flex-direction:column; gap:var(--oz-space-3); max-width:var(--oz-content-max); margin:0 auto; padding-top:var(--oz-space-4); padding-bottom:var(--oz-space-6); }
+.oz-about [id^="about-"] { scroll-margin-top:calc(56px + var(--oz-space-4)); outline:none; }
+.oz-about-title { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-about h2 { margin:0; font:800 22px/28px var(--oz-font-display); color:var(--oz-text-primary); text-wrap:balance; }
+.oz-about h3 { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-about p { margin:0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-about-eyebrow { font:500 12px/16px var(--oz-font-ui) !important; letter-spacing:.02em; text-transform:uppercase; color:var(--oz-blue-700) !important; }
+.oz-about-lede { margin-top:var(--oz-space-1) !important; }
+
+/* In-page tabs: chips that scroll to a section (never a route change) */
+.oz-about-tabs { display:flex; gap:var(--oz-space-2); overflow-x:auto; scrollbar-width:none; margin:0 calc(-1 * var(--oz-space-4)); padding:0 var(--oz-space-4); }
+.oz-about-tabs::-webkit-scrollbar { display:none; }
+.oz-about-tabs button { flex:none; min-height:var(--oz-touch); padding:0 var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill);
+  background:var(--oz-bg-surface); color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); cursor:pointer;
+  transition:background-color 200ms var(--oz-ease-out), border-color 200ms var(--oz-ease-out), color 200ms var(--oz-ease-out), scale 150ms ease-out; }
+.oz-about-tabs button[aria-pressed="true"] { background:var(--oz-blue-100); border-color:var(--oz-blue-300); color:var(--oz-blue-700); }
+.oz-about-tabs button:active { scale:.97; }
+.oz-about-tabs button:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+
+/* Hero */
+.oz-about-hero { position:relative; display:flex; flex-direction:column-reverse; align-items:stretch; gap:var(--oz-space-3);
+  padding:var(--oz-space-5); border-radius:var(--oz-radius-xl); background:var(--oz-blue-700); color:var(--oz-text-on-brand); overflow:hidden; }
+.oz-about-hero-copy { display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-3); }
+.oz-about-hero .oz-about-eyebrow { color:var(--oz-lime-500) !important; }
+.oz-about-hero h2 { color:var(--oz-text-on-brand); font-size:28px; line-height:34px; max-width:14ch; }
+.oz-about-hero p { color:var(--oz-text-on-brand); max-width:52ch; }
+.oz-about-hero .oz-btn { width:100%; justify-content:center; }
+.oz-about-halo { align-self:center; display:grid; place-items:center; width:160px; aspect-ratio:1; border-radius:50%; background:var(--oz-lime-100);
+  box-shadow:0 0 0 8px rgba(255,255,255,.12); }
+.oz-about-halo img { width:78%; height:auto; }
+
+/* What you can do */
+.oz-about-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--oz-space-3); }
+.oz-about-tile { display:flex; flex-direction:column; gap:var(--oz-space-1); padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); min-height:148px; }
+.oz-about-tile h3 { margin-top:var(--oz-space-2); }
+.oz-about-tile.is-lilac { background:var(--oz-lilac-bg); } .oz-about-tile.is-lilac .oz-about-tile-ic { color:var(--oz-text-lilac); }
+.oz-about-tile.is-mint { background:var(--oz-mint-bg); } .oz-about-tile.is-mint .oz-about-tile-ic { color:var(--oz-text-mint); }
+.oz-about-tile.is-sky { background:var(--oz-sky-bg); } .oz-about-tile.is-sky .oz-about-tile-ic { color:var(--oz-text-sky); }
+.oz-about-tile.is-peach { background:var(--oz-peach-bg); } .oz-about-tile.is-peach .oz-about-tile-ic { color:var(--oz-text-peach); }
+.oz-about-tile-ic { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--oz-bg-surface); }
+.oz-about-tile-ic .oz-ic { width:24px; height:24px; }
+
+/* Cards */
+.oz-about-pair { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--oz-space-3); }
+.oz-about-card { display:flex; flex-direction:column; gap:var(--oz-space-3); padding:var(--oz-space-5); border-radius:var(--oz-radius-xl); background:var(--oz-bg-surface); min-width:0; }
+.oz-about-card > p + p { margin-top:calc(-1 * var(--oz-space-1)); }
+.oz-about-note { display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-2); padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); background:var(--oz-bg-subtle); }
+.oz-about-why { margin:0; display:flex; flex-direction:column; }
+.oz-about-why > div { padding:var(--oz-space-3) 0; border-bottom:1px solid var(--oz-border); }
+.oz-about-why > div:first-child { padding-top:0; } .oz-about-why > div:last-child { border-bottom:0; padding-bottom:0; }
+.oz-about-why dt { font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-about-why dd { margin:var(--oz-space-1) 0 0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+
+.oz-about-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-about-steps li { display:flex; align-items:center; gap:var(--oz-space-3); padding:var(--oz-space-2) var(--oz-space-3); }
+.oz-about-steps b { display:block; font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-about-steps small { display:block; font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-about-num { flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--oz-lime-500); color:var(--oz-text-on-accent); font:700 14px/1 var(--oz-font-ui); }
+
+/* FAQ: native <details>; height animates via interpolate-size (oz-motion.css) */
+.oz-about-faq details { border-bottom:1px solid var(--oz-border); }
+.oz-about-faq details:last-child { border-bottom:0; }
+.oz-about-faq summary { list-style:none; display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); min-height:var(--oz-touch);
+  padding:var(--oz-space-2) var(--oz-space-3); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); cursor:pointer; border-radius:var(--oz-radius-sm); }
+.oz-about-faq summary::-webkit-details-marker { display:none; }
+.oz-about-faq summary:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:-2px; }
+.oz-about-faq details p { padding:0 var(--oz-space-3) var(--oz-space-3); font-size:12px; line-height:16px; }
+/* +/– sign: two bars; the vertical one rotates flat when open */
+.oz-about-faq-sign { position:relative; flex:none; width:12px; height:12px; color:var(--oz-blue-700); }
+.oz-about-faq-sign::before, .oz-about-faq-sign::after { content:''; position:absolute; left:0; top:5px; width:12px; height:2px; border-radius:1px; background:currentColor; transition:rotate 220ms var(--oz-ease-out); }
+.oz-about-faq-sign::after { rotate:90deg; }
+.oz-about-faq details[open] .oz-about-faq-sign::after { rotate:0deg; }
+
+.oz-about-grid3 { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--oz-space-3); }
+.oz-about-mini { display:flex; flex-direction:column; gap:var(--oz-space-1); padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); text-decoration:none; transition:scale 150ms ease-out; }
+.oz-about-mini:active { scale:.97; }
+.oz-about-mini.is-filled { background:var(--oz-bg-subtle); border-color:transparent; }
+.oz-about-mini b { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-about-mini small { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-about-way { display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-2); padding:var(--oz-space-3) 0; }
+.oz-about-way h3 { font-weight:700; }
+
+/* Team */
+.oz-about-team { display:flex; flex-direction:column; gap:var(--oz-space-1); padding-top:var(--oz-space-3); }
+.oz-about-team > h2 { font-size:22px; }
+.oz-about-team-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--oz-space-3); margin-top:var(--oz-space-3); }
+.oz-about-group { align-items:flex-start; }
+.oz-about-people { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:var(--oz-space-2); width:100%; }
+.oz-about-person { display:flex; flex-direction:column; align-items:center; gap:var(--oz-space-1); text-align:center; min-width:0; }
+.oz-about-person b { margin-top:var(--oz-space-1); font:600 14px/18px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-about-person small { font:500 12px/14px var(--oz-font-ui); color:var(--oz-text-secondary); overflow-wrap:anywhere; }
+.oz-about-portrait { display:block; width:64px; height:64px; border-radius:50%; background-image:url(../assets/about/core-team.png); background-size:813.559322% auto;
+  background-repeat:no-repeat; background-color:var(--oz-bg-subtle); box-shadow:0 0 0 4px var(--oz-blue-100); }
+
+/* Closing call to action */
+.oz-about-cta { display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-2); padding:var(--oz-space-6) var(--oz-space-5); border-radius:var(--oz-radius-xl); background:var(--oz-blue-700); }
+.oz-about-cta .oz-about-eyebrow { color:var(--oz-lime-500) !important; }
+.oz-about-cta h2, .oz-about-cta p { color:var(--oz-text-on-brand); }
+.oz-about-cta .oz-btn { margin-top:var(--oz-space-3); width:100%; justify-content:center; }
+
+/* More about list */
+.oz-about-more { display:flex; flex-direction:column; border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); overflow:hidden; }
+.oz-about-more .oz-row { display:flex; align-items:center; gap:var(--oz-space-3); min-height:60px; padding:0 var(--oz-space-4); color:var(--oz-text-primary); text-decoration:none; font:500 16px/24px var(--oz-font-ui); }
+.oz-about-more .oz-row + .oz-row { border-top:1px solid var(--oz-border); }
+.oz-about-more .oz-row > span:nth-child(2) { flex:1; }
+.oz-about-more-ic { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-about-more-ic .oz-ic { width:20px; height:20px; }
+
+/* Tablet: two-up where there is room */
+@media (min-width:640px) {
+  .oz-about-tiles { grid-template-columns:repeat(4, minmax(0,1fr)); }
+  .oz-about-team-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+/* Web (Figma 1440 frame): 24px gaps, side-by-side pairs, hero with the halo on the right */
+@media (min-width:1024px) {
+  .oz-about { gap:var(--oz-space-6); padding-top:var(--oz-space-2); }
+  .oz-about-tabs { margin:0; padding:0; overflow:visible; }
+  .oz-about-tiles, .oz-about-pair, .oz-about-team-grid { gap:var(--oz-space-4); }
+  .oz-about-pair { grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--oz-space-6); }
+  .oz-about-hero { flex-direction:row; align-items:center; justify-content:space-between; gap:var(--oz-space-6); padding:var(--oz-space-7) var(--oz-space-8) var(--oz-space-7) var(--oz-space-8); }
+  .oz-about-hero h2 { font-size:clamp(32px, 3vw, 40px); line-height:1.1; }
+  .oz-about-hero .oz-btn { width:auto; }
+  .oz-about-halo { width:clamp(180px, 18vw, 240px); margin-right:var(--oz-space-3); }
+  .oz-about-card { padding:var(--oz-space-6); }
+  .oz-about h2 { font-size:28px; line-height:34px; }
+  .oz-about-grid3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
+  .oz-about-cta { display:grid; grid-template-columns:minmax(0,640px) auto; justify-content:space-between; grid-template-areas:"e b" "h b" "p b";
+    align-items:center; column-gap:var(--oz-space-6); padding:var(--oz-space-7) var(--oz-space-8); }
+  .oz-about-cta .oz-btn { width:auto; min-width:200px; margin:0; }
+  .oz-about-cta .oz-about-eyebrow { grid-area:e; } .oz-about-cta h2 { grid-area:h; } .oz-about-cta p { grid-area:p; } .oz-about-cta .oz-btn { grid-area:b; }
+  .oz-about-more { display:none; } /* the web sidebar and header already reach these pages */
+}
+@media (prefers-reduced-motion:reduce) {
+  .oz-about-tabs button, .oz-about-mini, .oz-about-faq-sign::after { transition:none; }
+}
+.oz-about-nowrap { white-space:nowrap; } /* keeps Figma's headline break: "Campus life," / "with a little extra." */
+.oz-about-hero h2 { max-width:none; }
+/* Live point values + disclosures (production facts kept inside the Figma "How points work" card) */
+.oz-about-values { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--oz-space-2); }
+.oz-about-values li { display:flex; flex-direction:column; gap:2px; padding:var(--oz-space-3); border-radius:var(--oz-radius-md); background:var(--oz-blue-100); }
+.oz-about-values b { font:800 20px/24px var(--oz-font-display); color:var(--oz-blue-700); }
+.oz-about-values span { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-about-fine { font-size:12px !important; line-height:16px !important; }
+@media (min-width:1024px) { .oz-about-values { grid-template-columns:repeat(4, minmax(0,1fr)); gap:var(--oz-space-3); } }
+
+
+/* Student help pages */
+.oz-help { display:grid; gap:var(--oz-space-4); color:var(--oz-text-primary); }
+.oz-feedback { max-width:720px; margin-inline:auto; }
+.oz-help-heading { display:grid; gap:var(--oz-space-2); }
+.oz-help :is(h1,h2,p) { margin:0; }
+.oz-help h1 { font:800 28px/34px var(--oz-font-display); }
+.oz-help h2 { font:700 18px/24px var(--oz-font-display); }
+.oz-help p { color:var(--oz-text-secondary); }
+.oz-help-back { display:inline-flex; align-items:center; gap:var(--oz-space-1); width:fit-content; min-height:var(--oz-touch); color:var(--oz-blue-700); font-weight:600; }
+.oz-help-grid, .oz-help-options, .oz-help-messages, .oz-help #fb-list,
+.oz-help #info-contact-form, .oz-help-form-pair { display:grid; gap:var(--oz-space-3); }
+.oz-help-panel { display:grid; align-content:start; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
+.oz-help-social .oz-row + .oz-row { border-top:1px solid var(--oz-border); }
+.oz-help-email { display:flex; flex-wrap:wrap; align-items:center; gap:var(--oz-space-2); }
+.oz-help-email a { overflow-wrap:anywhere; }
+.oz-help-email button { display:grid; place-items:center; min-width:var(--oz-touch); min-height:var(--oz-touch); border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-blue-700); cursor:pointer; }
+.oz-help-field { display:grid; gap:var(--oz-space-1); min-width:0; font:600 14px/20px var(--oz-font-ui); }
+.oz-help-field :is(input,textarea,select) { width:100%; min-width:0; min-height:var(--oz-touch); padding:var(--oz-space-3); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); color:var(--oz-text-primary); font:400 16px/22px var(--oz-font-ui); }
+.oz-help-field textarea { resize:vertical; }
+.oz-help :is(button,a,input,textarea,select,summary):focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-help-note { font:400 12px/16px var(--oz-font-ui); }
+.oz-help-draft { padding:var(--oz-space-3); border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+.oz-help-draft > * + * { margin-top:var(--oz-space-3); }
+.oz-help-draft-actions { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-help-draft summary { cursor:pointer; }
+.oz-help-draft pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+.oz-help-topics { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); min-inline-size:0; margin:0; padding:0; border:0; }
+.oz-help-topics legend { margin-bottom:var(--oz-space-2); font-weight:600; }
+.oz-help-topic { display:inline-flex; gap:var(--oz-space-1); align-items:center; min-height:var(--oz-touch); padding:0 var(--oz-space-2); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); cursor:pointer; }
+.oz-help-topic:has(input:checked) { border-color:var(--oz-blue-700); background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-feedback .fb-count { justify-self:end; }
+.oz-feedback .fb-reply { border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+@media (min-width:1024px) {
+  .oz-help-grid { grid-template-columns:minmax(0, 1fr) minmax(0, 2fr); align-items:start; }
+  .oz-help-form-pair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* Design-system audit (round 7): information.css drives About / Contact from its own palette variables; point them at
+   the +Onz tokens so links, labels and accents match the rest of the app. */
+body .info-page, body .information-page { --info-blue:var(--oz-blue-700); --info-ink:var(--oz-text-primary); --info-muted:var(--oz-text-secondary); --info-line:var(--oz-border); }
+.overview-directory .directory-cafes > summary { color:var(--oz-text-primary); }
+.oz-about-mini { color:var(--oz-text-primary); }
+
+/* ---------- Contact + "What's on your mind?" composer (round 7) ---------- */
+.oz-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; padding:0; border:0; }
+.oz-contact-card h2 { margin:0; }
+/* Email row: address opens the mail app; Copy confirms itself (icon + label cross-fade, no toast). */
+.oz-contact-email { display:flex; align-items:center; gap:var(--oz-space-2); min-width:0; padding:var(--oz-space-2); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); }
+.oz-contact-mail { flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:var(--oz-space-3); color:var(--oz-text-primary); text-decoration:none; border-radius:var(--oz-radius-md); }
+.oz-contact-mail:active { opacity:.7; }
+.oz-contact-addr { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 14px/20px var(--oz-font-ui); color:var(--oz-blue-700); }
+.oz-copy { position:relative; display:grid; flex:none; height:36px; min-width:92px; padding:0 var(--oz-space-3); border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-blue-700); font:600 14px/20px var(--oz-font-ui); cursor:pointer; transition:background-color 200ms var(--oz-ease-out), color 200ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-copy:active { scale:.96; }
+.oz-copy-state { grid-area:1/1; display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-1); transition:opacity 200ms var(--oz-ease-out), translate 200ms var(--oz-ease-out); }
+.oz-copy-state .oz-ic { width:16px; height:16px; }
+.oz-copy-done { opacity:0; translate:0 6px; }
+.oz-copy.is-copied { background:var(--oz-success-bg); color:var(--oz-text-success); }
+.oz-copy.is-copied .oz-copy-idle { opacity:0; translate:0 -6px; }
+.oz-copy.is-copied .oz-copy-done { opacity:1; translate:0 0; }
+/* Socials: two equal tiles, logo + handle. */
+.oz-contact-socials { display:grid; grid-template-columns:1fr 1fr; gap:var(--oz-space-2); }
+.oz-contact-social { display:flex; align-items:center; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-3); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); color:var(--oz-text-primary); text-decoration:none; transition:background-color 150ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-contact-social:active { scale:.97; background:var(--oz-bg-subtle); }
+.oz-contact-social img { flex:none; }
+.oz-contact-social span { display:flex; flex-direction:column; min-width:0; }
+.oz-contact-social b { font:600 14px/20px var(--oz-font-ui); }
+.oz-contact-social small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (hover:hover) { .oz-contact-social:hover { background:var(--oz-bg-subtle); } .oz-contact-mail:hover .oz-contact-addr { text-decoration:underline; } }
+.oz-contact-history { justify-self:start; margin-top:var(--oz-space-1); font:600 14px/20px var(--oz-font-ui); }
+.oz-help-query { display:grid; gap:var(--oz-space-3); align-content:start; min-width:0; }
+
+/* Composer: title, topic chips, one message box, Send, then one fine line. */
+.oz-help .oz-composer { gap:var(--oz-space-4); }
+.oz-composer-title { margin:0; }
+.oz-chips { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); min-inline-size:0; margin:0; padding:0; border:0; }
+.oz-chip { position:relative; display:inline-flex; align-items:center; min-height:36px; padding:0 var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill);
+  background:var(--oz-bg-surface); color:var(--oz-text-primary); font:500 14px/20px var(--oz-font-ui); cursor:pointer;
+  transition:background-color 150ms var(--oz-ease-out), border-color 150ms var(--oz-ease-out), color 150ms var(--oz-ease-out), scale 150ms var(--oz-ease-out); }
+.oz-chip input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+.oz-chip:active { scale:.96; }
+.oz-chip:has(input:checked) { border-color:var(--oz-blue-700); background:var(--oz-blue-700); color:var(--oz-text-on-brand); font-weight:600; }
+.oz-chip:has(input:focus-visible) { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-composer-box { position:relative; display:block; }
+.oz-composer-box textarea { display:block; width:100%; min-height:120px; padding:var(--oz-space-3) var(--oz-space-3) var(--oz-space-6); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md);
+  background:var(--oz-bg-subtle); color:var(--oz-text-primary); font:400 16px/24px var(--oz-font-ui); resize:vertical; transition:border-color 150ms var(--oz-ease-out), background-color 150ms var(--oz-ease-out); }
+.oz-composer-box textarea:focus { outline:0; border-color:var(--oz-blue-700); background:var(--oz-bg-surface); }
+.oz-composer-box .fb-count { position:absolute; right:var(--oz-space-3); bottom:var(--oz-space-2); font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-composer .oz-btn .oz-ic { width:20px; height:20px; }
+.oz-composer-fine { margin:calc(var(--oz-space-2) * -1) 0 0; text-align:center; font:500 12px/16px var(--oz-font-ui); }
+/* Phones: the address must always show in full, so Copy is a 40px icon button (copy → green check) and the address may wrap. */
+.oz-contact-email .oz-row-lead { width:36px; height:36px; }
+.oz-contact-email .oz-row-lead .oz-ic { width:20px; height:20px; }
+.oz-contact-addr { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; }
+.oz-copy { min-width:40px; width:40px; height:40px; padding:0; border-radius:50%; }
+.oz-copy-state > span:not(.oz-ic) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.oz-copy-state .oz-ic { width:20px; height:20px; }
+@media (min-width:1024px) {
+  .oz-copy { width:auto; min-width:92px; padding:0 var(--oz-space-3); border-radius:var(--oz-radius-pill); height:36px; }
+  .oz-copy-state > span:not(.oz-ic) { position:static; width:auto; height:auto; overflow:visible; clip-path:none; }
+  .oz-copy-state .oz-ic { width:16px; height:16px; }
+}
+
+/* "Email us" (Octopus Energy / Gusto on Mobbin): the address is the hero of its card — a large tinted tile that opens
+   the mail app, with Copy beside it. */
+.oz-contact-emailcard .oz-contact-email { padding:var(--oz-space-3); border:0; border-radius:var(--oz-radius-lg); background:var(--oz-blue-50, var(--oz-blue-100)); }
+.oz-contact-emailcard .oz-row-lead { width:44px; height:44px; background:var(--oz-action-secondary); color:var(--oz-text-on-brand); }
+.oz-contact-emailcard .oz-row-lead .oz-ic { width:22px; height:22px; }
+#view .oz-contact-emailcard .oz-contact-addr { font:600 16px/24px var(--oz-font-ui); color:var(--oz-blue-700); }
+.oz-contact-emailcard .oz-copy { background:var(--oz-bg-surface); }
+/* Copy lives in the card header (labelled pill), so the address gets the whole tile and never wraps mid-domain. */
+.oz-contact-emailcard { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+.oz-contact-emailcard > h2 { grid-column:1; grid-row:1; }
+.oz-contact-emailcard .oz-contact-email { display:contents; }
+.oz-contact-emailcard .oz-contact-mail { grid-column:1 / -1; grid-row:2; padding:var(--oz-space-3); border-radius:var(--oz-radius-lg); background:var(--oz-blue-50, var(--oz-blue-100)); }
+.oz-contact-emailcard .oz-copy { grid-column:2; grid-row:1; width:auto; min-width:92px; height:36px; padding:0 var(--oz-space-3); border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); }
+.oz-contact-emailcard .oz-copy-state > span:not(.oz-ic) { position:static; width:auto; height:auto; overflow:visible; clip-path:none; }
+.oz-contact-emailcard .oz-copy-state .oz-ic { width:16px; height:16px; }
+#view .oz-contact-emailcard .oz-contact-addr { overflow-wrap:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

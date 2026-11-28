@@ -34,7 +34,7 @@ fs.writeFileSync(path.join(out, 'firestore.rules'), rules);
 for (const site of Object.keys(SITES)) {
   const dir = path.join(out, site);
   try { copySite(site, dir); } catch (e) { console.error(e.message); process.exit(1); }
-  for (const f of ['index.html', 'sw.js']) {
+  for (const f of ['index.html', 'sw.js', 'css/oz-legacy.css']) {
     const p = path.join(dir, f);
     if (fs.existsSync(p)) fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replaceAll('__VERSION__', version));
   }

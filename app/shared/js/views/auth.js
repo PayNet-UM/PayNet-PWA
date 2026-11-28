@@ -10,18 +10,16 @@ import { termsSheet, termsHTML, termsLangSwitch, bindTermsLang, termsText, terms
 const MPP_EMAIL = mppBootstrapEmails[0];
 const isAdminSite = (app) => app.site === 'admin';
 
-function frame(app, inner) {
+// Signed-out frame (Figma 01 · Sign in, 441:51): language toggle top right, content, footer pinned to the bottom
+// with the programme line (Universiti Malaya · HEP · PayNet Digital Campus 5.0) under it. Same column on web.
+function frame(app, inner, foot = '') {
   document.body.classList.remove('mpp-mode');
   const admin = isAdminSite(app);
-  document.body.innerHTML = `<div class="auth">
-    <aside class="art">
-      <a class="brand" style="color:#fff"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"></a>
-      <div><h2>${admin ? 'Admin dashboard' : 'Add on to campus life.'}</h2>
-        <p>${admin ? 'Review merchants, manage rewards and report on the +Onz programme.' : 'Events, lessons and rewards in one place.'}</p></div>
-      <p class="faint" style="color:#8A9AB2">Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p>
-      ${chevron('#29B6F6', 16)}
-    </aside>
-    <div class="form-side">${langToggleHTML('auth-lang')}${inner}${!admin?'<nav class="auth-info-links" aria-label="About and contact"><a href="#/about">About us</a><span aria-hidden="true">·</span><a href="#/contact">Contact us</a></nav>':''}</div></div>`;
+  document.body.innerHTML = `<div class="auth oz-auth"><div class="oz-auth-col form-side">
+    <header class="oz-auth-top">${langToggleHTML('auth-lang')}</header>
+    <div class="oz-auth-body">${inner}</div>
+    <footer class="oz-auth-foot">${foot}${!admin ? '<nav class="auth-info-links" aria-label="About and contact"><a href="#/about">About us</a><span aria-hidden="true">·</span><a href="#/contact">Contact us</a></nav>' : ''}
+      <p class="oz-auth-org" data-no-i18n>Universiti Malaya · Hal Ehwal Pelajar · PayNet Digital Campus 5.0</p></footer></div></div>`;
   app.shellRole = null;
   if (app.addDemoRibbon) app.addDemoRibbon();
 }
@@ -358,29 +356,29 @@ export function renderSignIn(app, mode = 'in', showEmail = false) {
   const iosApp = !admin && !demo && isStandalone() && isIOS();
   const forApp = !admin && !demo && !!handoffHash();
   frame(app, `
-    <div><a class="brand"><img class="onz-brand-logo" src="icons/onz-logo-dark.svg" alt="+Onz" width="680" height="214"></a></div>
-    <div><h1>${admin ? 'Sign in to the Admin dashboard' : 'Sign in to +Onz'}</h1>
-      <p class="lede">${admin ? 'For the Admin team only. Use the email the Admin team gave admin access to.' : 'Sign in with Google. New users get an account.'}</p></div>
+    <a class="oz-auth-lockup" aria-label="+Onz" data-no-i18n><img src="icons/onz-mark.svg" alt="" width="64" height="64"><span>+Onz</span></a>
+    <div class="oz-auth-head"><h1>${admin ? 'Sign in to the Admin dashboard' : 'Sign in to +Onz'}</h1>
+      <p>${admin ? 'For the Admin team only. Use the email the Admin team gave admin access to.' : 'Use your Google account. New here? We’ll set you up.'}</p></div>
     ${!demo && inAppBrowser() ? `<div class="notice warn" id="inapp">${icon('info')}<span>You’re in another app’s built-in browser. Google sign-in only works in Chrome or Safari. <button class="link" id="open-browser">Open in browser</button></span></div>` : ''}
     ${iosApp ? `<div class="notice" id="ios-app">${icon('info')}<span>Google opens Safari. Match the code on both screens, confirm in Safari, then return here to finish sign-in.</span></div>` : ''}
     ${forApp ? `<div class="notice" id="for-app">${icon('smartphone')}<span><b>Signing in for the +Onz app on your home screen.</b> Sign in here, compare the matching code with your home-screen app, then return to the app and finish sign-in.</span></div>` : ''}
-    <button class="btn block google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
-    <details id="email-box" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
-      <div class="stack" style="margin-top:14px">
-        <div class="seg" role="tablist"><button class="${mode === 'in' ? 'on' : ''}" data-mode="in">Sign in</button><button class="${mode === 'up' ? 'on' : ''}" data-mode="up">Create account</button></div>
-        <form id="auth-form" class="stack">
-          <label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
-          <label class="field">Password<input name="password" type="password" minlength="6" autocomplete="${mode === 'in' ? 'current-password' : 'new-password'}" required>
-            ${mode === 'up' ? '<small>At least 6 characters. We’ll email you a link to verify the address.</small>' : ''}</label>
-          <button class="btn primary block" type="submit">${mode === 'in' ? 'Sign in' : 'Create account'}</button>
-          ${mode === 'in' ? '<button class="btn ghost block" type="button" id="forgot">Forgot your password?</button>' : ''}
-        </form></div></details>
-    <p class="faint" style="text-align:center">You’ll stay signed in on this device until you sign out.</p>
-    ${admin ? '' : `<p class="faint" style="text-align:center">By signing in you agree to the <button class="link" type="button" id="terms-link">Terms of Use and Privacy Notice</button>.</p>`}
+    <div class="oz-auth-actions">
+      <button class="oz-btn oz-btn-ghost oz-auth-google google-btn" id="google">${GOOGLE_G}<span>Continue with Google</span></button>
+      <details id="email-box" class="oz-auth-email" ${showEmail ? 'open' : ''}><summary>Use email and password instead</summary>
+        <div class="stack">
+          <div class="seg" role="tablist"><button class="${mode === 'in' ? 'on' : ''}" data-mode="in">Sign in</button><button class="${mode === 'up' ? 'on' : ''}" data-mode="up">Create account</button></div>
+          <form id="auth-form" class="stack">
+            <label class="field">Email<input name="email" type="email" autocomplete="email" required></label>
+            <label class="field">Password<input name="password" type="password" minlength="6" autocomplete="${mode === 'in' ? 'current-password' : 'new-password'}" required>
+              ${mode === 'up' ? '<small>At least 6 characters. We’ll email you a link to verify the address.</small>' : ''}</label>
+            <button class="btn primary block" type="submit">${mode === 'in' ? 'Sign in' : 'Create account'}</button>
+            ${mode === 'in' ? '<button class="btn ghost block" type="button" id="forgot">Forgot your password?</button>' : ''}
+          </form></div></details></div>
     ${demo ? `<div class="demo-box"><b>Demo mode</b><p class="faint">No Firebase project is connected, so data stays in this browser. Jump straight into a ready-made account:</p>
       <div class="row">${admin ? `<button class="btn small" data-demo="${MPP_EMAIL}">Admin team</button>`
         : '<button class="btn small" data-demo="aina@siswa.um.edu.my">Student</button><button class="btn small" data-demo="kopikolej@demo.my">Merchant</button>'}</div></div>` : ''}
-    ${admin ? `<p class="faint" style="text-align:center">Student or merchant? <a href="${esc(siteUrls.client)}">Open the +Onz app</a></p>` : ''}`);
+    ${admin ? `<p class="oz-auth-note">Student or merchant? <a href="${esc(siteUrls.client)}">Open the +Onz app</a></p>` : ''}`,
+    admin ? '' : '<p class="oz-auth-terms">By continuing you agree to the <button class="link" type="button" id="terms-link">Terms of Use and Privacy Notice</button>.</p>');
   const { sdk, auth } = app.backend;
   if ($('#open-browser')) $('#open-browser').onclick = openInBrowserSheet;
   if ($('#terms-link')) $('#terms-link').onclick = () => termsSheet();

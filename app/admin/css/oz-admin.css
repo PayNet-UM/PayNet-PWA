@@ -1,0 +1,398 @@
+/* +Onz Admin on the design system (Figma "Admin · …" 1440 and "Mobile admin · …" 390; Programme overview 1136:64484,
+   Merchants 1136:64509, Admin menu 1137:67223). Loaded after the old Admin stylesheets, and every rule is scoped to
+   .oz-admin so it outranks them. Shell first, then the primitives every Admin page is built from (cards, buttons,
+   tags, stats, tables, fields, chips, notices), then the few Admin-only blocks. Tokens only. */
+
+body.mpp-mode { background:var(--oz-bg-app); background-image:none; color:var(--oz-text-primary); font-family:var(--oz-font-ui); }
+body.mpp-mode::before, body.mpp-mode::after { content:none; }
+
+/* ---------------------------------------------------------------- shell */
+.oz-admin { display:grid; grid-template-columns:minmax(0,1fr); min-height:100dvh; }
+.oz-arail { position:sticky; top:0; z-index:30; display:flex; flex-direction:column; background:var(--oz-bg-surface); border-bottom:1px solid var(--oz-border); }
+.oz-arail-head { display:flex; align-items:center; justify-content:space-between; gap:var(--oz-space-3); min-height:64px; padding:var(--oz-space-2) var(--oz-space-4); }
+.oz-abrand { display:flex; flex-direction:column; text-decoration:none; }
+.oz-abrand b { font:800 22px/28px var(--oz-font-display); color:var(--oz-blue-700); }
+.oz-abrand small { font:500 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-arail-body { display:none; }
+.oz-arail-title { margin:0 0 var(--oz-space-2); font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-anav { display:flex; flex-direction:column; gap:2px; }
+.oz-anav a { display:flex; align-items:center; gap:var(--oz-space-3); min-height:44px; padding:var(--oz-space-2) var(--oz-space-3); border-radius:var(--oz-radius-md); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); text-decoration:none; transition:background-color 120ms ease-out, color 120ms ease-out; }
+.oz-anav a .oz-ic { flex:none; width:20px; height:20px; color:var(--oz-neutral-600); }
+.oz-anav a > span:not(.count):not(.oz-ic) { flex:1; min-width:0; }
+.oz-anav a.on { background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-anav a.on .oz-ic { color:var(--oz-blue-700); }
+@media (hover:hover) { .oz-anav a:not(.on):hover { background:var(--oz-bg-subtle); color:var(--oz-text-primary); } }
+.oz-anav a:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:1px; }
+.oz-anav .count { display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:var(--oz-radius-pill); background:var(--oz-lime-500); font:700 12px/16px var(--oz-font-ui); color:var(--oz-text-on-accent); }
+.oz-anav .count.hidden { display:none; }
+.oz-awho { display:flex; flex-direction:column; gap:var(--oz-space-3); margin-top:var(--oz-space-4); padding-top:var(--oz-space-4); border-top:1px solid var(--oz-border); }
+.oz-awho-id { display:flex; flex-direction:column; min-width:0; }
+.oz-awho-id strong { font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-awho-id small { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); overflow-wrap:anywhere; }
+.oz-awho-actions { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-amain { min-width:0; display:flex; flex-direction:column; }
+.oz-atop { display:none; }
+.oz-admin main.view, .oz-admin main.view.wide { width:100%; max-width:1120px; margin:0 auto; padding:var(--oz-space-4) var(--oz-space-4) var(--oz-space-9); }
+/* Phones: Menu opens the navigation as a full page under the top bar (Figma Admin menu 1137:67223). */
+.oz-arail.open { position:fixed; inset:0; overflow:auto; border:0; }
+.oz-arail.open .oz-arail-body { display:block; padding:var(--oz-space-2) var(--oz-space-4) var(--oz-space-8); }
+.oz-arail.open .oz-arail-head { position:sticky; top:0; background:var(--oz-bg-surface); }
+body.oz-amenu-open { overflow:hidden; }
+
+@media (min-width:1024px) {
+  .oz-admin { grid-template-columns:240px minmax(0,1fr); }
+  .oz-arail, .oz-arail.open { position:sticky; inset:auto; top:0; height:100dvh; overflow:auto; border-bottom:0; border-right:1px solid var(--oz-border); }
+  .oz-arail-head { min-height:72px; padding:var(--oz-space-4); }
+  .oz-amenu, .oz-arail-title { display:none; }
+  .oz-arail-body, .oz-arail.open .oz-arail-body { display:flex; flex-direction:column; flex:1; padding:0 var(--oz-space-3) var(--oz-space-4); }
+  .oz-awho { margin-top:auto; }
+  .oz-atop { display:flex; align-items:center; justify-content:space-between; min-height:64px; padding:0 var(--oz-space-6); background:var(--oz-bg-surface); border-bottom:1px solid var(--oz-border); }
+  .oz-acrumb { margin:0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+  .oz-acrumb b { font-weight:500; color:var(--oz-text-secondary); }
+  .oz-atop-who { font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); }
+  .oz-admin main.view, .oz-admin main.view.wide { padding:var(--oz-space-6) var(--oz-space-6) var(--oz-space-9); }
+  body.oz-amenu-open { overflow:auto; }
+}
+
+/* ---------------------------------------------------------------- page head + overview */
+.oz-admin .oz-ahead { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:var(--oz-space-4); margin:0 0 var(--oz-space-5); padding:0; background:none; border:0; box-shadow:none; }
+.oz-admin .oz-ahead::before, .oz-admin .oz-ahead::after { content:none; }
+.oz-ahead-copy { min-width:0; flex:1 1 320px; }
+.oz-admin .oz-ahead h1 { margin:0; font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); letter-spacing:0; }
+.oz-admin .oz-ahead p { margin:var(--oz-space-3) 0 0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); max-width:64ch; }
+.oz-ahead-actions { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-acount { display:inline-grid; place-items:center; min-width:20px; height:20px; margin-left:var(--oz-space-1); padding:0 6px; border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); font:700 12px/16px var(--oz-font-ui); color:var(--oz-blue-900); }
+.oz-admin .oz-astats, .oz-admin .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:var(--oz-space-3); margin:0 0 var(--oz-space-5); }
+.oz-admin .oz-astat, .oz-admin .stats .stat, .oz-admin .stat { display:flex; flex-direction:column; gap:var(--oz-space-1); min-width:0; padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:none; }
+.oz-admin .stat::before, .oz-admin .stat::after { content:none; }
+.oz-admin .stat .k, .oz-astat-label { font:500 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); text-transform:none; letter-spacing:0; }
+.oz-admin .stat .v, .oz-astat-value { font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.oz-astat-unit { font-size:22px; }
+.oz-admin .stat .s, .oz-astat-detail { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .hep-metric-icon, .oz-admin .tile-icon { display:none; }
+.oz-agrid { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--oz-space-4); }
+@media (min-width:1200px) { .oz-agrid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+.oz-acard { display:flex; flex-direction:column; gap:var(--oz-space-3); min-width:0; padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); }
+.oz-acard-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-admin .oz-acard-head h2 { margin:0; font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-anote { margin:0; font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-alist { display:flex; flex-direction:column; }
+.oz-aline { display:flex; align-items:center; gap:var(--oz-space-3); padding:var(--oz-space-3) 0; border-top:1px solid var(--oz-border); min-width:0; }
+.oz-aline:first-child { border-top:0; padding-top:0; }
+.oz-aline > .oz-ic { flex:none; width:22px; height:22px; color:var(--oz-blue-700); }
+.oz-aline > span:not(.oz-tag):not(.oz-abar):not(.oz-arank):not(.oz-ic) { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.oz-aline b { font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); overflow-wrap:anywhere; }
+.oz-aline small { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); overflow-wrap:anywhere; }
+.oz-aline .oz-tag { flex:none; }
+.oz-abar { display:block; flex:0 0 72px; height:6px; border-radius:var(--oz-radius-pill); background:var(--oz-neutral-200); overflow:hidden; }
+.oz-aleague .oz-abar { flex:none; width:100%; margin-top:var(--oz-space-1); }
+.oz-abar i { display:block; height:100%; border-radius:inherit; background:var(--oz-blue-700); }
+.oz-arank { flex:none; display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--oz-bg-subtle); font:700 12px/16px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-aline:first-child .oz-arank { background:var(--oz-lime-500); color:var(--oz-text-on-accent); }
+.oz-aperiod select { min-height:36px; }
+.oz-aicon { display:inline-grid; place-items:center; flex:none; width:40px; height:40px; border-radius:var(--oz-radius-md); background:var(--oz-blue-100); color:var(--oz-blue-900); }
+.oz-aicon .oz-ic { width:22px; height:22px; }
+.oz-aicon.is-small { width:32px; height:32px; } .oz-aicon.is-small .oz-ic { width:18px; height:18px; }
+.oz-arow { display:flex; align-items:center; gap:var(--oz-space-3); min-height:64px; padding:var(--oz-space-3) var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); color:inherit; text-decoration:none; }
+.oz-arow-text { flex:1; display:flex; flex-direction:column; min-width:0; }
+.oz-arow-text strong { font:600 14px/20px var(--oz-font-ui); } .oz-arow-text small { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-aempty { display:flex; align-items:center; gap:var(--oz-space-3); padding:var(--oz-space-3); border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+.oz-aempty p { margin:0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+
+/* ---------------------------------------------------------------- primitives used by every Admin page */
+.oz-admin main.view h1 { font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); letter-spacing:0; }
+.oz-admin main.view h2 { font:600 18px/24px var(--oz-font-ui); color:var(--oz-text-primary); letter-spacing:0; }
+.oz-admin main.view h3 { font:600 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); letter-spacing:0; }
+.oz-admin main.view h2 .ic, .oz-admin main.view h1 .ic { display:none; }
+.oz-admin .page-title { margin:0 0 var(--oz-space-5); }
+.oz-admin .page-title p { margin:var(--oz-space-2) 0 0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .faint, .oz-admin .muted { color:var(--oz-text-secondary); }
+.oz-admin .section { margin:0 0 var(--oz-space-5); }
+.oz-admin .section > .head, .oz-admin .hep-panel-head, .oz-admin .hep-section-title { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--oz-space-2); margin:0 0 var(--oz-space-3); }
+/* Cards */
+.oz-admin .card { padding:var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:none; background-image:none; }
+.oz-admin .card.pad-lg { padding:var(--oz-space-5); }
+.oz-admin .card::before, .oz-admin .card::after { content:none; }
+.oz-admin .stack { display:flex; flex-direction:column; gap:var(--oz-space-3); }
+.oz-admin .grid-2 { gap:var(--oz-space-3); }
+/* Buttons → oz buttons (secondary blue pill, primary lime, ghost outline). */
+.oz-admin .btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--oz-space-2); min-height:var(--oz-touch); padding:var(--oz-space-2) var(--oz-space-4); border:1px solid transparent; border-radius:var(--oz-radius-pill); background:var(--oz-action-secondary); color:var(--oz-text-on-brand); font:600 14px/20px var(--oz-font-ui); box-shadow:none; background-image:none; text-decoration:none; transform:none; transition:scale 150ms ease-out, opacity 150ms ease-out; }
+.oz-admin .btn::before, .oz-admin .btn::after { content:none; }
+.oz-admin .btn:active { scale:.97; }
+.oz-admin .btn .ic, .oz-admin .btn .oz-ic { width:18px; height:18px; }
+.oz-admin .btn.primary { background:var(--oz-action); color:var(--oz-text-on-accent); }
+.oz-admin .btn.ghost { background:transparent; border-color:var(--oz-border); color:var(--oz-blue-700); }
+.oz-admin .btn.warn, .oz-admin .btn.danger { background:var(--oz-danger); color:var(--oz-text-on-accent); }
+.oz-admin .btn.small { min-height:36px; padding:var(--oz-space-1) var(--oz-space-3); }
+.oz-admin .btn.block { display:flex; width:100%; }
+.oz-admin .btn:disabled, .oz-admin .btn[aria-disabled="true"] { background:var(--oz-bg-subtle); border-color:transparent; color:var(--oz-text-disabled); cursor:not-allowed; }
+.oz-admin .btn:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+/* Tags */
+.oz-admin .badge { display:inline-flex; align-items:center; gap:var(--oz-space-1); padding:4px var(--oz-space-3); border:0; border-radius:var(--oz-radius-pill); background:var(--oz-lilac-bg); color:var(--oz-text-lilac); font:500 12px/16px var(--oz-font-ui); box-shadow:none; white-space:nowrap; }
+.oz-admin .badge.ok { background:var(--oz-success-bg); color:var(--oz-text-success); }
+.oz-admin .badge.warn { background:var(--oz-warning-bg); color:var(--oz-text-warning); }
+.oz-admin .badge.bad { background:var(--oz-danger-bg); color:var(--oz-text-danger); }
+.oz-admin .badge .ic { width:14px; height:14px; }
+/* Tables (Figma Merchants table: subtle header row, 1px dividers, 16px radius frame) */
+.oz-admin .table-wrap { overflow:auto; border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:none; }
+.oz-admin table.data { width:100%; border-collapse:collapse; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); background:var(--oz-bg-surface); }
+.oz-admin table.data th { position:sticky; top:0; padding:var(--oz-space-3) var(--oz-space-4); background:var(--oz-bg-subtle); border-bottom:1px solid var(--oz-border); font:600 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); text-align:left; text-transform:none; letter-spacing:0; white-space:nowrap; }
+.oz-admin table.data td { padding:var(--oz-space-3) var(--oz-space-4); border-bottom:1px solid var(--oz-border); vertical-align:middle; }
+.oz-admin table.data tr:last-child td { border-bottom:0; }
+@media (hover:hover) { .oz-admin table.data tbody tr:hover td { background:var(--oz-bg-app); } }
+.oz-admin table.data .r, .oz-admin table.data td.num { text-align:right; font-variant-numeric:tabular-nums; }
+/* Fields */
+.oz-admin .field { display:flex; flex-direction:column; gap:var(--oz-space-2); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); }
+.oz-admin .field small { font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin main.view input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), .oz-admin main.view select, .oz-admin main.view textarea { min-height:44px; padding:var(--oz-space-2) var(--oz-space-3); border:1px solid var(--oz-border); border-radius:var(--oz-radius-md); background:var(--oz-bg-surface); font:400 16px/24px var(--oz-font-ui); color:var(--oz-text-primary); box-shadow:none; }
+.oz-admin main.view input:focus-visible, .oz-admin main.view select:focus-visible, .oz-admin main.view textarea:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:1px; border-color:var(--oz-border-strong); }
+.oz-admin main.view input[type=checkbox], .oz-admin main.view input[type=radio] { accent-color:var(--oz-blue-700); }
+.oz-admin .check { display:flex; align-items:center; gap:var(--oz-space-3); min-height:44px; font:400 14px/20px var(--oz-font-ui); }
+/* Chips / filters */
+.oz-admin .chips { display:flex; flex-wrap:wrap; gap:var(--oz-space-2); }
+.oz-admin .chips button, .oz-admin .chips a { min-height:36px; padding:0 var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); box-shadow:none; }
+.oz-admin .chips .on, .oz-admin .chips [aria-pressed="true"] { border-color:var(--oz-blue-700); background:var(--oz-blue-700); color:var(--oz-text-on-brand); }
+/* Notices, lists, empty */
+.oz-admin .notice { display:flex; align-items:flex-start; gap:var(--oz-space-3); padding:var(--oz-space-3) var(--oz-space-4); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-primary); box-shadow:none; }
+.oz-admin .notice.bad { border-color:var(--oz-danger-bg); background:var(--oz-danger-bg); }
+.oz-admin .notice .ic { width:20px; height:20px; color:var(--oz-blue-700); flex:none; }
+.oz-admin .list .item { padding:var(--oz-space-3) 0; border-bottom:1px solid var(--oz-border); background:none; box-shadow:none; }
+.oz-admin .empty { padding:var(--oz-space-5); border:0; border-radius:var(--oz-radius-lg); background:var(--oz-bg-subtle); color:var(--oz-text-secondary); text-align:center; }
+/* Old decorative Admin bits that no longer exist in the design */
+.oz-admin .hep-emblem i, .oz-admin .hep-orbit, .oz-admin .hep-eyebrow { display:none; }
+.oz-admin .hep-page-head .hep-emblem { display:none; }
+.oz-admin .dash-section, .oz-admin .cmp-card, .oz-admin .hep-fb { border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); box-shadow:none; background-image:none; }
+.oz-admin .hep-fb::before, .oz-admin .hep-fb::after, .oz-admin .dash-section::before, .oz-admin .cmp-card::before { content:none; }
+.demo-ribbon { box-shadow:none; }
+
+@media print {
+  .oz-admin { display:block; } .oz-arail, .oz-atop, .demo-ribbon { display:none !important; }
+  .oz-admin main.view { padding:0; max-width:none; }
+}
+@media (prefers-reduced-motion:reduce) { .oz-anav a, .oz-admin .btn { transition:none; } }
+
+/* Round 2: outrank legacy nav/icon sizing; tables inside cards; two-up stats on phones. */
+.oz-admin .oz-anav a { justify-content:flex-start; text-align:left; width:auto; height:auto; }
+.oz-admin .oz-anav a > .oz-ic, .oz-admin .oz-aline > .oz-ic { flex:0 0 auto; margin:0; }
+.oz-admin .oz-anav a > span:not(.count):not(.oz-ic) { flex:1 1 0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.oz-admin .card:has(> .table-wrap:only-child) { padding:0; overflow:hidden; }
+.oz-admin .card > .table-wrap { border:0; border-radius:0; margin:0; }
+@media (max-width:1023.98px) {
+  .oz-admin .oz-astats, .oz-admin .stats { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .oz-admin .oz-astat, .oz-admin .stat { padding:var(--oz-space-3); }
+  .oz-admin .stat .v, .oz-astat-value { font-size:22px; line-height:28px; }
+  .oz-ahead-actions .oz-btn { flex:1 1 auto; }
+}
+.oz-admin .points-budget-scenario { padding:var(--oz-space-5); border:1px solid var(--oz-border); border-radius:var(--oz-radius-lg); background:var(--oz-bg-surface); background-image:none; box-shadow:none; color:var(--oz-text-primary); }
+.oz-admin .points-eyebrow { color:var(--oz-blue-700); font:600 12px/16px var(--oz-font-ui); letter-spacing:.04em; }
+.oz-admin .check > span, .oz-admin .check > div { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+.oz-admin .hep-feature-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap:var(--oz-space-2) var(--oz-space-5); }
+.oz-admin .check b, .oz-admin .check strong { white-space:normal; }
+
+/* ---------------------------------------------------------------- round 3: density and hierarchy */
+/* Tables inside a card run edge to edge (header row meets the card sides), like Stripe / Linear lists. */
+.oz-admin .card > .table-wrap, .oz-admin .card .table-wrap { margin-inline:calc(var(--oz-space-4) * -1); border:0; border-top:1px solid var(--oz-border); border-radius:0; }
+.oz-admin .card.pad-lg > .table-wrap, .oz-admin .card.pad-lg .table-wrap { margin-inline:calc(var(--oz-space-5) * -1); }
+.oz-admin .card > .table-wrap:last-child { margin-bottom:calc(var(--oz-space-4) * -1); }
+.oz-admin .card.pad-lg > .table-wrap:last-child { margin-bottom:calc(var(--oz-space-5) * -1); }
+.oz-admin .card > .table-wrap:first-child { border-top:0; margin-top:calc(var(--oz-space-4) * -1); }
+.oz-admin .card.pad-lg > .table-wrap:first-child { margin-top:calc(var(--oz-space-5) * -1); }
+.oz-admin .card:has(> .table-wrap) { overflow:hidden; }
+.oz-admin table.data th:first-child, .oz-admin table.data td:first-child { padding-left:var(--oz-space-5); }
+.oz-admin table.data th:last-child, .oz-admin table.data td:last-child { padding-right:var(--oz-space-5); }
+/* Row actions: one quiet size, the primary one filled, destructive ones as red text (Hick: fewer equal-weight buttons). */
+.oz-admin table.data td .btn { min-height:32px; padding:var(--oz-space-1) var(--oz-space-3); font-size:13px; line-height:18px; }
+.oz-admin table.data td .btn:not(.primary):not(.warn):not(.danger) { background:transparent; border-color:var(--oz-border); color:var(--oz-blue-700); }
+.oz-admin table.data td .btn.warn, .oz-admin table.data td .btn.danger { background:transparent; border-color:transparent; color:var(--oz-text-danger); padding-inline:var(--oz-space-2); }
+.oz-admin table.data td .row, .oz-admin table.data td:last-child { white-space:nowrap; }
+.oz-admin table.data td .row { display:flex; flex-wrap:nowrap; gap:var(--oz-space-1); justify-content:flex-end; }
+/* Side-by-side cards share a height so their edges line up. */
+.oz-admin .grid-2, .oz-admin .two, .oz-admin .cols, .oz-admin .dash-grid { align-items:stretch; }
+.oz-admin .grid-2 > .card, .oz-admin .two > .card, .oz-admin .cols > .card { height:100%; }
+/* One empty state everywhere: icon + sentence on a subtle surface, left aligned. */
+.oz-admin .hep-empty, .oz-admin .empty, .oz-aempty { display:flex; align-items:center; justify-content:flex-start; gap:var(--oz-space-3); padding:var(--oz-space-3) var(--oz-space-4); border:0; border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); text-align:left; box-shadow:none; }
+.oz-admin .hep-empty p, .oz-admin .empty p { margin:0; font:400 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .empty > .ic, .oz-admin .empty > .oz-ic { width:20px; height:20px; color:var(--oz-blue-700); margin:0; }
+/* Section heads inside cards: title and actions on one line, description under the title. */
+.oz-admin .card > .row.between, .oz-admin .card > .head { margin-bottom:var(--oz-space-3); }
+.oz-admin .card h2 + p, .oz-admin .card h2 + .faint { margin-top:var(--oz-space-1); }
+/* Search fields that lead a list are part of it, not a floating bar. */
+.oz-admin main.view input[type=search] { width:100%; }
+/* Page description reads on one line where it fits. */
+.oz-admin .oz-ahead p { max-width:80ch; }
+.oz-admin .card:has(> .table-wrap:only-child) > .table-wrap { margin:0 !important; }
+.oz-admin .table-wrap { max-height:none; }
+/* Phones: table rows become stacked list items (name first, other values inline, actions wrap underneath). */
+@media (max-width:639.98px) {
+  .oz-admin table.data thead { display:none; }
+  .oz-admin table.data, .oz-admin table.data tbody { display:block; width:100%; }
+  .oz-admin table.data tr { display:flex; flex-wrap:wrap; align-items:center; gap:var(--oz-space-1) var(--oz-space-3); padding:var(--oz-space-3) var(--oz-space-4); border-bottom:1px solid var(--oz-border); }
+  .oz-admin table.data tr:last-child { border-bottom:0; }
+  .oz-admin table.data td { display:block; padding:0 !important; border:0; text-align:left !important; font-size:14px; color:var(--oz-text-secondary); }
+  .oz-admin table.data td:first-child { flex:1 1 100%; color:var(--oz-text-primary); }
+  .oz-admin table.data td:last-child { flex:1 1 100%; white-space:normal; }
+  .oz-admin table.data td .row { justify-content:flex-start; flex-wrap:wrap; margin-top:var(--oz-space-1); }
+  .oz-admin table.data td:empty { display:none; }
+}
+
+/* ================================================================ round 4: declutter + one spacing rhythm
+   Rhythm (tokens): page head → content 24 · between sections 24 · card padding 24 web / 16 phone ·
+   inside a card 16 · heading → its line 4 · label → value 4. Text never below 12/16; body copy 14/20. */
+.oz-admin main.view > * + * { margin-top:var(--oz-space-6); }
+.oz-admin main.view > .oz-ahead + * { margin-top:0; }
+.oz-admin .oz-ahead { margin-bottom:var(--oz-space-6); }
+.oz-admin .card, .oz-admin .card.pad-lg, .oz-acard { padding:var(--oz-space-4); }
+.oz-admin .card > * + *, .oz-admin .stack > * + * { margin-top:0; }
+.oz-admin .card.stack, .oz-admin .card { display:flex; flex-direction:column; gap:var(--oz-space-4); }
+.oz-admin .card > h2 + p, .oz-admin .card > h2 + .faint, .oz-admin .card > h2 + .muted { margin-top:calc(var(--oz-space-4) * -1 + var(--oz-space-1)); }
+.oz-admin .card .table-wrap { margin-block:0; }
+.oz-admin main.view p, .oz-admin main.view li { font-size:14px; line-height:20px; }
+.oz-admin main.view small, .oz-admin .faint { font-size:12px; line-height:16px; }
+.oz-admin main.view .card p.faint, .oz-admin main.view .card p.muted { font-size:14px; line-height:20px; color:var(--oz-text-secondary); }
+.oz-admin .hep-settings, .oz-admin .dash-wrap { display:flex; flex-direction:column; gap:var(--oz-space-6); }
+.oz-admin .hep-settings > form, .oz-admin .hep-settings > section { margin:0 !important; }
+.oz-admin .oz-astats, .oz-admin .stats { margin:0; gap:var(--oz-space-4); }
+@media (min-width:1024px) {
+  .oz-admin .card, .oz-admin .card.pad-lg, .oz-acard { padding:var(--oz-space-6); }
+  .oz-admin .card.pad-lg > .table-wrap, .oz-admin .card.pad-lg .table-wrap, .oz-admin .card > .table-wrap, .oz-admin .card .table-wrap { margin-inline:calc(var(--oz-space-6) * -1); }
+  .oz-admin .card > .table-wrap:last-child, .oz-admin .card.pad-lg > .table-wrap:last-child { margin-bottom:calc(var(--oz-space-6) * -1); }
+  .oz-admin .card > .table-wrap:first-child, .oz-admin .card.pad-lg > .table-wrap:first-child { margin-top:calc(var(--oz-space-6) * -1); }
+  .oz-admin table.data th:first-child, .oz-admin table.data td:first-child { padding-left:var(--oz-space-6); }
+  .oz-admin table.data th:last-child, .oz-admin table.data td:last-child { padding-right:var(--oz-space-6); }
+}
+@media (max-width:1023.98px) {
+  .oz-admin .card > .table-wrap, .oz-admin .card .table-wrap { margin-inline:calc(var(--oz-space-4) * -1); }
+}
+.oz-admin .card:has(> .table-wrap:only-child) { padding:0; }
+
+/* Settings rows (Language etc.): title + help on the left, control on the right. */
+.oz-aset-row { flex-direction:row !important; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+.oz-aset-row h2 { margin:0; }
+.oz-aset-row p { margin:var(--oz-space-1) 0 0 !important; }
+.oz-admin .lang-toggle, .oz-admin [class*="lang-toggle"] { display:inline-flex; gap:4px; padding:4px; border-radius:var(--oz-radius-pill); background:var(--oz-bg-subtle); border:0; }
+.oz-admin [data-lang-set] { min-height:36px; min-width:56px; padding:0 var(--oz-space-4); border:0; border-radius:var(--oz-radius-pill); background:transparent; font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); cursor:pointer; }
+.oz-admin [data-lang-set][aria-pressed="true"] { background:var(--oz-bg-surface); color:var(--oz-text-primary); box-shadow:var(--oz-shadow-card); }
+
+/* ---------------------------------------------------------------- grouped sidebar */
+.oz-anav { gap:var(--oz-space-4); }
+.oz-anav-group { display:flex; flex-direction:column; gap:2px; }
+.oz-anav-title { margin:0 0 var(--oz-space-1); padding:0 var(--oz-space-3); font:600 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); letter-spacing:.02em; }
+.oz-anav a { min-height:40px; padding:var(--oz-space-2) var(--oz-space-3); }
+.oz-anav-foot { padding-top:var(--oz-space-3); border-top:1px solid var(--oz-border); }
+.oz-awho { flex-direction:row; flex-wrap:wrap; align-items:center; gap:var(--oz-space-2) var(--oz-space-3); margin-top:var(--oz-space-3); padding:var(--oz-space-3); border:0; border-radius:var(--oz-radius-md); background:var(--oz-bg-subtle); }
+.oz-awho-avatar { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--oz-blue-100); color:var(--oz-blue-900); }
+.oz-awho-avatar .oz-ic { width:20px; height:20px; }
+.oz-awho-id { flex:1; }
+.oz-awho-out { flex:none; display:grid; place-items:center; width:36px; height:36px; border:0; border-radius:50%; background:transparent; color:var(--oz-text-secondary); cursor:pointer; }
+.oz-awho-out .oz-ic { width:20px; height:20px; }
+.oz-awho-out:hover { background:var(--oz-bg-surface); color:var(--oz-text-primary); }
+.oz-awho-out:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+.oz-awho-app { flex-basis:100%; font-size:12px; line-height:16px; }
+@media (min-width:1024px) {
+  .oz-arail-body, .oz-arail.open .oz-arail-body { gap:0; }
+  .oz-anav { flex:1; }
+  .oz-anav-foot { margin-top:auto; }
+  .oz-awho { margin-top:var(--oz-space-3); }
+}
+
+/* ---------------------------------------------------------------- dashboard */
+.oz-admin .dash-section { margin:0; }
+.oz-admin .dash-section > h2 { margin:0; font:600 18px/24px var(--oz-font-ui); }
+.oz-admin .dash-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:var(--oz-space-4); margin:0; }
+.oz-admin .dash-tile { gap:var(--oz-space-1); padding:var(--oz-space-4); }
+.oz-admin .dash-tile .k { font:500 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.dash-tile-num { display:flex; align-items:baseline; flex-wrap:wrap; gap:var(--oz-space-1) var(--oz-space-3); }
+.dash-delta { display:inline-flex; align-items:baseline; gap:var(--oz-space-1); padding:2px var(--oz-space-2); border-radius:var(--oz-radius-pill); font:600 12px/16px var(--oz-font-ui); font-variant-numeric:tabular-nums; }
+.dash-delta small { font:400 12px/16px var(--oz-font-ui) !important; opacity:.85; }
+.dash-delta.is-up { background:var(--oz-success-bg); color:var(--oz-text-success); }
+.dash-delta.is-down { background:var(--oz-danger-bg); color:var(--oz-text-danger); }
+.dash-delta.is-flat { background:var(--oz-bg-subtle); color:var(--oz-text-secondary); }
+.oz-admin .dash-tile .s { gap:var(--oz-space-2); margin-top:var(--oz-space-1); font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .dash-spark { color:var(--oz-blue-700); margin:var(--oz-space-1) 0 0; }
+.oz-admin .dash-source, .oz-admin .dash-tile .badge { font-size:12px; line-height:16px; }
+.oz-admin .dash-updated { margin:0; font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .dash-jump { margin:0; padding:var(--oz-space-2) 0; background:var(--oz-bg-app); box-shadow:none; }
+.oz-admin .dash-jump-top { border:1px solid var(--oz-border); background:var(--oz-bg-surface); color:var(--oz-text-primary); font:600 14px/20px var(--oz-font-ui); padding:var(--oz-space-2) var(--oz-space-4); }
+.oz-admin .cmp-grid { gap:var(--oz-space-4); margin:0; }
+.oz-admin .cmp-card { padding:var(--oz-space-4); border-radius:var(--oz-radius-lg); border:1px solid var(--oz-border); }
+.oz-admin .cmp-name { font:600 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .cmp-bar, .oz-admin .trend-controls { margin:0; gap:var(--oz-space-3); }
+.oz-admin .cmp-caption { margin:0; font:400 12px/16px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .trend-head { margin:0; }
+.oz-admin .trend-head b { font:800 28px/34px var(--oz-font-display); color:var(--oz-text-primary); }
+.oz-admin .trend-name { font:500 14px/20px var(--oz-font-ui); color:var(--oz-text-secondary); }
+.oz-admin .trend-axis { font-size:12px; fill:var(--oz-text-secondary); }
+.oz-admin .trend-line, .oz-admin .trend-dot, .oz-admin .trend-end, .oz-admin .trend-hover { stroke:var(--oz-blue-700); }
+.oz-admin .trend-dot, .oz-admin .trend-end, .oz-admin .trend-hover { fill:var(--oz-blue-700); stroke:var(--oz-bg-surface); }
+.oz-admin .trend-grid { stroke:var(--oz-border); }
+.oz-admin .dash-break td { padding-block:var(--oz-space-2); }
+.oz-anav { gap:var(--oz-space-3); } .oz-anav a { min-height:36px; padding:6px var(--oz-space-3); } .oz-anav-title { margin-bottom:2px; } .oz-awho { padding:var(--oz-space-2) var(--oz-space-3); }
+@media (min-width:1024px) { .oz-arail-head { min-height:64px; padding:var(--oz-space-3) var(--oz-space-4); } }
+.oz-admin .dash-section { overflow:visible !important; }
+.oz-admin .dash-section .table-wrap { overflow-x:auto; }
+.oz-admin .dash-section table.data td { vertical-align:top; }
+.oz-admin .dash-section table.data td:last-child { white-space:normal; min-width:240px; }
+
+/* ================================================================ round 5: consistency patch (2026-11-27)
+   Fixes found by the clipping probe at 390 / 768 / 1024 / 1440, EN and BM. */
+/* Phones: the shell grid stretched its first row (the 64px top bar) into a ~100px empty band on short pages. */
+@media (max-width:1023.98px) { .oz-admin { grid-template-rows:auto 1fr; align-content:start; } }
+/* Menu and header settings are icon buttons, like the student and merchant gear (Remote, Base44 on Mobbin). */
+@media (min-width:1024px) { .oz-admin .oz-amenu { display:none; } }
+.oz-amenu { display:grid; place-items:center; width:var(--oz-touch); height:var(--oz-touch); padding:0; border:0; border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-text-primary); cursor:pointer; }
+.oz-amenu .oz-ic { width:24px; height:24px; }
+.oz-amenu:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+@media (hover:hover) { .oz-amenu:hover { background:var(--oz-blue-300); } }
+.oz-atop-gear { display:grid; place-items:center; width:var(--oz-touch); height:var(--oz-touch); border-radius:var(--oz-radius-pill); background:var(--oz-blue-100); color:var(--oz-text-primary); text-decoration:none; }
+.oz-atop-gear .oz-ic { width:24px; height:24px; }
+.oz-atop-gear:focus-visible { outline:2px solid var(--oz-focus-ring); outline-offset:2px; }
+@media (hover:hover) { .oz-atop-gear:hover { background:var(--oz-blue-300); } }
+/* Account row: the email stays on one line and ellipsises (full address in the tooltip) instead of breaking into three and being cut off. */
+.oz-awho-id { flex:1 1 0; }
+.oz-awho-id small { overflow-wrap:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Legacy .table-wrap padding (0 22px) inset the header band away from the card edge. */
+.oz-admin .table-wrap { padding:0; overflow-x:auto; }
+/* Tables never break words: dates, statuses and row buttons stay on one line; a narrow window scrolls the table
+   (Contra, Remote on Mobbin) instead of squeezing "Review" into "Rev / iew". Long free-text cells still wrap. */
+.oz-admin table.data td { overflow-wrap:normal; word-break:normal; }
+.oz-admin table.data td:first-child { min-width:16ch; }
+/* The no-wrap last column is for row actions only; a text column that happens to be last (Activity "Details") wraps. */
+.oz-admin table.data td:last-child:not(:has(.btn, button, .row, a)) { white-space:normal; min-width:24ch; }
+.oz-admin table.data .btn, .oz-admin table.data .badge, .oz-admin table.data .oz-tag, .oz-admin table.data time { white-space:nowrap; word-break:keep-all; }
+@media (max-width:639.98px) { .oz-admin .table-wrap { overflow-x:visible; } }
+/* Copy wraps without a one-word last line; titles balance. */
+.oz-admin p, .oz-admin small, .oz-admin li { text-wrap:pretty; }
+.oz-admin h1, .oz-admin h2, .oz-admin h3 { text-wrap:balance; }
+/* Filter chips sit one rhythm step under the page head and above their list. */
+.oz-admin .chips + .card { margin-top:var(--oz-space-4); }
+/* Sidebar labels wrap to a second line instead of ellipsising ("Keputusan semakan …" in BM). */
+.oz-admin .oz-anav a > span:not(.count):not(.oz-ic) { white-space:normal; overflow:visible; text-overflow:clip; text-wrap:balance; }
+
+/* ================================================================ round 7: legacy component bridge (colours only)
+   The runtime audit (every admin route, 390 and 1440) found these legacy components still painting off-token colours:
+   Points guide (points.css), Campus events (event-submissions.css), Settings summary and Rewards budget (hep.css). */
+.oz-admin :is(.points-policy-page, .points-admin-summary, .event-admin-grid, .event-review-queue, .hep-budget, .hep-settings, .stall-survey-admin) :is(h2, h3, h4, strong, b, summary, .num) { color:var(--oz-text-primary); }
+.oz-admin :is(.points-policy-page, .points-admin-summary, .event-admin-grid, .event-review-queue, .hep-budget, .hep-settings, .stall-survey-admin) :is(p, small, span:not([class*="oz-"]):not(.badge):not(.count), li, .event-admin-description, .points-source-label, .points-live-state, .points-settings-source) { color:var(--oz-text-secondary); }
+.oz-admin :is(.points-policy-page, .points-admin-summary, .hep-settings) a:not(.btn):not(.oz-btn) { color:var(--oz-blue-700); }
+/* Surfaces: cards white, notes and inner panels subtle, icon tiles the blue chip. */
+.oz-admin :is(.points-policy-page article, .points-conditional, .points-default-note, .points-no-awards, .points-source-label, .points-admin-summary, .event-review-queue, .event-admin-cover, .hep-budget-meter) { background:var(--oz-bg-subtle); border-color:var(--oz-border); }
+.oz-admin :is(.points-source-icon, .points-section-icon, .points-level-badge) { background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-admin :is(.points-source-icon, .points-section-icon, .points-level-badge) .oz-ic { background-color:var(--oz-blue-700); color:var(--oz-blue-700); }
+.oz-admin .points-policy-page .oz-ic, .oz-admin .points-admin-summary .oz-ic, .oz-admin .event-admin-grid .oz-ic { color:var(--oz-blue-700); }
+/* Brand panels: blue with white text; the one lime total stays lime with ink text. */
+.oz-admin :is(.points-policy-hero, .points-value-card) { background:var(--oz-blue-700); color:var(--oz-text-on-brand); }
+.oz-admin :is(.points-policy-hero, .points-value-card) :is(p, span, small, strong, b, h1, h2, h3) { color:var(--oz-text-on-brand); }
+.oz-admin :is(.points-policy-hero, .points-value-card) .oz-ic { background-color:var(--oz-text-on-brand); }
+.oz-admin .points-learning-total, .oz-admin .points-value-card :is(span[class=""], span:not([class])) { background:var(--oz-lime-500); color:var(--oz-text-on-accent); }
+.oz-admin .hep-budget-meter > i, .oz-admin .stall-survey-admin .bar > i { background:var(--oz-blue-700); }
+.oz-admin .stall-survey-admin .bar, .oz-admin .bar { background:var(--oz-bg-subtle); }
+.oz-admin .bar > i { background:var(--oz-blue-700); }
+.oz-admin .cmp-value, .oz-admin td.num, .oz-admin .num { color:var(--oz-text-primary); }
+/* Specific legacy variants (nth-child tints, welfare and budget labels) matched at their own specificity. */
+.oz-admin .points-levels > span:nth-child(n) .points-level-badge, .oz-admin .points-sources > article:nth-child(n) > .points-source-icon { background:var(--oz-blue-100); color:var(--oz-blue-700); }
+.oz-admin .hep-welfare-review h2 > span, .oz-admin .hep-budget-track > .row, .oz-admin .points-budget-scenario h2 small, .oz-admin .points-budget-scenario p, .oz-admin .points-admin-summary p { color:var(--oz-text-secondary); }
+.oz-admin .points-policy-page :is(b, strong, h4) { color:var(--oz-text-primary); }
+/* Legacy variables that older admin rules still read (charts, stall survey, points guide) now resolve to tokens. */
+.oz-admin { --ink:var(--oz-text-primary); --ink-2:var(--oz-text-secondary); --ink-3:var(--oz-text-secondary); --paper:var(--oz-bg-app); --card:var(--oz-bg-surface); --line:var(--oz-border); --onz-blue:var(--oz-blue-700); --onz-navy:var(--oz-text-primary); --onz-lime:var(--oz-lime-500); }
+.oz-admin .points-guide-content { --points-ink:var(--oz-text-primary); --points-muted:var(--oz-text-secondary); }
+.oz-admin .points-use-grid article:nth-child(n) .points-source-icon { background:var(--oz-blue-100); color:var(--oz-blue-700); }

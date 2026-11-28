@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="31.5" height="27.3" viewBox="0 0 31.5 27.3" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Tail">
+<path id="Tail Stem" d="M2.1 25.2C11.1 25.2 17.7 20.4 21.3 12" stroke-width="4.2" stroke-linecap="round" stroke="#4DA1F8"/>
+<path id="Tail Tuft" d="M27.5996 0C29.7535 0 31.5 1.74648 31.5 3.90039C31.4998 6.05412 29.7534 7.7998 27.5996 7.7998C27.395 7.79978 27.1942 7.78332 26.998 7.75293C26.9982 7.76854 27 7.78415 27 7.7998C27 10.2851 24.9853 12.2998 22.5 12.2998C20.2002 12.2998 18.3044 10.5746 18.0342 8.34766C17.8279 8.38141 17.6163 8.40037 17.4004 8.40039C15.2465 8.40039 13.5 6.65391 13.5 4.5C13.5 2.34609 15.2465 0.599609 17.4004 0.599609C19.208 0.599786 20.7269 1.83042 21.1689 3.49902C21.5895 3.36902 22.0367 3.2998 22.5 3.2998C22.9242 3.2998 23.3345 3.35905 23.7236 3.46875C23.9382 1.5179 25.5916 0.000197241 27.5996 0Z" fill="url(#paint0_linear_0_239)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_239" x1="22.5" y1="0" x2="22.5" y2="12.3" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1325F5"/>
+<stop offset="1" stop-color="#5A78FF"/>
+</linearGradient>
+</defs>
+</svg>

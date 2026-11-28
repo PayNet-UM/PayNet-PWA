@@ -1,0 +1,21 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="119.298" height="167.018" viewBox="0 0 119.298 167.018" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Hats" opacity="0.4">
+<circle id="Frame L" cx="45.3333" cy="72.1754" r="9.39474" fill="white" fill-opacity="0.18" stroke-width="2.68421" stroke="url(#paint0_linear_0_50)"/>
+<circle id="Frame R" cx="73.9649" cy="72.1754" r="9.39474" fill="white" fill-opacity="0.18" stroke-width="2.68421" stroke="url(#paint1_linear_0_50)"/>
+<rect id="Bridge" x="54.8772" y="70.386" width="9.54386" height="2.38596" rx="1.19298" fill="#6B3E1F"/>
+<rect id="Temple L" x="25.6491" y="69.193" width="9.54386" height="2.38596" rx="1.19298" fill="#6B3E1F"/>
+<rect id="Temple R" x="84.1053" y="69.193" width="9.54386" height="2.38596" rx="1.19298" fill="#6B3E1F"/>
+<ellipse id="Glint" cx="40.5614" cy="66.5088" rx="2.38596" ry="1.49123" fill="white" fill-opacity="0.7"/>
+<ellipse id="Glint_2" cx="69.193" cy="66.5088" rx="2.38596" ry="1.49123" fill="white" fill-opacity="0.7"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_50" x1="45.3333" y1="61.4386" x2="45.3333" y2="82.9123" gradientUnits="userSpaceOnUse">
+<stop stop-color="#6B3E1F"/>
+<stop offset="1" stop-color="#A8672F"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_50" x1="73.9649" y1="61.4386" x2="73.9649" y2="82.9123" gradientUnits="userSpaceOnUse">
+<stop stop-color="#6B3E1F"/>
+<stop offset="1" stop-color="#A8672F"/>
+</linearGradient>
+</defs>
+</svg>

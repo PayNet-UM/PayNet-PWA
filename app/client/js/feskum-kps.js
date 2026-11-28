@@ -59,7 +59,7 @@ export function kpsBooth(id) {
 
 export function kpsMapHTML() {
   return `<section class="kps-section" aria-labelledby="kps-title">
-    <header class="kps-section-head"><span class="kps-section-number" aria-hidden="true">01</span><div><h2 id="kps-title">Tapak KPS</h2><p>Tapak Parking KPS</p></div><a class="btn small" href="${KPS_PLAN.source}" target="_blank" rel="noopener">${icon('map')} <span>Source plan</span></a></header>
+    <header class="kps-section-head"><span class="kps-section-number" aria-hidden="true">01</span><div><h2 id="kps-title">Tapak KPS</h2><p>Tapak Parking KPS</p></div><a class="oz-btn oz-btn-ghost oz-btn-sm" href="${KPS_PLAN.source}" target="_blank" rel="noopener">${icon('map')} <span>Source plan</span></a></header>
     <div class="kps-plan-shell"><div class="kps-plan-toolbar"><div class="kps-play-title"><div><h3>Explore stalls</h3><span class="kps-explored" title="Stalls explored this visit">${icon('eye')} <b id="kps-explored-count">0</b><span>/ 76</span><span>explored</span></span></div></div><button type="button" class="kps-map-mode" id="kps-zoom-fit" aria-pressed="false">${icon('map')}<span data-kps-fit-label>Whole map</span></button></div>
       <div class="kps-explore-progress" id="kps-explore-progress" role="progressbar" aria-label="Stalls explored this visit" aria-valuemin="0" aria-valuemax="76" aria-valuenow="0"><i></i></div>
       <div class="kps-map-guide" role="status"><span class="kps-guide-step" aria-hidden="true">1</span><div><b id="kps-guide-title">Choose a stall group</b><span id="kps-guide-hint">Tap a group on the map to get closer.</span></div></div>

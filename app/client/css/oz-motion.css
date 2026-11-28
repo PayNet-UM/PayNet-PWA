@@ -1,0 +1,117 @@
+/* +Onz motion (Figma Motion 55:5356). Pairs with js/oz-motion.js. Client only.
+   Native patterns (Mobbin: OpenTable, Brainly, Ladder tab bars; Tide Guide settings push): tab content switches instantly,
+   the selected pill springs, sub-pages push in over the previous page, pressed buttons darken and cards give slightly. */
+
+/* Selection pill: one thumb per group springs to the selected item (nav bar, segmented controls, wardrobe tabs). */
+.has-thumb:not(.oz-tabbar) { position:relative; } /* the nav bar keeps its own fixed/static positioning */
+.has-thumb { isolation:isolate; }
+.oz-thumb { position:absolute; left:0; top:0; z-index:-1; border-radius:var(--oz-radius-pill); background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card);
+  pointer-events:none; opacity:0; transition:transform 300ms cubic-bezier(.25,1,.5,1), width 300ms cubic-bezier(.25,1,.5,1), height 240ms var(--oz-ease-out), opacity 120ms ease-out; /* settles without overshoot, like native tab bars */ }
+.has-thumb > .oz-seg-item[aria-current="page"], .has-thumb > .oz-seg-item[aria-selected="true"] { background:transparent; box-shadow:none; }
+.oz-tabbar.has-thumb > .oz-thumb { background:var(--oz-blue-100); box-shadow:none; }
+.oz-tabbar.has-thumb > .oz-tab.on { background:transparent; }
+@media (min-width:1024px) { .oz-tabbar.has-thumb { position:relative; } .oz-tabbar.has-thumb > .oz-thumb { border-radius:var(--oz-radius-lg); } }
+/* Wardrobe tabs: a short underline 8px under the selected icon (Wardrobe Tabs 696:13646) */
+.av-categories.has-thumb > .oz-thumb, .av-modes.has-thumb > .oz-thumb, .oz-hist-filter.has-thumb > .oz-thumb { background:none; box-shadow:none; border-radius:0; }
+.av-categories.has-thumb > .oz-thumb::after, .av-modes.has-thumb > .oz-thumb::after, .oz-hist-filter.has-thumb > .oz-thumb::after { content:''; position:absolute; left:50%; bottom:0; width:28px; height:3px; margin-left:-14px; /* centres the 28px bar */
+  border-radius:2px; background:var(--oz-blue-900); }
+.av-categories.has-thumb > .oz-thumb::after { bottom:11px; }
+.av-categories.has-thumb .av-cat-bar { visibility:hidden; }
+
+/* Press feedback: buttons and rows darken while held; cards and tiles give a little. */
+.oz-btn, .av-save-pill, .oz-lg-find, .oz-menu-row, .oz-row, .oz-seg-item, .oz-tab, .av-float, .guide-link, .oz-icon-btn, .oz-gear { transition:scale 150ms ease-out, filter 120ms ease-out, background-color 160ms ease-out; }
+/* Buttons give to .97 while pressed (scale property, so a centring transform is never overwritten) and darken. */
+.oz-btn:active, .av-save-pill:active, .oz-lg-find:active, .av-float:active, .guide-link:active, .oz-icon-btn:active, .oz-gear:active { scale:.97; filter:brightness(.9); }
+.oz-btn:active, .oz-menu-row:active, .oz-row:active, .oz-seg-item:active, .oz-tab:active { transition-duration:70ms; }
+.oz-menu-row:active, .oz-row:active { background:var(--oz-bg-subtle); }
+.oz-tab .oz-ic, .oz-tab .ic { transition:scale 150ms ease-out; }
+.oz-tab:active .oz-ic, .oz-tab:active .ic { scale:.9; }
+.av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity { transition:scale 150ms ease-out; }
+.av-tile:active, .oz-poster-card:active, .oz-lg-pod:active, .oz-activity:active { scale:.97; }
+.av-tile::after { transition:border-color 160ms linear; }
+
+/* Page push (phones): the outgoing page is kept as a still snapshot that slides back while the new one slides over it. */
+.oz-route-ghost { position:fixed; z-index:5; overflow:hidden; margin:0; pointer-events:none; background:var(--oz-bg-app); will-change:transform; }
+.oz-route-in { position:relative; background:var(--oz-bg-app); will-change:transform; }
+.oz-fade-ghost { position:absolute; pointer-events:none; }
+
+/* Keep the native top layer through dismissal so the sheet can move back to its origin. */
+dialog.sheet[open] { animation:oz-sheet-in 300ms var(--oz-ease-out); }
+dialog.sheet[open]::backdrop { animation:oz-fade 220ms ease-out; }
+@media (min-width:1024px) { dialog.sheet[open] { animation:oz-pop-in 220ms var(--oz-ease-out); } }
+
+@keyframes oz-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes oz-sheet-in { from { transform:translateY(100%); } to { transform:none; } }
+@keyframes oz-pop-in { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
+
+@supports (transition-behavior:allow-discrete) and (overlay:auto) {
+  dialog.sheet {
+    --oz-sheet-from:translateY(100%);
+    --oz-sheet-enter:300ms;
+    --oz-sheet-exit:230ms;
+    transform:var(--oz-sheet-from); opacity:0;
+    transition:transform var(--oz-sheet-exit) ease-in, opacity var(--oz-sheet-exit) ease-in,
+      display var(--oz-sheet-exit) allow-discrete, overlay var(--oz-sheet-exit) allow-discrete;
+  }
+  dialog.sheet[open] { animation:none; transform:none; opacity:1; transition-duration:var(--oz-sheet-enter); transition-timing-function:var(--oz-ease-out); }
+  dialog.sheet::backdrop { opacity:0; transition:opacity 180ms ease-in, display 230ms allow-discrete, overlay 230ms allow-discrete; }
+  dialog.sheet[open]::backdrop { animation:none; opacity:1; transition-duration:220ms; transition-timing-function:ease-out; }
+  @starting-style {
+    dialog.sheet[open] { transform:var(--oz-sheet-from); opacity:0; }
+    dialog.sheet[open]::backdrop { opacity:0; }
+  }
+  @media (min-width:1024px) {
+    dialog.sheet { --oz-sheet-from:scale(.97); --oz-sheet-enter:220ms; --oz-sheet-exit:170ms; }
+  }
+}
+
+dialog.sheet:has([data-shared-poster]) { --oz-sheet-from:none; }
+
+/* Accordions: height:auto animates (Chrome/Edge; others open instantly, as before). */
+:root { interpolate-size:allow-keywords; }
+details::details-content { block-size:0; overflow-y:clip; transition:block-size 200ms ease-in, content-visibility 200ms allow-discrete; }
+details[open]::details-content { block-size:auto; transition-duration:260ms; transition-timing-function:var(--oz-ease-out); }
+
+@media (prefers-reduced-motion:reduce) {
+  .oz-thumb { transition:opacity var(--oz-dur-dissolve) linear; }
+  .av-tile:active, .oz-poster-card:active, .oz-lg-pod:active, .oz-activity:active, .oz-tab:active .oz-ic, .oz-tab:active .ic, .oz-btn:active, .av-save-pill:active, .oz-lg-find:active, .av-float:active, .guide-link:active, .oz-icon-btn:active, .oz-gear:active { scale:none; }
+  details::details-content { transition:none; }
+  dialog.sheet, dialog.sheet[open] { animation:none; transition:none; transform:none; }
+  dialog.sheet::backdrop, dialog.sheet[open]::backdrop { animation:none; transition:none; }
+}
+
+/* "+N pts" chip that flies from where points were earned to the points pill (oz-motion.js flyPoints). */
+.oz-fly-pts { position:fixed; z-index:300; pointer-events:none; padding:4px 10px; border-radius:var(--oz-radius-pill); background:var(--oz-lime-500); color:var(--oz-text-on-accent, #0b0f3a); font:800 14px/20px var(--oz-font-ui); white-space:nowrap; box-shadow:0 6px 16px rgb(11 15 58 / .18); will-change:translate, scale, opacity; }
+@media (prefers-reduced-motion:reduce) { .oz-fly-pts { display:none; } }
+
+/* ---------- Consistency pass 2: one press language for the whole app ----------
+   Before this, tappable things pressed to .94/.96/.97/.98 depending on the file, and some (deal cards, voucher
+   tickets, hero chips, username copy) didn't respond at all. Now: small controls press to .96; cards, tiles and rows
+   to .98 with a light tint. Same 160 ms curve in and out, no overshoot. Reduced motion keeps only the tint. */
+:root { --oz-press-control:.96; --oz-press-card:.98; --oz-press-ms:160ms; }
+:is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+  .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+  .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop) {
+  transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out), color var(--oz-press-ms) var(--oz-ease-out), opacity var(--oz-press-ms) var(--oz-ease-out); }
+:is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+  .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+  .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop):active:not(:disabled) { scale:var(--oz-press-control); }
+:is(.av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard, .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a,
+  .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket, .oz-deal, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt, .oz-friend-row) {
+  transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out); }
+:is(.av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard, .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a,
+  .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt):active { scale:var(--oz-press-card); }
+.oz-deal:has(a:active, button:active) { scale:var(--oz-press-card); }
+/* "Copied" confirmation from copyWithFeedback(): success colour while the check / label shows. */
+body .is-copied:not(.oz-copy), body .is-copied:not(.oz-copy) .oz-ic { color:var(--oz-text-success); }
+@media (prefers-reduced-motion:reduce) {
+  :is(.oz-btn, .oz-chip, .oz-copy, .oz-friend-sort, .oz-friend-more, .oz-friend-clear, .av-float, .av-save-pill, .oz-lg-find, .oz-lg-link, .oz-gear, .oz-icon-btn,
+    .guide-link, .oz-cal2-nav, .oz-cal2-today, .oz-mstep, .username-copy, .oz-shop-go, .oz-about-tabs button, .oz-ev-chips button, .oz-shops-chips button,
+    .oz-mchips button, .oz-mseats-presets button, .oz-hero-chip, .pts-chip, .oz-lg-totop, .av-tile, .oz-poster-card, .oz-lg-pod, .oz-activity, .oz-evcard,
+    .oz-shop-main, .oz-about-mini, .oz-contact-social, .oz-mlink, .oz-mstart-steps a, .oz-poster-full, .oz-quiz-opt, .oz-survey-opt, .oz-voucher-ticket,
+    .oz-deal, a.oz-row, button.oz-row, .oz-menu-row, .oz-learn-row, a.oz-pg-row, .oz-sort-opt):active { scale:1; }
+}
+.oz-friend-x { transition:scale var(--oz-press-ms) var(--oz-ease-out), background-color var(--oz-press-ms) var(--oz-ease-out); } .oz-friend-x:active { scale:var(--oz-press-control); }
+
+/* Party-hat burst (motion.burst) */
+.oz-burst-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; pointer-events:none; z-index:2; }

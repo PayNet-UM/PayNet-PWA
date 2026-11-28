@@ -1,5 +1,150 @@
 // English → Bahasa Malaysia. One entry per line: English|Malay. Matching is on the whole (trimmed) text.
 export const MS = `
+All live deals|Semua tawaran langsung
+Claim|Tuntut
+LIVE|LANGSUNG
+Shop is full. Try again soon.|Kedai penuh. Cuba lagi sebentar lagi.
+Claimed today|Dituntut hari ini
+Back tomorrow|Kembali esok
+Directions|Panduan arah
+Live deals are unavailable offline.|Tawaran langsung tidak tersedia di luar talian.
+Customise Sir Onz|Ubah suai Sir Onz
+Your Sir Onz|Sir Onz anda
+Sir Onz avatar|Avatar Sir Onz
+Hats|Topi
+Colours|Warna
+Wardrobe|Almari pakaian
+Back to Me|Kembali ke Saya
+Barista cap|Topi barista
+Explorer hat|Topi penjelajah
+Blue|Biru
+Red|Merah
+Orange|Oren
+Yellow|Kuning
+Green|Hijau
+Teal|Biru kehijauan
+Purple|Ungu
+Pink|Merah jambu
+Midnight|Biru malam
+Cocoa|Koko
+Aqua|Akua
+Plum|Plum
+Slate|Kelabu batu
+Full view|Paparan penuh
+Explore addOnz|Terokai addOnz
+All activities|Semua aktiviti
+Campus events|Acara kampus
+FESKUM booths|Gerai FESKUM
+Points & rewards|Mata & ganjaran
+No upcoming events right now.|Tiada acara akan datang buat masa ini.
+Campus connections|Hubungan kampus
+Faculty looks|Gaya fakulti
+Mix & match|Padan sendiri
+Eyewear|Cermin mata
+Scarves|Selendang
+Backgrounds|Latar
+Round glasses|Cermin mata bulat
+Campus scarf|Selendang kampus
+Sky|Langit
+Campus|Kampus
+Night|Malam
+Lime|Limau
+Plain|Polos
+None|Tiada
+Yours|Milik anda
+Back to wardrobe|Kembali ke almari pakaian
+Earned so far|Dikumpul setakat ini
+Customise Onzo|Ubah suai Onzo
+Your Onzo|Onzo anda
+Onzo avatar|Avatar Onzo
+Onzo saved.|Onzo disimpan.
+Item type|Jenis item
+Your faculty’s outfit is yours to wear. The other faculty outfits are coming soon.|Pakaian fakulti anda boleh dipakai. Pakaian fakulti lain akan datang tidak lama lagi.
+Each student wears their own faculty’s outfit for free. The other faculty outfits are coming soon.|Setiap pelajar boleh memakai pakaian fakulti sendiri secara percuma. Pakaian fakulti lain akan datang tidak lama lagi.
+Works with every skin.|Sesuai dengan semua warna.
+Works with every hat.|Sesuai dengan semua topi.
+Fund|Tabung
+Find student-run businesses around campus|Cari perniagaan pelajar di sekitar kampus
+Personal info|Maklumat peribadi
+Account and settings|Akaun dan tetapan
+Edit profile|Sunting profil
+Preferences|Keutamaan
+When you earn points|Apabila anda mengumpul mata
+Account actions|Tindakan akaun
+App language|Bahasa aplikasi
+Account|Akaun
+For people who haven’t joined +Onz yet. They enter your code once, when they sign up. It can’t be used after sign-up.|Untuk mereka yang belum menyertai +Onz. Mereka memasukkan kod anda sekali sahaja, semasa mendaftar. Kod tidak boleh digunakan selepas pendaftaran.
+Friend request sent|Permintaan rakan dihantar
+For friends already on +Onz|Untuk rakan yang sudah menggunakan +Onz
+Search for their username, or give them yours. You can add friends any time.|Cari nama pengguna mereka, atau berikan nama pengguna anda. Anda boleh menambah rakan pada bila-bila masa.
+Choose a username first, then add friends by theirs any time.|Pilih nama pengguna dahulu, kemudian tambah rakan melalui nama pengguna mereka pada bila-bila masa.
+Spent|Dibelanjakan
+Earlier|Sebelum ini
+Nothing to show for this filter.|Tiada apa-apa untuk ditunjukkan bagi tapisan ini.
+Show|Tunjuk
+Points you earn and spend appear here.|Mata yang anda kumpul dan belanjakan dipaparkan di sini.
+The 10 students whose codes were used most.|10 pelajar yang kodnya paling banyak digunakan.
+Referrers|Perujuk
+Overall standings|Kedudukan keseluruhan
+Scoring rules|Peraturan pemarkahan
+No college set|Kolej belum ditetapkan
+Find my KK|Cari KK saya
+Find my faculty|Cari fakulti saya
+Add it in Me|Tambah di Saya
+Top three|Tiga teratas
+All standings|Semua kedudukan
+Back to top|Kembali ke atas
+Invite a friend|Jemput rakan
+Referrals count toward Top referrers|Rujukan dikira untuk Perujuk teratas
+Share invite|Kongsi jemputan
+How the KK League is scored|Cara markah Liga KK dikira
+How the Faculty League is scored|Cara markah Liga Fakulti dikira
+Scores are syncing.|Markah sedang disegerakkan.
+Unranked|Tiada kedudukan
+No points earned yet. Get your KK started.|Belum ada mata dikumpul. Mulakan untuk KK anda.
+No points earned yet. Get your faculty started.|Belum ada mata dikumpul. Mulakan untuk fakulti anda.
+No one has joined with a code yet. Be the first.|Belum ada yang menyertai dengan kod. Jadilah yang pertama.
+The board is temporarily unavailable.|Papan ini tidak tersedia buat sementara waktu.
+Every point you earn adds to your residential college (KK).|Setiap mata yang anda kumpul ditambah kepada kolej kediaman (KK) anda.
+Your earned points also count for your faculty, whichever college you live in.|Mata yang anda kumpul turut dikira untuk fakulti anda, walau di kolej mana pun anda tinggal.
+Positive earned points count, excluding welfare grants. Spending or donating never lowers a score.|Mata positif yang dikumpul dikira, tidak termasuk bantuan kebajikan. Penggunaan atau sumbangan mata tidak pernah mengurangkan markah.
+Deleted accounts no longer contribute.|Akaun yang dipadam tidak lagi menyumbang.
+Every college is listed, including colleges with no points yet.|Setiap kolej disenaraikan, termasuk kolej yang belum mempunyai mata.
+Every faculty is listed, including faculties with no points yet.|Setiap fakulti disenaraikan, termasuk fakulti yang belum mempunyai mata.
+Entries with the same points share a rank.|Penyertaan dengan mata yang sama berkongsi kedudukan.
+The server keeps the totals; this page updates by itself.|Pelayan menyimpan jumlah mata; halaman ini dikemas kini dengan sendirinya.
+The KK with the most points wins prizes!|KK dengan mata terbanyak memenangi hadiah!
+Champion|Juara
+Hats and colours unlock as you level up. Spending points never takes them away.|Topi dan warna dibuka apabila tahap anda naik. Membelanjakan mata tidak akan menariknya balik.
+Earn with live deals|Kumpul mata dengan tawaran langsung
+Past 7 days|7 hari lalu
+Streak|Rentetan
+Rewards sections|Bahagian ganjaran
+No rewards yet|Belum ada ganjaran
+No vouchers yet|Belum ada baucar
+earned|diperoleh
+your campus, all added up|kampus anda, semuanya terkumpul
+Profile and preferences|Profil dan pilihan
+Help and information|Bantuan dan maklumat
+About +Onz|Tentang +Onz
+Install +Onz|Pasang +Onz
+Terms of Use and Privacy|Terma Penggunaan dan Privasi
+App|Aplikasi
++Onz home|Laman utama +Onz
+Upcoming events|Acara akan datang
+All campus events|Semua acara kampus
+Explore +Onz|Terokai +Onz
+Find campus shops|Cari kedai kampus
+Browse stalls and get directions.|Lihat gerai dan dapatkan arah.
+Discover student-run businesses.|Temui perniagaan kendalian pelajar.
+One-minute lessons on paying safely.|Pelajaran seminit tentang bayaran selamat.
+Find offers around campus.|Cari tawaran di sekitar kampus.
+Posters, calendar and past events.|Poster, kalendar dan acara lalu.
+Levels, streaks and ways to earn.|Tahap, rentetan dan cara mengumpul mata.
+No upcoming events right now|Tiada acara akan datang buat masa ini
+New campus events appear here as soon as they are announced.|Acara kampus baharu dipaparkan di sini sebaik sahaja diumumkan.
+Browse past events|Lihat acara lalu
+Top level reached|Tahap tertinggi dicapai
 Archived|Diarkibkan
 Archived stalls and floor map.|Arkib gerai dan pelan tapak.
 events this month|acara bulan ini
@@ -15,6 +160,71 @@ Calendar|Kalendar
 Ended|Tamat
 Previous month|Bulan sebelumnya
 Next month|Bulan seterusnya
+Story|Kisah
+Take part|Sertai
+Team|Pasukan
+About sections|Bahagian Tentang
+One app to learn, earn and redeem on campus.|Satu aplikasi untuk belajar, mengumpul dan menebus di kampus.
+Finish a short lesson in Learn & Earn.|Selesaikan pelajaran ringkas dalam Belajar & Kumpul Mata.
+Show your voucher to the Admin team.|Tunjukkan baucar anda kepada pasukan Admin.
+FAQ|Soalan lazim
+What counts for my KK score?|Apa yang dikira untuk skor KK saya?
+Only points you earn. Spending or donating never lowers it.|Hanya mata yang anda peroleh. Berbelanja atau menderma tidak pernah menurunkannya.
+How do I earn points?|Bagaimana saya mendapat mata?
+Who gives me my voucher?|Siapa yang memberi baucar saya?
+Show your voucher to the Admin team, who mark it redeemed.|Tunjukkan baucar anda kepada pasukan Admin, yang akan menandakannya sebagai ditebus.
+Earn points from eligible activities around campus.|Dapatkan mata daripada aktiviti layak di sekitar kampus.
+Complete eligible lessons, surveys and streaks.|Lengkapkan pelajaran, tinjauan dan rentetan yang layak.
+Use your balance|Guna baki anda
+Redeem available vouchers or donate points to student welfare.|Tebus baucar yang tersedia atau dermakan mata kepada kebajikan pelajar.
+Levels and leagues|Tahap dan liga
+Search events|Cari acara
+Coming up|Akan datang
+Past|Lepas
+Month|Bulan
+Nothing on this day.|Tiada acara pada hari ini.
+No events match your search.|Tiada acara yang sepadan dengan carian anda.
+Explore FESKUM booths|Terokai gerai FESKUM
+Have an event to promote? Submit it|Ada acara untuk dipromosikan? Hantar di sini
+Previous week|Minggu sebelumnya
+Next week|Minggu seterusnya
+Calendar view|Paparan kalendar
+event this month|acara bulan ini
+Merchant home|Laman utama peniaga
+Next step|Langkah seterusnya
+Not started|Belum bermula
+Your shop|Kedai anda
+Profile, verification and map location|Profil, pengesahan dan lokasi peta
+See your stall type and answers|Lihat jenis gerai dan jawapan anda
+15 questions about your business|15 soalan tentang perniagaan anda
+Cashless readiness|Kesediaan tanpa tunai
+Review your QR readiness|Semak kesediaan QR anda
+Live deals and voucher program|Tawaran langsung dan program baucar
+Claims and performance|Tuntutan dan prestasi
+Not applied yet|Belum memohon
+Students who scanned your deal QR|Pelajar yang mengimbas QR tawaran anda
+Claims you gave the discount for|Tuntutan yang anda beri diskaun
+Open Deal QR and tap Apply discount|Buka QR Tawaran dan ketik Guna diskaun
+Nobody waiting right now|Tiada yang menunggu sekarang
+You can still browse all campus shops.|Anda masih boleh melihat semua kedai kampus.
+Search shops or stalls|Cari kedai atau gerai
+No shops match. Try another word or category.|Tiada kedai yang sepadan. Cuba perkataan atau kategori lain.
+Public listings and maps|Senarai awam dan peta
+shops|kedai
+Lesson · 1 question|Pelajaran · 1 soalan
+Answers|Jawapan
+Remove friend|Buang rakan
+Friend removed.|Rakan telah dibuang.
+Copy is unavailable here.|Salinan tidak tersedia di sini.
+per eligible live deal|setiap tawaran langsung yang layak
+every 7-day streak|setiap rentetan 7 hari
+Current point values|Nilai mata semasa
+Points are an in-app balance with no cash value. They are used for programme vouchers or donated to student welfare. Programme prizes and KK League prize details will be announced here once confirmed.|Mata ialah baki dalam aplikasi tanpa nilai tunai. Ia digunakan untuk baucar program atau didermakan kepada kebajikan pelajar. Butiran hadiah program dan hadiah Liga KK akan diumumkan di sini setelah disahkan.
+Spending or donating points doesn’t lower your earned total.|Berbelanja atau menderma mata tidak menurunkan jumlah mata yang anda peroleh.
+Meet the team|Kenali pasukan
+UM students adding the extra.|Pelajar UM yang menambah nilai.
+Get involved|Libatkan diri
+More about +Onz|Lagi tentang +Onz
 Choose an event date|Pilih tarikh acara
 Nothing listed for this day.|Tiada acara disenaraikan pada hari ini.
 Choose a highlighted day to explore its events.|Pilih hari yang ditandakan untuk melihat acaranya.
@@ -476,6 +686,16 @@ Show this confirmation to staff. They will apply your discount.|Tunjukkan penges
 Valid for 15 minutes after scanning|Sah selama 15 minit selepas mengimbas
 This confirms a deal claim, not a payment.|Ini mengesahkan tuntutan tawaran, bukan pembayaran.
 Back to live deals|Kembali ke tawaran aktif
+Your deal claim|Tuntutan tawaran anda
+Scan the deal QR|Imbas QR tawaran
+Camera preview|Pratonton kamera
+Point your camera at the code shown by staff.|Halakan kamera ke kod yang ditunjukkan oleh kakitangan.
+No manual code entry is available.|Kod tidak boleh dimasukkan secara manual.
+Camera permission denied|Akses kamera tidak dibenarkan
+Camera unavailable|Kamera tidak tersedia
+Scan unsuccessful|Imbasan tidak berjaya
+Time left|Masa berbaki
+Ask staff to show the deal QR. Each student can claim each deal once a day. This confirms a deal claim, not a payment.|Minta kakitangan menunjukkan QR tawaran. Setiap pelajar boleh menuntut setiap tawaran sekali sehari. Ini mengesahkan tuntutan tawaran, bukan pembayaran.
 Redeem with the Admin team|Tebus melalui pasukan Admin
 e.g. RM5 campus reward|cth. Ganjaran kampus RM5
 Show this voucher to the Admin team for redemption.|Tunjukkan baucar ini kepada pasukan Admin untuk penebusan.
@@ -565,6 +785,7 @@ KPIs and surveys|KPI dan tinjauan
 Rewards and budget|Ganjaran dan bajet
 Settings|Tetapan
 Menu|Menu
+Close menu|Tutup menu
 Main|Utama
 Shortcuts|Pintasan
 Dashboard|Papan pemuka
@@ -572,6 +793,7 @@ Account menu|Menu akaun
 Your points|Mata anda
 Close|Tutup
 Cancel|Batal
+Lesson progress|Kemajuan pelajaran
 Continue|Teruskan
 Save|Simpan
 Edit|Sunting
@@ -712,6 +934,8 @@ Points and payments need a connection so the cashier can confirm them. Reconnect
 A new version is ready. Reopen the app to update.|Versi baharu sudah sedia. Buka semula aplikasi untuk mengemas kini.
 Student|Pelajar
 Merchant|Peniaga
+Merchant workspace|Ruang kerja peniaga
+Promote|Promosi
 +Onz|+Onz
 +Onz|+Onz
 Hi|Hai
@@ -1733,6 +1957,8 @@ Events, lessons and rewards in one place.|Acara, pelajaran dan ganjaran di satu 
 You can ask for up to 1,000 points at a time.|Anda boleh meminta sehingga 1,000 mata pada satu masa.
 You’ve already sent a request today. You can send another tomorrow.|Anda sudah menghantar permohonan hari ini. Anda boleh menghantar lagi esok.
 Sign in with Google. New users get an account.|Log masuk dengan Google. Pengguna baharu akan mendapat akaun.
+Use your Google account. New here? We’ll set you up.|Gunakan akaun Google anda. Baru di sini? Kami akan sediakan akaun anda.
+By continuing you agree to the|Dengan meneruskan, anda bersetuju dengan
 Usually reviewed within 1–2 working days.|Biasanya disemak dalam 1–2 hari bekerja.
 Submit your shop details for Admin team verification.|Hantar butiran kedai untuk pengesahan pasukan Admin.
 The Admin team reviews offers and quiet-hour bonuses before publishing.|Pasukan Admin menyemak tawaran dan bonus waktu lengang sebelum diterbitkan.
@@ -2325,6 +2551,90 @@ Delete my account|Padam akaun saya
 Close my account|Tutup akaun saya
 Close my business account|Tutup akaun perniagaan saya
 Back|Kembali
+Party hat|Topi parti
+KK headband|Ikat kepala KK
+Stoke the flame|Marakkan api
+Give|Beri
+How many points to give?|Berapa banyak mata untuk diberi?
+Only you and the Admin team see this|Hanya anda dan pasukan Admin boleh melihatnya
+Digital confidence|Keyakinan digital
+Up to 1,000 pts per request|Sehingga 1,000 mata bagi setiap permintaan
+Show friends list|Tunjukkan senarai rakan
+Email us|E-mel kami
+Ask staff for this deal’s QR|Minta kakitangan tunjukkan QR tawaran ini
+Once per deal, each day · points land straight away|Sekali bagi setiap tawaran, setiap hari · mata masuk serta-merta
+Deal|Tawaran
+Every 7 days in a row|Setiap 7 hari berturut-turut
+One-time bonus|Bonus sekali sahaja
+Per eligible deal|Bagi setiap tawaran yang layak
+Up next|Seterusnya
+Picked the wrong one? Ask the Admin team.|Tersalah pilih? Hubungi pasukan Admin.
+Vouchers|Baucar
+No requests right now|Tiada permintaan buat masa ini
+Recently added|Baru ditambah
+Oldest first|Paling lama dahulu
+Sort friends|Susun rakan
+Search your friends|Cari rakan anda
+Clear search|Kosongkan carian
+Say hello|Sapa kami
+Follow us|Ikuti kami
+Copied|Disalin
+Email address copied|Alamat e-mel disalin
+Write email|Tulis e-mel
+Your draft is ready.|Draf anda sudah sedia.
+Your messages and replies|Mesej dan balasan anda
+Topic|Topik
+Ask a question or share an idea|Tanya soalan atau kongsi idea
+vs last week|berbanding minggu lalu
+No change|Tiada perubahan
+Programme|Program
+Reports|Laporan
+The language of this dashboard on this device.|Bahasa papan pemuka ini pada peranti ini.
+Hide checklist|Sembunyikan senarai semak
+Pin saved|Pin disimpan
+Pin moved. Save to update it.|Pin dialihkan. Simpan untuk mengemas kininya.
+Counter poster|Poster kaunter
+Review checklist|Semak senarai semak
+Edit total|Sunting jumlah
+Live deals show only while you’re below their seat limit.|Tawaran semasa hanya dipaparkan apabila anda di bawah had tempat duduknya.
+Deal claims and discounts at your counter.|Tuntutan tawaran dan diskaun di kaunter anda.
+Given at your counter|Diberi di kaunter anda
+Nobody waiting|Tiada yang menunggu
+Open Deal QR to apply|Buka QR Tawaran untuk memberi diskaun
+Claims that became a discount|Tuntutan yang menjadi diskaun
+No deal claims yet|Belum ada tuntutan tawaran
+Checked by the Admin team, so these are locked.|Disemak oleh pasukan Admin, jadi butiran ini dikunci.
+to change something.|untuk menukar sesuatu.
+How students earn points at your counter. Vouchers are fulfilled by the Admin team.|Cara pelajar mengumpul mata di kaunter anda. Baucar diuruskan oleh pasukan Admin.
+Create a deal for your quiet hours. It goes live straight away.|Cipta tawaran untuk waktu lengang anda. Ia terus aktif.
+Drag, tap a level, or hold + to count fast.|Seret, pilih tahap, atau tekan lama + untuk mengira dengan pantas.
+Empty|Kosong
+Half|Separuh
+Full|Penuh
+Set quickly|Tetapkan dengan pantas
+Close merchant account|Tutup akaun peniaga
+The Admin team reviews closure requests.|Pasukan Admin menyemak permintaan penutupan.
+Before closure|Sebelum penutupan
+What gets deleted|Apa yang dipadam
+The team settles outstanding vouchers and updates the PayNet list before closing the account. They’ll contact you at|Pasukan akan menyelesaikan baucar tertunggak dan mengemas kini senarai PayNet sebelum menutup akaun. Mereka akan menghubungi anda di
+if they need anything.|jika mereka memerlukan apa-apa.
+Comment (optional)|Komen (pilihan)
+Add details for the Admin team|Tambah butiran untuk pasukan Admin
+Keep account|Kekalkan akaun
+Your profile, matric number, points history, survey answers, friends and username.|Profil, nombor matrik, sejarah mata, jawapan tinjauan, rakan dan nama pengguna anda.
+Waiting for discount|Menunggu diskaun
+Claims|Tuntutan
+Applied|Diberi
+deal claims|tuntutan tawaran
+deal claim|tuntutan tawaran
+used at the counter|digunakan di kaunter
+Verification pending|Pengesahan belum selesai
+Publishes instantly, no approval needed|Diterbitkan serta-merta, tanpa kelulusan
+staff ready|kakitangan bersedia
+Admin menu|Menu Admin
+Export Lampiran 1 from PayNet list.|Eksport Lampiran 1 daripada senarai PayNet.
+No college points yet.|Belum ada mata kolej.
+Students, merchants and campus opportunities.|Pelajar, peniaga dan peluang kampus.
 This deletes your +Onz account straight away. It can’t be undone.|Ini memadam akaun +Onz anda serta-merta. Ia tidak boleh dibatalkan.
 Your profile, matric number, points history, survey answers, friends and username are deleted.|Profil, nombor matrik, sejarah mata, jawapan tinjauan, rakan dan nama pengguna anda dipadam.
 Vouchers you used and welfare requests stay in the Admin team’s records with your name removed.|Baucar yang telah digunakan dan permintaan kebajikan kekal dalam rekod pasukan Admin tanpa nama anda.
@@ -2825,6 +3135,15 @@ Your DuitNow QR|QR DuitNow anda
 These were checked by the Admin team, so they’re locked. Need to change something?|Butiran ini telah disemak oleh pasukan Admin, jadi ia dikunci. Perlu menukar sesuatu?
 Contact the Admin team|Hubungi pasukan Admin
 Show QR to students|Paparkan QR kepada pelajar
+Manage promotions|Urus promosi
+Back to Deal QR|Kembali ke QR tawaran
+Keep this screen open at the counter.|Biarkan skrin ini terbuka di kaunter.
+Loading deal QR…|Memuatkan QR tawaran…
+Check Promote your shop to see why.|Semak Promosikan kedai anda untuk mengetahui sebabnya.
+This deal isn’t live any more|Tawaran ini tidak lagi aktif
+The student can now see the confirmed discount.|Pelajar kini boleh melihat diskaun yang disahkan.
+Discount cannot be applied to an expired claim.|Diskaun tidak boleh diberikan untuk tuntutan yang telah tamat tempoh.
+Show the QR to students. Give them the discount and mark it applied before the claim expires.|Paparkan QR kepada pelajar. Berikan diskaun dan tandakan sebagai diberikan sebelum tuntutan tamat tempoh.
 No deal is live right now.|Tiada tawaran yang aktif sekarang.
 A deal shows here during its hours, while your café has space.|Tawaran dipaparkan di sini dalam waktunya, semasa kafe anda masih ada ruang.
 Not live right now|Tidak aktif sekarang
@@ -3146,4 +3465,38 @@ This account changed type. Refresh and try again.|Jenis akaun ini telah berubah.
 Only student and business accounts can be deleted here.|Hanya akaun pelajar dan perniagaan boleh dipadamkan di sini.
 Deleted an account|Memadam akaun
 Use Mark as closed only if the account is already gone.|Gunakan Tandakan sebagai ditutup hanya jika akaun sudah tiada.
+You’re building a daily habit. Keep opening +Onz.|Anda sedang membina tabiat harian. Teruskan membuka +Onz.
+View calendar|Lihat kalendar
+Streak calendar|Kalendar rentetan
+Open +Onz daily to keep your streak going.|Buka +Onz setiap hari untuk mengekalkan rentetan anda.
+Back to streak|Kembali ke rentetan
+Prev|Sebelum
+Counted|Dikira
+Not counted|Tidak dikira
+Yet to score|Belum mendapat mata
+No college yet|Belum ada kolej
+No faculty yet|Belum ada fakulti
+Short money lessons. One question each, points earned once.|Pelajaran wang yang ringkas. Satu soalan setiap satu, mata diperoleh sekali.
+Practice anytime|Berlatih bila-bila masa
+All lessons and the Money check done|Semua pelajaran dan Semakan wang selesai
+See your Money Check|Lihat Semakan Wang anda
+Open Money Check survey|Buka tinjauan Semakan Wang
+Ways to earn|Cara mengumpul mata
+Off for now|Dimatikan buat masa ini
+Up to 1,000 pts|Sehingga 1,000 mata
+Referrals and browsing the campus map don’t award points. Welfare grants move points from the shared fund and don’t count for levels or leagues.|Rujukan dan melayari peta kampus tidak memberi mata. Geran kebajikan memindahkan mata daripada tabung bersama dan tidak dikira untuk tahap atau liga.
+Colours and looks|Warna dan gaya
+Levels and the KK and Faculty Leagues count points earned, not spent. Hats unlock with levels; they aren’t bought.|Tahap serta Liga KK dan Fakulti mengira mata yang dikumpul, bukan yang dibelanjakan. Topi dibuka mengikut tahap; ia tidak dibeli.
+100 pts = RM1|100 mata = RM1
+100 points is about RM1. Each reward has its own price, set by HEP. Points have no cash value.|100 mata lebih kurang RM1. Setiap ganjaran mempunyai harganya sendiri, ditetapkan oleh HEP. Mata tiada nilai tunai.
+Two ways to use them|Dua cara menggunakannya
+Collected at the HEP counter|Diambil di kaunter HEP
+Every point goes to the fund|Setiap mata disalurkan ke tabung
+How points are protected|Cara mata dilindungi
+Each balance change and its points-history entry are saved together. The history can’t be edited or deleted, and the rules block repeat lesson bonuses, duplicate daily deal claims and negative balances.|Setiap perubahan baki dan catatan sejarah matanya disimpan bersama. Sejarah tidak boleh disunting atau dipadam, dan peraturan menghalang bonus pelajaran berulang, tuntutan tawaran harian berganda dan baki negatif.
+Changing a bonus affects future awards only. The Admin team can correct mistakes with a recorded reason.|Menukar bonus hanya menjejaskan ganjaran akan datang. Pasukan Admin boleh membetulkan kesilapan dengan sebab yang direkodkan.
+Earn more points|Kumpul lebih banyak mata
+Your progress|Kemajuan anda
+Previous month|Bulan sebelumnya
+Next month|Bulan seterusnya
 `;

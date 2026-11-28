@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="98.5915" height="138.028" viewBox="0 0 98.5915 138.028" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Hats">
+<ellipse id="Contact Shadow" cx="49.2958" cy="46.0915" rx="33.0282" ry="2.71127" fill="#0B0F3A" fill-opacity="0.18"/>
+<path id="Songkok" d="M17.7465 21.9366C38.7793 19.6361 59.8122 19.6361 80.8451 21.9366C83.1455 22.2653 84.2958 23.5798 84.2958 25.8803V48.0634C60.9624 50.0352 37.6291 50.0352 14.2958 48.0634V25.8803C14.2958 23.5798 15.446 22.2653 17.7465 21.9366Z" fill="url(#paint0_linear_0_3646)"/>
+<path id="Top Sheen" d="M17.7465 21.9366C38.7793 19.6361 59.8122 19.6361 80.8451 21.9366C83.1455 22.2653 84.2958 23.5798 84.2958 25.8803V27.3592C60.9624 24.73 37.6291 24.73 14.2958 27.3592V25.8803C14.2958 23.5798 15.446 22.2653 17.7465 21.9366Z" fill="white" fill-opacity="0.12"/>
+<path id="Fold" d="M14.2958 42.8873C37.6291 44.8592 60.9624 44.8592 84.2958 42.8873V46.338C60.9624 48.3099 37.6291 48.3099 14.2958 46.338V42.8873Z" fill="black" fill-opacity="0.3"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_3646" x1="49.2958" y1="20.2113" x2="49.2958" y2="49.5423" gradientUnits="userSpaceOnUse">
+<stop stop-color="#141414"/>
+<stop offset="1" stop-color="#333333"/>
+</linearGradient>
+</defs>
+</svg>

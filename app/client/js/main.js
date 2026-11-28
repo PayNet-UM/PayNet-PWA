@@ -3,18 +3,21 @@
 import { initBackend } from './backend.js';
 import { captureSource } from './initiatives.js';
 import * as D from './data.js';
-import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, initials, errText, routeLoadingHTML } from './ui.js';
+import { $, $$, esc, icon, toast, sheet, closeSheet, sheetOpen, countUp, errText } from './ui.js';
 import * as Auth from './views/auth.js';
 import { trySignInByAlias } from './link-email.js';
 import { initI18n, langToggleHTML } from './i18n.js';
-import { avatarSVG, defaultFor } from './avatar.js';
+import { accountMenuHTML, mountAccountMenu } from './account-menu.js';
 import { siteUrls } from './firebase-config.js';
 import { startDailyAppActivity } from './app-activity.js';
 import { startPageTime } from './page-time.js';
 import * as Guide from './guide.js';
 import { unseenReplies } from './feedback.js';
 import { INFORMATION_ROUTES } from './information.js';
-import { mountPageMotion } from './motion.js';
+import { routeLeave, routeEnter, mountThumbs, nextRouteDir, flyPoints, fillOnView } from './oz-motion.js';
+import { installOzIcons, ozIcon } from './oz-icons.js';
+import { ozPointsPill, ozRouteSkeleton } from './oz-ui.js';
+installOzIcons();
 initI18n();
 
 const app = {
@@ -23,9 +26,11 @@ const app = {
 };
 window.__umc = app; // handy for debugging in the console
 
+// +Onz redesign navigation (Bottom Tab Bar 721:20421 on mobile, Web · Sidebar 915:33484 from 1024px).
+// Students: five destinations. Events are reached from Home and About from the account menu.
 const nav = {
-  student: [['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['events', 'Campus Events', 'calendar'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
-  merchant: [['scan', 'Deal QR', 'qr-code'], ['shop', 'My shop', 'store'], ['about', 'About us', 'info'], ['home', 'Home', 'house', true], ['promote', 'Promote your shop', 'megaphone'], ['insights', 'Insights', 'chart-column']],
+  student: [['home', 'Home', 'house'], ['community', 'Community', 'users'], ['leagues', 'Leagues', 'trophy'], ['rewards', 'Rewards', 'gift'], ['me', 'Me', 'user']],
+  merchant: [['home', 'Home', 'house'], ['shop', 'My shop', 'store'], ['scan', 'Deal QR', 'qr-code'], ['insights', 'Insights', 'wallet'], ['promote', 'Promote your shop', 'megaphone'], ['about', 'About us', 'info', 'desktop']],
 };
 
 // A route can name the switch (or switches) it needs; turned-off routes leave the menu and redirect home.
@@ -60,7 +65,7 @@ async function onUser(user) {
   render.token=Symbol();
   if(app.viewCleanup){try{app.viewCleanup();}catch{}app.viewCleanup=null;}
   stopWatchers(); closeSheet();
-  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.stallSurveyDone = undefined; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.shellRole = null;
+  app.user = user; app.role = null; app.ctx = null; app.rules = D.DEFAULT_RULES; app.profile = null; app.isMpp = false; app.feedbackNew = 0; app.merchant = null; app.stallSurveyDone = undefined; app.visits = []; app.ledger = []; app.ledgerLoaded = false; app.appDays = []; app.streakMotion = null; app.redeemMotion = null; app.shellRole = null;
   const { sdk, db, mode } = app.backend;
   if (!user) return informationRoute()?renderPublicInformation():Auth.renderSignIn(app);
   Auth.googleWorked();
@@ -94,15 +99,23 @@ function startRole(role) {
   const { sdk, db } = app.backend;
   app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'users', app.ctx.uid), (s) => {
     if (!s.exists()) return;
+    const before = app.profile && JSON.stringify(app.profile.avatar);
+    const prevPoints = app.profile ? Number(app.profile.points) || 0 : null;
     app.profile = { id: s.id, ...s.data() }; app.ctx.profile = app.profile;
-    $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points));
-    paintAvatar();
+    // Points come from where they were earned (the control just tapped) and land on the pill.
+    if (prevPoints !== null && (Number(app.profile.points) || 0) > prevPoints) flyPoints((Number(app.profile.points) || 0) - prevPoints);
+    $$('[data-bind=points]').forEach((el) => countUp(el, app.profile.points, el.matches('.oz-balance-value') ? 220 : undefined));
+    // A changed look (saved here or on another device) redraws live pages, e.g. Home's hero and the header picture.
+    if (before !== undefined && before !== JSON.stringify(app.profile.avatar)) app.emit && app.emit('profile');
   }, () => {}));
   if (role === 'student') {
 
     app.watchers.push(D.watchLedger(app.ctx, (l) => { app.ledger = l; app.ledgerLoaded = true; app.emit && app.emit('ledger'); }, () => {}));
     app.watchers.push(D.watchAppDays(app.ctx, (days) => { app.appDays = days; app.emit && app.emit('app-activity'); }, () => {}));
-    app.watchers.push(startDailyAppActivity(app.ctx, { onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
+    app.watchers.push(startDailyAppActivity(app.ctx, { onRecorded: (day) => {
+      app.streakMotion = { day };
+      app.emit('streak-recorded');
+    }, onError: () => toast('Couldn’t save today’s app check-in. We’ll retry when you return.', true) }));
     // Anonymous time on each page (privacy notice: "How the app is used").
     app.pageTime = startPageTime(app.ctx); app.watchers.push(app.pageTime.stop);
   }
@@ -115,7 +128,6 @@ function startRole(role) {
     }, () => {}));
     app.watchers.push(sdk.onSnapshot(sdk.doc(db, 'merchants', app.ctx.uid), (s) => {
       app.merchant = s.exists() ? { id: s.id, ...s.data() } : null; app.ctx.merchantName = app.merchant?.name || '';
-      paintAvatar();
       app.emit && app.emit('merchant');
     }, () => {}));
   }
@@ -140,51 +152,39 @@ function shell(role, routes) {
   app.shellRole = role;
   const p = app.profile || {};
   document.body.innerHTML = `
-    <div class="shell">
-      <header class="topbar">
-        <a class="brand" href="#/home"><img class="onz-brand-logo" src="icons/onz-logo.svg" alt="+Onz" width="680" height="214"><em class="onz-role">${role === 'student' ? 'Student' : 'Merchant'}</em></a>
+    <div class="shell oz-shell oz-${role}">
+      <header class="topbar oz-topbar">
+        <a class="brand oz-wordmark" href="#/home" aria-label="+Onz home" data-no-i18n>+Onz</a>
+        <p class="oz-tagline">${role === 'merchant' ? 'Merchant workspace' : 'your campus, all added up'}</p>
         <span class="spacer"></span>
-        ${role === 'student' ? `<a class="pts-chip" href="#/rewards" aria-label="Your points">${icon('sparkles')}<span data-bind="points">${(p.points || 0).toLocaleString()}</span></a>` : ''}
-        ${langToggleHTML()}
-        <button class="avatar" id="avatar" aria-label="Account menu">${esc(initials(p.name))}</button>
+        ${role === 'student' ? ozPointsPill(p.points || 0) : ''}
+        <button class="avatar oz-gear" id="avatar" aria-label="Account menu" title="Account">${ozIcon('settings')}</button>
       </header>
+      <aside class="oz-sidebar">
+        <a class="oz-side-brand" href="#/home" aria-label="+Onz home" data-no-i18n tabindex="-1">+Onz</a>
+        ${role === 'merchant' ? '<span class="oz-side-role">Merchant</span>' : ''}
+        <nav class="tabbar oz-tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, only]) =>
+          `<a href="#/${k}" data-tab="${k}" class="oz-tab${only === 'desktop' ? ' nav-desktop-only' : ''}"${k === 'promote' ? ' aria-label="Promote your shop"' : ''}>${icon(ic)}<span class="oz-tab-label">${label}</span>${k === 'promote' ? '<span class="oz-tab-short" aria-hidden="true">Promote</span>' : ''}</a>`).join('')}</nav>
+      </aside>
       <main class="view" id="view"></main>
-      <nav class="tabbar" aria-label="Main">${nav[role].filter(([k]) => !routes[k] || routeOn(routes[k])).map(([k, label, ic, center]) =>
-        `<a href="#/${k}" data-tab="${k}" class="${center ? 'center' : ''}${k==='about'&&role==='merchant'?' nav-desktop-only':''}">${center ? `<span class="bubble">${icon(ic)}</span>` : icon(ic)}<span>${label}</span></a>`).join('')}</nav>
     </div>`;
   $('#avatar').onclick = () => accountSheet();
   addDemoRibbon();
-  paintAvatar();
+  mountThumbs(document.querySelector(".oz-sidebar") || document);
   paintFeedbackDot(); // the reply check may finish before the top bar exists
 }
-// Students see their avatar in the top bar; merchants see their logo.
-function paintAvatar() {
-  const el = $('#avatar'); if (!el) return;
-  const p = app.profile || {};
-  if (app.role === 'student') { el.classList.add('has-art'); el.innerHTML = avatarSVG(p.avatar || defaultFor(app.ctx?.uid), { variant: 'head', size: 40, title: p.name }); }
-  else if (app.role === 'merchant' && app.merchant?.logo) { el.classList.add('has-art'); el.innerHTML = `<img src="${app.merchant.logo}" alt="">`; }
-  else { el.classList.remove('has-art'); el.textContent = initials(p.name); }
-}
-
+// Account menu (Figma "Me · Account menu" 525:10476). Students get it as the page #/me/account; merchants as a sheet.
+// The header gear opens Account as a page pushed over wherever you are (a toolbar button, like Instagram or Revolut),
+// not a jump to the Me tab: the current tab stays selected and Back returns to the page you came from.
+const ACCOUNT_PAGES = /^(me\/(account|settings|language)|delete-account)(\/|$)/;
 function accountSheet() {
-  const p = app.profile || {};
-  const el = sheet(`<h2>${esc(p.name || app.user.email)}</h2><p class="muted">${esc(app.user.email)}</p>
-    <div class="stack" style="margin-top:18px">
-      ${app.role === 'student' ? '<a class="btn block" href="#/me" data-close>Profile and settings</a><a class="btn block" href="#/avatar" data-close>Customise avatar</a>' : ''}
-      ${app.role === 'student' ? `<a class="btn block" href="#/feedback" data-close id="to-feedback">${icon('mail')} Questions and feedback${app.feedbackNew ? ` <span class="badge ok">${app.feedbackNew === 1 ? '1 new reply' : `${app.feedbackNew} new replies`}</span>` : ''}</a>` : ''}
-      ${app.isMpp ? `<a class="btn block" href="${esc(siteUrls.admin)}" id="to-mpp">Open the Admin dashboard</a>` : ''}
-      <a class="btn block" href="#/about" data-close>${icon('info')} About us</a><a class="btn block" href="#/contact" data-close>${icon('mail')} Contact us</a>
-      <a class="btn block" href="#/points" data-close>${icon('sparkles')} Points guide</a>
-      <button class="btn block" id="tour">${icon('compass')} Take the tour</button>
-      <button class="btn block" id="install">Install the app on this device</button>
-      <button class="btn block" id="terms">${icon('shield-check')} Terms of Use and Privacy Notice</button>
-      <button class="btn block warn" id="signout">${icon('log-out')} Sign out</button>
-      ${app.role === 'student' || app.role === 'merchant' ? `<a class="btn block ghost danger-link" href="#/delete-account" data-close>${icon('trash-2')} ${app.role === 'merchant' ? 'Close my account' : 'Delete my account'}</a>` : ''}
-    </div>`);
-  $('#signout', el).onclick = async () => { closeSheet(); await app.backend.sdk.signOut(app.backend.auth); location.hash = ''; };
-  $('#install', el).onclick = () => installApp();
-  $('#tour', el).onclick = () => { closeSheet(); Guide.start(app); };
-  $('#terms', el).onclick = () => { closeSheet(); import('./terms.js').then((m) => m.termsSheet()); };
+  if (app.role === 'student') {
+    const here = location.hash.replace(/^#\/?/, '') || 'home';
+    if (!ACCOUNT_PAGES.test(here) && !/^me(\/|$)/.test(here)) { app.accountFrom = '#/' + here; nextRouteDir(1); }
+    location.hash = '#/me/account'; return;
+  }
+  const el = sheet(accountMenuHTML(app, { siteUrls }));
+  mountAccountMenu(el, app);
 }
 app.accountSheet = accountSheet;
 
@@ -193,9 +193,9 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); defe
 function installApp() {
   if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; closeSheet(); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  sheet(`<h2>Install +Onz</h2><p class="muted">${ios
+  sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">Install +Onz</h2><p class="oz-fsheet-body">${ios
     ? 'In Safari, tap the Share button, then “Add to Home Screen”.'
-    : 'Open your browser menu and choose “Install app” or “Add to Home screen”. If it’s already installed, open it from your home screen.'}</p>`);
+    : 'Open your browser menu and choose “Install app” or “Add to Home screen”.'}</p></div>`);
 }
 app.installApp = installApp;
 
@@ -205,7 +205,10 @@ function addDemoRibbon() {
   b.setAttribute('aria-label', 'Demo mode: switch account or reset');
   b.onclick = () => import('./demo-seed.js').then((m) => m.demoSheet(app));
   const bar = $('.topbar .spacer');
-  if (bar) { b.classList.add('in-bar'); bar.before(b); } else document.body.append(b);
+  if (bar) {
+    b.classList.add('in-bar');
+    if (app.role === 'merchant') bar.after(b); else bar.before(b);
+  } else document.body.append(b);
 }
 app.addDemoRibbon = addDemoRibbon;
 
@@ -227,7 +230,7 @@ async function renderPublicInformation() {
   if(render.token!==token)return;
   view.innerHTML=html;window.scrollTo(0,0);
   const cleanup=route.mount?.(view,app,requested.args);
-  const stopMotion=mountPageMotion(view);
+  const stopMotion=mountThumbs(view);
   app.viewCleanup=()=>{stopMotion();cleanup?.();};
 }
 async function render() {
@@ -239,9 +242,14 @@ async function render() {
   if(sheetOpen())closeSheet();
   const requestedPath=location.hash.replace(/^#\/?/,'')||'home';
   const previousView=$('#view');
-  if(previousView){previousView.setAttribute('aria-busy','true');previousView.innerHTML=routeLoadingHTML(requestedPath);}
+  previousView?.setAttribute('aria-busy','true');
   $$('.tabbar a').forEach(a=>a.classList.toggle('pending',a.dataset.tab===requestedPath.split('/')[0]));
-  let view=previousView;
+  let view=previousView, loadingPath=requestedPath, savedView=null, captured=false;
+  const loading=setTimeout(()=>{
+    if(render.token!==token||!view)return;
+    if(!captured&&!view.querySelector('.route-loading'))savedView=view.cloneNode(true);
+    view.innerHTML=ozRouteSkeleton(loadingPath);
+  },500);
   try {
     // Fetch in parallel, and ignore any request superseded by a later tap or sign-in change.
     const [next,mod]=await Promise.all([D.getRules(app.ctx).catch(()=>app.rules),loadRoleModule(app.role)]);
@@ -257,23 +265,29 @@ async function render() {
     if(render.token!==token)return;
     if(gate&&gate!==route){history.replaceState(null,'','#/'+gate);route=gate;parts=[gate];if(mod.gateMessage)toast(mod.gateMessage);}
     const r=mod.routes[route];
-    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===(r.tab||route);a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-    view=$('#view');view.className='view'+(r.wide?' wide':'');view.setAttribute('aria-busy','true');
-    view.innerHTML=routeLoadingHTML(route);
+    if(!ACCOUNT_PAGES.test(canonical)){if(app.accountFrom&&'#/'+canonical===app.accountFrom)nextRouteDir(-1);app.accountFrom=null;}
+    const fromRoute=app.accountFrom?app.accountFrom.slice(2).split('/')[0]:null;
+    const tabKey=fromRoute?(mod.routes[fromRoute]?.tab||fromRoute):(r.tab||route);
+    $$('.tabbar a').forEach(a=>{const active=a.dataset.tab===tabKey||(a.dataset.tab===route&&!$(`.tabbar a[data-tab="${r.tab}"]`));a.classList.toggle('on',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    const leaving=routeLeave($('#view'),canonical,savedView);
+    captured=true; loadingPath=route;
+    view=$('#view');view.setAttribute('aria-busy','true');
     document.title=`${r.title} · +Onz ${app.role==='student'?'Student':'Merchant'}`;
     const html=await r.render(app,parts.slice(1));
-    if(render.token!==token)return;
+    if(render.token!==token){leaving?.ghost.remove();return;}
+    clearTimeout(loading);
+    view.className='view'+(r.wide?' wide':'')+' route-'+route;
     view.innerHTML=html;window.scrollTo(0,0);
     const cleanup=r.mount?await r.mount(view,app,parts.slice(1)):null;
-    if(render.token!==token){cleanup?.();return;}
-    const stopMotion=mountPageMotion(view);app.viewCleanup=()=>{stopMotion();cleanup?.();};
+    if(render.token!==token){leaving?.ghost.remove();cleanup?.();return;}
+    routeEnter(view,leaving,canonical);const stopMotion=mountThumbs(view);requestAnimationFrame(()=>fillOnView(view));app.viewCleanup=()=>{stopMotion();cleanup?.();};
     view.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
     $$('[data-bind=points]',view).forEach(el=>{el.dataset.v=app.profile?.points||0;});
   }catch(e){
     if(render.token!==token)return;
     console.error(e);view?.removeAttribute('aria-busy');$$('.tabbar a.pending').forEach(a=>a.classList.remove('pending'));
-    if(view)view.innerHTML=`<div class="card empty" style="margin-top:20px">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p><button class="btn" style="margin-top:12px" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
-  }
+    if(view)view.innerHTML=`<div class="oz-empty">${icon('circle-alert')}<h3>This page didn’t load</h3><p class="muted">${esc(errText(e))}</p><button class="oz-btn oz-btn-ghost oz-btn-md" onclick="location.reload()">${icon('refresh-cw')} Reload</button></div>`;
+  }finally{clearTimeout(loading);}
 }
 app.render = render;
 

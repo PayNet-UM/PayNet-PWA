@@ -1,0 +1,26 @@
+<svg width="200" height="280" viewBox="0 0 200 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="100" cy="95.5" rx="67" ry="5.5" fill="#0B0F3A" fill-opacity="0.18"/>
+<path d="M100 3L169 94C123 104.667 77 104.667 31 94L100 3Z" fill="url(#hat-party-a)"/>
+<circle cx="96.5" cy="37.5" r="4.5" fill="#FFE27A"/>
+<circle cx="123.5" cy="64.5" r="5.5" fill="#FFE27A"/>
+<circle cx="80.5" cy="67.5" r="5.5" fill="#FFE27A"/>
+<circle cx="144" cy="87" r="4" fill="#FFE27A"/>
+<circle cx="54.5" cy="87.5" r="4.5" fill="#FFE27A"/>
+<circle cx="104" cy="84" r="4" fill="#FFE27A"/>
+<path d="M29 85C76.3333 95.6667 123.667 95.6667 171 85V95C123.667 105.667 76.3333 105.667 29 95V85Z" fill="url(#hat-party-b)"/>
+<circle cx="100" cy="2" r="12" fill="url(#hat-party-c)"/>
+<defs>
+<linearGradient id="hat-party-a" x1="100" y1="3" x2="100" y2="102" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF5FA2"/>
+<stop offset="1" stop-color="#FFB3D1"/>
+</linearGradient>
+<linearGradient id="hat-party-b" x1="100" y1="85" x2="100" y2="103" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFE27A"/>
+<stop offset="1" stop-color="#F5B700"/>
+</linearGradient>
+<linearGradient id="hat-party-c" x1="100" y1="-10" x2="100" y2="14" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFE27A"/>
+<stop offset="1" stop-color="#F5B700"/>
+</linearGradient>
+</defs>
+</svg>

@@ -14,7 +14,7 @@ const ROLES=[
   ['merchant','kopikolej@demo.my',['home','scan','shop','promote','insights','poster','survey','about','contact','points']],
   ['admin',null,['overview','dashboard','initiatives','merchants','approvals','rewards','campaigns','kpis','people','paynet','recon','feedback','closures','activity','settings','points']],
 ];
-const VIEWPORTS=[{width:320,height:740},{width:390,height:844},{width:768,height:1024},{width:844,height:390},{width:1360,height:960}];
+const VIEWPORTS=[{width:320,height:740},{width:390,height:844},{width:768,height:1024},{width:844,height:390},{width:1024,height:900},{width:1360,height:960},{width:1440,height:900}];
 const browser=await chromium.launch(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{});
 const errors=[];let checked=0;
 try {
@@ -48,13 +48,38 @@ try {
             assert.equal(await page.locator('dialog[open]').count(),0,`${label}: unexpected modal`);
             if(role==='student'&&route==='home'){
               assert.equal(await page.locator('#view .info-links,#view .points-summary').count(),0,`${label}: redundant homepage links`);
-              const about=page.locator('.tabbar [data-tab="about"]'),home=page.locator('.tabbar [data-tab="home"]');
-              assert.ok(await about.isVisible(),`${label}: About tab missing`);
+              const home=page.locator('.tabbar [data-tab="home"]');
+              assert.equal(await page.locator('.tabbar [data-tab="about"]').count(),0,`${label}: About now lives in the account menu`);
               if(viewport.width<1024){
-                const a=await about.boundingBox(),h=await home.boundingBox(),l=await page.locator('.tabbar [data-tab="leagues"]').boundingBox();
-                assert.ok(l.x<a.x&&a.x<h.x,`${label}: About belongs between Leagues and Home`);
+                const box=async(t)=>(await page.locator(`.tabbar [data-tab="${t}"]`).boundingBox()).x;
+                const xs=[await box('home'),await box('community'),await box('leagues'),await box('rewards'),await box('me')];
+                assert.ok(xs.every((x,i)=>!i||xs[i-1]<x),`${label}: tabs should read Home, Community, Leagues, Rewards, Me`);
+                // Every tab stays inside the floating bar, whichever one is lit (Me used to slip out when Community was active).
+                const bar=await page.locator('.oz-tabbar').boundingBox(), me=await page.locator('.tabbar [data-tab="me"]').boundingBox();
+                assert.ok(me.x+me.width<=bar.x+bar.width+1,`${label}: Me tab leaves the tab bar`);
               }
               assert.equal(await home.getAttribute('aria-current'),'page');
+              if(viewport.width===390||viewport.width===1440){
+                const mobile=viewport.width===390;
+                const hero=await page.locator('.oz-home .oz-hero').boundingBox();
+                const ring=await page.locator('.oz-home .h-ring').boundingBox();
+                assert.deepEqual([hero.width,hero.y,ring.width,ring.x-hero.x,ring.y-hero.y],
+                  mobile?[358,72,171,210,22]:[720,138,211,500,16],`${label}: Points Hero should use the Figma art geometry`);
+              }
+            }
+            if(role==='merchant'&&route==='scan'){
+              const menu=page.locator('#avatar');
+              assert.equal(await menu.getAttribute('aria-label'),language==='ms'?'Menu akaun':'Account menu');
+              assert.equal((await menu.innerText()).trim(),'','Merchant account control is the gear icon, like students');assert.equal(await menu.locator('.oz-ic').count(),1);
+              if(viewport.width===390){
+                const header=await page.locator('.oz-topbar').boundingBox();
+                const nav=await page.locator('.oz-tabbar').boundingBox();
+                assert.equal(header.height,56,`${label}: Merchant header height`);
+                assert.deepEqual([nav.x,nav.y,nav.width,nav.height],[0,756,390,88],`${label}: Merchant bottom navigation bounds`);
+              }
+              if(viewport.width>=1024){
+                assert.equal((await page.locator('.oz-sidebar').boundingBox()).width,240,`${label}: Merchant sidebar width`);
+              }
             }
             if(role==='student'&&route==='rewards')assert.equal(await page.locator('.rewards-page .points-summary[href="#/points"]').count(),1,`${label}: points guide missing from Rewards`);
             if(role==='student'&&route==='avatar'){

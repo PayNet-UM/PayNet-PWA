@@ -41,8 +41,63 @@ let toastTimer;
 export function toast(msg, bad = false) {
   let el = $('#toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.append(el); }
-  el.textContent = msg; el.classList.toggle('bad', bad); el.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), bad ? 6500 : 3600);
+  const ms = bad ? 6500 : 3600;
+  el.textContent = msg; el.classList.toggle('bad', bad);
+  // Restart the time-left line (Klook / DoorDash toasts on Mobbin) for each new message.
+  el.style.setProperty('--toast-ms', ms + 'ms'); el.classList.remove('show'); void el.offsetWidth; el.style.translate = ''; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+  if (!el.dataset.swipe) { el.dataset.swipe = '1'; swipeToast(el); }
+}
+// Swipe a toast down (or sideways) to dismiss it early.
+function swipeToast(el) {
+  let y0 = null, x0 = 0, dy = 0, dx = 0;
+  el.addEventListener('pointerdown', (e) => { y0 = e.clientY; x0 = e.clientX; dy = dx = 0; el.setPointerCapture?.(e.pointerId); el.classList.add('is-dragging'); });
+  el.addEventListener('pointermove', (e) => { if (y0 === null) return; dy = Math.max(0, e.clientY - y0); dx = e.clientX - x0; el.style.translate = Math.abs(dx) > dy ? `${dx}px 0` : `0 ${dy}px`; });
+  const end = () => { if (y0 === null) return; y0 = null; el.classList.remove('is-dragging');
+    if (dy > 28 || Math.abs(dx) > 80) { clearTimeout(toastTimer); el.classList.remove('show'); setTimeout(() => { el.style.translate = ''; }, 220); } else el.style.translate = ''; };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+
+// Where the last tap happened, so sheets and earned points can start from it ("come from origin").
+let lastTap = null;
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('pointerdown', (e) => {
+  const el = e.target instanceof Element ? e.target.closest('button, a, [role=button], .oz-row, .oz-card, label, summary') || e.target : null;
+  if (el) lastTap = { el, t: performance.now(), x: e.clientX, y: e.clientY };
+}, true);
+/** The rect of the element tapped in the last `ms` that is still on screen (or the tap point), else null. */
+export function tapOrigin(ms = 8000) {
+  if (!lastTap || performance.now() - lastTap.t > ms) return null;
+  const { el, x, y } = lastTap;
+  if (el.isConnected && !el.closest('dialog')) { const r = el.getBoundingClientRect(); if (r.width && r.height && r.bottom > 0 && r.top < innerHeight) return r; }
+  return new DOMRect(x - 1, y - 1, 2, 2);
+}
+const motionOK = () => typeof Element.prototype.animate === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isPhoneWidth = () => matchMedia('(max-width: 1023.98px)').matches;
+// Phones: pull the sheet down by its top edge to dismiss (Apple Maps, Klook, DoorDash). Follows the finger with
+// resistance upward; past 30 % of its height or a fast flick it closes, otherwise it springs back.
+function dragToDismiss(d) {
+  let y0 = null, t0 = 0, dy = 0, h = 0;
+  d.addEventListener('pointerdown', (e) => {
+    if (!isPhoneWidth() || !motionOK() || e.button > 0) return;
+    const top = d.getBoundingClientRect().top; const body = $('.sheet-body', d);
+    const onGrab = e.clientY - top < 56 && !e.target.closest('button, a, input, select, textarea, [data-close]');
+    if (!onGrab) return;
+    y0 = e.clientY; t0 = performance.now(); dy = 0; h = d.offsetHeight; body && (body.style.overflow = 'hidden');
+    d.setPointerCapture?.(e.pointerId); d.classList.add('is-dragging');
+  });
+  d.addEventListener('pointermove', (e) => { if (y0 === null) return; const raw = e.clientY - y0; if (Math.abs(raw) > 4) d.dataset.dragged = '1'; dy = raw >= 0 ? raw : -Math.sqrt(-raw) * 2; d.style.translate = `0 ${dy}px`; });
+  const end = (e) => {
+    if (y0 === null) return; const v = dy / Math.max(1, performance.now() - t0); y0 = null;
+    const body = $('.sheet-body', d); body && (body.style.overflow = ''); d.classList.remove('is-dragging');
+    if (dy > h * .3 || (v > .8 && dy > 48)) {
+      d.animate([{ translate: `0 ${dy}px` }, { translate: `0 ${h}px` }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'forwards' })
+        .finished.then(() => { d.classList.add('no-exit'); closeSheet(); requestAnimationFrame(() => { d.getAnimations().forEach((a) => a.cancel()); d.style.translate = ''; setTimeout(() => d.classList.remove('no-exit'), 50); }); }, () => {});
+    } else {
+      d.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: 320, easing: 'cubic-bezier(.25,1,.5,1)' });
+      d.style.translate = '';
+    }
+  };
+  d.addEventListener('pointerup', end); d.addEventListener('pointercancel', end);
 }
 
 // ------------------------------------------------------------- sheet (modal)
@@ -53,14 +108,30 @@ export function sheet(html, { onClose, wide } = {}) {
     d = document.createElement('dialog'); d.id = 'sheet'; d.className = 'sheet';
     d.innerHTML = '<button class="close" aria-label="Close" data-close>' + icon('x') + '</button><div class="sheet-body"></div>';
     document.body.append(d);
-    d.addEventListener('click', (e) => { if (e.target === d || e.target.closest('[data-close]')) closeSheet(); });
+    // Backdrop = a click outside the sheet's box (not a tap on its own padding, and not the end of a drag).
+    d.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]')) return closeSheet();
+      if (e.target !== d || d.dataset.dragged) { delete d.dataset.dragged; return; }
+      const r = d.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeSheet();
+    });
     d.addEventListener('close', () => { sheetCleanup.forEach((f) => { try { f(); } catch { /* */ } }); sheetCleanup = []; });
+    d.insertAdjacentHTML('afterbegin', '<span class="sheet-grab" aria-hidden="true"></span>');
+    dragToDismiss(d);
   }
   sheetCleanup.forEach((f) => { try { f(); } catch { /* */ } }); sheetCleanup = [];
   if (onClose) sheetCleanup.push(onClose);
   d.style.width = wide ? 'min(760px, 100vw)' : '';
   $('.sheet-body', d).innerHTML = html;
-  if (!d.open) d.showModal();
+  // Web: the dialog grows out of the control that opened it and shrinks back toward it (Apple Maps, AllTrails).
+  if (!d.open) {
+    const from = !isPhoneWidth() && motionOK() && !/data-shared-poster/.test(html) ? tapOrigin(1500) : null;
+    if (from) {
+      const dx = (from.left + from.width / 2 - innerWidth / 2) * .35, dy = (from.top + from.height / 2 - innerHeight / 2) * .35;
+      d.style.setProperty('--oz-sheet-from', `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(.9)`);
+    } else d.style.removeProperty('--oz-sheet-from');
+    d.showModal();
+  }
   $('.sheet-body', d).scrollTop = 0;
   return $('.sheet-body', d);
 }
@@ -70,8 +141,9 @@ export const sheetOpen = () => !!($('#sheet') && $('#sheet').open);
 export function confirmSheet(title, body, okLabel = 'Confirm', danger = false) {
   return new Promise((resolve) => {
     let done = false;
-    const el = sheet(`<h2>${esc(title)}</h2><p class="muted">${body}</p><div class="row end" style="margin-top:20px">
-      <button class="btn" data-no>Cancel</button><button class="btn ${danger ? 'warn' : 'primary'}" data-yes>${esc(okLabel)}</button></div>`,
+    // +Onz confirm (design system, shared with Admin): question, one line, then two equal buttons.
+    const el = sheet(`<div class="oz-fsheet"><h2 class="oz-fsheet-title">${esc(title)}</h2><p class="oz-fsheet-body">${body}</p><div class="oz-fsheet-actions">
+      <button type="button" class="oz-btn oz-btn-ghost oz-btn-md" data-no>Cancel</button><button type="button" class="oz-btn ${danger ? 'oz-btn-destructive' : 'oz-btn-primary'} oz-btn-md" data-yes>${esc(okLabel)}</button></div></div>`,
     { onClose: () => { if (!done) resolve(false); } });
     $('[data-no]', el).onclick = () => { done = true; resolve(false); closeSheet(); };
     $('[data-yes]', el).onclick = () => { done = true; resolve(true); closeSheet(); };
@@ -161,18 +233,19 @@ let jsqrLoading = null;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
 export async function startScanner(videoEl, onCode, onStatus, { manualFallback = true } = {}) {
   if (!window.jsQR) { jsqrLoading = jsqrLoading || loadScript('vendor/jsQR.js'); await jsqrLoading; }
-  if (!navigator.mediaDevices?.getUserMedia) { onStatus(manualFallback ? 'This browser can’t open the camera here. Type the code instead.' : 'Open the app in a camera-enabled browser to scan the merchant’s QR.'); return () => {}; }
+  if (!navigator.mediaDevices?.getUserMedia) { onStatus(manualFallback ? 'This browser can’t open the camera here. Type the code instead.' : 'Open the app in a camera-enabled browser to scan the merchant’s QR.', 'unsupported'); return () => {}; }
   let stream, raf, alive = true;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 720 } }, audio: false });
   } catch (e) {
-    onStatus(e.name === 'NotAllowedError' ? (manualFallback ? 'Camera permission is blocked. Allow it in your browser settings, or type the code instead.' : 'Allow camera access in your browser settings, then try again.') : (manualFallback ? 'No camera available. Type the code instead.' : 'No camera available. Use a device with a camera to scan the deal QR.'));
+    const denied = e.name === 'NotAllowedError';
+    onStatus(denied ? (manualFallback ? 'Camera permission is blocked. Allow it in your browser settings, or type the code instead.' : 'Allow camera access in your browser settings, then try again.') : (manualFallback ? 'No camera available. Type the code instead.' : 'No camera available. Use a device with a camera to scan the deal QR.'), denied ? 'denied' : 'unavailable');
     return () => {};
   }
   if (!alive) { stream.getTracks().forEach((t) => t.stop()); return () => {}; }
   videoEl.srcObject = stream; videoEl.setAttribute('playsinline', ''); videoEl.muted = true;
   await videoEl.play().catch(() => {});
-  onStatus('Point the camera at the QR code.');
+  onStatus('Point the camera at the QR code.', 'ready');
   const canvas = document.createElement('canvas'); const cx = canvas.getContext('2d', { willReadFrequently: true });
   let last = 0, lastCode = '';
   const tick = (t) => {

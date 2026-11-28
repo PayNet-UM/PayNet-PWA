@@ -1,0 +1,107 @@
+/* +Onz type conformance (Figma "UI Design System › 02 · Type", 430:215) — loaded last.
+   The master file has 11 text styles. Screens built in earlier rounds picked in-between values (13px labels, 20/24 and
+   23/28 headings, 11px captions…). This file snaps every one of those to its Figma role, grouped by style, so the app
+   uses only the 11 styles. `#view` scoping beats screen rules without !important and keeps Admin untouched.
+   A new screen should use the .oz-h1….oz-caption utilities (oz-type.css) directly instead of adding here. */
+:root {
+  --oz-t-display: 800 40px/44px var(--oz-font-display);
+  --oz-t-number-xl: 800 48px/52px var(--oz-font-display);
+  --oz-t-h1: 800 28px/34px var(--oz-font-display);
+  --oz-t-h2: 700 22px/28px var(--oz-font-display);
+  --oz-t-h3: 600 18px/24px var(--oz-font-ui);
+  --oz-t-body: 400 16px/24px var(--oz-font-ui);
+  --oz-t-body-strong: 600 16px/24px var(--oz-font-ui);
+  --oz-t-body-sm: 400 14px/20px var(--oz-font-ui);
+  --oz-t-label: 600 14px/20px var(--oz-font-ui);
+  --oz-t-caption: 500 12px/16px var(--oz-font-ui);
+  --oz-t-button: 700 16px/20px var(--oz-font-ui);
+}
+
+/* Number XL — the one big balance number on Rewards ("1,240 pts" in the spec). */
+#view .oz-balance-value { font:var(--oz-t-number-xl); }
+
+/* H1 — page titles, including the Wardrobe title and the Streak hero line. */
+#view .av-title, #view .av-title span,
+#view .oz-streak-hero h2, #view .oz-streak-hero h2 strong { font:var(--oz-t-h1); letter-spacing:0; }
+
+/* H2 — page section headings and display numbers. */
+#view .oz-section-head h2,
+#view .oz-lg-standings-head h2,
+#view .oz-about h2, #view .oz-about h2 span,
+#view .oz-lg-sum-value, #view .oz-lg-sum-value span,
+#view .oz-streak-day, #view .oz-streak-day span, #view .oz-streak-day strong,
+#view .oz-hist-strip strong,
+#view .oz-pg-facts b, #view .oz-pg-facts b span,
+#view .oz-about-values b,
+#view .oz-date-poster b,
+#view .oz-poster-title { font:var(--oz-t-h2); letter-spacing:0; }
+
+/* H3 — titles of a card or a group inside a page. */
+#view .oz-composer-title, #view .oz-contact-card h2, #view .oz-help-messages h2,
+#view .community-welfare h2, #view .community-support h2,
+#view .oz-learn-list h2, #view .oz-pg-card h2,
+#view .oz-activities h2, #view .oz-hist-head, #view .oz-ev-group,
+#view .friends-section-heading h2,
+#view .oz-about-way h3,
+#view .oz-lg-pod-name,
+#view .oz-lg-code strong { font:var(--oz-t-h3); }
+
+/* Body Strong — row and list-item titles, back links. */
+#view .friend-identity h3, #view .oz-shop-link, #view .oz-hist-row .oz-menu-label span,
+#view .oz-ev-empty h3, #view .oz-evcard h3, #view .oz-voucher-cost,
+#view .oz-help-back, #view .oz-lg-invite-head h2,
+#view .oz-about-more .oz-row span { font:var(--oz-t-body-strong); }
+
+/* Body — plain reading text and row labels. */
+#view .oz-email-row .oz-menu-label, #view .oz-help-panel > p, #view .oz-lg-subcount { font:var(--oz-t-body); }
+
+/* Label — links, small controls, names and ranks in lists. */
+#view .oz-section-head .oz-link, #view .oz-section-head .oz-link span,
+#view .oz-lg-find, #view .oz-lg-link, #view .oz-lg-totop, #view .oz-lg-totop span,
+#view .oz-lg-pod-place, #view .oz-lg-pod-place span,
+#view .oz-lg-name strong, #view .oz-lg-rank, #view .oz-lg-ref-list .oz-lg-pts,
+#view .username-tag span, #view .oz-activity span,
+#view .oz-hero-chip, #view .oz-ev-views .oz-seg-item,
+#view .points-summary strong, #view .oz-me li strong,
+#view .oz-about-person b, #view .oz-about-num,
+#view .oz-streak-cal-link span,
+#view .oz-chip:has(input:checked) span { font:var(--oz-t-label); }
+
+/* Body SM — unselected chips. */
+#view .oz-chip span { font:var(--oz-t-body-sm); }
+
+/* Button — the full-width primary actions. */
+#view .community-shortcuts button { font:var(--oz-t-button); }
+
+/* Caption — meta lines, tags, pills, counters and badges. */
+#view .oz-tag,
+#view .oz-learn-eyebrow, #view .oz-learn-count, #view .oz-learn-count b,
+#view .oz-evcard-meta span, #view .oz-evcard-body > span,
+#view .oz-about-fine, #view .oz-about-faq details p, #view .oz-about-mini small, #view .oz-about-person small,
+#view .oz-cafe p, #view .oz-shop-meta, #view .oz-field small, #view .directory-cafes p.faint, #view .oz-cafes-title small,
+#view .oz-hero-next, #view .oz-pg-note,
+#view .oz-lg-pod-pts, #view .oz-lg-pts, #view .oz-lg-name small, #view .oz-lg-gap,
+#view .oz-lg-sum-label, #view .oz-lg-sum-label span,
+#view .oz-date-poster small,
+#view .oz-deal-note, #view .oz-deal-shop, #view .oz-deal-pill,
+#view .oz-streak-count, #view .streak-calendar li > span:first-child, #view .oz-streak-status,
+#view .streak-bonus, #view .streak-bonus span,
+#view .welfare-history summary span,
+#view .av-lock-pill, #view .event-reactions button span,
+#view .oz-shops-verified, #view .friends-count, #view .friends-monogram,
+#view .oz-poster-tag, #view .oz-survey-num { font:var(--oz-t-caption); }
+
+/* Web account page and wardrobe stage pills. */
+#view .oz-menu-title { font:var(--oz-t-h2); letter-spacing:0; }
+#view .av-points span, #view .av-save-pill { font:var(--oz-t-label); }
+
+/* Merchant app: same roles. (The printable shop poster headline and the +Onz wordmark are brand artwork, not UI text.) */
+#view .merchant-page :is(h2, .oz-mzero h3), #view .oz-mhome-side-title, #view .oz-mstat strong { font:var(--oz-t-h2); letter-spacing:0; }
+#view :is(.oz-mstart-state, .oz-mlink-text small, .oz-mnote, .oz-mkpi small, .mer-poster-mini small, .mer-poster-mini b, .oz-mstat small, .oz-mready-text small, .oz-mnew, .oz-mcount) { font:var(--oz-t-caption); }
+#view :is(.mer-pin-status, .oz-mstart-count, .oz-mkpi > span) { font:var(--oz-t-body-sm); }
+#view .poster p > b { font:var(--oz-t-body-strong); }
+#view .poster p.muted { font:var(--oz-t-body); }
+#view .poster p > .faint { font:var(--oz-t-body-sm); }
+body .oz-tabbar .oz-tab :is(.oz-tab-label, .oz-tab-short) { font:var(--oz-t-label); }
+#view .oz-mnote a { font:var(--oz-t-caption); text-decoration:underline; text-underline-offset:2px; }
+body .oz-topbar .oz-tagline { font:var(--oz-t-h3); }

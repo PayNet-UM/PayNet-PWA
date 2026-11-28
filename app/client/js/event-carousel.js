@@ -1,6 +1,7 @@
 // Original event artwork: user-supplied Feskum Intsa Feed.pdf, pages 3–13.
 // Artwork and programme descriptions are kept separate from reward and check-in rules.
 import { $, $$, esc, icon, sheet } from './ui.js';
+import * as OM from './oz-motion.js';
 import {EVENT_SLIDES,activeEventSlides,eventToday,feskumFloorMapAvailable} from './event-catalog.js';
 export {EVENT_SLIDES};
 
@@ -12,6 +13,7 @@ const controlPaths = {
 };
 const eventIcon = name => controlPaths[name]?`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${controlPaths[name]}</svg>`:icon(name);
 const imageFor = s => `assets/feskum-2026/feed-${String(s.page).padStart(2,'0')}.jpg`;
+export const eventPosterImage = imageFor;
 export function eventCarousel({page=false,today}={}) {
   const slides=activeEventSlides(today),s=slides[0];
   if(!s)return '';
@@ -122,9 +124,17 @@ export function mountEventCarousel(root) {
     openEventPoster(slides[index]);
   }
   poster.onclick=()=>{if(performance.now()>ignoreUntil)details();};
-  poster.onpointerdown=e=>{start={x:e.clientX,y:e.clientY};};
-  poster.onpointercancel=()=>{start=null;};
-  poster.onpointerup=e=>{if(!start)return;const x=e.clientX-start.x,y=e.clientY-start.y;start=null;if(Math.abs(x)>45&&Math.abs(x)>Math.abs(y)){ignoreUntil=performance.now()+400;change(requestedIndex+(x<0?1:-1));}};
+  // Drag: the poster follows the finger with rubber-band resistance; on release it hands off to a spring that keeps
+  // the release velocity (no fixed-duration snap back). A long or fast enough swipe also changes the poster.
+  let lastX=0,lastT=0,vx=0;
+  poster.onpointerdown=e=>{start={x:e.clientX,y:e.clientY};lastX=e.clientX;lastT=e.timeStamp;vx=0;poster.getAnimations().forEach(a=>a.cancel());};
+  poster.onpointermove=e=>{if(!start)return;const x=e.clientX-start.x,y=e.clientY-start.y;if(Math.abs(x)<6||Math.abs(x)<Math.abs(y))return;
+    const dt=e.timeStamp-lastT;if(dt>0)vx=(e.clientX-lastX)/dt*1000;lastX=e.clientX;lastT=e.timeStamp;
+    if(!motion.matches)poster.style.translate=`${OM.rubber(x,poster.clientWidth||320)}px 0`;};
+  const release=()=>{const cur=parseFloat(poster.style.translate)||0;OM.springBack(poster,cur,OM.rubber(vx,1600)*.5);};
+  poster.onpointercancel=()=>{start=null;release();};
+  poster.onpointerup=e=>{if(!start)return;const x=e.clientX-start.x,y=e.clientY-start.y;start=null;release();
+    if((Math.abs(x)>45||Math.abs(vx)>600)&&Math.abs(x)>Math.abs(y)){ignoreUntil=performance.now()+400;change(requestedIndex+(x<0?1:-1));}};
   box.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();change(requestedIndex+(e.key==='ArrowRight'?1:-1));}};
   const enter=()=>{hovered=true;arm();},leave=()=>{hovered=false;arm();};
   const focus=()=>{focused=true;arm();},blur=e=>{if(!box.contains(e.relatedTarget)){focused=false;arm();}};
@@ -146,7 +156,7 @@ export function mountEventCarousel(root) {
     box.removeEventListener('mouseenter',enter);box.removeEventListener('mouseleave',leave);
     box.removeEventListener('focusin',focus);box.removeEventListener('focusout',blur);
     document.removeEventListener('visibilitychange',visibility);motion.removeEventListener?.('change',preference);
-    poster.onclick=poster.onpointerdown=poster.onpointerup=poster.onpointercancel=box.onkeydown=play.onclick=null;
+    poster.onclick=poster.onpointerdown=poster.onpointermove=poster.onpointerup=poster.onpointercancel=box.onkeydown=play.onclick=null;
     if(prev)prev.onclick=null;if(next)next.onclick=null;
     $$('[data-slide]',box).forEach(b=>b.onclick=null);
   }
@@ -163,6 +173,22 @@ export function mountEventCarousel(root) {
 }
 
 // Gallery and slideshow open the same original artwork and organiser details.
-export function openEventPoster(s,{status=''}={}) {
-  sheet(`<div class="event-poster-dialog">${status?`<span class="badge">${esc(status)}</span>`:""}<span class="event-slide-tag">${esc(s.tag)}</span><h2>${esc(s.title)}</h2><p>${esc(s.when)}</p><p class="muted">${esc(s.where)}</p><a href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>${s.note?`<p>${esc(s.note)}</p>`:''}<p class="faint">Confirm current details with the organiser.</p>${feskumFloorMapAvailable()?`<a class="btn primary" href="#/feskum" data-close>${icon('map-pin')} Explore stalls</a>`:''}</div>`,{wide:true});
+// Poster viewer (Figma 716:15900 / web 918:31700): tags, title, when/where, the full poster, note, then one action.
+// Rebuilt on oz classes; .event-poster-dialog stays as the test hook. event-carousel.css is retired.
+export function openEventPoster(s,{status='', trigger=null}={}) {
+  const from = trigger?.getBoundingClientRect();
+  const shared = from?.width && from.height && !matchMedia('(prefers-reduced-motion: reduce)').matches && typeof Element.prototype.animate === 'function';
+  const body = sheet(`<div class="event-poster-dialog oz-poster-sheet"${shared ? ' data-shared-poster' : ''}><div class="oz-poster-tags">${status?`<span class="oz-tag oz-tag-lilac">${esc(status)}</span>`:''}<span class="oz-tag oz-tag-peach event-slide-tag">${esc(s.tag)}</span></div>
+    <h2>${esc(s.title)}</h2><p class="oz-poster-when">${esc(s.when)}</p><p class="oz-poster-where">${esc(s.where)}</p>
+    <a class="oz-poster-full" href="${imageFor(s)}" target="_blank" rel="noopener" aria-label="Open full-size poster: ${esc(s.title)}"><img src="${imageFor(s)}" alt="${esc(s.title)} — full event poster"></a>
+    ${s.note?`<p class="oz-poster-note">${esc(s.note)}</p>`:''}<p class="oz-poster-fine">Confirm current details with the organiser.</p>
+    ${feskumFloorMapAvailable()?`<a class="oz-btn oz-btn-primary oz-btn-md oz-btn-block" href="#/feskum" data-close><span>Explore stalls</span></a>`:''}</div>`,{wide:true});
+  if (!shared) return;
+  const poster = body.querySelector('.oz-poster-full');
+  const to = poster.getBoundingClientRect();
+  if (!to.width || !to.height) return;
+  const scale = Math.min(from.width / to.width, from.height / to.height);
+  const x = from.left + from.width / 2 - to.left - to.width / 2;
+  const y = from.top + from.height / 2 - to.top - to.height / 2;
+  poster.animate([{ transform: `translate(${x}px,${y}px) scale(${scale})` }, { transform: 'none' }], { duration: 300, easing: OM.EASE.out });
 }

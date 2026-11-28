@@ -1,0 +1,44 @@
+/* +Onz map pin kit (Figma 17 · Map Pin & Booth Map Kit 33:3046), drawn by map.js with createMap(el, { kit: true }).
+   Head-only Sir Onz pins: state = eyes + badge (assets/onz/map/pin-*.svg, exported from the kit's layers). */
+.kk-pin.oz-pin { position:relative; display:block; width:52px; height:56px; }
+.kk-pin.oz-pin > img { display:block; width:52px; height:56px; transition:scale var(--oz-press-ms) var(--oz-ease-out); transform-origin:50% 80%; }
+.kk-pin.oz-pin:hover > img { scale:1.06; }
+/* Selected pin: a little bigger and its name shows (Figma booth labels). */
+.kk-pin.oz-pin.is-selected > img { scale:1.14; }
+.oz-pin-label { position:absolute; left:calc(100% - 6px); top:14px; display:none; max-width:140px; padding:2px var(--oz-space-2); border-radius:var(--oz-radius-pill);
+  background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); color:var(--oz-text-primary); font:var(--oz-t-caption); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; pointer-events:none; }
+.oz-pins-labelled .oz-pin-label, .kk-pin.oz-pin.is-selected .oz-pin-label { display:block; }
+/* Cluster: the kit's ringed head with the real count over it. */
+.oz-pin-cluster { position:relative; display:block; width:52px; height:56px; cursor:pointer; }
+.oz-pin-cluster > img { display:block; width:52px; height:56px; }
+.oz-pin-cluster > .oz-pin-count { position:absolute; left:0; right:0; top:13px; text-align:center; color:var(--oz-text-on-brand); font:700 14px/16px var(--oz-font-ui); }
+/* Zoomed-out dots: blue, lime (live), grey (closed), ringed for a cluster. */
+.oz-pin-dot { display:block; width:14px; height:14px; margin:4px; border-radius:50%; background:var(--oz-blue-700); box-shadow:0 0 0 2px var(--oz-bg-surface), var(--oz-shadow-card); cursor:pointer; }
+.oz-pin-dot.is-live { background:var(--oz-lime-500); box-shadow:0 0 0 2px var(--oz-blue-900); }
+.oz-pin-dot.is-closed { background:var(--oz-neutral-400); }
+.oz-pin-dot.is-cluster { width:20px; height:20px; margin:1px; box-shadow:0 0 0 3px var(--oz-lime-500); }
+@media (prefers-reduced-motion:reduce) { .kk-pin.oz-pin > img { transition:none; } }
+
+/* Legend keys for the pin states on the map right now. */
+.oz-map-key { display:inline-flex; align-items:center; gap:var(--oz-space-1); }
+.oz-map-key[hidden] { display:none; }
+.oz-map-key img { display:block; width:17px; height:18px; }
+
+/* Peek guide card (33:3400) with the design system's Corner peek (25:1489): your Onzo's head sits lower-left in a pale
+   square (≈ 75% of its width, cropped at the bottom edge), beside name, where and Navigate. */
+.oz-shops-preview .oz-peek { display:flex; align-items:center; gap:var(--oz-space-4); padding:var(--oz-space-3); border-radius:var(--oz-radius-lg);
+  background:var(--oz-bg-surface); box-shadow:var(--oz-shadow-card); }
+.oz-peek-tile { position:relative; flex:none; width:88px; height:88px; border-radius:var(--oz-radius-md); background:var(--oz-league-tint); overflow:hidden; }
+/* Corner peek rule: the head fills ~90% of the square. Lion v2 canvas 200×280 at 0.49: mane (x 19–181) from 2 px,
+   mane top (y 41) at ~20% of the tile, cut at the badge. The tail is outside the crop, so it is hidden here. */
+.oz-peek-onzo { position:absolute; left:-7px; top:-3px; width:98px; height:137px; }
+.oz-peek-onzo svg { display:block; width:98px; height:137px; }
+.oz-peek-onzo image[href$="tail.svg"] { display:none; }
+.oz-peek-body { min-width:0; flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:var(--oz-space-1); }
+.oz-peek-body .oz-btn { margin-top:var(--oz-space-2); }
+#view .oz-peek-body h3 { margin:0; font:var(--oz-t-h3); overflow-wrap:anywhere; }
+#view .oz-peek-body h3 a { color:var(--oz-text-primary); text-decoration:none; }
+.oz-peek-body h3 a:hover { text-decoration:underline; }
+#view .oz-peek-body p { margin:0; font:var(--oz-t-body-sm); color:var(--oz-text-secondary); text-wrap:pretty; }
+.nearby-location-key.oz-map-key[hidden] { display:none; }

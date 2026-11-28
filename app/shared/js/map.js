@@ -2,8 +2,10 @@
 // (googleMapsApiKey), and falls back to Leaflet + OpenStreetMap when there is no key, in Demo mode
 // without a key, or if Google rejects the key. Both engines sit behind one small interface:
 //   const m = await createMap(el, { center, zoom });
-//   m.setPins(list, { popup }) · m.setMe(pos) · m.fit(points) · m.setView(lat, lng, zoom)
+//   m.setPins(list, { popup, onSelect }); m.selectPin(id) · m.setMe(pos) · m.fit(points, { animate }) · m.setView(lat, lng, zoom)
 //   m.onClick(cb) · m.dragPin(lat, lng, onMove) · m.remove()
+// createMap(el, { kit: true }) draws the +Onz map pin kit instead of logo pins (client only; Admin keeps logo pins):
+//   m.setPins(list, { popup, onSelect, state: (m) => 'shop' | 'live' | 'claimed' | 'closed' })
 import { GEO_BOX, inGeoBox } from './data.js';
 import { safeImg, esc, colorFor, initials } from './ui.js';
 import * as CFG from './firebase-config.js';
@@ -37,6 +39,44 @@ export function pinHTML(m) {
   return `<span class="kk-pin" style="--c:${c}"><span class="kk-pin-head">${inner}</span></span>`;
 }
 const meHTML = () => '<span class="kk-me"><span></span></span>';
+
+// ------------------------------------------------------------------ +Onz map pin kit
+// Figma "17 · Map Pin & Booth Map Kit" (33:3046): head-only Sir Onz pins; the state is the eyes + badge, never colour
+// alone (shop = Calm, live deal = Wink + lime plus, claimed today = Happy + check, closed = Sleepy + z). Pins that would
+// overlap merge into a cluster (count + lime ring, tap to zoom in, 99+ above that). Below DOT_ZOOM the pins become plain
+// dots (blue, lime for live, grey for closed, ringed for a cluster); the pin is never shrunk further.
+const KIT_W = 52, KIT_H = 56; // the kit's 182×195 pin canvas at 56 px high (≈ 46 px visible, ≥ 36 px rule)
+const KIT_TIP = [26, 45]; // pin tip (91, 157.3 on the canvas) sits on the shop
+const KIT_HEAD = [26, 21]; // cluster: the head's centre (91, 72.8) sits on the group's centre
+const DOT_ZOOM = 13, LABEL_ZOOM = 18, MERGE_PX = 40; // the whole campus fits at 13 on a phone: pins (clusters handle overlap); dots only when zoomed out beyond campus
+const KIT_RANK = { live: 0, claimed: 1, shop: 2, closed: 3 };
+const KIT_STATES = new Set(Object.keys(KIT_RANK));
+const kitState = (v) => (KIT_STATES.has(v) ? v : 'shop');
+const kitPin = (m, state = 'shop') => `<span class="kk-pin oz-pin is-${state}"><img src="assets/onz/map/pin-${state}.svg" width="${KIT_W}" height="${KIT_H}" alt="">${m && m.name ? `<span class="oz-pin-label" data-no-i18n>${esc(m.name)}</span>` : ''}</span>`;
+const kitCluster = (count) => `<span class="oz-pin oz-pin-cluster"><img src="assets/onz/map/pin-cluster.svg" width="${KIT_W}" height="${KIT_H}" alt=""><b class="oz-pin-count" data-no-i18n>${count > 99 ? '99+' : count}</b></span>`;
+const kitDot = (state, count = 1) => `<span class="oz-pin-dot is-${state}${count > 1 ? ' is-cluster' : ''}"></span>`;
+// Web Mercator world pixels at a zoom level (both engines use it), so grouping is the same on Google and Leaflet.
+const worldPx = (lat, lng, z) => { const size = 256 * 2 ** z, sin = Math.sin(lat * Math.PI / 180);
+  return [(lng + 180) / 360 * size, (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * size]; };
+/** Group pins that would overlap at this zoom; live deals lead a group. Returns [{ lat, lng, members: [{ m, state }] }]. */
+export function kitGroups(list, zoom, stateOf = () => 'shop') {
+  const items = list.filter(hasPin).map((m) => ({ m, state: kitState(stateOf(m)), p: worldPx(m.lat, m.lng, zoom) }))
+    .sort((a, b) => KIT_RANK[a.state] - KIT_RANK[b.state]);
+  const reach = zoom < DOT_ZOOM ? 16 : MERGE_PX; const groups = [];
+  for (const it of items) {
+    const g = groups.find((x) => Math.hypot(x.p[0] - it.p[0], x.p[1] - it.p[1]) < reach);
+    if (g) g.members.push(it); else groups.push({ p: it.p, members: [it] });
+  }
+  return groups.map((g) => ({ members: g.members, lat: g.members.reduce((t, x) => t + x.m.lat, 0) / g.members.length,
+    lng: g.members.reduce((t, x) => t + x.m.lng, 0) / g.members.length }));
+}
+const kitMarkup = (g, zoom) => {
+  const one = g.members.length === 1, lead = g.members[0], dots = zoom < DOT_ZOOM;
+  if (dots) return { html: kitDot(lead.state, g.members.length), size: [22, 22], anchor: [11, 11], tappable: false };
+  if (one) return { html: kitPin(lead.m, lead.state), size: [KIT_W, KIT_H], anchor: KIT_TIP, tappable: true };
+  return { html: kitCluster(g.members.length), size: [KIT_W, KIT_H], anchor: KIT_HEAD, tappable: false };
+};
+const kitTitle = (g) => (g.members.length === 1 ? g.members[0].m.name || '' : `${g.members.length} shops`);
 
 const LOC_ERR = (e) => new Error(e.code === 1 ? 'Location permission is blocked. Allow it in your browser settings, then try again.'
   : e.code === 3 ? 'Finding your location took too long. Try again outdoors.'
@@ -86,7 +126,7 @@ const node = (html) => { const d = document.createElement('div'); d.innerHTML = 
 const latOf = (p) => (typeof p.lat === 'function' ? p.lat() : p.lat);
 const lngOf = (p) => (typeof p.lng === 'function' ? p.lng() : p.lng);
 
-async function googleMap(el, { center, zoom, interactive }) {
+async function googleMap(el, { center, zoom, interactive, userMarker, kit = false }) {
   const g = await loadGoogle();
   const map = new g.Map(el, {
     center: { lat: center[0], lng: center[1] }, zoom, mapId: MAP_ID, clickableIcons: false,
@@ -95,20 +135,60 @@ async function googleMap(el, { center, zoom, interactive }) {
   });
   const AM = g.marker.AdvancedMarkerElement;
   const info = new g.InfoWindow();
-  let pins = [], me = null, drag = null, crowds = [];
+  const pins = new Map();
+  let me = null, drag = null, crowds = [];
   const onTap = (marker, fn) => {
     let last = 0; const go = () => { const t = Date.now(); if (t - last > 300) { last = t; fn(); } };
     if (marker.addListener) marker.addListener('click', go);
     if (marker.addEventListener) marker.addEventListener('gmp-click', go);
   };
-  return {
+  // Kit pins: an AdvancedMarker puts the content's bottom centre on the point, so shift it down to the tip / centre.
+  const kitNode = (html, size, anchor) => { const n = node(html); n.style.translate = `0 ${size[1] - anchor[1]}px`; return n; };
+  let kitList = [], kitOpts = {}, kitMarkers = [], kitZoom = null, selected = null;
+  const drawKit = () => {
+    pins.forEach((p) => { p.marker.map = null; }); pins.clear(); kitMarkers.forEach((mk) => { mk.map = null; }); kitMarkers = []; info.close();
+    const z = Math.round(map.getZoom()); kitZoom = z;
+    el.classList.toggle('oz-pins-labelled', z >= LABEL_ZOOM);
+    kitGroups(kitList, z, kitOpts.state).forEach((g) => {
+      const { html, size, anchor, tappable } = kitMarkup(g, z); const lead = g.members[0];
+      const content = kitNode(html, size, anchor);
+      const marker = new AM({ map, position: { lat: g.lat, lng: g.lng }, title: kitTitle(g), content, gmpClickable: true, zIndex: 100 - KIT_RANK[lead.state] });
+      if (tappable) {
+        const { popup, onSelect } = kitOpts; const m = lead.m;
+        onTap(marker, () => { if (popup) { info.setContent(node('<div>' + popup(m) + '</div>')); info.open({ anchor: marker, map }); } onSelect?.(m); });
+        pins.set(m.id, { marker, content });
+      } else {
+        onTap(marker, () => {
+          if (g.members.length > 1) { const b = new g_.LatLngBounds(); g.members.forEach(({ m }) => b.extend({ lat: m.lat, lng: m.lng })); map.fitBounds(b, 56); }
+          else { map.setCenter({ lat: g.lat, lng: g.lng }); map.setZoom(Math.max(z + 2, DOT_ZOOM + 1)); }
+        });
+        kitMarkers.push(marker);
+      }
+    });
+    if (selected) api.selectPin(selected);
+  };
+  const g_ = g;
+  if (kit && map.addListener) map.addListener('zoom_changed', () => { if (kitList.length && Math.round(map.getZoom()) !== kitZoom) drawKit(); });
+  const api = {
     engine: 'google', raw: map,
-    setPins(list, { popup } = {}) {
-      pins.forEach((p) => { p.map = null; }); pins = [];
+    setPins(list, { popup, onSelect, state } = {}) {
+      if (kit) { kitList = list.filter(hasPin); kitOpts = { popup, onSelect, state }; drawKit(); return; }
+      pins.forEach((p) => { p.marker.map = null; }); pins.clear(); info.close();
       list.filter(hasPin).forEach((m) => {
-        const mk = new AM({ map, position: { lat: m.lat, lng: m.lng }, title: m.name || '', content: node(pinHTML(m)), gmpClickable: !!popup });
-        if (popup) onTap(mk, () => { info.setContent(node(`<div>${popup(m)}</div>`)); info.open({ anchor: mk, map }); });
-        pins.push(mk);
+        const content = node(pinHTML(m));
+        const marker = new AM({ map, position: { lat: m.lat, lng: m.lng }, title: m.name || '', content, gmpClickable: !!(popup || onSelect) });
+        if (popup || onSelect) onTap(marker, () => {
+          if (popup) { info.setContent(node('<div>' + popup(m) + '</div>')); info.open({ anchor: marker, map }); }
+          onSelect?.(m);
+        });
+        pins.set(m.id, { marker, content });
+      });
+    },
+    selectPin(id) {
+      selected = id;
+      pins.forEach(({ marker, content }, key) => {
+        content.classList.toggle('is-selected', key === id);
+        marker.zIndex = key === id ? 900 : null;
       });
     },
     // "Here now" groups: each item { lat, lng, html, title, onTap }, drawn beside its shop pin.
@@ -123,7 +203,8 @@ async function googleMap(el, { center, zoom, interactive }) {
     setMe(pos) {
       if (!pos) { if (me) me.map = null; me = null; return; }
       if (me) me.position = { lat: pos.lat, lng: pos.lng };
-      else me = new AM({ map, position: { lat: pos.lat, lng: pos.lng }, title: 'You', content: node(meHTML()), zIndex: 1000 });
+      else me = new AM({ map, position: { lat: pos.lat, lng: pos.lng }, title: 'You', content: node(userMarker?.html || meHTML()), zIndex: 1000,
+        ...(userMarker && { anchorLeft: -userMarker.anchor[0] + 'px', anchorTop: -userMarker.anchor[1] + 'px' }) });
     },
     fit(points) {
       if (!points.length) return;
@@ -136,15 +217,16 @@ async function googleMap(el, { center, zoom, interactive }) {
     onClick(cb) { map.addListener('click', (e) => e.latLng && cb(e.latLng.lat(), e.latLng.lng())); },
     dragPin(lat, lng, onMove) {
       if (!drag) {
-        drag = new AM({ map, position: { lat, lng }, gmpDraggable: true, title: 'Your shop', content: node(pinHTML(null)) });
+        drag = new AM({ map, position: { lat, lng }, gmpDraggable: true, title: 'Your shop', content: kit ? kitNode(kitPin(null), [KIT_W, KIT_H], KIT_TIP) : node(pinHTML(null)) });
         const done = () => { const p = drag.position; onMove(latOf(p), lngOf(p)); };
         if (drag.addListener) drag.addListener('dragend', done);
         if (drag.addEventListener) drag.addEventListener('gmp-dragend', done);
       } else drag.position = { lat, lng };
     },
     zoom: () => map.getZoom(),
-    remove() { pins.forEach((p) => { p.map = null; }); crowds.forEach((c) => { c.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
+    remove() { pins.forEach((p) => { p.marker.map = null; }); kitMarkers.forEach((mk) => { mk.map = null; }); crowds.forEach((c) => { c.map = null; }); if (me) me.map = null; if (drag) drag.map = null; info.close(); el.innerHTML = ''; },
   };
+  return api;
 }
 
 // ------------------------------------------------------------------ Leaflet fallback
@@ -161,7 +243,7 @@ function loadLeaflet() {
   }
   return leafletLoading;
 }
-async function leafletMap(el, { center, zoom, interactive }) {
+async function leafletMap(el, { center, zoom, interactive, userMarker, kit = false }) {
   const L = await loadLeaflet();
   const map = L.map(el, { zoomControl: interactive, dragging: interactive, scrollWheelZoom: false, tap: true, zoomAnimation: false, markerZoomAnimation: false,
     maxBounds: [[GEO_BOX.latMin - 0.03, GEO_BOX.lngMin - 0.03], [GEO_BOX.latMax + 0.03, GEO_BOX.lngMax + 0.03]], minZoom: 13 }).setView(center, zoom);
@@ -172,14 +254,45 @@ async function leafletMap(el, { center, zoom, interactive }) {
   map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
   const resizeTimer = setTimeout(() => map.invalidateSize(), 60);
   const icon = (html, size = [40, 48], anchor = [20, 46]) => L.divIcon({ className: 'kk-pin-wrap', iconSize: size, iconAnchor: anchor, popupAnchor: [0, -42], html });
+  const pins = new Map();
   const layer = L.layerGroup().addTo(map); const crowdLayer = L.layerGroup().addTo(map); let me = null, drag = null;
-  return {
+  let kitList = [], kitOpts = {}, selected = null;
+  const drawKit = () => {
+    layer.clearLayers(); pins.clear();
+    const z = map.getZoom();
+    el.classList.toggle('oz-pins-labelled', z >= LABEL_ZOOM);
+    kitGroups(kitList, z, kitOpts.state).forEach((g) => {
+      const { html, size, anchor, tappable } = kitMarkup(g, z); const lead = g.members[0];
+      const mk = L.marker([g.lat, g.lng], { icon: L.divIcon({ className: 'kk-pin-wrap', iconSize: size, iconAnchor: anchor, popupAnchor: [0, -anchor[1]], html }),
+        title: kitTitle(g), alt: kitTitle(g), zIndexOffset: (3 - KIT_RANK[lead.state]) * 10 }).addTo(layer);
+      if (tappable) {
+        const { popup, onSelect } = kitOpts; const m = lead.m;
+        if (popup) mk.bindPopup(popup(m), { minWidth: 200, autoPanPadding: [12, 12], keepInView: true });
+        if (onSelect) mk.on('click', () => onSelect(m));
+        pins.set(m.id, mk);
+      } else if (g.members.length > 1) mk.on('click', () => map.fitBounds(g.members.map(({ m }) => [m.lat, m.lng]), { padding: [56, 56], maxZoom: 19 }));
+      else mk.on('click', () => map.setView([g.lat, g.lng], Math.max(z + 2, DOT_ZOOM + 1)));
+    });
+    if (selected) api.selectPin(selected);
+  };
+  if (kit) map.on('zoomend', () => { if (kitList.length) drawKit(); });
+  const api = {
     engine: 'leaflet', raw: map,
-    setPins(list, { popup } = {}) {
-      layer.clearLayers();
+    setPins(list, { popup, onSelect, state } = {}) {
+      if (kit) { kitList = list.filter(hasPin); kitOpts = { popup, onSelect, state }; drawKit(); return; }
+      layer.clearLayers(); pins.clear();
       list.filter(hasPin).forEach((m) => {
         const mk = L.marker([m.lat, m.lng], { icon: icon(pinHTML(m)), title: m.name || '', alt: m.name || '' }).addTo(layer);
         if (popup) mk.bindPopup(popup(m), { minWidth: 200, autoPanPadding: [12, 12], keepInView: true });
+        if (onSelect) mk.on('click', () => onSelect(m));
+        pins.set(m.id, mk);
+      });
+    },
+    selectPin(id) {
+      selected = id;
+      pins.forEach((marker, key) => {
+        marker.getElement()?.querySelector('.kk-pin')?.classList.toggle('is-selected', key === id);
+        marker.setZIndexOffset(key === id ? 900 : 0);
       });
     },
     setCrowds(list) {
@@ -192,36 +305,43 @@ async function leafletMap(el, { center, zoom, interactive }) {
     setMe(pos) {
       if (!pos) { if (me) map.removeLayer(me); me = null; return; }
       if (me) me.setLatLng([pos.lat, pos.lng]);
-      else me = L.marker([pos.lat, pos.lng], { icon: icon(meHTML(), [22, 22], [11, 11]), title: 'You', zIndexOffset: 1000 }).addTo(map);
+      else me = L.marker([pos.lat, pos.lng], { icon: icon(userMarker?.html || meHTML(), userMarker?.size || [22, 22], userMarker?.anchor || [11, 11]), title: 'You', zIndexOffset: 1000, interactive: false, keyboard: false }).addTo(map);
     },
-    fit(points) {
-      if (points.length > 1) map.fitBounds(points, { padding: [36, 36], maxZoom: 17, animate: false });
-      else if (points.length === 1) map.setView(points[0], 17, { animate: false });
+    // { animate: true } glides between views (filter changes) so pins don't jump across the map;
+    // the first placement and reduced motion still snap.
+    fit(points, { animate = false } = {}) {
+      if (!points.length) return;
+      const glide = animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      const opts = { padding: [36, 36], maxZoom: 17, duration: 0.5, easeLinearity: 0.4 };
+      if (!glide) { if (points.length > 1) map.fitBounds(points, { ...opts, animate: false }); else map.setView(points[0], 17, { animate: false }); return; }
+      map.stop();
+      if (points.length > 1) map.flyToBounds(points, opts); else map.flyTo(points[0], 17, opts);
     },
     setView(lat, lng, z) { map.setView([lat, lng], z || map.getZoom()); },
     onClick(cb) { map.on('click', (e) => cb(e.latlng.lat, e.latlng.lng)); },
     dragPin(lat, lng, onMove) {
       if (!drag) {
-        drag = L.marker([lat, lng], { draggable: true, icon: icon(pinHTML(null)), autoPan: true }).addTo(map);
+        drag = L.marker([lat, lng], { draggable: true, icon: kit ? icon(kitPin(null), [KIT_W, KIT_H], KIT_TIP) : icon(pinHTML(null)), autoPan: true }).addTo(map);
         drag.on('dragend', () => { const p = drag.getLatLng(); onMove(p.lat, p.lng); });
       } else drag.setLatLng([lat, lng]);
     },
     zoom: () => map.getZoom(),
     remove() { clearTimeout(resizeTimer); try { map.stop(); map.off(); map.remove(); } catch { /* already gone */ } },
   };
+  return api;
 }
 
 // ------------------------------------------------------------------ public API
-export async function createMap(el, { center = UM_CENTER, zoom = 16, interactive = true } = {}) {
+export async function createMap(el, { center = UM_CENTER, zoom = 16, interactive = true, userMarker, kit = false } = {}) {
   if (mapEngine() === 'google') {
-    try { return await googleMap(el, { center, zoom, interactive }); } catch (e) { console.warn('Google Maps unavailable, using the basic map', e); googleBroken = true; }
+    try { return await googleMap(el, { center, zoom, interactive, userMarker, kit }); } catch (e) { console.warn('Google Maps unavailable, using the basic map', e); googleBroken = true; }
   }
-  return leafletMap(el, { center, zoom, interactive });
+  return leafletMap(el, { center, zoom, interactive, userMarker, kit });
 }
 
 // Merchant pin picker. Calls onChange({lat, lng}) whenever the pin moves.
-export async function pinPicker(el, start, onChange) {
-  const map = await createMap(el, { center: hasPin(start) ? [start.lat, start.lng] : UM_CENTER, zoom: hasPin(start) ? 18 : 16 });
+export async function pinPicker(el, start, onChange, { kit = false } = {}) {
+  const map = await createMap(el, { center: hasPin(start) ? [start.lat, start.lng] : UM_CENTER, zoom: hasPin(start) ? 18 : 16, kit });
   const place = (lat, lng, { pan = true } = {}) => {
     lat = +(+lat).toFixed(6); lng = +(+lng).toFixed(6);
     map.dragPin(lat, lng, (a, b) => place(a, b, { pan: false }));
@@ -234,8 +354,8 @@ export async function pinPicker(el, start, onChange) {
 }
 
 // A small map with one shop pin (merchant page, Admin team review).
-export async function shopPinMap(el, m, { zoom = 17, interactive = true } = {}) {
-  const map = await createMap(el, { center: [m.lat, m.lng], zoom, interactive });
-  map.setPins([m]);
+export async function shopPinMap(el, m, { zoom = 17, interactive = true, kit = false, state } = {}) {
+  const map = await createMap(el, { center: [m.lat, m.lng], zoom, interactive, kit });
+  map.setPins([m], { state });
   return map;
 }

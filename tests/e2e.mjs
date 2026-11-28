@@ -28,22 +28,24 @@ await stu.goto(BASE); await stu.evaluate(() => { localStorage.clear(); sessionSt
 await stu.reload(); await stu.waitForFunction(() => document.documentElement.dataset.backend, null, { timeout: 60000 });
 if (await stu.evaluate(() => document.documentElement.dataset.backend) !== 'demo') { console.error('Stopped: the server is not in Demo mode. Use npm run dev:demo.'); await b.close(); process.exit(1); }
 await login(stu, 'aina@siswa.um.edu.my'); await stu.waitForSelector('.kk-hero', { timeout: 90000 });
+// Figma Home: a Find campus shops row, then Explore addOnz (Learn & Earn, Student ventures) and All activities.
 const pillars = await stu.locator('.kk-pillar').count();
-if (pillars !== 4) throw new Error('expected 4 +Onz directory cards, got ' + pillars);
-for (const route of ['explore', 'community', 'explore/deals', 'learn']) {
-  if (await stu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 1) throw new Error('missing directory: ' + route);
+if (pillars !== 3) throw new Error('expected 3 +Onz directory rows, got ' + pillars);
+for (const route of ['explore', 'community', 'learn', 'activities']) {
+  if (await stu.locator(`.oz-home a[href="#/${route}"]`).count() < 1) throw new Error('missing directory: ' + route);
 }
 for (const route of ['bayar', 'explore/idea']) {
   if (await stu.locator(`main a[href="#/${route}"]`).count() !== 0) throw new Error('unexpected homepage link: ' + route);
 }
-if (await stu.locator('.tabbar a[href="#/events"]').count() !== 1) throw new Error('missing Campus Events navigation');
+if ((await stu.locator('.tabbar a[data-tab]').evaluateAll((links) => links.map((a) => a.dataset.tab))).join() !== 'home,community,leagues,rewards,me') throw new Error('student navigation should be Home, Community, Leagues, Rewards, Me');
+if (await stu.locator('#view a[href="#/events"]').count() < 1) throw new Error('missing Campus Events link on Home');
 if (await stu.locator('#to-mpp').count() !== 0) throw new Error('student app offers the HEP dashboard to a student');
 const before = await pointsOf(stu);
 await stu.screenshot({ path: `${shots}/01-home.png`, fullPage: true });
 ok(`student home shows the +Onz hub (${pillars} directories) and ${before} points`);
 
 await stu.goto(BASE + '#/explore'); await stu.waitForSelector('#cmap .kk-pin', { timeout: 20000 });
-const pins = await stu.locator('#cmap .kk-pin').count(); const logos = await stu.locator('#cmap .kk-pin img').count();
+const pins = await stu.locator('#cmap .kk-pin').count(); const logos = await stu.locator('#cmap .kk-pin.oz-pin img[src*="assets/onz/map/pin-"]').count();
 const navHref = await stu.getAttribute('#clist .checkout-shop-action a', 'href');
 if (pins < 4 || logos < 4 || !/google\.com\/maps\/dir\/.*destination=3\.1\d+,101\.6\d+/.test(navHref)) throw new Error(`pins ${pins}, logos ${logos}, nav ${navHref}`);
 await stu.waitForSelector('#cmap .kk-me'); await stu.waitForSelector('#clist .nearby-distance');
@@ -51,11 +53,12 @@ const nearest = (await stu.textContent('#clist .checkout-shop h3')).trim();
 if (nearest !== 'Fresh Laundry') throw new Error('nearest should be Fresh Laundry, got ' + nearest);
 // Location centres the map on the nearby shop; the first marker in DOM order
 // may be outside the map viewport. Exercise the visible shop at that location.
-await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.mpop a[href*="google.com/maps/dir"]');
+await stu.locator('#cmap .leaflet-marker-icon[title="Fresh Laundry"]').click(); await stu.waitForSelector('.oz-shops-preview:not([hidden]) .oz-peek a[href*="google.com/maps/dir"]');
+if (!/Fresh Laundry/.test(await stu.textContent('.oz-shops-preview .oz-peek h3'))) throw new Error('the peek card should show the tapped shop');
 if (await stu.locator('.tabbar a.on[data-tab="home"]').count() !== 1) throw new Error('Home should stay active when browsing its directory');
 if (await stu.locator('.tabbar a[data-tab="explore"]').count()) throw new Error('Overview should only be accessed through the homepage');
 await stu.screenshot({ path: `${shots}/02-campus-shops.png` });
-ok(`central directory shows ${pins} logo pins; live location puts ${nearest} first`);
+ok(`central directory shows ${pins} Sir Onz pins; live location puts ${nearest} first`);
 
 await stu.goto(BASE + '#/checkin');
 await stu.waitForFunction(() => location.hash === '#/explore');
@@ -81,8 +84,11 @@ ok('nearby discovery shows location only with permission, sorts shops by distanc
 await stu.goto(BASE + '#/friends'); await stu.waitForFunction(() => location.hash === '#/community/friends');
 await stu.waitForSelector('#friends-section-accepted');
 if (await stu.locator('.tabbar a[data-tab="community"].on').count() !== 1 || await stu.locator('.tabbar a[data-tab="friends"]').count()) throw new Error('Friends and Community navigation is not unified');
-await stu.click('.community-shortcuts a[href="#/leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
-await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty'); await stu.waitForSelector('#league-referrals');
+// Leagues is its own nav tab (Figma), so Community no longer repeats a Leagues link.
+await stu.click('.tabbar a[data-tab="leagues"]'); await stu.waitForFunction(() => location.hash === '#/leagues');
+// Figma Leagues is one board per tab: KK shows; Faculty and Referrers are on the page but hidden until chosen.
+await stu.waitForSelector('#league-kk'); await stu.waitForSelector('#league-faculty', { state: 'attached' }); await stu.waitForSelector('#league-referrals', { state: 'attached' });
+if (await stu.locator('.oz-lg-tabs a[aria-current="page"]').getAttribute('href') !== '#/leagues/kk') throw new Error('KK League tab is not selected on Leagues');
 // The first plain visit to Leagues explains the KK League, then never again.
 await stu.waitForSelector('.guide .is-tour', { timeout: 15000 });
 if ((await stu.textContent('#guide-title')).trim() !== 'Your KK' || !/Step 1 of 2/.test(await stu.textContent('.guide-step'))) throw new Error('Leagues tour did not start on Your KK');
@@ -90,12 +96,22 @@ await stu.screenshot({ path: `${shots}/04b-leagues-tour.png` });
 await stu.click('.guide [data-next]');
 if (!/most points wins prizes/.test(await stu.textContent('.guide-card'))) throw new Error('Leagues tour does not mention the prize');
 await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
-await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .community-podium, #league-kk .community-league-empty'); await stu.waitForTimeout(900);
+await stu.goto(BASE + '#/home'); await stu.goto(BASE + '#/leagues'); await stu.waitForSelector('#league-kk .oz-lg-pod, #league-kk .oz-lg-empty'); await stu.waitForTimeout(900);
 if (await stu.locator('.guide').count()) throw new Error('Leagues tour showed again after it was seen');
-await stu.click('#league-help'); await stu.waitForSelector('.guide .is-tour');
+// Every college is listed, including those without points, so nothing is hidden from students.
+if (await stu.locator('#league-kk .oz-lg-pod, #league-kk .oz-lg-row').count() < 14) throw new Error('KK League does not list every college');
+// "Scoring rules" explains the scoring, and its "Show me around" replays the tour.
+await stu.click('#league-help'); await stu.waitForSelector('.oz-lg-rules'); await stu.click('.oz-lg-rules [data-tour]'); await stu.waitForSelector('.guide .is-tour');
+await stu.click('.guide [data-skip]'); await stu.waitForFunction(() => !document.querySelector('.guide'));
+// The board follows the route: the Faculty tab selects and shows the Faculty League, and Back returns to KK.
+await stu.click('.oz-lg-tabs a[href="#/leagues/faculty"]'); await stu.waitForFunction(() => location.hash === '#/leagues/faculty');
+await stu.waitForSelector('#league-faculty:not([hidden])'); if (!await stu.locator('#league-kk').isHidden()) throw new Error('KK board still shows on the Faculty tab');
+if (await stu.locator('.oz-lg-tabs a[aria-current="page"]').getAttribute('href') !== '#/leagues/faculty') throw new Error('Faculty tab is not selected');
+await stu.goBack(); await stu.waitForSelector('#league-kk:not([hidden])');
+await stu.click('#league-help'); await stu.waitForSelector('.oz-lg-rules [data-tour]'); await stu.click('.oz-lg-rules [data-tour]'); await stu.waitForSelector('.guide .is-tour');
 await stu.goto(BASE + '#/rewards'); await stu.waitForFunction(() => !document.querySelector('.guide')); // leaving the page closes it
 await stu.goto(BASE + '#/community'); await stu.waitForSelector('#friends-section-accepted');
-await stu.click('.community-shortcuts [data-friends-jump="community-welfare"]');
+await stu.click('.oz-ctabs [data-ctab="fund"]'); // Figma Community: the welfare fund is the Fund tab
 await stu.waitForFunction(() => document.activeElement?.id === 'community-welfare');
 await stu.click('#request-welfare'); await stu.waitForSelector('#welfare-request-form');
 await stu.goto(BASE + '#/home'); await stu.waitForSelector('.kk-hero');
@@ -103,23 +119,22 @@ await stu.goto(BASE + '#/community/add'); await stu.waitForSelector('#friend-sea
 await stu.waitForFunction(() => document.activeElement?.id === 'friend-search');
 if (await stu.locator('#friends-section-accepted').count() !== 1) throw new Error('Friend lists did not remount');
 await stu.screenshot({ path: `${shots}/04-community.png`, fullPage: true });
-ok('Community combines friends and welfare; Leagues has its own page, explains the KK League once and replays it from the (i) button');
+ok('Community combines friends and welfare; Leagues has its own page, one board per tab with every college listed, explains the KK League once and replays it from Scoring rules');
 
+// Sir Onz replaced the human avatar: hats and colours unlock by level; older drawing options stay stored untouched.
+const avatarBefore = await stu.evaluate(() => window.__umc.profile.avatar || {});
 await stu.goto(BASE + '#/avatar'); await stu.waitForSelector('#av-prev svg');
-await stu.click('.av-opts [data-k="hair"][data-v="curly"]');
-await stu.click('[data-t="glasses"]');
-const skin = stu.locator('.av-range[data-k="skin"]');
-await skin.focus(); await skin.press('Home');
-for (let i = 0; i < 5; i++) await skin.press('ArrowRight');
-await stu.click('[aria-controls="av-gear"]');
 await stu.click('.av-opts [data-k="hat"][data-v="cap"]');
-await stu.click('.av-swatches [data-k="outfitColor"][data-v="2"]');
 const locked = await stu.locator('.av-opts [data-k="hat"][data-locked]').count();
+await stu.click('[aria-controls="av-colours"]');
+await stu.click('.av-opts [data-k="onz"][data-v="red"]');
+if (!await stu.locator('#av-prev svg image[href$="skins/red/mane.svg"]').count()) throw new Error('preview did not switch to the red skin');
 await stu.screenshot({ path: `${shots}/05-avatar.png`, fullPage: true });
 await stu.click('#av-save'); await stu.waitForSelector('.me-card');
 const saved = await stu.evaluate(() => window.__umc.profile.avatar);
-if (saved.hair !== 'curly' || saved.hat !== 'cap' || !saved.glasses || saved.skin !== 5) throw new Error('avatar not saved: ' + JSON.stringify(saved));
-ok(`avatar saved (curly hair, cap, glasses); ${locked} hats still locked behind levels`);
+if (saved.hat !== 'cap' || saved.onz !== 'red') throw new Error('avatar not saved: ' + JSON.stringify(saved));
+for (const k of ['skin', 'hair', 'outfit']) if (k in avatarBefore && saved[k] !== avatarBefore[k]) throw new Error('older avatar field changed: ' + k);
+ok(`Sir Onz saved (cap, red); ${locked} hats still locked behind levels; older avatar fields kept`);
 
 for (const r of ['rewards', 'community', 'events', 'bayar', 'learn', 'deals', 'explore/idea', 'cafes']) {
   await stu.goto(BASE + '#/' + r); await stu.waitForTimeout(700);
@@ -156,8 +171,10 @@ if (await stu.evaluate(() => document.documentElement.scrollWidth > innerWidth +
 await stu.evaluate(()=>{Date.now=window.beforeMapClock;delete window.beforeMapClock;});
 ok('Tapak KPS preserves allocations in the adapted layout, opens pending vendor details, supports keyboard selection and zooms without mobile overflow');
 await stu.goto(BASE + '#/learn'); await stu.waitForSelector('[data-lesson="2"]'); await stu.click('[data-lesson="2"]');
-await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#toast.show');
-ok('all student screens rendered; lesson: ' + (await stu.textContent('#toast')));
+await stu.click('#sheet [data-a="1"]'); await stu.waitForSelector('#sheet [data-quiz-continue]');
+if (await stu.locator('#sheet .oz-quiz-progress').evaluate((el) => el.value) !== 1) throw new Error('Correct answer did not complete the lesson progress');
+ok('all student screens rendered; lesson: ' + (await stu.textContent('#sheet #fb p')));
+await stu.click('#sheet [data-quiz-continue]');
 
 // voucher
 await stu.goto(BASE + '#/rewards'); await stu.waitForSelector('[data-redeem="kopi-rm3"]:not([disabled])');
@@ -174,7 +191,7 @@ if (!/Show your deal QR at the counter/.test(await mer.textContent('#start-here 
 await mer.screenshot({ path: `${shots}/06-merchant-home.png`, fullPage: true });
 ok('merchant home shows live-deal activity');
 // Reward vouchers are fulfilled only in the HEP site.
-await mer.goto(BASE + '#/scan'); await mer.waitForSelector('.mer-qr-intro');
+await mer.goto(BASE + '#/scan'); await mer.getByRole('heading', { name: 'Deal QR', exact: true }).waitFor();
 if (!(await mer.locator('.mer-qr-manage[href="#/promote"]').count())) throw new Error('Deal QR should point to Promote your shop');
 if (await mer.locator('#manual, #cam, #use').count()) throw new Error('merchant still has voucher redemption controls');
 const counter = await ctx.newPage(); watch(counter, 'HEP counter'); await fresh(counter);
@@ -193,16 +210,56 @@ const pointsBeforeScan = await pointsOf(stu);
 await mer.goto(BASE + '#/scan/' + liveId);
 await mer.waitForFunction(() => [...document.querySelectorAll('#live-deal-qr canvas, #live-deal-qr img')].some((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none'), null, { timeout: 30000 });
 const dealQR=await mer.getAttribute('#live-deal-qr','data-code');
+const merchantQR = await mer.locator('#live-deal-qr :is(canvas,img):visible').first().screenshot();
 await stu.goto(BASE + '#/claim-deal/' + liveId); await stu.waitForSelector('#start-deal-scan');
+const claimShots = async (state) => {
+  const original = stu.viewportSize();
+  for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    await stu.setViewportSize(viewport);
+    await stu.evaluate(() => scrollTo(0, 0));
+    await stu.screenshot({ path: `${shots}/claim-${state}-${viewport.width}.png`, animations: 'disabled',
+      style: '#toast, canvas.confetti { visibility:hidden; }' });
+  }
+  await stu.setViewportSize(original);
+};
+if (await stu.locator('#deal-scanner-panel').isVisible()) throw new Error('camera opened before the student requested it');
+await claimShots('ready');
+await stu.evaluate(() => {
+  navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Denied in the test browser', 'NotAllowedError'); };
+});
+await stu.click('#start-deal-scan');
+await stu.getByText('Camera permission denied', { exact: true }).waitFor();
+await stu.locator('#retry-deal-scan').waitFor();
+await claimShots('camera-denied');
 // Feed the actual merchant QR image through the student's camera pipeline.
-await stu.evaluate((raw) => {
-  const holder=document.createElement('div'); new QRCode(holder,{text:raw,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
-  const qr=holder.querySelector('canvas'), frame=document.createElement('canvas');frame.width=640;frame.height=640;
-  const x=frame.getContext('2d'), draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);x.drawImage(qr,64,64);};draw();
+await stu.evaluate(async (png) => {
+  const qr = new Image(); qr.src = 'data:image/png;base64,' + png; await qr.decode();
+  const frame=document.createElement('canvas');frame.width=640;frame.height=640;
+  const x=frame.getContext('2d'); x.imageSmoothingEnabled = false;
+  const draw=()=>{x.fillStyle='#fff';x.fillRect(0,0,640,640);if(window.useDealQR) x.drawImage(qr,64,64,512,512);};draw();
   navigator.mediaDevices.getUserMedia=async()=>{const stream=frame.captureStream(10),timer=setInterval(draw,100);for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{clearInterval(timer);stop();};}return stream;};
-}, dealQR);
-await stu.click('#start-deal-scan'); await stu.waitForSelector('#deal-confirmation h2');
+}, merchantQR.toString('base64'));
+await stu.click('#retry-deal-scan');
+await stu.waitForSelector('#deal-cam:visible');
+if (await stu.locator('#deal-scan-status').isVisible()) throw new Error('camera recovered but stale denial remained visible');
+await claimShots('scanner');
+await stu.evaluate(() => { window.useDealQR = true; });
+await stu.waitForSelector('#deal-confirmation h2');
 if (!/Claim confirmed/.test(await stu.textContent('#deal-confirmation'))) throw new Error('QR scan did not confirm the deal');
+const claimTimer = stu.locator('#deal-confirmation [role="timer"]');
+const firstClaimTime = await claimTimer.innerText();
+if (!/^\d{1,2}:\d{2}$/.test(firstClaimTime)) throw new Error('claim timer must show minutes and seconds');
+await stu.waitForFunction((initial) => document.querySelector('#deal-confirmation [role="timer"]')?.textContent !== initial, firstClaimTime);
+await claimShots('confirmed');
+await stu.evaluate(() => { window.beforeClaimClock = Date.now; Date.now = () => window.beforeClaimClock() + 16 * 60_000; });
+try {
+  await stu.getByRole('heading', { name: 'Claim expired' }).waitFor();
+  if (await claimTimer.count()) throw new Error('expired claim still shows a countdown');
+  if (!await stu.locator('.deal-points-earned').count()) throw new Error('claim expiry hid the previously earned points');
+  await claimShots('expired');
+} finally {
+  await stu.evaluate(() => { Date.now = window.beforeClaimClock; delete window.beforeClaimClock; });
+}
 await stu.waitForFunction((before) => Number(document.querySelector('.pts-chip [data-bind=points]').textContent.replace(/\D/g,'')) === before + 10, pointsBeforeScan);
 if (await stu.locator('.deal-points-earned').count() !== 1) throw new Error('scan points are not shown');
 await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `${shots}/m-deal-qr-claim.png` });
@@ -210,9 +267,29 @@ await mer.waitForSelector('[data-apply-claim]'); await mer.screenshot({ path: `$
 if (!(await mer.evaluate(() => document.querySelector('.mer-claim').getBoundingClientRect().top < document.querySelector('#live-deal-qr').getBoundingClientRect().top))) throw new Error('the new claim should appear above the QR');
 await mer.click('[data-apply-claim]');
 await stu.waitForFunction(() => document.querySelector('#deal-confirmation h2')?.textContent === 'Discount applied');
+if (await claimTimer.count()) throw new Error('applied claim still shows a countdown');
+await claimShots('applied');
 await stu.screenshot({path:`${shots}/s-live-deal-claim.png`,fullPage:true});
-await mer.click('#sheet [data-close]');
+await mer.getByText('The student can now see the confirmed discount.', { exact: true }).waitFor();
+if (await mer.locator('#sheet[open]').count()) throw new Error('counter view opened a sheet instead of the deal route');
+await mer.evaluate(() => { window.beforeCounterClock = Date.now; Date.now = () => window.beforeCounterClock() + 88_000; });
+try {
+  await mer.waitForFunction((initial) => {
+    const code = document.querySelector('#live-deal-qr')?.dataset.code;
+    return code && code !== initial;
+  }, dealQR, { timeout: 6000 });
+} finally {
+  await mer.evaluate(() => { Date.now = window.beforeCounterClock; delete window.beforeCounterClock; });
+}
+await mer.getByRole('link', { name: 'Back to Deal QR' }).click();
+await mer.getByRole('heading', { name: 'Deal QR', exact: true }).waitFor();
 ok('student scanned the merchant QR and the correct merchant applied that specific deal');
+await stu.goto(BASE + '#/explore/deals');
+const usedDeal = stu.locator('#checkout-deals article').filter({ hasText: 'Campus QR special' });
+await usedDeal.getByText('Claimed today', { exact: true }).waitFor({ timeout: 5000 });
+if (await usedDeal.locator('a[href^="#/claim-deal/"]').count()) throw new Error('a claimed deal still offers the scanner');
+if (!await usedDeal.getByRole('link', { name: 'View shop' }).count() || !await usedDeal.getByRole('link', { name: 'Directions' }).count()) throw new Error('the deal card lost its directory actions');
+ok('the deal directory shows the credited claim and preserves the shop and directions links');
 await mer.goto(BASE + '#/shop'); await mer.waitForSelector('#pin-map .kk-pin', { timeout: 20000 });
 await mer.click('#locate'); await mer.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.10994'));
 await mer.click('#pin-save'); await mer.waitForSelector('#toast.show');
@@ -270,14 +347,14 @@ await ns.waitForSelector('.guide .is-welcome', { timeout: 20000 });
 if ((await ns.textContent('#guide-title')).trim() !== 'Welcome to +Onz, Nur!') throw new Error('student welcome: ' + await ns.textContent('#guide-title'));
 await ns.click('.guide [data-next]'); await ns.waitForSelector('.guide .is-tour');
 // The overlay covers the page, so switch the language from the page's own toggle in code.
-await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="ms"]')?.click());
+await ns.evaluate(async () => (await import('./js/i18n.js')).setLang('ms'));
 await ns.waitForFunction(() => /^Langkah 1 daripada \d+$/.test(document.querySelector('.guide-step')?.textContent.trim() || ''));
 await ns.screenshot({ path: `${shots}/g-student-step-ms.png` });
-await ns.evaluate(() => document.querySelector('.topbar [data-lang-set="en"]')?.click());
+await ns.evaluate(async () => (await import('./js/i18n.js')).setLang('en'));
 for (let k = 0; k < 12 && await ns.locator('.guide .is-tour').count(); k++) await ns.click('.guide [data-next]');
 await ns.waitForSelector('.guide .is-finish'); await ns.screenshot({ path: `${shots}/g-student-finish.png` });
 await ns.click('.guide-tasks a[data-go="avatar"]'); await ns.waitForFunction(() => location.hash === '#/avatar' && !document.querySelector('.guide'));
-await ns.goto(BASE + '#/me'); await ns.waitForSelector('#prof');
+await ns.goto(BASE + '#/me/profile'); await ns.waitForSelector('#prof'); // Figma: the profile form is Me › Edit profile
 if (await ns.locator('#prof select[name=college]').count() || !/Kolej Kediaman Ketujuh \(KK7\)/.test(await ns.inputValue('#prof input[aria-describedby="college-locked"]'))) throw new Error('college is still editable in Me');
 await ns.screenshot({ path: `${shots}/c-me-locked.png`, fullPage: true });
 await ns.close();
@@ -320,13 +397,13 @@ await nm.goto(BASE + '#/shop'); await nm.waitForSelector('#app-form');
 await nm.fill('#app-form [name=name]', 'Satay Siswa'); await nm.fill('#app-form [name=accountName]', 'Satay Siswa Enterprise'); await nm.fill('#app-form [name=location]', 'KK11 cafeteria');
 await nm.setInputFiles('#app-form [name=qr]', { name: 'qr.png', mimeType: 'image/png', buffer: png });
 await nm.evaluate(() => { document.querySelector('#app-form [name=logo]').removeAttribute('required'); document.querySelector('#app-form [name=qr]').removeAttribute('required'); });
-await nm.click('#app-form button.primary'); await nm.waitForSelector('#toast.show');
+await nm.click('#app-form button.oz-btn-primary'); await nm.waitForSelector('#toast.show');
 const noLogo = await nm.textContent('#toast');
 if (!/map first|logo/i.test(noLogo)) throw new Error('missing logo/pin not caught: ' + noLogo);
 await nm.waitForTimeout(3500);
 await nm.click('#locate'); await nm.waitForFunction(() => String(document.querySelector('#pin-read').dataset.lat || '').startsWith('3.1'));
 await nm.setInputFiles('#app-form [name=logo]', { name: 'logo.png', mimeType: 'image/png', buffer: png }); await nm.waitForSelector('#logo-prev img');
-await nm.click('#app-form button.primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
+await nm.click('#app-form button.oz-btn-primary'); await nm.waitForSelector('text=Sent to the Admin team', { timeout: 15000 });
 ok(`new merchant was asked for a pin and logo ("${noLogo.trim()}"), then sent the application`);
 
 // ---------- the two websites keep to their own people
@@ -417,11 +494,11 @@ const gp = await gctx.newPage(); watch(gp, 'google-maps');
 await login(gp, 'aina@siswa.um.edu.my'); await gp.waitForSelector('.kk-hero', { timeout: 90000 });
 await gp.goto(BASE + '#/explore'); await gp.waitForSelector('#cmap .gm-stub .kk-pin', { timeout: 20000 });
 const gpins = await gp.locator('#cmap .gm-stub-marker .kk-pin').count();
-await gp.locator('#cmap .gm-stub-marker').first().click(); await gp.waitForSelector('.gm-stub-info .mpop a[href*="google.com/maps/dir"]');
+await gp.locator('#cmap .gm-stub-marker').first().click(); await gp.waitForSelector('.oz-shops-preview:not([hidden]) .oz-peek a[href*="google.com/maps/dir"]');
 await gp.click('#nearby-locate'); await gp.waitForSelector('#cmap .kk-me');
 if (!/key=TEST_KEY/.test(mapsUrl) || !/libraries=marker/.test(mapsUrl)) throw new Error('Maps script URL: ' + mapsUrl);
 await gp.screenshot({ path: `${shots}/07-google-maps-path.png` });
-ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, info window, live location)`);
+ok(`with a Google Maps key the app loads Google Maps (${gpins} pins, peek card with directions, live location)`);
 await gctx.close();
 
 // ---------- feature switches, using the real Settings form
@@ -525,7 +602,7 @@ await off.goto(ADMIN + '#/settings'); await off.waitForSelector('#features');
 const offStu = await ctx.newPage(); watch(offStu, 'student, switches off'); await fresh(offStu);
 await login(offStu, 'aina@siswa.um.edu.my'); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
 if (await offStu.locator('.tabbar a[href="#/explore"]').count() !== 0) throw new Error('nav still shows Overview');
-for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.kk-pillars a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
+for (const route of ['explore', 'explore/deals']) if (await offStu.locator(`.oz-home a[href="#/${route}"]`).count() !== 0) throw new Error('home still links to ' + route);
 for (const route of ['explore', 'deals', 'cafes', 'checkin', 'bayar', 'merchant/mer1', 'claim-deal/' + liveId]) {
   await offStu.goto(BASE + '#/' + route); await offStu.waitForTimeout(500);
   if (await offStu.locator('.kk-hero').count() !== 1) throw new Error('typed #/' + route + ' did not go home');
@@ -546,7 +623,7 @@ if (/check in at shops|your check-ins/i.test(await offMer.locator('body').innerT
 ok('with switches off, sign-up has no merchant option');
 await off.check('#features input[name=overview]'); await off.click('#features button'); await off.waitForTimeout(600);
 await offStu.goto(BASE); await offStu.reload(); await offStu.waitForSelector('.kk-hero', { timeout: 30000 });
-if (await offStu.locator('.kk-pillars a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not restore its homepage card');
+if (await offStu.locator('.oz-home-shops a[href="#/explore"]').count() !== 1) throw new Error('turning Overview on did not restore its homepage card');
 await offStu.goto(BASE + '#/explore'); await offStu.waitForSelector('#cmap', { timeout: 20000 });
 if (await offStu.locator('#directory-deals').isVisible()) throw new Error('Live deals shown while its switch is off');
 await offStu.locator('#clist h3 a[href^="#/merchant/"]').first().click(); await offStu.waitForSelector('text=Visit this shop', { timeout: 20000 });
@@ -564,15 +641,16 @@ await linkPage.selectOption('#ob [name=college]', { index: 1 }); await linkPage.
 await linkPage.check('#ob [name=terms]'); await linkPage.click('#ob button[type=submit]');
 await linkPage.waitForSelector('.guide [data-skip]', { timeout: 30000 }); await linkPage.click('.guide [data-skip]');
 await linkPage.waitForFunction(() => !document.querySelector('.guide'));
-await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#add-email');
+await linkPage.goto(BASE + '#/me/profile'); await linkPage.waitForSelector('#add-email'); // sign-in emails live on Me › Edit profile
 await linkPage.click('#add-email'); await linkPage.fill('#le [name=email]', 'link.second@siswa.um.edu.my'); await linkPage.click('#le button');
 await linkPage.waitForFunction(() => document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
 await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
 await linkPage.waitForSelector('#google'); await googleAs(linkPage, 'link.second@siswa.um.edu.my');
 await linkPage.waitForFunction(() => !document.querySelector('#google') && !document.querySelector('#ob'), null, { timeout: 30000 });
-await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('#signin-emails');
+await linkPage.goto(BASE + '#/me'); await linkPage.waitForSelector('.me-card');
 if (!(await linkPage.locator('.me-card').innerText()).includes('Link Tester')) throw new Error('the second email should open the same account');
 ok('a student added a second Google account on Me, and it signs in to the same account');
+await linkPage.goto(BASE + '#/me/profile'); await linkPage.waitForSelector('#signin-emails');
 await linkPage.click('[data-remove-email="link.second@siswa.um.edu.my"]'); await linkPage.click('#sheet [data-yes]');
 await linkPage.waitForFunction(() => !document.querySelector('#signin-emails')?.textContent.includes('link.second@siswa.um.edu.my'), null, { timeout: 20000 });
 await linkPage.evaluate(async () => { const { sdk, auth } = window.__umc.backend; await sdk.signOut(auth); });
